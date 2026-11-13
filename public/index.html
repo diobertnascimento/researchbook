@@ -965,7 +965,7 @@ a.lc:hover{text-decoration:underline}
 
 <script>
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.6.0';
+const APP_VERSAO = '0.6.1';
 
 /* =========================================================
    Ícones
@@ -1061,21 +1061,21 @@ const TRILHAS = [
 const ARGUMENTOS = [
   {id:'simul', tese:'A economia de 18% relatada para o RotaCoop foi medida em simulação, não na operação das cooperativas.', tipo:'Crítica a precedente', forca:3, fontes:['moraes2024','venable2016'], usado:'Trabalhos relacionados',
     trechos:[
-      {t:'Os autores relatam economia de 18% na quilometragem, mas todas as rotas foram geradas e comparadas em simulação, sem que as equipes de coleta as percorressem. O resultado, nessas condições, tende a superestimar o ganho na operação.', c:'(MORAES; LINS, 2024)'},
-      {t:'Uma avaliação que pretenda sustentar a utilidade de um artefato precisa observá-lo em uso no contexto real antes de afirmar seus efeitos.', c:'(VENABLE; PRIES-HEJE; BASKERVILLE, 2016)'},
+      {t:'Os autores relatam economia de 18% na quilometragem, mas todas as rotas foram geradas e comparadas em simulação, sem que as equipes de coleta as percorressem. O resultado, nessas condições, tende a superestimar o ganho na operação.', c:'(Moraes; Lins, 2024)'},
+      {t:'Uma avaliação que pretenda sustentar a utilidade de um artefato precisa observá-lo em uso no contexto real antes de afirmar seus efeitos.', c:'(Venable; Pries-Heje; Baskerville, 2016)'},
     ]},
   {id:'adesao', tese:'Para roteirizadores em cooperativas, a adesão das equipes às rotas na operação é critério de avaliação mais adequado que a economia de quilometragem em simulação.', tipo:'Decisão metodológica', forca:4, fontes:['goldkuhl2012','venable2016','moraes2024'], usado:'Método',
     trechos:[
-      {t:'Sob uma postura pragmatista, o que garante o conhecimento produzido pelo artefato não é o consenso entre observadores, mas a regularidade das consequências de aplicá-lo repetidamente em condições comparáveis.', c:'(GOLDKUHL, 2012)'},
-      {t:'Como a rota proposta só gera economia se for percorrida, é preciso medir a adesão das equipes antes de afirmar utilidade.', c:'(MORAES; LINS, 2024)'},
+      {t:'Sob uma postura pragmatista, o que garante o conhecimento produzido pelo artefato não é o consenso entre observadores, mas a regularidade das consequências de aplicá-lo repetidamente em condições comparáveis.', c:'(Goldkuhl, 2012)'},
+      {t:'Como a rota proposta só gera economia se for percorrida, é preciso medir a adesão das equipes antes de afirmar utilidade.', c:'(Moraes; Lins, 2024)'},
     ]},
   {id:'pragm', tese:'O pragmatismo sustenta de forma coerente as três camadas da DSR, do problema à avaliação.', tipo:'Posicionamento', forca:5, fontes:['goldkuhl2012','iivari2007','hevner2004'], usado:'Método',
     trechos:[
-      {t:'Adotar o pragmatismo em todas as camadas evita a incoerência de justificar o artefato pela utilidade e avaliá-lo por critérios interpretativistas.', c:'(GOLDKUHL, 2012; IIVARI, 2007)'},
+      {t:'Adotar o pragmatismo em todas as camadas evita a incoerência de justificar o artefato pela utilidade e avaliá-lo por critérios interpretativistas.', c:'(Goldkuhl, 2012; Iivari, 2007)'},
     ]},
   {id:'quem', tese:'“Utilidade para quem?” Declarar o critério de utilidade é também uma escolha sobre quem o artefato serve.', tipo:'Reflexividade', forca:2, fontes:['venable2016'], usado:'Limitações',
     trechos:[
-      {t:'Declarar ex ante o critério de utilidade protege a avaliação contra racionalizações posteriores, mas não a torna neutra.', c:'(VENABLE; PRIES-HEJE; BASKERVILLE, 2016)'},
+      {t:'Declarar ex ante o critério de utilidade protege a avaliação contra racionalizações posteriores, mas não a torna neutra.', c:'(Venable; Pries-Heje; Baskerville, 2016)'},
     ]},
 ];
 
@@ -1395,7 +1395,7 @@ V.fichamento = (id) => {
     <div class="campo"><label>Referência ABNT gerada</label><div class="ref-abnt" style="margin:0">${l.abnt}</div></div>`;
   if(p===1) corpo=`
     <h2>Citações</h2><p class="instr">Escolha os trechos que merecem citação direta. Para cada um, diga em uma frase por que ele importa para você.</p>
-    ${GRIFOS_VEN.slice(0,3).map(g=>`<div class="citacao"><blockquote style="border-color:var(--hl-${g.cor})">${g.t}</blockquote><div class="cit">(VENABLE; PRIES-HEJE; BASKERVILLE, 2016, p. ${g.p})</div><div class="campo" style="margin:0"><textarea placeholder="Por que este trecho importa?"></textarea></div></div>`).join('')}`;
+    ${GRIFOS_VEN.slice(0,3).map(g=>`<div class="citacao"><blockquote style="border-color:var(--hl-${g.cor})">${g.t}</blockquote><div class="cit">(Venable; Pries-Heje; Baskerville, 2016, p. ${g.p})</div><div class="campo" style="margin:0"><textarea placeholder="Por que este trecho importa?"></textarea></div></div>`).join('')}`;
   if(p===2) corpo=`
     <h2>Resumo</h2><p class="instr">Explique o texto com suas palavras, sem olhar o PDF. Os grifos de conceito e evidência ficam ao lado como apoio.</p>
     <div class="campo"><label>Resumo <span>94 palavras</span></label><textarea style="min-height:220px">O artigo propõe o FEDS, um quadro para planejar a avaliação em pesquisas de design science. A avaliação é organizada em duas dimensões: o propósito (formativo ou somativo) e o paradigma (artificial ou naturalístico). Em vez de um único teste no fim, os autores defendem trajetórias de avaliação ao longo do projeto, escolhidas a partir dos riscos principais do design. Propõem quatro estratégias típicas e um processo em quatro passos para escolher entre elas.</textarea></div>`;
@@ -1407,7 +1407,7 @@ V.fichamento = (id) => {
     <div class="campo"><label>Como isto conversa com a minha pesquisa?</label><textarea placeholder="Conecte com a dissertação ou outro projeto"></textarea></div>`;
   if(p===4) corpo=`
     <h2>Para a dissertação</h2><p class="instr">Escreva trechos que você usaria no texto final, já com a citação. Cada trecho é ligado a um argumento.</p>
-    <div class="citacao"><div class="campo"><label>Trecho</label><textarea>A escolha da estratégia de avaliação não é neutra: ela decorre dos riscos que o design enfrenta (VENABLE; PRIES-HEJE; BASKERVILLE, 2016). No caso de um roteirizador para cooperativas, o risco central é humano: rotas tecnicamente melhores podem não ser percorridas.</textarea></div>
+    <div class="citacao"><div class="campo"><label>Trecho</label><textarea>A escolha da estratégia de avaliação não é neutra: ela decorre dos riscos que o design enfrenta (Venable; Pries-Heje; Baskerville, 2016). No caso de um roteirizador para cooperativas, o risco central é humano: rotas tecnicamente melhores podem não ser percorridas.</textarea></div>
     <div class="campo" style="margin:0"><label>Sustenta o argumento</label><select><option>Adesão das equipes como critério de avaliação</option><option>A economia do RotaCoop foi medida em simulação</option><option>Criar novo argumento</option></select></div></div>
     <button class="btn" data-acao="toast" data-msg="Novo trecho em branco adicionado">${I.mais}Outro trecho</button>`;
   const revisao = p===3 ? `
@@ -2057,16 +2057,16 @@ function escritaHTML(t){
         <div class="aviso-demo-pg" style="margin-bottom:22px">Texto de exemplo, escrito para o protótipo.</div>
         <h2>3. Reputação como modelo de negócio</h2>
         <div class="par autor"><span class="tag-a">Seu</span>O greenwashing costuma ser contado como um exagero de comunicação. Essa leitura é confortável porque trata o problema como falha de redação, que se corrige com mais revisão. Ela esconde a pergunta que importa: por que tantas empresas tinham interesse em parecer mais sustentáveis do que eram?</div>
-        <div class="par co"><span class="tag-a">Coautoria: versão do copilot, editada por você</span>A resposta está no modelo de negócio. Para Nogueira e Prado, o relatório de sustentabilidade passou a funcionar como ativo de reputação junto a investidores e consumidores <span class="cit-in" title="Grifo de conceito, cap. 2">(NOGUEIRA; PRADO, 2023)</span>. Nesse modelo, a narrativa não é efeito colateral do relatório; é o produto.</div>
+        <div class="par co"><span class="tag-a">Coautoria: versão do copilot, editada por você</span>A resposta está no modelo de negócio. Para Nogueira e Prado, o relatório de sustentabilidade passou a funcionar como ativo de reputação junto a investidores e consumidores <span class="cit-in" title="Grifo de conceito, cap. 2">(Nogueira; Prado, 2023)</span>. Nesse modelo, a narrativa não é efeito colateral do relatório; é o produto.</div>
         <div class="par autor ativo"><span class="tag-a">Seu, em revisão</span><span class="sem-fonte">As empresas sabiam que os números eram maquiados</span> e lucravam com isso, então não dá pra dizer que foi exagero.</div>
         <div class="versoes-box">
           <h4>Versões propostas pelo copilot a partir do seu parágrafo</h4>
           <div class="alerta">⚠ <span>Você afirma que as empresas “sabiam”. Nenhuma fonte do seu acervo sustenta isso. As duas versões tiram essa parte; para mantê-la, adicione uma fonte à biblioteca.</span></div>
           <div class="versao-op"><div class="cab"><b>Mais próxima do seu texto</b><span class="chip">liga à fonte</span><span class="chip">mesma ordem</span></div>
-            <p>As empresas lucravam com a reputação que o relatório construía; por isso, chamar o greenwashing de exagero não se sustenta <span class="cit-in">(NOGUEIRA; PRADO, 2023)</span>.</p>
+            <p>As empresas lucravam com a reputação que o relatório construía; por isso, chamar o greenwashing de exagero não se sustenta <span class="cit-in">(Nogueira; Prado, 2023)</span>.</p>
             <div class="bts"><button class="btn prim" data-acao="toast" data-msg="Versão aplicada. O parágrafo passa a contar como coautoria.">Usar</button><button class="btn" data-acao="toast" data-msg="Edite à vontade; quanto mais você mudar, mais o trecho conta como seu.">Editar a partir desta</button></div></div>
           <div class="versao-op"><div class="cab"><b>Mais acadêmica</b><span class="chip">tira o coloquial</span><span class="chip">liga à fonte</span></div>
-            <p>Tratar o greenwashing como exagero de comunicação ignora que o modelo de negócio dependia justamente da reputação construída pelos relatórios <span class="cit-in">(NOGUEIRA; PRADO, 2023)</span>.</p>
+            <p>Tratar o greenwashing como exagero de comunicação ignora que o modelo de negócio dependia justamente da reputação construída pelos relatórios <span class="cit-in">(Nogueira; Prado, 2023)</span>.</p>
             <div class="bts"><button class="btn prim" data-acao="toast" data-msg="Versão aplicada. O parágrafo passa a contar como coautoria.">Usar</button><button class="btn" data-acao="toast" data-msg="Edite à vontade; quanto mais você mudar, mais o trecho conta como seu.">Editar a partir desta</button></div></div>
           <div class="versao-op" style="padding-bottom:0"><div class="bts"><button class="btn fant" data-acao="toast" data-msg="Mantido como você escreveu. O trecho continua marcado como sem fonte.">Manter o meu</button></div></div>
         </div>
