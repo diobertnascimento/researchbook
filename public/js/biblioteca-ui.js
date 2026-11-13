@@ -287,14 +287,18 @@ export function criarBibliotecaUI({ bib, registrar }) {
 
   async function montar(id) {
     const palco = document.getElementById('pdf-palco');
-    if (!palco || montando === id) return;
+    if (!palco || (montando && montando.id === id && montando.palco === palco)) return;
     const l = bib.obter(id);
     if (!l?.pdf) return;
-    montando = id;
+    // Se a tela for redesenhada no meio (ex.: a sincronização terminou), uma montagem nova assume
+    // o palco novo e esta desiste, para o PDF nunca ficar preso num palco fora da tela.
+    const eu = { id, palco };
+    montando = eu;
+    const vale = () => montando === eu && document.body.contains(palco);
     const inicio = performance.now();
     const r = await bib.obterPDF(id);
-    if (!document.body.contains(palco)) {
-      montando = null;
+    if (!vale()) {
+      if (montando === eu) montando = null;
       return;
     }
     if (r.erro) {
@@ -328,6 +332,11 @@ export function criarBibliotecaUI({ bib, registrar }) {
         }, 1500);
       },
     });
+    if (!vale()) {
+      controle?.destruir();
+      if (montando === eu) montando = null;
+      return;
+    }
     montando = null;
     if (controle) {
       leitorAtual = { id, controle, palco };
