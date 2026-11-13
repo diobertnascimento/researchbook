@@ -46,6 +46,14 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Registros:** gravados no aparelho a cada 2 s e ao sair, mantidos 180 dias; nunca guardam conteúdo do usuário. Eventos atuais: `sessao.inicio`, `app.pronto`, `ui.navegacao`, `ui.clique` (só atributos de ação), `js.erro`, `app.versao_nova_disponivel`, `app.atualizar`, dicas de instalação e migrações.
 - **Segurança:** política de conteúdo (CSP) no próprio HTML: só arquivos do app; cada serviço do Google entra explicitamente quando for usado. Repositório com `main` protegida, pull requests só de colaboradores e varredura de segredos.
 
+## Login e Drive (entrega 2, v0.8.0)
+- **Projeto no Google Cloud** na conta pessoal do Diobert: APIs do Drive e do Agenda ligadas; app em modo de teste, com ele como único usuário de teste (o Google recusa outras contas); cliente OAuth do tipo aplicativo da Web, autorizado só em `https://diobertnascimento.github.io` e `http://localhost:4173`. O ID do cliente fica em `public/js/config.js` (público por natureza); a chave secreta do cliente não é usada.
+- **Login** por redirecionamento para a página do Google (fluxo de token, sem scripts de terceiros), com `state` aleatório. O app confere o token no Google (precisa ter sido emitido para o researchbook e incluir `drive.file`). Permissões: e-mail e `drive.file`. Token de cerca de 1 hora, guardado só no aparelho; "Sair da conta" revoga no Google.
+- **Tela de entrada:** aparece em aparelhos onde a conta nunca entrou. É só cortesia com visitantes; a proteção dos dados é o login do Google e a permissão do Drive. Com a sessão vencida, o app abre com a cópia local e oferece "Reconectar ao Google".
+- **Pasta no Drive:** `researchbook/`, criada pelo app e marcada para ser encontrada mesmo se renomeada ou movida. Cada coleção em `dados/<colecao>.json`; registros em `registros/<data>/sessao-<sessao>-<aparelho>.jsonl`.
+- **Sincronização:** ao abrir, a cada minuto com o app visível, ao voltar a internet e 4 s depois de uma mudança. Sem mudanças, custa uma chamada. Junção item a item contra a última sincronização: mudou só de um lado, vale esse lado; mudou dos dois, fica o mais recente e o outro vai para "conflitos" (nada é descartado). Exclusões viram marca `apagado`, para chegar aos outros aparelhos.
+- **Pendências:** tela para revisar conflitos; limpeza de marcas de exclusão antigas; teste do login no iPhone com o app instalado.
+
 ## Escrita dentro do produto (confirmado em 13/11/2026)
 - O Diobert escreve dentro do researchbook. Os textos ficam salvos na pasta, com salvamento automático e versões anteriores, e são exportados para Word (.docx).
 - O editor precisa ter formatação de texto: negrito, itálico, sublinhado, títulos, listas, citação longa recuada, desfazer e refazer. O formato salvo precisa preservar o sublinhado (Markdown puro não preserva).
@@ -98,9 +106,10 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.6.0 (13/11/2026): projeto no GitHub com testes, CLAUDE.md e publicação automática no GitHub Pages. Os testes acharam e foi corrigida rolagem lateral no celular em Ajustes e no fichamento. Dados de exemplo sem nomes reais e com tema fictício (roteirizador de coleta seletiva, artigo sobre greenwashing, trabalho em grupo sobre ecoponto), porque o repositório é público.
 - v0.6.1 (13/11/2026): instruções de todas as funções de IA em `prompts/`; citações no formato da NBR 10520:2023.
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
+- v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 
 ## Próximas etapas
-1. Entrega 2: tela de login com Google (só a conta do Diobert), pasta no Drive pela API sincronizada com a cópia local, registros de cada sessão também no Drive, exemplos fora da versão publicada.
+1. Tela para revisar conflitos de sincronização.
 2. Upload de PDF e PDF.js com grifos ancorados por página.
 3. Crossref (DOI) e geração ABNT.
 4. Gemini: tutor e copilot com as instruções de `prompts/`; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino; casos de comportamento rodando contra o modelo.

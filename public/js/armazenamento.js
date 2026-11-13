@@ -9,7 +9,7 @@
 //    um backup completo na coleção "backups" (ficam os 5 mais recentes).
 
 const NOME = 'researchbook';
-export const ESQUEMA = 1;
+export const ESQUEMA = 2;
 export const ESQUEMA_DADOS = 1;
 
 export const COLECOES = [
@@ -25,6 +25,10 @@ const ESTRUTURA = {
     r.createIndex('t', 't');
     r.createIndex('sessao', 'sessao');
     db.createObjectStore('backups', { keyPath: 'criadoEm' });
+  },
+  // v0.8.0: versões que perderam um conflito de sincronização, guardadas para o Diobert decidir.
+  2: (db) => {
+    db.createObjectStore('conflitos', { keyPath: 'id' });
   },
 };
 
@@ -54,6 +58,14 @@ export function abrir() {
 
 export function todos(db, colecao) {
   return pedido(db.transaction(colecao).objectStore(colecao).getAll());
+}
+
+export function um(db, colecao, id) {
+  return pedido(db.transaction(colecao).objectStore(colecao).get(id));
+}
+
+export function gravar(db, colecao, item) {
+  return pedido(db.transaction(colecao, 'readwrite').objectStore(colecao).put(item));
 }
 
 export function gravarVarios(db, colecao, itens) {

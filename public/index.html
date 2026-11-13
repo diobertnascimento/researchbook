@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <!-- Segurança: o app só carrega código, estilos, fontes e imagens dele mesmo.
      Quando o login Google e o Gemini entrarem, os endereços do Google são acrescentados aqui, um a um. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>researchbook</title>
 <meta name="theme-color" content="#1F4A5A">
@@ -806,6 +806,21 @@ details.prio-grupo[open] > summary header::after{content:"Ocultar"}
 .res-busca a span{color:var(--grafite-2);font-size:var(--t-xs);margin-left:auto;white-space:nowrap}
 .res-busca .vazio-b{padding:18px 8px;color:var(--grafite);font-size:var(--t-s)}
 
+/* Tela de entrada */
+body.bloqueado aside.nav, body.bloqueado .tabbar{display:none!important}
+body.bloqueado .app{grid-template-columns:1fr}
+.entrar{min-height:100vh;display:grid;place-items:center;padding:32px 20px}
+.entrar-caixa{max-width:420px;width:100%}
+.entrar-caixa .wordmark{font-size:30px;padding:0;margin-bottom:28px}
+.entrar-caixa h1{font-size:var(--t-xl);margin:0 0 10px}
+.entrar-caixa p{color:var(--grafite);margin:0 0 22px;line-height:1.55}
+.entrar-caixa .btn.prim{width:100%;justify-content:center;padding:13px 18px;font-size:var(--t-m)}
+.entrar-nota{font-size:var(--t-xs);color:var(--grafite-2);margin:18px 0 0}
+.entrar-erro{background:#FBEDE8;border:1px solid #E7B8A8;color:#7A2E18;border-radius:var(--r-s);padding:10px 12px;font-size:var(--t-s);margin:0 0 16px}
+/* Situação do Drive no rodapé do menu */
+.salvo.ok i{background:#5C8F4E}.salvo.aviso i{background:#C0702F}.salvo.erro i{background:#B0412B}
+.salvo button{background:none;border:0;padding:0;color:var(--petroleo);font:inherit;text-decoration:underline;cursor:pointer}
+
 /* Ajustes > Este aparelho */
 .ap-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .ap-it{background:var(--papel);border:1px solid var(--linha);border-radius:var(--r-s);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -986,8 +1001,26 @@ a.lc:hover{text-decoration:underline}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+/* Volta do login do Google: o retorno chega no endereço (#access_token=...). Guarda e limpa o endereço
+   antes de o roteador ler, para o token não ficar no histórico nem virar rota. */
+(function(){
+  if(!/^#(access_token|error)=/.test(location.hash)) return;
+  let volta='#painel';
+  try{ sessionStorage.setItem('rb.oauth',location.hash.slice(1)); volta=sessionStorage.getItem('rb.oauth.volta')||'#painel'; }catch(e){}
+  history.replaceState(null,'',location.pathname+location.search+volta);
+})();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.7.0';
+const APP_VERSAO = '0.8.0';
+/* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
+   A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
+function acesso(){
+  try{
+    if(localStorage.getItem('rb.exemplo')==='1') return 'livre';
+    if(sessionStorage.getItem('rb.oauth')) return 'conectando';
+    if(localStorage.getItem('rb.conta')) return 'livre';
+  }catch(e){}
+  return 'entrar';
+}
 
 /* =========================================================
    Ícones
@@ -1180,7 +1213,7 @@ function desenhaMenu(rota){
     it('diss','#projeto',dot('#1F4A5A'),'Dissertação') +
     DISCIPLINAS.map((d,i)=>it('disc'+i,'#disciplina/'+i,dot(CORES_DISC[i]),d)).join('');
   const voceAtivo=sec==='voce';
-  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div class="salvo pendente"><i></i>Drive ainda não conectado</div><span class="selo-demo" style="margin-left:10px;font-size:11px">Protótipo v${APP_VERSAO}, dados de exemplo</span>`;
+  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div id="status-drive">${statusDriveHTML()}</div><span class="selo-demo" style="margin-left:10px;font-size:11px">Protótipo v${APP_VERSAO}, dados de exemplo</span>`;
   const tb=[['painel','#painel',I.painel,'Hoje'],['bib','#biblioteca',I.biblioteca,'Biblioteca'],['esc','#escrita',I.escrita,'Escrita'],['todos','#disciplinas',I.disciplinas,'Projetos'],['voce','#autor',I.autor,'Você']];
   document.getElementById('tabbar').innerHTML=tb.map(([k,h,ic,r])=>`<a href="${h}" class="${(k==='voce'?voceAtivo:k==='todos'?(base==='disciplinas'||base==='disciplina'||sec==='diss'):ativo(k))?'ativo':''}">${ic}${r}</a>`).join('');
 }
@@ -1714,11 +1747,8 @@ V.ajustes = () => `
     </section>
     <section id="sec-pasta">
       <h2>Pasta do researchbook</h2>
-      <p>Tudo vai ficar em arquivos comuns numa pasta <b>researchbook</b> do seu Google Drive, iguais nos dois computadores e no celular. O app só enxerga o que ele mesmo criou ali.</p>
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
-        <span class="chip proj" style="font-size:var(--t-s);padding:5px 12px">Meu Drive/researchbook</span>
-        <span class="mute" style="font-size:var(--t-s)">A conexão com o Google entra na próxima versão</span>
-      </div>
+      <p>Tudo fica em arquivos comuns numa pasta <b>researchbook</b> do seu Google Drive, iguais nos dois computadores e no celular. O app só enxerga o que ele mesmo criou ali.</p>
+      ${contaHTML()}
 <pre class="arvore">researchbook/
 ├── biblioteca/
 │   ├── pdfs/                <span>goldkuhl-2012.pdf</span>
@@ -1739,13 +1769,14 @@ V.ajustes = () => `
 │       ├── agenda.json          <span>eventos e o id de cada um no Google Agenda</span>
 │       └── anotacoes.md
 ├── cartoes/
+├── dados/                   <span>uma lista por tipo de dado: leituras.json, grifos.json…</span>
 ├── registros/
-│   └── 2026-11-13/sessao-11h32.jsonl   <span>um arquivo por sessão, gravado a cada 10 s</span>
+│   └── 2026-11-13/sessao-…jsonl   <span>um arquivo por sessão e aparelho, enviado a cada sincronização</span>
 └── memoria/
     ├── autor.md  decisoes.md  regras.md
     ├── conversas/           <span>registro completo, por mês</span>
     └── exportar/</pre>
-      <div class="aviso"><span>⚠</span><div>Abra o researchbook em um computador por vez, para o Drive não criar cópias em conflito. A chave do Gemini fica só neste navegador, fora da pasta, para não ir parar no Drive.</div></div>
+      <div class="aviso"><span>ⓘ</span><div>Pode usar os dois computadores e o celular ao mesmo tempo: cada mudança vai para o Drive e chega aos outros aparelhos na próxima sincronização. Se o mesmo item mudar em dois lugares antes disso, fica a versão mais recente e a outra é guardada para você decidir. A chave do Gemini fica só em cada aparelho, nunca na pasta.</div></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn" data-acao="toast" data-msg="Na versão funcional, gera um .bib com toda a biblioteca.">Exportar referências (BibTeX)</button>
         <a class="btn fant" href="#memoria">Exportar memória para outras IAs</a>
@@ -2667,6 +2698,53 @@ document.addEventListener('submit',e=>{
   render(); const c=document.getElementById('conversa'); c.scrollTop=c.scrollHeight;
 });
 
+/* Situação do Drive (rodapé do menu): atualizada pela sincronização */
+function statusDriveHTML(){
+  const rb=window.rb; const conta=(()=>{try{return localStorage.getItem('rb.conta')}catch(e){return null}})();
+  const linha=(cls,txt)=>`<div class="salvo ${cls}"><i></i>${txt}</div>`;
+  if(!conta) return linha('pendente','Dados de exemplo, sem Drive');
+  if(!rb) return linha('pendente','Abrindo…');
+  const e=rb.sincronia?rb.sincronia.estado():{fase:rb.google.conectado()?'parado':'desconectado'};
+  const conf=e.conflitos?`, ${e.conflitos} ${e.conflitos===1?'conflito':'conflitos'}`:'';
+  if(e.fase==='ok') return linha('ok',`Sincronizado às ${new Date(e.ultima).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${conf}`);
+  if(e.fase==='sincronizando'||e.fase==='parado') return linha('pendente','Sincronizando com o Drive…');
+  if(e.fase==='offline') return linha('aviso','Sem internet: salvo neste aparelho');
+  if(e.fase==='desconectado') return linha('aviso','Salvo neste aparelho. <button data-google="entrar">Reconectar ao Google</button>');
+  return linha('erro','Erro ao sincronizar. <a href="#ajustes">Ver detalhes</a>');
+}
+window.statusDriveHTML=statusDriveHTML;
+
+V.entrar = () => {
+  const rb=window.rb; const erro=rb&&rb.google.erro;
+  if(acesso()==='conectando') return `<div class="entrar"><div class="entrar-caixa"><a class="wordmark"><span>researchbook</span></a><h1>Conectando ao Google…</h1><p>Conferindo o login e a permissão do Drive.</p></div></div>`;
+  return `<div class="entrar"><div class="entrar-caixa">
+    <a class="wordmark"><span>researchbook</span></a>
+    <h1>Entre para continuar</h1>
+    <p>Estudo e escrita do mestrado. Só a conta autorizada entra, e os dados ficam numa pasta <b>researchbook</b> no Google Drive dela.</p>
+    ${erro?`<div class="entrar-erro" role="alert">${erro}</div>`:''}
+    <button class="btn prim" data-google="entrar">Entrar com Google</button>
+    <p class="entrar-nota">O app pede só duas permissões: saber o seu e-mail e usar os arquivos que ele mesmo criar no seu Drive. Ele não enxerga o resto do Drive.</p>
+  </div></div>`;
+};
+
+/* Ajustes > Pasta: conta Google e sincronização */
+function contaHTML(){
+  const rb=window.rb; let conta=null; try{conta=localStorage.getItem('rb.conta')}catch(e){}
+  if(!conta) return `<div class="aj-linha" style="margin-bottom:16px"><span class="mute" style="font-size:var(--t-s)">Nenhuma conta conectada neste aparelho.</span><button class="btn prim" data-google="entrar">Entrar com Google</button></div>`;
+  const e=rb&&rb.sincronia?rb.sincronia.estado():null;
+  const id=rb&&rb.sincronia?rb.sincronia.idPasta():null;
+  const esc=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  return `<div class="ap-grade" style="margin-bottom:12px">
+      <div class="ap-it"><span>Conta</span><b>${esc(conta)}</b><small>${rb&&rb.google.conectado()?'conectada':'sessão vencida: entre de novo para sincronizar'}</small></div>
+      <div class="ap-it"><span>Sincronização</span><div>${statusDriveHTML()}</div>${e&&e.erro?`<small>${esc(e.erro)}</small>`:''}</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+      <button class="btn" data-google="sincronizar">Sincronizar agora</button>
+      ${id?`<a class="btn fant" href="https://drive.google.com/drive/folders/${encodeURIComponent(id)}" target="_blank" rel="noopener">Abrir a pasta no Drive</a>`:''}
+      <button class="btn fant" data-google="sair">Sair da conta</button>
+    </div>`;
+}
+
 /* Downloads: registros (CSV) e cópia dos dados (JSON) */
 function baixar(nome,conteudo,tipo){const url=URL.createObjectURL(new Blob([conteudo],{type:tipo}));const a=document.createElement('a');a.href=url;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 document.addEventListener('click',async e=>{
@@ -2680,6 +2758,9 @@ document.addEventListener('click',async e=>{
    Roteador
    ========================================================= */
 function render(){
+  const bloqueado=acesso()!=='livre';
+  document.body.classList.toggle('bloqueado',bloqueado);
+  if(bloqueado){document.getElementById('vista').innerHTML=V.entrar();return}
   const rota=(location.hash||'#painel').slice(1);
   const [v,arg,arg2]=rota.split('/');
   document.body.classList.toggle('leitor', v==='leitor');
