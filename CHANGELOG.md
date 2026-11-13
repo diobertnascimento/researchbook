@@ -5,7 +5,7 @@ Cada versão nova entra no topo, em linguagem de quem usa o app.
 ## 0.6.0 (13/11/2026)
 - Repositório no GitHub com testes automáticos no computador e no celular, e publicação no GitHub Pages só quando os testes passam.
 - Dados de exemplo sem nomes de pessoas reais e com tema de pesquisa fictício.
-- Fontes Lexend e Literata servidas pelo próprio app: funcionam sem internet e deixam os testes iguais em qualquer máquina.
+- Fontes Lexend e Literata servidas pelo próprio app: funcionam sem internet e deixam os testes iguais em qualquer máquina. A Literata usa a versão mais leve (52 KB em vez de 110 KB).
 - Corrigido: no celular, os botões da Memória passavam da largura da tela.
 - Corrigido: no celular, as telas de Ajustes e de fichamento passavam da largura da tela.
 - Ajustes ganhou modelos do Gemini por tarefa, uso e custo, e registros de tudo o que acontece no app.
