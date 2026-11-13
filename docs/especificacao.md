@@ -64,6 +64,14 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **ABNT:** `public/js/abnt.js` monta referências pela NBR 6023:2018 (artigo, livro, capítulo, evento, dissertação, tese; até três autores, depois "et al."; [S. l.], [s. n.], [s. d.] quando falta) e citações pela NBR 10520:2023.
 - **Pendências:** fichamento real a partir dos grifos; trilhas reais; extração de metadados do PDF pelo Gemini quando não houver DOI; zoom no leitor.
 
+## Fichamento real (entrega 4, v0.10.0)
+- **Coleção `fichamentos`**, um por obra (id da obra): etapas feitas, citações (grifo, texto, página, por que importa), resumo, análise crítica (problema, como o argumento é construído, onde é fraco, conexão com a pesquisa) e trechos para a dissertação (texto e argumento).
+- **Etapas e cores:** Citações mostra todos os grifos; Resumo, conceito e evidência; Análise crítica, método e crítica; Para a dissertação, os grifos lilás, que inserem a citação com página no trecho.
+- **Autoria:** nada é escrito pela IA; os grifos só entram como citação quando o Diobert escolhe. Comentários do tutor por etapa entram com o Gemini (`prompts/fichamento.md`).
+- **Salvamento:** automático (0,7 s depois de parar de digitar); ao concluir, `fichamentos/<obra>.md` no Drive, em Markdown legível fora do app.
+- **Argumentos:** teses digitadas nos trechos viram itens da coleção `argumentos` (só a tese, nas palavras do Diobert), base da tela Argumentos real.
+- **Etapas da obra:** não iniciada, em leitura, leitura concluída, em fichamento, fichada.
+
 ## Escrita dentro do produto (confirmado em 13/11/2026)
 - O Diobert escreve dentro do researchbook. Os textos ficam salvos na pasta, com salvamento automático e versões anteriores, e são exportados para Word (.docx).
 - O editor precisa ter formatação de texto: negrito, itálico, sublinhado, títulos, listas, citação longa recuada, desfazer e refazer. O formato salvo precisa preservar o sublinhado (Markdown puro não preserva).
@@ -118,11 +126,12 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.10.0 (13/11/2026): entrega 4, fichamento real em cinco etapas a partir dos grifos, com arquivo .md no Drive.
 - v0.9.0 (13/11/2026): entrega 3, biblioteca real: DOI no Crossref, ABNT, PDF no Drive e no aparelho, leitor PDF.js com grifos.
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Fichamento real a partir dos grifos, e trilhas reais.
+1. Argumentos e trilhas reais; Hoje com o próximo passo real (continuar a leitura ou o fichamento).
 2. Tela para revisar conflitos de sincronização.
 3. Gemini: tutor e copilot com as instruções de `prompts/`; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino; casos de comportamento rodando contra o modelo.
 5. Google Agenda pela API oficial.

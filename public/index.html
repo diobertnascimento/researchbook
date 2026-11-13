@@ -821,6 +821,15 @@ a.linha-lv{color:inherit;text-decoration:none}
 .ad-msg.ok{background:#E7F0E2;color:#2F5A24}.ad-msg.erro{background:#FBEDE8;color:#7A2E18}
 .ref-previa{background:var(--papel-2);border-radius:var(--r-s);padding:10px 12px;margin-top:8px}
 .ref-previa small{color:var(--grafite);font-size:var(--t-xs)}.ref-previa p{margin:4px 0 0;font-size:var(--t-s);line-height:1.5}
+/* Fichamento real */
+.fich-real{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
+.fich-real .citacao{border:1px solid var(--linha);border-radius:var(--r-m);padding:14px 16px;margin-bottom:12px;background:var(--papel)}
+.fich-real .citacao.on{border-color:var(--petroleo)}
+.fich-real .citacao blockquote{margin:0;border-left:4px solid;padding:2px 0 2px 12px;font-family:var(--leitura);line-height:1.55}
+.fich-real .citacao .cit{font-size:var(--t-xs);color:var(--grafite);margin-top:6px}
+.btn.mini{padding:2px 9px;font-size:var(--t-xs);margin-left:8px}
+@media (max-width:1000px){.fich-real{grid-template-columns:minmax(0,1fr)}}
+
 /* Leitor de PDF */
 #pdf-palco{display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px 8px 60px}
 .pdf-pagina{position:relative;background:#fff;box-shadow:0 2px 14px rgba(40,30,10,.12);border-radius:2px;flex:none}
@@ -1055,7 +1064,7 @@ a.lc:hover{text-decoration:underline}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.9.0';
+const APP_VERSAO = '0.10.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -1464,6 +1473,7 @@ function notasHTML(){
 }
 
 V.fichamentos = () => {
+  if(modoReal()) return window.rb&&window.rb.fichUI ? window.rb.fichUI.lista() : '<div class="topo"><div><h1>Fichamentos</h1><p>Abrindo…</p></div></div>';
   const fich=['venable2016','moraes2024','brans1985','hevner2004','peffers2007','saaty1980'];
   const passosFeitos={venable2016:3,moraes2024:2,brans1985:4,hevner2004:5,peffers2007:5,saaty1980:5};
   return `
@@ -1495,6 +1505,11 @@ const GRIFOS_VEN = [
   {cor:'dissert', t:'Choosing a strategy should follow from the main risks the design faces.', p:83},
 ];
 V.fichamento = (id) => {
+  if(modoReal()){
+    const real=window.rb&&window.rb.fichUI&&window.rb.fichUI.tela(decodeURIComponent(id||''));
+    if(real) return real;
+    if(!window.rb||!window.rb.fichUI) return '<div class="topo"><div><h1>Fichamento</h1><p>Abrindo…</p></div></div>';
+  }
   const l=L(id)||L('venable2016'); const p=S.passoFich;
   const cores=PASSOS[p].cores;
   const grifos=GRIFOS_VEN.filter(g=>!cores.length||cores.includes(g.cor));
