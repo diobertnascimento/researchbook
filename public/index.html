@@ -8,9 +8,13 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icone.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<link rel="preload" href="fontes/lexend.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Fontes servidas pelo próprio app (licença SIL OFL em public/fontes): funcionam sem internet e não dependem do Google Fonts. */
+@font-face{font-family:'Lexend';src:url(fontes/lexend.woff2) format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Literata';src:url(fontes/literata.woff2) format('woff2');font-weight:200 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Literata';src:url(fontes/literata-italico.woff2) format('woff2');font-weight:200 900;font-style:italic;font-display:swap}
+</style>
 <style>
 /* ============ Tokens ============ */
 :root{
@@ -562,7 +566,7 @@ body.foco .palco{padding-top:56px}
 .versao-op .cab{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:var(--t-xs);color:var(--grafite)}
 .versao-op .cab b{font-weight:500;color:var(--tinta);font-size:var(--t-s);margin-right:4px}
 .versao-op p{font-family:var(--leitura);font-size:16.5px;line-height:1.65;margin:8px 0 10px}
-.versao-op .bts{display:flex;gap:8px}
+.versao-op .bts{display:flex;gap:8px;flex-wrap:wrap}
 .versao-op .bts .btn{padding:5px 12px;font-size:var(--t-xs)}
 .revs{display:flex;flex-direction:column;max-width:900px}
 .rev-it{display:grid;grid-template-columns:28px 1fr auto;gap:14px;align-items:start;padding:14px 0;border-top:1px solid var(--linha)}
@@ -630,7 +634,7 @@ body.foco .palco{padding-top:56px}
 .sug-it{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:10px 0;border-top:1px solid #C6D7DC;font-size:var(--t-s)}
 .sug-it:first-of-type{border-top:0}
 .sug-it small{display:block;color:var(--grafite);font-size:var(--t-xs);margin-top:2px}
-.sug-it .bts{display:flex;gap:6px}
+.sug-it .bts{display:flex;gap:6px;flex-wrap:wrap}
 .sug-it .btn{padding:4px 11px;font-size:var(--t-xs)}
 .mem-cat{background:var(--cartao);border:1px solid var(--linha);border-radius:var(--r-m);margin-bottom:14px}
 .mem-cat summary{list-style:none;cursor:pointer;padding:14px 20px;display:flex;justify-content:space-between;font-weight:500}
@@ -852,7 +856,7 @@ a.lc:hover{text-decoration:underline}
 @media (max-width:1000px){.aula-grid{grid-template-columns:1fr}.ev{grid-template-columns:52px 1fr}.ev .g-st{grid-column:2}}
 
 /* ============ v0.6: modelos, custo, registros ============ */
-@media (max-width:600px){.barras-dia{gap:2px}.barras-dia div{min-width:0}.barras-dia div:not(:nth-child(5n+1)) span{visibility:hidden}.aj table{display:block;max-width:100%;overflow-x:auto}.aj section{padding:20px 16px}.editor .pe{flex-wrap:wrap;gap:8px}.editor .pe .btn{white-space:normal;text-align:center}}
+@media (max-width:600px){.sug-it{grid-template-columns:1fr}.barras-dia{gap:2px}.barras-dia div{min-width:0}.barras-dia div:not(:nth-child(5n+1)) span{visibility:hidden}.aj table{display:block;max-width:100%;overflow-x:auto}.aj section{padding:20px 16px}.editor .pe{flex-wrap:wrap;gap:8px}.editor .pe .btn{white-space:normal;text-align:center}}
 .aj-wrap{display:grid;grid-template-columns:190px minmax(0,1fr);gap:32px;align-items:start}
 .aj-wrap .aj{max-width:980px}
 .aj-indice{position:sticky;top:24px;display:flex;flex-direction:column;gap:2px}

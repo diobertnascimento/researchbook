@@ -58,7 +58,7 @@ Comandos: `npm run abrir` (app em http://localhost:4173), `npm test`, `npm run t
 - Wizard só para tarefa rara. Ajuda no contexto ("Como ... funciona?" recolhido), sem tutorial.
 - Status sempre visível (salvamento, erros com o próximo passo). Ação destrutiva tem desfazer.
 - Sem sequência de dias que pune falhas, sem notificação insistente, sem urgência falsa.
-- Visual: fontes Lexend (interface) e Literata (leitura); papel `#F4F0E6`, tinta `#211F1B`, petróleo `#1F4A5A`. Cores de grifo por função: Conceito (amarelo), Evidência (verde), Método (azul), Crítica (salmão), Para a dissertação (lilás).
+- Visual: fontes Lexend (interface) e Literata (leitura), servidas de `public/fontes/` (nunca do Google Fonts); papel `#F4F0E6`, tinta `#211F1B`, petróleo `#1F4A5A`. Cores de grifo por função: Conceito (amarelo), Evidência (verde), Método (azul), Crítica (salmão), Para a dissertação (lilás).
 - Tudo tem que funcionar a 390 px de largura sem rolagem lateral (um teste confere).
 
 ### Textos da interface

@@ -1,7 +1,7 @@
 // Funções compartilhadas pelos testes.
 
-// Erros de rede de recursos externos (ex.: fontes do Google) não contam como falha do app.
-const IGNORAR = [/Failed to load resource/i, /fonts\.(googleapis|gstatic)\.com/i];
+// Falhas de rede de recursos externos não contam como erro do app.
+const IGNORAR = [/Failed to load resource/i];
 
 /** Começa a coletar erros de JavaScript e do console da página. */
 export function coletarErros(page) {
