@@ -38,6 +38,14 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - Custo: zero (GitHub Free, GitHub Pages, APIs do Google). O GitHub Free não bloqueia juntar PR com teste falhando; a regra é juntar só com tudo verde.
 - Versão do app (`APP_VERSAO`) aparece no app e vai em cada registro.
 
+## Base do app e segurança (entrega 1, v0.7.0)
+- **PWA:** manifesto, ícones (SVG e PNG, incluindo o do iPhone) e service worker que guarda o app no aparelho. Abre sem internet depois da primeira visita.
+- **Atualização:** a cada publicação muda a versão do service worker; o app mostra "Nova versão disponível" e só recarrega quando o Diobert toca em "Atualizar agora". Verifica ao voltar para o app e a cada hora.
+- **iPhone:** instalação manual pelo Safari (Compartilhar > Adicionar à Tela de Início); o app mostra a dica até ser dispensada. Usar sempre pelo ícone: o armazenamento do app instalado é separado do Safari e não sofre a limpeza de 7 dias.
+- **Dados locais:** IndexedDB com uma coleção por tipo de dado, `meta`, `registros` e `backups`. Estrutura e formato versionados: passos de estrutura só acrescentam; mudanças de formato são migrações de dados com backup completo antes (ficam 5). "Baixar cópia dos dados" exporta tudo em JSON.
+- **Registros:** gravados no aparelho a cada 2 s e ao sair, mantidos 180 dias; nunca guardam conteúdo do usuário. Eventos atuais: `sessao.inicio`, `app.pronto`, `ui.navegacao`, `ui.clique` (só atributos de ação), `js.erro`, `app.versao_nova_disponivel`, `app.atualizar`, dicas de instalação e migrações.
+- **Segurança:** política de conteúdo (CSP) no próprio HTML: só arquivos do app; cada serviço do Google entra explicitamente quando for usado. Repositório com `main` protegida, pull requests só de colaboradores e varredura de segredos.
+
 ## Escrita dentro do produto (confirmado em 13/11/2026)
 - O Diobert escreve dentro do researchbook. Os textos ficam salvos na pasta, com salvamento automático e versões anteriores, e são exportados para Word (.docx).
 - O editor precisa ter formatação de texto: negrito, itálico, sublinhado, títulos, listas, citação longa recuada, desfazer e refazer. O formato salvo precisa preservar o sublinhado (Markdown puro não preserva).
@@ -87,12 +95,12 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.4 (13/11/2026): redesenho de usabilidade a partir do benchmark (navegação, revelação progressiva, laço de hábito).
 - v0.5 (13/11/2026): disciplina como central (aulas gravadas com transcrição, agenda, anotações) e Google Agenda nos ajustes.
 - v0.6 (13/11/2026): modelos por tarefa, uso e custo, registros. Ainda com dados de exemplo; nada é salvo.
+- v0.6.1 (13/11/2026): instruções de todas as funções de IA em `prompts/`; citações no formato da NBR 10520:2023.
+- v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.6.0 (13/11/2026): projeto no GitHub com testes, CLAUDE.md e publicação automática no GitHub Pages. Os testes acharam e foi corrigida rolagem lateral no celular em Ajustes e no fichamento. Dados de exemplo sem nomes reais e com tema fictício (roteirizador de coleta seletiva, artigo sobre greenwashing, trabalho em grupo sobre ecoponto), porque o repositório é público.
 
 ## Próximas etapas
-1. Subir o repositório no GitHub e ligar o GitHub Pages (passo a passo no README).
-2. PWA: service worker, instalação e aviso "Nova versão disponível".
-3. Login Google; pasta no Drive pela API; cópia local no IndexedDB; esquema versionado; registros por sessão desde o primeiro dia.
+1. Login Google; pasta no Drive pela API; cópia local no IndexedDB; esquema versionado; registros por sessão desde o primeiro dia.
 4. Upload de PDF e PDF.js com grifos ancorados por página.
 5. Crossref (DOI) e geração ABNT.
 6. Gemini: tutor e copilot com instruções separadas; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino.

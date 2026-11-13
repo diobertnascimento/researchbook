@@ -2,12 +2,17 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<!-- Segurança: o app só carrega código, estilos, fontes e imagens dele mesmo.
+     Quando o login Google e o Gemini entrarem, os endereços do Google são acrescentados aqui, um a um. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>researchbook</title>
 <meta name="theme-color" content="#1F4A5A">
 <meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone-180.png">
+<meta name="apple-mobile-web-app-title" content="researchbook">
 <link rel="preload" href="fontes/lexend.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 /* Fontes servidas pelo próprio app (licença SIL OFL em public/fontes): funcionam sem internet e não dependem do Google Fonts. */
@@ -671,6 +676,7 @@ pre.arvore span{color:var(--grafite-2)}
 .nav a.item.ativo small{color:#C9C3B6}
 .salvo{display:flex;align-items:center;gap:7px;font-size:var(--t-xs);color:var(--grafite-2);padding:0 10px}
 .salvo i{width:7px;height:7px;border-radius:50%;background:#5C8F4E}
+.salvo.pendente i{background:var(--linha-2)}
 .sec-cab{margin-bottom:22px}
 .sec-cab h1{font-size:var(--t-xxl);font-weight:500;letter-spacing:-.025em;line-height:1.1;margin:0 0 14px}
 .subnav{display:flex;gap:4px;border-bottom:1px solid var(--linha)}
@@ -799,6 +805,22 @@ details.prio-grupo[open] > summary header::after{content:"Ocultar"}
 .res-busca a:hover,.res-busca a.sel{background:var(--papel-2)}
 .res-busca a span{color:var(--grafite-2);font-size:var(--t-xs);margin-left:auto;white-space:nowrap}
 .res-busca .vazio-b{padding:18px 8px;color:var(--grafite);font-size:var(--t-s)}
+
+/* Ajustes > Este aparelho */
+.ap-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.ap-it{background:var(--papel);border:1px solid var(--linha);border-radius:var(--r-s);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ap-it span{font-size:var(--t-xs);color:var(--grafite)}
+.ap-it b{font-weight:500}
+.ap-it small{font-size:var(--t-xs);color:var(--grafite-2);line-height:1.4}
+
+/* Avisos fixos: versão nova, instalação no iPhone */
+#avisos{position:fixed;right:24px;bottom:24px;z-index:70;display:flex;flex-direction:column;gap:10px;max-width:380px}
+.aviso-fixo{background:var(--tinta);color:#fff;border-radius:var(--r-m);padding:14px 16px;box-shadow:0 8px 24px rgba(33,31,27,.18);font-size:var(--t-s);line-height:1.45}
+.aviso-fixo p{margin:0 0 10px}
+.aviso-fixo .bts{display:flex;gap:8px;flex-wrap:wrap}
+.aviso-fixo .btn.prim{background:#fff;color:var(--tinta);border-color:#fff}
+.aviso-fixo .btn.fant{color:#fff}
+@media (max-width:1000px){#avisos{left:12px;right:12px;max-width:none;bottom:calc(76px + env(safe-area-inset-bottom))}}
 
 /* Barra inferior (celular) */
 .tabbar{display:none}
@@ -965,7 +987,7 @@ a.lc:hover{text-decoration:underline}
 
 <script>
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.6.1';
+const APP_VERSAO = '0.7.0';
 
 /* =========================================================
    Ícones
@@ -1158,7 +1180,7 @@ function desenhaMenu(rota){
     it('diss','#projeto',dot('#1F4A5A'),'Dissertação') +
     DISCIPLINAS.map((d,i)=>it('disc'+i,'#disciplina/'+i,dot(CORES_DISC[i]),d)).join('');
   const voceAtivo=sec==='voce';
-  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div class="salvo"><i></i>Salvo no Drive há 2 min</div><span class="selo-demo" style="margin-left:10px;font-size:11px">Protótipo v${APP_VERSAO}, dados de exemplo</span>`;
+  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div class="salvo pendente"><i></i>Drive ainda não conectado</div><span class="selo-demo" style="margin-left:10px;font-size:11px">Protótipo v${APP_VERSAO}, dados de exemplo</span>`;
   const tb=[['painel','#painel',I.painel,'Hoje'],['bib','#biblioteca',I.biblioteca,'Biblioteca'],['esc','#escrita',I.escrita,'Escrita'],['todos','#disciplinas',I.disciplinas,'Projetos'],['voce','#autor',I.autor,'Você']];
   document.getElementById('tabbar').innerHTML=tb.map(([k,h,ic,r])=>`<a href="${h}" class="${(k==='voce'?voceAtivo:k==='todos'?(base==='disciplinas'||base==='disciplina'||sec==='diss'):ativo(k))?'ativo':''}">${ic}${r}</a>`).join('');
 }
@@ -1547,20 +1569,6 @@ function custoMes(cen){ // cen: 'agora' | 'dez' | 'jan'
 }
 const FRAC = 13/30;
 const DIAS = [0.21,0.18,0.71,0.64,0.69,0.25,0.12,0.09,0.31,0.74,0.66,0.72,0.30];
-const LOGS = [
-  ['11:51:08','ia','ia.chamada','Tutor: conversa','gemini-3.8-flash, 3,1 mil + 12 mil em cache → 0,9 mil tokens','1,6 s','ok'],
-  ['11:50:57','ui','ui.grifo','Leitor','Grifo de método em Goldkuhl (2012), p. 7','','ok'],
-  ['11:49:30','ia','ia.validacao','Copilot: versões','Citação fora do acervo bloqueada: “as empresas sabiam”','','aviso'],
-  ['11:49:22','ia','ia.chamada','Copilot: versões','gemini-4-argon, 12,4 mil → 3,2 mil tokens (2,1 mil de pensamento)','7,9 s','ok'],
-  ['11:49:14','erro','ia.erro','Copilot: versões','429: limite de pedidos por minuto. Nova tentativa em 2 s','','erro'],
-  ['11:46:02','arq','arquivo.salvar','Escrita','escrita/2026-11-artigo-sustentabilidade/texto.md (18 KB)','42 ms','ok'],
-  ['11:41:37','ag','agenda.criar','Agenda','“Ler Iivari (2007) antes da aula” criado no Google Agenda','880 ms','ok'],
-  ['11:40:11','ia','ia.avaliacao','Tutor: conversa','Resposta marcada como útil','','ok'],
-  ['11:33:50','ia','ia.chamada','Resumo da aula','gemini-3.8-flash, 24,8 mil → 1,9 mil tokens','4,2 s','ok'],
-  ['11:33:05','ia','ia.transcricao','Aula 7','gemini-3.5-transcribe, 102 min de áudio, 2 vozes','3 min 10 s','ok'],
-  ['11:32:41','erro','js.erro','Leitor','TypeError ao grifar trecho que cruza dois parágrafos','','erro'],
-  ['11:32:02','ui','sessao.inicio','Hoje','Sessão 11h32 iniciada, versão 0.6 do app','','ok'],
-];
 const LOG_TIPOS = [['tudo','Tudo'],['ia','IA'],['erro','Erros'],['ui','Interface'],['arq','Arquivos e agenda']];
 
 function secModelos(){
@@ -1613,41 +1621,68 @@ function secCusto(){
   </section>`;
 }
 function secRegistros(){
-  const f=S.logFiltro; const lista=LOGS.filter(l=>f==='tudo'||l[1]===f||(f==='arq'&&l[1]==='ag'));
+  const f=S.logFiltro; const rb=window.rb;
+  const todos=rb?rb.registros.lista():[];
+  const hoje=new Date().toISOString().slice(0,10);
+  const deHoje=todos.filter(e=>e.t.slice(0,10)===hoje);
+  const sessoes=new Set(deHoje.map(e=>e.sessao)).size;
+  const erros=deHoje.filter(e=>e.st==='erro').length;
+  const grupo=e=>e.tipo==='app'?'ui':e.tipo;
+  const lista=todos.filter(e=>f==='tudo'||grupo(e)===f||(f==='arq'&&e.tipo==='ag')).slice(-80).reverse();
+  const hora=t=>new Date(t).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const esc=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const linhas=!rb?`<tr><td colspan="5" class="mute">Carregando os registros deste aparelho…</td></tr>`
+    : lista.length?lista.map(e=>`<tr class="st-${e.st}"><td class="mute">${hora(e.t)}</td><td><code>${esc(e.ev)}</code></td><td>${esc(e.onde)}</td><td>${esc(e.det)}</td><td class="num">${e.dur!=null?e.dur+' ms':''}</td></tr>`).join('')
+    : `<tr><td colspan="5" class="mute">Nenhum registro deste tipo ainda.</td></tr>`;
   return `<section id="sec-registros">
     <h2>Registros</h2>
-    <p>Cada ação, chamada à IA, arquivo salvo e erro vira um registro. Eles são gravados na pasta a cada 10 segundos e ao fechar, um arquivo por sessão.</p>
+    <p>Cada sessão, tela aberta, ação e erro vira um registro, guardado neste aparelho por 180 dias. Os registros nunca guardam o que você escreve, só nomes de ações, telas e tempos. Quando o Drive estiver ligado, cada sessão também vira um arquivo na pasta.</p>
     <div class="kpis">
-      <div><b>1.284</b><span>eventos hoje</span><small>2 sessões</small></div>
-      <div><b>46</b><span>chamadas à IA hoje</span><small>2 precisaram de nova tentativa</small></div>
-      <div><b>0,2%</b><span>de erros</span><small>3 erros, 1 sem solução</small></div>
-      <div><b>1,6 s</b><span>tempo típico da IA</span><small>95% abaixo de 6,8 s</small></div>
+      <div><b>${deHoje.length.toLocaleString('pt-BR')}</b><span>eventos hoje</span><small>${sessoes} ${sessoes===1?'sessão':'sessões'}</small></div>
+      <div><b>${erros}</b><span>${erros===1?'erro hoje':'erros hoje'}</span><small>${erros?'veja abaixo, em Erros':'nenhum problema registrado'}</small></div>
+      <div><b>0</b><span>chamadas à IA</span><small>o Gemini entra numa próxima versão</small></div>
+      <div><b>v${esc(rb?rb.versao:APP_VERSAO)}</b><span>versão do app</span><small>vai em cada registro</small></div>
     </div>
     <div class="seg" role="group" aria-label="Filtrar registros" style="margin:4px 0 12px">${LOG_TIPOS.map(([k,n])=>`<button data-log="${k}" class="${k===f?'on':''}">${n}</button>`).join('')}</div>
     <div class="tab-wrap"><table class="tab-ia logs"><thead><tr><th>Hora</th><th>Evento</th><th>Onde</th><th>Detalhe</th><th class="num">Duração</th></tr></thead><tbody>
-      ${lista.map(([h,t,ev,onde,det,dur,st])=>`<tr class="st-${st}"><td class="mute">${h}</td><td><code>${ev}</code></td><td>${onde}</td><td>${det}</td><td class="num">${dur}</td></tr>`).join('')}
+      ${linhas}
     </tbody></table></div>
     <div class="aj-linha" style="margin-top:16px;align-items:center">
-      <label class="check" style="margin:0"><input type="checkbox">Guardar o texto completo de prompts e respostas <span class="mute-2" style="font-size:var(--t-xs)">(desligado: só tamanhos, modelo e tempo)</span></label>
-      <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-acao="toast" data-msg="registros-2026-11.csv exportado">Exportar CSV</button></div>
+      <label class="check" style="margin:0"><input type="checkbox" disabled>Guardar o texto completo de prompts e respostas <span class="mute-2" style="font-size:var(--t-xs)">(desligado: só tamanhos, modelo e tempo; disponível quando o Gemini entrar)</span></label>
+      <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-baixar="registros">Exportar CSV</button></div>
     </div>
     <details class="ajuda-det" style="margin-top:12px"><summary>O que cada registro guarda?</summary>
-      <p style="margin:10px 0 6px;font-size:var(--t-s);color:var(--grafite)">Arquivo <code>registros/2026-11-13/sessao-11h32.jsonl</code>, uma linha por evento, mantido por 180 dias. Campos:</p>
-      <ul style="margin:0;padding-left:18px;font-size:var(--t-s);color:var(--grafite);display:flex;flex-direction:column;gap:4px">
-        <li>quando, sessão, versão do app, tela e evento</li>
-        <li>na IA: tarefa, modelo, nível de pensamento, tokens de entrada, em cache, de pensamento e de saída, tempo, custo, tentativa e modelo reserva</li>
-        <li>avaliação da resposta (útil ou não) e bloqueios de citação fora do acervo</li>
-        <li>em erros: código, mensagem, onde aconteceu e se houve recuperação</li>
-        <li>em arquivos e agenda: caminho, tamanho, tempo e o id do evento no Google</li>
+      <ul style="margin:10px 0 0;padding-left:18px;font-size:var(--t-s);color:var(--grafite);display:flex;flex-direction:column;gap:4px">
+        <li>quando, sessão, versão do app, tela, evento e resultado</li>
+        <li>no início da sessão: sistema, navegador, se o app está instalado e o tamanho da tela</li>
+        <li>em erros: a mensagem e onde aconteceu</li>
+        <li>na IA (quando entrar): tarefa, modelo, versão da instrução, nível de pensamento, tokens, tempo, custo, tentativa e modelo reserva</li>
       </ul>
     </details>
+  </section>`;
+}
+function secAparelho(){
+  const rb=window.rb;
+  if(!rb) return `<section id="sec-aparelho"><h2>Este aparelho</h2><p class="mute">Carregando…</p></section>`;
+  const d=rb.dados, a=rb.aparelho;
+  const item=(n,v,obs)=>`<div class="ap-it"><span>${n}</span><b>${v}</b>${obs?`<small>${obs}</small>`:''}</div>`;
+  return `<section id="sec-aparelho">
+    <h2>Este aparelho</h2>
+    <p>Uma cópia dos seus dados fica guardada aqui, para o app abrir rápido e funcionar sem internet. A cópia oficial vai ficar no seu Google Drive.</p>
+    <div class="ap-grade">
+      ${item('Versão do app','v'+rb.versao)}
+      ${item('Instalado',a.instalado?'Sim':'Não',a.instalado?'abre em tela cheia':(a.sistema==='iOS'?'no Safari: Compartilhar, Adicionar à Tela de Início':'pelo menu do navegador: Instalar app'))}
+      ${item('Armazenamento',d.disponivel?'Ativo':'Indisponível',d.disponivel?(d.persistente?'protegido contra limpeza automática':'o navegador pode limpar se faltar espaço; o Drive guarda a cópia oficial'):'este navegador não permite guardar dados; use o app instalado')}
+      ${item('Formato dos dados','versão '+d.esquema,'muda com migração automática e backup antes')}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="btn" data-baixar="dados" ${d.disponivel?'':'disabled'}>Baixar cópia dos dados</button></div>
   </section>`;
 }
 
 V.ajustes = () => `
   <div class="topo"><div><h1>Ajustes</h1><p>IA, custos, registros, agenda, cores e a pasta onde tudo fica.</p></div></div>
   <div class="aj-wrap">
-  <nav class="aj-indice" aria-label="Seções dos ajustes">${[['sec-ia','Conexão com o Gemini'],['sec-modelos','Modelos por tarefa'],['sec-custo','Uso e custo'],['sec-registros','Registros'],['sec-agenda','Google Agenda'],['sec-cores','Marca-textos'],['sec-pasta','Pasta']].map(([id,n])=>`<button data-sec="${id}">${n}</button>`).join('')}</nav>
+  <nav class="aj-indice" aria-label="Seções dos ajustes">${[['sec-ia','Conexão com o Gemini'],['sec-modelos','Modelos por tarefa'],['sec-custo','Uso e custo'],['sec-registros','Registros'],['sec-aparelho','Este aparelho'],['sec-agenda','Google Agenda'],['sec-cores','Marca-textos'],['sec-pasta','Pasta']].map(([id,n])=>`<button data-sec="${id}">${n}</button>`).join('')}</nav>
   <div class="aj">
     <section id="sec-ia">
       <h2>Conexão com o Gemini</h2>
@@ -1660,6 +1695,7 @@ V.ajustes = () => `
     ${secModelos()}
     ${secCusto()}
     ${secRegistros()}
+    ${secAparelho()}
     <section id="sec-cores">
       <h2>Marca-textos</h2>
       <p>Cada cor tem uma função. A função decide para qual etapa do fichamento o grifo vai.</p>
@@ -1678,14 +1714,12 @@ V.ajustes = () => `
     </section>
     <section id="sec-pasta">
       <h2>Pasta do researchbook</h2>
-      <p>Tudo fica em arquivos comuns numa pasta do seu computador. O Google Drive sincroniza essa pasta sozinho.</p>
+      <p>Tudo vai ficar em arquivos comuns numa pasta <b>researchbook</b> do seu Google Drive, iguais nos dois computadores e no celular. O app só enxerga o que ele mesmo criou ali.</p>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
         <span class="chip proj" style="font-size:var(--t-s);padding:5px 12px">Meu Drive/researchbook</span>
-        <span class="mute" style="font-size:var(--t-s)">Acesso liberado nesta sessão</span>
-        <button class="btn" style="margin-left:auto" data-acao="toast" data-msg="Na versão funcional, o Chrome abre o seletor de pastas.">Trocar pasta</button>
+        <span class="mute" style="font-size:var(--t-s)">A conexão com o Google entra na próxima versão</span>
       </div>
 <pre class="arvore">researchbook/
-├── researchbook.html        <span>o próprio app</span>
 ├── biblioteca/
 │   ├── pdfs/                <span>goldkuhl-2012.pdf</span>
 │   └── leituras/            <span>goldkuhl-2012.json: dados, etapa, grifos, notas</span>
@@ -2633,6 +2667,15 @@ document.addEventListener('submit',e=>{
   render(); const c=document.getElementById('conversa'); c.scrollTop=c.scrollHeight;
 });
 
+/* Downloads: registros (CSV) e cópia dos dados (JSON) */
+function baixar(nome,conteudo,tipo){const url=URL.createObjectURL(new Blob([conteudo],{type:tipo}));const a=document.createElement('a');a.href=url;a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-baixar]'); if(!b||!window.rb) return;
+  const dia=new Date().toISOString().slice(0,10);
+  if(b.dataset.baixar==='registros'){baixar(`researchbook-registros-${dia}.csv`,window.rb.registros.csv(),'text/csv;charset=utf-8');toast('Registros exportados')}
+  if(b.dataset.baixar==='dados'){const d=await window.rb.dados.exportar();baixar(`researchbook-dados-${dia}.json`,JSON.stringify(d,null,2),'application/json');toast('Cópia dos dados baixada')}
+});
+
 /* =========================================================
    Roteador
    ========================================================= */
@@ -2652,5 +2695,6 @@ function render(){
 window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#disciplina/')&&!S.manterAba)S.discAba='geral';S.manterAba=false;if(location.hash.startsWith('#aula/'))S.aulaAba=S.aulaAba||'transcricao';fecharModal();document.getElementById('toast').classList.remove('on');render();window.scrollTo({top:0});document.getElementById('vista').focus({preventScroll:true})});
 render();
 </script>
+<script type="module" src="js/inicio.js"></script>
 </body>
 </html>
