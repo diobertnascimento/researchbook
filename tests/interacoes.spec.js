@@ -30,6 +30,22 @@ test('leitor: F liga o modo foco e Esc desliga', async ({ page }, info) => {
   await expect(page.locator('body')).not.toHaveClass(/foco/);
 });
 
+test('celular: no leitor, tutor e grifos abrem como folhas, uma de cada vez', async ({ page }, info) => {
+  test.skip(info.project.name !== 'celular', 'Só no celular');
+  await abrirApp(page, '#leitor/goldkuhl2012');
+  const tutor = page.locator('.col-tutor');
+  const grifos = page.locator('.col-grifos');
+  await expect(tutor).toBeHidden();
+  await page.locator('.barra-leitor button[data-alt="verTutor"], button[data-alt="verTutor"]').first().click();
+  await expect(tutor).toBeVisible();
+  await page.locator('button[data-alt="verGrifos"]').first().click();
+  await expect(grifos).toBeVisible();
+  await expect(tutor).toBeHidden();
+  await grifos.getByRole('button', { name: 'Fechar' }).click();
+  await expect(grifos).toBeHidden();
+  expect(await page.locator('#doc').evaluate((e) => e.getBoundingClientRect().width)).toBeGreaterThan(300);
+});
+
 test('disciplina: abas trocam o conteúdo', async ({ page }) => {
   const erros = coletarErros(page);
   await abrirApp(page);

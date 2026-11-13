@@ -107,6 +107,8 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.6.1 (13/11/2026): instruções de todas as funções de IA em `prompts/`; citações no formato da NBR 10520:2023.
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
+- v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
 1. Tela para revisar conflitos de sincronização.
