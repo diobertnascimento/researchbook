@@ -58,8 +58,9 @@ Comandos: `npm run abrir` (app em http://localhost:4173), `npm test`, `npm run t
 - Wizard só para tarefa rara. Ajuda no contexto ("Como ... funciona?" recolhido), sem tutorial.
 - Status sempre visível (salvamento, erros com o próximo passo). Ação destrutiva tem desfazer.
 - Sem sequência de dias que pune falhas, sem notificação insistente, sem urgência falsa.
-- Visual: fontes Lexend (interface) e Literata (leitura), servidas de `public/fontes/` (nunca do Google Fonts); papel `#F4F0E6`, tinta `#211F1B`, petróleo `#1F4A5A`. Cores de grifo por função: Conceito (amarelo), Evidência (verde), Método (azul), Crítica (salmão), Para a dissertação (lilás).
+- Visual: fontes Lexend (interface) e Literata (leitura); papel `#F4F0E6`, tinta `#211F1B`, petróleo `#1F4A5A`. Cores de grifo por função: Conceito (amarelo), Evidência (verde), Método (azul), Crítica (salmão), Para a dissertação (lilás).
 - Tudo tem que funcionar a 390 px de largura sem rolagem lateral (um teste confere).
+- Fontes: só famílias do catálogo do Google Fonts (fonts.google.com), com licença aberta. Os arquivos ficam em `public/fontes/`, baixados do pacote `@fontsource-variable/<família>` do npm (o mesmo arquivo do Google Fonts), junto com a licença. Não carregar dos servidores do Google: o app precisa funcionar sem internet, os testes precisam ver a mesma fonte em qualquer máquina, e a regra de segurança só aceita código e arquivos do próprio app. Para trocar uma fonte, escolha outra família no Google Fonts e substitua os arquivos e o `@font-face` em `public/index.html`.
 
 ### Textos da interface
 - Português do Brasil, frases curtas, verbos simples, maiúscula só no início.
