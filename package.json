@@ -1,0 +1,16 @@
+{
+  "name": "researchbook",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Ferramenta pessoal de estudo para o mestrado: biblioteca, leitura, fichamentos, escrita e tutor com IA.",
+  "scripts": {
+    "abrir": "node scripts/servidor.mjs",
+    "test": "playwright test",
+    "test:ver": "playwright test --headed",
+    "relatorio": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
+  }
+}

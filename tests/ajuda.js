@@ -1,0 +1,33 @@
+// Funções compartilhadas pelos testes.
+
+// Erros de rede de recursos externos (ex.: fontes do Google) não contam como falha do app.
+const IGNORAR = [/Failed to load resource/i, /fonts\.(googleapis|gstatic)\.com/i];
+
+/** Começa a coletar erros de JavaScript e do console da página. */
+export function coletarErros(page) {
+  const erros = [];
+  page.on('pageerror', (e) => erros.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => {
+    if (m.type() === 'error' && !IGNORAR.some((r) => r.test(m.text()))) erros.push(`console: ${m.text()}`);
+  });
+  return erros;
+}
+
+/** Abre o app sem esperar recursos externos (fontes), que podem estar bloqueados. */
+export async function abrirApp(page, rota = '') {
+  await page.goto('/' + rota, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#vista >> *');
+}
+
+/** Troca de rota pelo hash e espera o app redesenhar a tela. */
+export async function irPara(page, hash) {
+  await page.evaluate(
+    (h) =>
+      new Promise((ok) => {
+        if (location.hash === h) return ok();
+        addEventListener('hashchange', () => setTimeout(ok, 0), { once: true });
+        location.hash = h;
+      }),
+    hash,
+  );
+}

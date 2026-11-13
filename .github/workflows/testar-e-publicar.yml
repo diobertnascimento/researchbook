@@ -1,0 +1,56 @@
+# Roda a cada envio (push) para qualquer branch.
+# 1. Testa o app no computador e no celular.
+# 2. Só na branch main, e só se os testes passarem, publica no GitHub Pages.
+#    Em outras branches, roda apenas os testes.
+name: Testar e publicar
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  testes:
+    name: Testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - name: Guardar relatório quando algo falhar
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-dos-testes
+          path: playwright-report
+          retention-days: 7
+
+  publicar:
+    name: Publicar
+    needs: testes
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: publicacao
+        uses: actions/deploy-pages@v4
