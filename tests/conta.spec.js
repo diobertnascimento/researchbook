@@ -41,6 +41,14 @@ test('login completo: volta para a tela pedida, sem token no endereço, e cria a
   expect(g.caminhos().some((c) => /^registros\/\d{4}-\d{2}-\d{2}\/sessao-.+\.jsonl$/.test(c))).toBe(true);
 });
 
+test('aceita o retorno do Google com os campos em outra ordem', async ({ page, context }) => {
+  await googleFalso(context, { ordem: 'token-primeiro' });
+  await entrar(page, '#escrita');
+  expect(page.url()).not.toContain('access_token');
+  expect(page.url()).toContain('#escrita');
+  await expect.poll(() => fase(page)).toBe('ok');
+});
+
 test('o que muda aqui vai para o Drive, e o que muda no Drive chega aqui', async ({ page, context }) => {
   const g = await googleFalso(context);
   await entrar(page);

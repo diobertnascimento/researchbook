@@ -48,7 +48,7 @@ export function entrar({ registrar }) {
   if (!configurado()) return;
   const estado = crypto.randomUUID();
   gravar(sessionStorage, 'rb.oauth.estado', estado);
-  const volta = location.hash && !/^#(access_token|error)=/.test(location.hash) ? location.hash : '#painel';
+  const volta = location.hash && !/(^#|&)(access_token|error)=/.test(location.hash) ? location.hash : '#painel';
   gravar(sessionStorage, 'rb.oauth.volta', volta);
   const p = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,

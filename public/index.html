@@ -1001,16 +1001,16 @@ a.lc:hover{text-decoration:underline}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* Volta do login do Google: o retorno chega no endereço (#access_token=...). Guarda e limpa o endereço
-   antes de o roteador ler, para o token não ficar no histórico nem virar rota. */
+/* Volta do login do Google: o retorno chega no endereço (#state=...&access_token=..., em qualquer ordem).
+   Guarda e limpa o endereço antes de o roteador ler, para o token não ficar no histórico nem virar rota. */
 (function(){
-  if(!/^#(access_token|error)=/.test(location.hash)) return;
+  if(!/(^#|&)(access_token|error)=/.test(location.hash)) return;
   let volta='#painel';
   try{ sessionStorage.setItem('rb.oauth',location.hash.slice(1)); volta=sessionStorage.getItem('rb.oauth.volta')||'#painel'; }catch(e){}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.8.0';
+const APP_VERSAO = '0.8.1';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 function acesso(){
