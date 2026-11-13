@@ -2,6 +2,9 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.8.1 (13/11/2026)
+- Corrigido: depois de aceitar as permissões no Google, o app voltava para a tela de entrada sem entrar. O Google devolve os dados do login numa ordem que o app não reconhecia.
+
 ## 0.8.0 (13/11/2026)
 - Tela de entrada: sem login, quem abre o endereço vê só "Entre para continuar". Só a conta autorizada no Google entra.
 - Login com Google sem scripts de terceiros. O app confere no Google se o login foi emitido para ele e se a permissão do Drive foi dada; se faltar algo, diz o que fazer.

@@ -11,7 +11,8 @@ const CORS = {
 };
 
 export async function googleFalso(context, opcoes = {}) {
-  const op = { email: 'autor@exemplo.com', escopos: ['openid', 'https://www.googleapis.com/auth/userinfo.email', DRIVE_FILE], aud: CLIENTE, negar: false, ...opcoes };
+  // ordem: o Google real devolve "state" antes do token (#state=...&access_token=...).
+  const op = { email: 'autor@exemplo.com', escopos: ['openid', 'https://www.googleapis.com/auth/userinfo.email', DRIVE_FILE], aud: CLIENTE, negar: false, ordem: 'state-primeiro', ...opcoes };
   const estado = { tokenValido: true, revogado: false, chamadas: [] };
   const arquivos = new Map();
   let seq = 0;
@@ -32,9 +33,9 @@ export const ESCOPO_DRIVE = '${DRIVE_FILE}';`,
     const u = new URL(r.request().url());
     estado.pedidoDeLogin = Object.fromEntries(u.searchParams);
     const st = u.searchParams.get('state');
-    const frag = op.negar
-      ? `error=access_denied&state=${st}`
-      : `access_token=tok-falso&token_type=Bearer&expires_in=3599&scope=${encodeURIComponent(op.escopos.join(' '))}&state=${st}`;
+    const token = `access_token=tok-falso&token_type=Bearer&expires_in=3599&scope=${encodeURIComponent(op.escopos.join(' '))}`;
+    const resposta = op.negar ? 'error=access_denied' : token;
+    const frag = op.ordem === 'state-primeiro' ? `state=${st}&${resposta}` : `${resposta}&state=${st}`;
     return r.fulfill({ status: 302, headers: { location: `${u.searchParams.get('redirect_uri')}#${frag}` } });
   });
 
