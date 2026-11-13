@@ -21,3 +21,6 @@ researchbook-dados/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# PDF fictício usado só nos testes
+!tests/fixtures/*.pdf

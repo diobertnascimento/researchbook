@@ -9,7 +9,7 @@
 //    um backup completo na coleção "backups" (ficam os 5 mais recentes).
 
 const NOME = 'researchbook';
-export const ESQUEMA = 2;
+export const ESQUEMA = 3;
 export const ESQUEMA_DADOS = 1;
 
 export const COLECOES = [
@@ -29,6 +29,10 @@ const ESTRUTURA = {
   // v0.8.0: versões que perderam um conflito de sincronização, guardadas para o Diobert decidir.
   2: (db) => {
     db.createObjectStore('conflitos', { keyPath: 'id' });
+  },
+  // v0.9.0: cópia local dos PDFs, para ler sem internet. Não sincroniza como coleção: o PDF vai para o Drive como arquivo.
+  3: (db) => {
+    db.createObjectStore('arquivos', { keyPath: 'id' });
   },
 };
 

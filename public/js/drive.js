@@ -145,5 +145,29 @@ export function criarDrive({ token, registrar }) {
     return { id: j.id, modificado: j.modifiedTime };
   }
 
-  return { raiz, pasta, listar, ler, gravar, idRaiz: () => ids.get('') ?? null };
+  /**
+   * Envia um arquivo binário (PDF, áudio) por upload em duas etapas (resumable), que aceita arquivos grandes.
+   * Devolve {id, modificado}. Se já existir um arquivo com o mesmo caminho, ele é substituído.
+   */
+  async function enviarArquivo(caminho, blob, tipo = blob.type || 'application/octet-stream') {
+    const a = await arquivo(caminho);
+    const det = `${caminho} (${tamanho(blob)})`;
+    const meta = a.id ? {} : { name: a.nome, parents: [a.pai], mimeType: tipo };
+    const url = a.id ? `${UP}/files/${a.id}?uploadType=resumable&fields=id,modifiedTime` : `${UP}/files?uploadType=resumable&fields=id,modifiedTime`;
+    const inicio = await chamar(a.id ? 'PATCH' : 'POST', url, { corpo: JSON.stringify(meta), tipo: 'application/json; charset=UTF-8', evento: 'drive.envio_inicio', det });
+    const destino = inicio.headers.get('Location');
+    if (!destino) throw new ErroDrive('O Google Drive não devolveu o endereço de envio', 'envio');
+    const r = await chamar('PUT', destino, { corpo: blob, tipo, evento: 'drive.envio_arquivo', det });
+    const j = await r.json();
+    ids.set(caminho, j.id);
+    return { id: j.id, modificado: j.modifiedTime };
+  }
+
+  /** Baixa um arquivo binário pelo id (o id fica guardado na ficha da obra). */
+  async function baixarArquivo(id, det = '') {
+    const r = await chamar('GET', `${API}/files/${encodeURIComponent(id)}?alt=media`, { evento: 'drive.baixar_arquivo', det });
+    return r.blob();
+  }
+
+  return { raiz, pasta, listar, ler, gravar, enviarArquivo, baixarArquivo, idRaiz: () => ids.get('') ?? null };
 }

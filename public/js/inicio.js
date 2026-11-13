@@ -7,6 +7,8 @@ import { iniciarDicaInstalar, ehIOS, instalado } from './instalar.js';
 import * as google from './google.js';
 import { criarDrive } from './drive.js';
 import { criarSincronia } from './sincronia.js';
+import { criarBiblioteca } from './biblioteca.js';
+import { criarBibliotecaUI } from './biblioteca-ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -126,6 +128,7 @@ async function iniciar() {
   const retorno = await google.concluirRetorno({ registrar });
 
   let sinc = null;
+  let driveAtual = null;
   const atualizarStatus = () => {
     const el = document.getElementById('status-drive');
     if (el && typeof window.statusDriveHTML === 'function') el.innerHTML = window.statusDriveHTML();
@@ -134,6 +137,7 @@ async function iniciar() {
   function ligarDrive() {
     if (sinc || !db || !google.sessao()) return;
     const drive = criarDrive({ token: () => google.sessao()?.token, registrar });
+    driveAtual = drive;
     sinc = criarSincronia({
       db,
       drive,
@@ -141,6 +145,7 @@ async function iniciar() {
       aparelho: idAparelho,
       aoEstado: (e) => {
         if (e.fase === 'desconectado') google.expirar();
+        if (e.fase === 'ok') window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
         atualizarStatus();
       },
     });
@@ -205,11 +210,17 @@ async function iniciar() {
     sincronia: null,
     aparelho: ap,
   };
+  if (db) {
+    const biblioteca = criarBiblioteca({ db, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
+    window.rb.biblioteca = biblioteca;
+    window.rb.bibUI = criarBibliotecaUI({ bib: biblioteca, registrar });
+    await biblioteca.carregar();
+  }
   ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });
 
   // Redesenha: a tela de entrada depende do login; Ajustes mostra dados desta base.
-  if ((retorno || /^#ajustes/.test(location.hash) || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
+  if ((retorno || /^#(ajustes|biblioteca|leitor)/.test(location.hash) || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
   atualizarStatus();
   document.dispatchEvent(new CustomEvent('rb:pronto'));
 }
