@@ -11,6 +11,7 @@ Ferramenta pessoal de estudo do Diobert para o mestrado acadêmico (dissertaçã
 - Telas do protótipo em `public/index.html` (HTML, CSS e JavaScript sem framework), ainda com dados de exemplo.
 - Base real em módulos ES em `public/js/` (v0.7.0): `inicio.js` (liga tudo e expõe `window.rb`), `armazenamento.js` (IndexedDB, migrações, backup), `registros.js`, `atualizacao.js` (service worker e aviso de versão nova) e `instalar.js` (dica do iPhone). Service worker em `public/sw.js`.
 - Login e Drive (v0.8.0): `config.js` (ID do cliente OAuth, público), `google.js` (login por redirecionamento, conferência do token, sair), `drive.js` (API do Drive com `drive.file`, novas tentativas e registros) e `sincronia.js` (junção item a item e conflitos). Dados novos sempre por `rb.dados.salvar/apagar/listar`, nunca direto no IndexedDB, para entrarem na sincronização.
+- Biblioteca (v0.9.0): `abnt.js` (NBR 6023:2018 e 10520:2023), `crossref.js`, `biblioteca.js` (fichas, PDFs e grifos), `biblioteca-ui.js` (telas reais) e `leitor-pdf.js` (PDF.js em `public/vendor/pdfjs`, arquivos `.js`). As telas reais entram quando `modoReal()` é verdadeiro; no modo de exemplo (testes), as telas antigas seguem iguais. O HTML dispara `rb:render` depois de cada tela, para os módulos montarem o que precisam.
 - Repositório **público**. Publicado no GitHub Pages pelo GitHub Actions (`.github/workflows/testar-e-publicar.yml`), só a partir da `main` e só depois que os testes passam.
 
 ## Arquitetura alvo (decidida em 13/11/2026)

@@ -6,7 +6,7 @@
 // muda este arquivo, e é isso que faz o navegador perceber que há versão nova.
 // Arquivo novo em public/ que o app usa ao abrir? Coloque em ARQUIVOS (um teste confere que existem).
 
-const VERSAO = '0.8.2';
+const VERSAO = '0.9.0';
 const CACHE = `researchbook-${VERSAO}`;
 const ARQUIVOS = [
   './',
@@ -28,6 +28,11 @@ const ARQUIVOS = [
   'js/google.js',
   'js/drive.js',
   'js/sincronia.js',
+  'js/abnt.js',
+  'js/crossref.js',
+  'js/biblioteca.js',
+  'js/biblioteca-ui.js',
+  'js/leitor-pdf.js',
 ];
 
 self.addEventListener('install', (e) => {
@@ -57,6 +62,20 @@ self.addEventListener('fetch', (e) => {
 
   if (req.mode === 'navigate') {
     e.respondWith(caches.match('index.html', { cacheName: CACHE }).then((r) => r || fetch(req)));
+    return;
+  }
+  // PDF.js (vendor/) é grande: guarda no primeiro uso, e daí em diante abre sem internet.
+  if (url.pathname.includes('/vendor/')) {
+    e.respondWith(
+      caches.match(req, { cacheName: CACHE }).then(
+        (r) =>
+          r ||
+          fetch(req).then((resp) => {
+            if (resp.ok) caches.open(CACHE).then((c) => c.put(req, resp.clone()));
+            return resp;
+          }),
+      ),
+    );
     return;
   }
   e.respondWith(caches.match(req, { cacheName: CACHE, ignoreSearch: true }).then((r) => r || fetch(req)));

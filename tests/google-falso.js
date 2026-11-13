@@ -7,7 +7,8 @@ const PASTA = 'application/vnd.google-apps.folder';
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-headers': 'authorization, content-type',
-  'access-control-allow-methods': 'GET, POST, PATCH, OPTIONS',
+  'access-control-allow-methods': 'GET, POST, PATCH, PUT, OPTIONS',
+  'access-control-expose-headers': 'Location',
 };
 
 export async function googleFalso(context, opcoes = {}) {
@@ -15,6 +16,7 @@ export async function googleFalso(context, opcoes = {}) {
   const op = { email: 'autor@exemplo.com', escopos: ['openid', 'https://www.googleapis.com/auth/userinfo.email', DRIVE_FILE], aud: CLIENTE, negar: false, ordem: 'state-primeiro', ...opcoes };
   const estado = { tokenValido: true, revogado: false, chamadas: [] };
   const arquivos = new Map();
+  const envios = new Map();
   let seq = 0;
   const agora = () => new Date(Date.now() + ++seq).toISOString();
   const novoId = () => `arq${++seq}`;
@@ -74,6 +76,26 @@ export const ESCOPO_DRIVE = '${DRIVE_FILE}';`,
     estado.chamadas.push(`${metodo} ${u.pathname}`);
     if (!estado.tokenValido || req.headers().authorization !== 'Bearer tok-falso') return r.fulfill(json({ error: { code: 401 } }, 401));
 
+    // Envio em duas etapas (resumable): a primeira devolve o endereço; a segunda manda o arquivo.
+    if (u.searchParams.get('uploadType') === 'resumable' && (metodo === 'POST' || metodo === 'PATCH')) {
+      const sessao = `s${++seq}`;
+      const existente = u.pathname.match(/files\/([^/]+)$/)?.[1];
+      envios.set(sessao, existente ? { existente } : { meta: JSON.parse(req.postData() || '{}') });
+      return r.fulfill({ status: 200, headers: { ...CORS, location: `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=${sessao}` }, body: '' });
+    }
+    if (metodo === 'PUT' && u.searchParams.get('upload_id')) {
+      const e = envios.get(u.searchParams.get('upload_id'));
+      let a;
+      if (e.existente) a = arquivos.get(e.existente);
+      else {
+        a = { id: novoId(), name: e.meta.name, mimeType: e.meta.mimeType, parents: e.meta.parents || [] };
+        arquivos.set(a.id, a);
+      }
+      a.binario = req.postDataBuffer();
+      a.modifiedTime = agora();
+      estado.envios = (estado.envios || 0) + 1;
+      return r.fulfill(json({ id: a.id, modifiedTime: a.modifiedTime }));
+    }
     if (metodo === 'GET' && u.pathname === '/drive/v3/files') {
       const q = u.searchParams.get('q') || '';
       return r.fulfill(json({ files: [...arquivos.values()].filter((a) => atende(q, a)).map(meta) }));
@@ -102,7 +124,8 @@ export const ESCOPO_DRIVE = '${DRIVE_FILE}';`,
     }
     if (metodo === 'GET' && (m = u.pathname.match(/^\/drive\/v3\/files\/([^/]+)$/)) && u.searchParams.get('alt') === 'media') {
       const a = arquivos.get(m[1]);
-      return a ? r.fulfill({ status: 200, headers: CORS, body: a.conteudo ?? '' }) : r.fulfill(json({ error: { code: 404 } }, 404));
+      if (a) estado.downloads = (estado.downloads || 0) + 1;
+      return a ? r.fulfill({ status: 200, headers: CORS, body: a.binario ?? a.conteudo ?? '' }) : r.fulfill(json({ error: { code: 404 } }, 404));
     }
     return r.fulfill(json({ error: { code: 400, message: `não simulado: ${metodo} ${u.pathname}` } }, 400));
   });
@@ -125,6 +148,7 @@ export const ESCOPO_DRIVE = '${DRIVE_FILE}';`,
     raiz: () => [...arquivos.values()].find((a) => a.appProperties?.rb === 'raiz'),
     caminhos: () => [...arquivos.values()].filter((a) => a.mimeType !== PASTA).map(caminho),
     ler: (c) => achar(c)?.conteudo ?? null,
+    tamanho: (c) => achar(c)?.binario?.length ?? null,
     /** Simula outro aparelho mudando um arquivo no Drive. */
     escrever: (c, conteudo) => {
       const a = achar(c);

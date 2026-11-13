@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <!-- Segurança: o app só carrega código, estilos, fontes e imagens dele mesmo.
      Quando o login Google e o Gemini entrarem, os endereços do Google são acrescentados aqui, um a um. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://api.crossref.org; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>researchbook</title>
 <meta name="theme-color" content="#1F4A5A">
@@ -807,6 +807,42 @@ details.prio-grupo[open] > summary header::after{content:"Ocultar"}
 .res-busca a span{color:var(--grafite-2);font-size:var(--t-xs);margin-left:auto;white-space:nowrap}
 .res-busca .vazio-b{padding:18px 8px;color:var(--grafite);font-size:var(--t-s)}
 
+/* Biblioteca real */
+a.linha-lv{color:inherit;text-decoration:none}
+.bib-vazia{background:var(--cartao);border:1px dashed var(--linha-2);border-radius:var(--r-l);padding:40px 32px;text-align:center;max-width:620px;margin:24px auto}
+.bib-vazia h2{margin:0 0 8px;font-size:var(--t-l)}
+.bib-vazia p{color:var(--grafite);margin:0 0 20px;line-height:1.55}
+.ad-origem{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin:4px 0 6px}
+.linha-doi{display:flex;gap:8px}.linha-doi input{flex:1;min-width:0}
+.linha3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.ficha{border-top:1px solid var(--linha);margin-top:16px;padding-top:16px}
+.ficha label small{color:var(--grafite-2);font-weight:400;margin-left:6px}
+.ad-msg{border-radius:var(--r-s);padding:9px 12px;font-size:var(--t-s);margin-top:12px;background:var(--papel-2)}
+.ad-msg.ok{background:#E7F0E2;color:#2F5A24}.ad-msg.erro{background:#FBEDE8;color:#7A2E18}
+.ref-previa{background:var(--papel-2);border-radius:var(--r-s);padding:10px 12px;margin-top:8px}
+.ref-previa small{color:var(--grafite);font-size:var(--t-xs)}.ref-previa p{margin:4px 0 0;font-size:var(--t-s);line-height:1.5}
+/* Leitor de PDF */
+#pdf-palco{display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px 8px 60px}
+.pdf-pagina{position:relative;background:#fff;box-shadow:0 2px 14px rgba(40,30,10,.12);border-radius:2px;flex:none}
+.pdf-pagina canvas{display:block}
+.pdf-num{position:absolute;top:-17px;right:0;font-size:11px;color:var(--grafite-2)}
+.pdf-grifos{position:absolute;inset:0;z-index:2;pointer-events:none}
+.pdf-grifo{position:absolute;mix-blend-mode:multiply;opacity:.55;border-radius:2px;pointer-events:auto;cursor:pointer}
+.pdf-grifo.f-conceito{background:var(--hl-conceito)}.pdf-grifo.f-evidencia{background:var(--hl-evidencia)}.pdf-grifo.f-metodo{background:var(--hl-metodo)}.pdf-grifo.f-critica{background:var(--hl-critica)}.pdf-grifo.f-dissert{background:var(--hl-dissert)}
+.pdf-aviso{max-width:520px;text-align:center;padding:40px 16px;color:var(--grafite)}
+.pdf-aviso .btn{margin:6px 0 18px}
+/* Camada de texto do PDF.js (selecionável e invisível sobre a página) */
+.textLayer{position:absolute;text-align:initial;inset:0;overflow:clip;opacity:1;line-height:1;-webkit-text-size-adjust:none;text-size-adjust:none;forced-color-adjust:none;transform-origin:0 0;z-index:1;--min-font-size:1;--text-scale-factor:calc(var(--total-scale-factor) * var(--min-font-size));--min-font-size-inv:calc(1 / var(--min-font-size))}
+.textLayer :is(span,br){color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%}
+.textLayer > :not(.markedContent),.textLayer .markedContent span:not(.markedContent){z-index:1;--font-height:0;font-size:calc(var(--text-scale-factor) * var(--font-height));--scale-x:1;--rotate:0deg;transform:rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv))}
+.textLayer .markedContent{display:contents}
+.textLayer ::selection{background:rgba(31,74,90,.28);color:transparent}
+.textLayer br::selection{background:transparent}
+.textLayer .endOfContent{display:block;position:absolute;inset:100% 0 0;z-index:0;cursor:default;user-select:none}
+.textLayer.selecting .endOfContent{top:0}
+.pop-pdf,.menu-grifo{flex-direction:column;align-items:stretch;z-index:60;max-width:calc(100vw - 16px)}
+.pop-pdf .linha-p,.menu-grifo .linha-p{flex-wrap:wrap}
+
 /* Tela de entrada */
 body.bloqueado aside.nav, body.bloqueado .tabbar{display:none!important}
 body.bloqueado .app{grid-template-columns:1fr}
@@ -1019,9 +1055,11 @@ a.lc:hover{text-decoration:underline}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.8.2';
+const APP_VERSAO = '0.9.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
+/* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
+function modoReal(){ try{ return localStorage.getItem('rb.exemplo')!=='1' && !!localStorage.getItem('rb.conta'); }catch(e){ return false; } }
 function acesso(){
   try{
     if(localStorage.getItem('rb.exemplo')==='1') return 'livre';
@@ -1279,6 +1317,7 @@ V.painel = () => {
 
 const FACETAS = [['proj','Projeto'],['etapa','Etapa'],['disc','Disciplina'],['conc','Conceito'],['tag','Tag']];
 V.biblioteca = () => {
+  if(modoReal()) return window.rb&&window.rb.bibUI ? window.rb.bibUI.lista() : '<div class="topo"><div><h1>Biblioteca</h1><p>Abrindo a biblioteca…</p></div></div>';
   const f=S.filtros, b=S.busca.toLowerCase();
   const lista=LEITURAS.filter(l=>
     (!f.proj||l.proj===f.proj)&&(!f.disc||l.disc===f.disc)&&(!f.conc||l.conc.includes(f.conc))&&(!f.tag||l.tags.includes(f.tag))&&
@@ -1344,6 +1383,11 @@ V.trilhas = () => `
   ${TRILHAS.map(trilhaHTML).join('')}`;
 
 V.leitor = (id) => {
+  if(modoReal()){
+    const real=window.rb&&window.rb.bibUI&&window.rb.bibUI.leitor(decodeURIComponent(id||''));
+    if(real) return real;
+    if(!window.rb||!window.rb.bibUI) return '<div class="topo"><div><h1>Leitor</h1><p>Abrindo…</p></div></div>';
+  }
   const l=L(id)||L('goldkuhl2012');
   const grifos=[...DOC_HTML.matchAll(/<mark class="(\w+)" data-id="(\w+)"[^>]*>(.*?)<\/mark>/g)].map(m=>({cor:m[1],id:m[2],t:m[3]}));
   return `
@@ -2787,6 +2831,7 @@ function render(){
   if(SECOES[SECAO_DE[v]] && SECOES[SECAO_DE[v]].tabs.some(([r])=>r===v)) html=secaoCab(v)+html.replace(/<h1[^>]*>[\s\S]*?<\/h1>/,'');
   document.getElementById('vista').innerHTML=html;
   pop.classList.remove('on');
+  document.dispatchEvent(new CustomEvent('rb:render',{detail:{rota}}));
 }
 window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#disciplina/')&&!S.manterAba)S.discAba='geral';S.manterAba=false;if(location.hash.startsWith('#aula/'))S.aulaAba=S.aulaAba||'transcricao';fecharModal();document.getElementById('toast').classList.remove('on');render();window.scrollTo({top:0});document.getElementById('vista').focus({preventScroll:true})});
 render();

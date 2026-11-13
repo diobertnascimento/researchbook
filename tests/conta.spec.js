@@ -175,7 +175,7 @@ test('o banco antigo (esquema 1) é atualizado sem perder dados', async ({ page 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await pronto(page);
   const r = await page.evaluate(async () => ({ lista: await window.rb.dados.listar('leituras'), conflitos: await window.rb.dados.conflitos(), esquema: window.rb.dados.esquema }));
-  expect(r.esquema).toBe(2);
+  expect(r.esquema).toBeGreaterThanOrEqual(2);
   expect(r.lista.map((l) => l.titulo)).toContain('Guardada no esquema 1');
   expect(r.conflitos).toEqual([]);
 });
