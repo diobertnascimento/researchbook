@@ -107,7 +107,14 @@ export function criarBiblioteca({ db, dados, registrar, drive }) {
   }
 
   /** Blob do PDF: do aparelho, ou baixado do Drive (e guardado) se veio de outro aparelho. */
-  async function obterPDF(id) {
+  // Um download por obra de cada vez: telas redesenhadas durante o download esperam o mesmo pedido.
+  const baixando = new Map();
+  function obterPDF(id) {
+    if (!baixando.has(id)) baixando.set(id, obterPDFagora(id).finally(() => baixando.delete(id)));
+    return baixando.get(id);
+  }
+
+  async function obterPDFagora(id) {
     const local = await arm.um(db, 'arquivos', id);
     if (local) return { blob: local.blob };
     const l = obter(id);

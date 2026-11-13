@@ -9,6 +9,7 @@ import { criarDrive } from './drive.js';
 import { criarSincronia } from './sincronia.js';
 import { criarBiblioteca } from './biblioteca.js';
 import { criarBibliotecaUI } from './biblioteca-ui.js';
+import { criarFichamentoUI } from './fichamento-ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -145,7 +146,10 @@ async function iniciar() {
       aparelho: idAparelho,
       aoEstado: (e) => {
         if (e.fase === 'desconectado') google.expirar();
-        if (e.fase === 'ok') window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
+        if (e.fase === 'ok') {
+          window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
+          window.rb.fichUI?.carregar();
+        }
         atualizarStatus();
       },
     });
@@ -214,13 +218,15 @@ async function iniciar() {
     const biblioteca = criarBiblioteca({ db, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
     window.rb.biblioteca = biblioteca;
     window.rb.bibUI = criarBibliotecaUI({ bib: biblioteca, registrar });
+    window.rb.fichUI = criarFichamentoUI({ bib: biblioteca, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
     await biblioteca.carregar();
+    await window.rb.fichUI.carregar();
   }
   ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });
 
   // Redesenha: a tela de entrada depende do login; Ajustes mostra dados desta base.
-  if ((retorno || /^#(ajustes|biblioteca|leitor)/.test(location.hash) || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
+  if ((retorno || /^#(ajustes|biblioteca|leitor|fichamento)/.test(location.hash) || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
   atualizarStatus();
   document.dispatchEvent(new CustomEvent('rb:pronto'));
 }

@@ -8,7 +8,7 @@ import { montarLeitor, lerInicio, FUNCOES } from './leitor-pdf.js';
 /* global I, S, toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const icone = (n) => (typeof I !== 'undefined' && I[n]) || '';
-const ETAPAS = ['Não iniciada', 'Em leitura', 'Leitura concluída'];
+const ETAPAS = ['Não iniciada', 'Em leitura', 'Leitura concluída', 'Em fichamento', 'Fichada'];
 const TIPOS = [
   ['artigo', 'Artigo de periódico'],
   ['livro', 'Livro'],
@@ -25,6 +25,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
   let leitorAtual = null; // { id, controle, palco }
   let montando = null;
   let rascunho = null; // ficha em edição no "Adicionar leitura"
+  let editando = null; // id da obra quando o modal corrige dados de uma obra existente
   let pdfEscolhido = null;
 
   const redesenhar = () => typeof window.render === 'function' && window.render();
@@ -138,7 +139,26 @@ export function criarBibliotecaUI({ bib, registrar }) {
     document.getElementById('ad-salvar')?.removeAttribute('hidden');
   }
 
+  function editar(id) {
+    const l = bib.obter(id);
+    if (!l) return;
+    editando = id;
+    rascunho = { ...l };
+    pdfEscolhido = null;
+    const veu = document.getElementById('veu');
+    veu.innerHTML = `<div class="modal" role="dialog" aria-labelledby="modal-tit"><h2 id="modal-tit">Corrigir dados da obra</h2>
+      <p>A referência ABNT se atualiza enquanto você corrige.</p>
+      <div class="ad-origem"><div class="campo"><label for="ad-doi">Buscar de novo pelo DOI</label><div class="linha-doi"><input id="ad-doi" value="${esc(l.doi || '')}" autocomplete="off"><button class="btn" data-bib="buscar-doi">Buscar</button></div></div></div>
+      <div id="ad-msg"></div>
+      <div id="ad-ficha">${campos(l)}</div>
+      <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" id="ad-salvar" data-bib="salvar">Salvar correções</button></div>
+    </div>`;
+    veu.classList.add('on');
+    document.getElementById('f-titulo').focus();
+  }
+
   function abrirAdicionar() {
+    editando = null;
     rascunho = null;
     pdfEscolhido = null;
     const veu = document.getElementById('veu');
@@ -210,6 +230,16 @@ export function criarBibliotecaUI({ bib, registrar }) {
       document.getElementById('f-titulo')?.focus();
       return;
     }
+    if (editando) {
+      const { id: _i, adicionadaEm: _a, ...mudancas } = f;
+      await bib.atualizar(editando, mudancas);
+      registrar('ui', 'biblioteca.corrigir');
+      editando = null;
+      fecharModal();
+      toast('Dados da obra corrigidos');
+      redesenhar();
+      return;
+    }
     const id = await bib.adicionar(f, pdfEscolhido);
     fecharModal();
     toast(pdfEscolhido ? 'Obra salva. O PDF vai para o seu Drive.' : 'Obra salva na biblioteca');
@@ -238,7 +268,9 @@ export function criarBibliotecaUI({ bib, registrar }) {
         <button class="txt" data-bib="referencia" data-id="${esc(l.id)}">Referência</button>
       </div>
       <div class="dir"><span class="mute-2" id="pdf-pag" style="font-size:var(--t-xs)">${l.totalPaginas ? `p. ${l.paginaAtual || 1} de ${l.totalPaginas}` : ''}</span>${
-        l.etapa >= 2 ? '<span class="chip">Leitura concluída</span>' : `<button class="btn prim" data-bib="concluir" data-id="${esc(l.id)}">Concluir leitura</button>`
+        l.etapa >= 2
+          ? `<a class="btn prim" href="#fichamento/${encodeURIComponent(l.id)}">${l.etapa >= 4 ? 'Ver fichamento' : l.etapa === 3 ? 'Continuar fichamento' : 'Fazer fichamento'}</a>`
+          : `<button class="btn prim" data-bib="concluir" data-id="${esc(l.id)}">Concluir leitura</button>`
       }</div>
     </div>
     <div class="leitor-grid sem-tutor ${verGrifos ? '' : 'sem-grifos'}">
@@ -255,14 +287,18 @@ export function criarBibliotecaUI({ bib, registrar }) {
 
   async function montar(id) {
     const palco = document.getElementById('pdf-palco');
-    if (!palco || montando === id) return;
+    if (!palco || (montando && montando.id === id && montando.palco === palco)) return;
     const l = bib.obter(id);
     if (!l?.pdf) return;
-    montando = id;
+    // Se a tela for redesenhada no meio (ex.: a sincronização terminou), uma montagem nova assume
+    // o palco novo e esta desiste, para o PDF nunca ficar preso num palco fora da tela.
+    const eu = { id, palco };
+    montando = eu;
+    const vale = () => montando === eu && document.body.contains(palco);
     const inicio = performance.now();
     const r = await bib.obterPDF(id);
-    if (!document.body.contains(palco)) {
-      montando = null;
+    if (!vale()) {
+      if (montando === eu) montando = null;
       return;
     }
     if (r.erro) {
@@ -296,6 +332,11 @@ export function criarBibliotecaUI({ bib, registrar }) {
         }, 1500);
       },
     });
+    if (!vale()) {
+      controle?.destruir();
+      if (montando === eu) montando = null;
+      return;
+    }
     montando = null;
     if (controle) {
       leitorAtual = { id, controle, palco };
@@ -345,7 +386,8 @@ export function criarBibliotecaUI({ bib, registrar }) {
     if (acao === 'salvar') salvar();
     if (acao === 'concluir') {
       await bib.atualizar(b.dataset.id, { etapa: 2 });
-      toast('Leitura concluída. O fichamento guiado chega numa próxima versão.');
+      toast('Leitura concluída. Agora, o fichamento.');
+      redesenhar();
     }
     if (acao === 'referencia') {
       const l = bib.obter(b.dataset.id);
@@ -427,5 +469,5 @@ export function criarBibliotecaUI({ bib, registrar }) {
     if (/^#biblioteca/.test(location.hash) && !document.getElementById('veu')?.classList.contains('on')) redesenhar();
   });
 
-  return { lista, leitor, abrirAdicionar };
+  return { lista, leitor, abrirAdicionar, editar };
 }

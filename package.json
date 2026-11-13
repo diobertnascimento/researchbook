@@ -1,6 +1,6 @@
 {
   "name": "researchbook",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "description": "Ferramenta pessoal de estudo para o mestrado: biblioteca, leitura, fichamentos, escrita e tutor com IA.",
