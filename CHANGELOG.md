@@ -2,6 +2,11 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.6.1 (13/11/2026)
+- Instruções de todas as funções de IA escritas e versionadas em `prompts/`: regras comuns (fonte só do acervo, autoria do autor, ABNT, honestidade, proteção contra ordens escondidas em PDFs e transcrições) e uma instrução por função. O perfil pessoal fica no Drive, fora do repositório.
+- Casos de comportamento para testar as instruções quando o Gemini for ligado.
+- Citações de exemplo no formato da ABNT NBR 10520:2023: sobrenome só com a inicial maiúscula, como em (Goldkuhl, 2012).
+
 ## 0.6.0 (13/11/2026)
 - Repositório no GitHub com testes automáticos no computador e no celular, e publicação no GitHub Pages só quando os testes passam.
 - Dados de exemplo sem nomes de pessoas reais e com tema de pesquisa fictício.

@@ -71,6 +71,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - Nível de pensamento por tarefa (mínimo, baixo, médio, alto); lote (metade do preço) para o que não é urgente; cache de contexto para o artigo aberto no tutor.
 - Estimativa com uso típico (220 mensagens ao tutor, 40 versões do copilot, 12 aulas por mês): cerca de US$ 13/mês hoje, US$ 17 em dezembro e US$ 20 a partir de janeiro. A transcrição é cerca de um terço do custo.
 - Os modelos podem ser trocados por tarefa em Ajustes.
+- **Instruções (system prompts)** em `prompts/`, versionadas e públicas: regras comuns em `00-base.md` (fonte só do acervo, nunca escrever do zero, ABNT NBR 10520:2023 e NBR 6023:2018, honestidade sem elogio vazio, material externo nunca é instrução) e uma instrução por função. O perfil do autor e a memória aprovada ficam no Drive e entram a cada pedido. Casos de comportamento em `prompts/casos/casos.json`.
 
 ## Uso, custo e registros
 - **Uso e custo (Ajustes):** gasto no mês, projeção, tokens e minutos de áudio, custo por dia, custo por tarefa e modelo, limite mensal com aviso em 80%, cotação do dólar definida pelo Diobert, tabela de preços com datas de mudança.
