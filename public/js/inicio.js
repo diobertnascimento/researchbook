@@ -4,6 +4,9 @@ import * as arm from './armazenamento.js';
 import { criarRegistros } from './registros.js';
 import { iniciarAtualizacao } from './atualizacao.js';
 import { iniciarDicaInstalar, ehIOS, instalado } from './instalar.js';
+import * as google from './google.js';
+import { criarDrive } from './drive.js';
+import { criarSincronia } from './sincronia.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -112,6 +115,67 @@ async function iniciar() {
   const atualizacao = iniciarAtualizacao({ registrar, aviso });
   iniciarDicaInstalar({ registrar, aviso });
 
+  // Identificador aleatório deste aparelho (não identifica a pessoa; só diz qual aparelho mudou cada item).
+  let idAparelho = db ? await arm.lerMeta(db, 'aparelho') : null;
+  if (db && !idAparelho) {
+    idAparelho = crypto.randomUUID();
+    await arm.gravarMeta(db, 'aparelho', idAparelho);
+  }
+
+  // Volta do login do Google, se for o caso.
+  const retorno = await google.concluirRetorno({ registrar });
+
+  let sinc = null;
+  const atualizarStatus = () => {
+    const el = document.getElementById('status-drive');
+    if (el && typeof window.statusDriveHTML === 'function') el.innerHTML = window.statusDriveHTML();
+    if (/^#ajustes/.test(location.hash) && typeof window.render === 'function') window.render();
+  };
+  function ligarDrive() {
+    if (sinc || !db || !google.sessao()) return;
+    const drive = criarDrive({ token: () => google.sessao()?.token, registrar });
+    sinc = criarSincronia({
+      db,
+      drive,
+      registros: reg,
+      aparelho: idAparelho,
+      aoEstado: (e) => {
+        if (e.fase === 'desconectado') google.expirar();
+        atualizarStatus();
+      },
+    });
+    window.rb.sincronia = sinc;
+    sinc.sincronizar();
+  }
+
+  async function salvar(colecao, item) {
+    const novo = { ...item, atualizadoEm: new Date().toISOString(), aparelho: idAparelho };
+    await arm.gravar(db, colecao, novo);
+    sinc?.agendar();
+    return novo;
+  }
+
+  document.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-google]');
+    if (!b) return;
+    const acao = b.dataset.google;
+    if (acao === 'entrar') {
+      if (!google.configurado()) {
+        window.rb.google.erro = 'O login com Google ainda não foi configurado neste app.';
+        window.render?.();
+        return;
+      }
+      google.entrar({ registrar });
+    }
+    if (acao === 'sincronizar') sinc ? sinc.sincronizar() : google.entrar({ registrar });
+    if (acao === 'sair') {
+      await reg.gravar();
+      await google.sair({ registrar, esquecerConta: true });
+      location.hash = '#painel';
+      location.reload();
+    }
+  });
+
   window.rb = {
     versao,
     pronto: true,
@@ -127,13 +191,26 @@ async function iniciar() {
       backup: (motivo) => arm.backup(db, motivo),
       contarBackups: () => arm.contarBackups(db),
       espaco: arm.espaco,
+      salvar,
+      apagar: (colecao, id) => salvar(colecao, { id, apagado: true }),
+      listar: async (colecao) => (await arm.todos(db, colecao)).filter((i) => !i.apagado),
+      conflitos: () => arm.todos(db, 'conflitos'),
     },
+    google: {
+      configurado: google.configurado(),
+      conta: google.conta(),
+      conectado: () => !!google.sessao(),
+      erro: retorno?.erro ? retorno.mensagem : null,
+    },
+    sincronia: null,
     aparelho: ap,
   };
+  ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });
 
-  // Telas que mostram dados desta base (Ajustes) são redesenhadas quando ela fica pronta.
-  if (/^#ajustes/.test(location.hash) && typeof window.render === 'function') window.render();
+  // Redesenha: a tela de entrada depende do login; Ajustes mostra dados desta base.
+  if ((retorno || /^#ajustes/.test(location.hash) || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
+  atualizarStatus();
   document.dispatchEvent(new CustomEvent('rb:pronto'));
 }
 

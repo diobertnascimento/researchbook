@@ -13,8 +13,12 @@ export function coletarErros(page) {
   return erros;
 }
 
-/** Abre o app sem esperar recursos externos (fontes), que podem estar bloqueados. */
+/**
+ * Abre o app no modo de exemplo (sem login), sem esperar recursos externos.
+ * O modo de exemplo só mostra os dados fictícios do código; os dados reais dependem do login Google.
+ */
 export async function abrirApp(page, rota = '') {
+  await page.addInitScript(() => localStorage.setItem('rb.exemplo', '1'));
   await page.goto('/' + rota, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#vista >> *');
 }

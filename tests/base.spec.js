@@ -46,6 +46,18 @@ test.describe('service worker', () => {
   });
 });
 
+test.describe('configuração', () => {
+  test.beforeEach(soComputador);
+
+  test('o ID do cliente Google tem o formato certo e nenhuma chave secreta está no código', () => {
+    const cfg = readFileSync(join(RAIZ, 'public/js/config.js'), 'utf8');
+    expect(cfg).toMatch(/GOOGLE_CLIENT_ID = '\d+-[a-z0-9]{32}\.apps\.googleusercontent\.com'/);
+    for (const f of ['public/index.html', ...['config', 'google', 'drive', 'sincronia', 'inicio'].map((n) => `public/js/${n}.js`)]) {
+      expect(readFileSync(join(RAIZ, f), 'utf8'), f).not.toMatch(/GOCSPX-|client_secret\s*[:=]\s*['"]/);
+    }
+  });
+});
+
 test.describe('registros', () => {
   test.beforeEach(soComputador);
 

@@ -10,6 +10,7 @@ Ferramenta pessoal de estudo do Diobert para o mestrado acadêmico (dissertaçã
 
 - Telas do protótipo em `public/index.html` (HTML, CSS e JavaScript sem framework), ainda com dados de exemplo.
 - Base real em módulos ES em `public/js/` (v0.7.0): `inicio.js` (liga tudo e expõe `window.rb`), `armazenamento.js` (IndexedDB, migrações, backup), `registros.js`, `atualizacao.js` (service worker e aviso de versão nova) e `instalar.js` (dica do iPhone). Service worker em `public/sw.js`.
+- Login e Drive (v0.8.0): `config.js` (ID do cliente OAuth, público), `google.js` (login por redirecionamento, conferência do token, sair), `drive.js` (API do Drive com `drive.file`, novas tentativas e registros) e `sincronia.js` (junção item a item e conflitos). Dados novos sempre por `rb.dados.salvar/apagar/listar`, nunca direto no IndexedDB, para entrarem na sincronização.
 - Repositório **público**. Publicado no GitHub Pages pelo GitHub Actions (`.github/workflows/testar-e-publicar.yml`), só a partir da `main` e só depois que os testes passam.
 
 ## Arquitetura alvo (decidida em 13/11/2026)
@@ -74,6 +75,7 @@ Comandos: `npm run abrir` (app em http://localhost:4173), `npm test`, `npm run t
 - **Arquivos do app:** todo arquivo que o app usa ao abrir entra em `ARQUIVOS` no `sw.js`.
 - **Esquema de dados:** passos de estrutura em `armazenamento.js` só acrescentam coleções e índices. Mudança de formato vira migração de dados (`MIGRACOES_DADOS`), sempre com backup antes. Nunca apagar dados sem backup.
 - **Registros:** toda função nova registra seus eventos com `rb.registros.registrar(tipo, evento, {det, dur, st})`. Nunca registre conteúdo do usuário.
+- **Login e Drive:** nunca pedir permissão mais ampla que `drive.file`. Nunca usar a chave secreta do cliente. Os testes usam um Google simulado (`tests/google-falso.js`); toda função nova que fala com o Google ganha teste com ele.
 - **Segurança (CSP):** a política fica no `<meta http-equiv="Content-Security-Policy">` de `index.html`. Para usar um serviço externo, acrescente só o endereço exato dele na diretiva certa e explique no PR. Nunca `unsafe-eval`, nunca `*`. Quando o código sair do HTML para `public/js/`, tirar `unsafe-inline` de `script-src`.
 
 ## Convenções do código atual
