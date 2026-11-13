@@ -95,16 +95,16 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.4 (13/11/2026): redesenho de usabilidade a partir do benchmark (navegação, revelação progressiva, laço de hábito).
 - v0.5 (13/11/2026): disciplina como central (aulas gravadas com transcrição, agenda, anotações) e Google Agenda nos ajustes.
 - v0.6 (13/11/2026): modelos por tarefa, uso e custo, registros. Ainda com dados de exemplo; nada é salvo.
+- v0.6.0 (13/11/2026): projeto no GitHub com testes, CLAUDE.md e publicação automática no GitHub Pages. Os testes acharam e foi corrigida rolagem lateral no celular em Ajustes e no fichamento. Dados de exemplo sem nomes reais e com tema fictício (roteirizador de coleta seletiva, artigo sobre greenwashing, trabalho em grupo sobre ecoponto), porque o repositório é público.
 - v0.6.1 (13/11/2026): instruções de todas as funções de IA em `prompts/`; citações no formato da NBR 10520:2023.
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
-- v0.6.0 (13/11/2026): projeto no GitHub com testes, CLAUDE.md e publicação automática no GitHub Pages. Os testes acharam e foi corrigida rolagem lateral no celular em Ajustes e no fichamento. Dados de exemplo sem nomes reais e com tema fictício (roteirizador de coleta seletiva, artigo sobre greenwashing, trabalho em grupo sobre ecoponto), porque o repositório é público.
 
 ## Próximas etapas
-1. Login Google; pasta no Drive pela API; cópia local no IndexedDB; esquema versionado; registros por sessão desde o primeiro dia.
-4. Upload de PDF e PDF.js com grifos ancorados por página.
-5. Crossref (DOI) e geração ABNT.
-6. Gemini: tutor e copilot com instruções separadas; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino.
-7. Google Agenda pela API oficial.
-8. Memória em camadas e exportação.
-9. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
-10. Revisão espaçada.
+1. Entrega 2: tela de login com Google (só a conta do Diobert), pasta no Drive pela API sincronizada com a cópia local, registros de cada sessão também no Drive, exemplos fora da versão publicada.
+2. Upload de PDF e PDF.js com grifos ancorados por página.
+3. Crossref (DOI) e geração ABNT.
+4. Gemini: tutor e copilot com as instruções de `prompts/`; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino; casos de comportamento rodando contra o modelo.
+5. Google Agenda pela API oficial.
+6. Memória em camadas e exportação.
+7. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
+8. Revisão espaçada.
