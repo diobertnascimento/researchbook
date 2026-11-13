@@ -27,6 +27,18 @@ test('todas as telas abrem sem erro e sem rolagem lateral', async ({ page }, inf
       const largura = page.viewportSize().width;
       const sobra = (await page.evaluate(() => document.documentElement.scrollWidth)) - largura;
       if (sobra > 1) problemas.push(`${rota}: ${sobra}px além da largura da tela`);
+
+      // No iPhone, campo com letra menor que 16 px faz o Safari dar zoom ao tocar.
+      const pequenos = await page.$$eval('input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea', (els) =>
+        els.filter((e) => e.getBoundingClientRect().width && parseFloat(getComputedStyle(e).fontSize) < 16).map((e) => e.placeholder || e.getAttribute('aria-label') || e.tagName),
+      );
+      if (pequenos.length) problemas.push(`${rota}: campos com letra menor que 16 px (${pequenos.slice(0, 3).join(', ')})`);
+
+      // O texto do leitor precisa ocupar a tela, não uma coluna estreita ao lado de um painel.
+      if (rota.startsWith('#leitor/')) {
+        const largura = await page.locator('#doc').evaluate((e) => e.getBoundingClientRect().width);
+        if (largura < 300) problemas.push(`${rota}: texto do leitor com só ${Math.round(largura)}px de largura`);
+      }
     }
 
     const links = await page.$$eval('a[href^="#"]', (as) => as.map((a) => a.getAttribute('href')));

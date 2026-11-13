@@ -391,6 +391,7 @@ body.foco aside.nav{display:none}
 .leitor-grid.sem-tutor{grid-template-columns:250px 1fr}
 .leitor-grid.sem-grifos.sem-tutor{grid-template-columns:1fr}
 .leitor-grid.sem-grifos .col-grifos,.leitor-grid.sem-tutor .col-tutor{display:none}
+.fechar-folha{display:none}
 .alterna{display:inline-flex;gap:4px}
 .alterna button{width:34px;height:34px;border-radius:8px;border:1px solid var(--linha-2);background:var(--cartao);display:grid;place-items:center;color:var(--grafite);padding:0}
 .alterna button:hover{border-color:var(--tinta);color:var(--tinta)}
@@ -957,7 +958,7 @@ a.lc:hover{text-decoration:underline}
   .folha-corpo{padding:22px 20px}
   .ref-linha{grid-template-columns:1fr}
   .nav a.item .rot,.nav a.item .qtd{display:none}
-  main{padding:22px 18px 60px}
+  main{padding:22px 18px calc(84px + env(safe-area-inset-bottom))}
   .bento{grid-template-columns:1fr 1fr}
   .b-hero{grid-column:1/-1;grid-row:auto;padding:24px}
   .b-hoje,.b-trilha,.b-grifos,.b-arg,.b-semana{grid-column:span 1}
@@ -967,8 +968,16 @@ a.lc:hover{text-decoration:underline}
   .linha-lv > :nth-child(3),.linha-lv > :nth-child(4){display:none}
   .seq li{grid-template-columns:34px 1fr;row-gap:8px}
   .seq li .pips,.seq .acao{grid-column:2;justify-self:start}
-  .leitor-grid{grid-template-columns:1fr}
-  .col-tutor{position:static;max-height:none;border-left:0;border-top:1px solid var(--linha)}
+  /* Leitor: o texto ocupa a largura toda; grifos e tutor viram folhas que sobem por cima do texto */
+  .leitor-grid,.leitor-grid.sem-grifos,.leitor-grid.sem-tutor,.leitor-grid.sem-grifos.sem-tutor{grid-template-columns:minmax(0,1fr)}
+  .col-tutor,.leitor-grid:not(.sem-grifos) .col-grifos{display:flex;flex-direction:column;position:fixed;left:0;right:0;top:auto;bottom:calc(61px + env(safe-area-inset-bottom));max-height:62vh;z-index:45;border:0;border-top:1px solid var(--linha-2);border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(40,30,10,.18);background:var(--cartao)}
+  .leitor-grid:not(.sem-grifos) .col-grifos{overflow:auto;padding:14px 16px}
+  .leitor-grid.sem-tutor .col-tutor,.leitor-grid.sem-grifos .col-grifos{display:none}
+  .fechar-folha{display:block;align-self:flex-end;margin:8px 12px 0;background:none;border:1px solid var(--linha-2);border-radius:999px;padding:4px 12px;font:inherit;font-size:var(--t-xs);color:var(--grafite)}
+  /* Menus de filtro da Biblioteca: sobem do rodapé, dentro da tela */
+  .filtro-menu{position:fixed;left:12px;right:12px;top:auto;bottom:calc(72px + env(safe-area-inset-bottom));min-width:0;max-height:60vh;overflow:auto}
+  /* iPhone: campos com letra menor que 16 px fazem o Safari aumentar o zoom ao tocar */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px!important}
   .palco.pdf .doc{column-count:1;padding:32px 24px}
   .fich-grid,.arg-grid,.rev-wrap{grid-template-columns:1fr}
   .passos .rot{display:none}
@@ -1010,7 +1019,7 @@ a.lc:hover{text-decoration:underline}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.8.1';
+const APP_VERSAO = '0.8.2';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 function acesso(){
@@ -1165,7 +1174,7 @@ const DOC_HTML = `
    ========================================================= */
 const S = {
   filtros:{proj:null,disc:null,conc:null,tag:null,etapa:null}, busca:'',
-  modoLeitura:'limpa', foco:false, logFiltro:'tudo', discAba:'geral', aulaAba:'transcricao', passoTexto:4, marcas:false, abaEsc:'copilot', dlg:'d1', verGrifos:false, verTutor:true, versao:'v3', tipoReg:'Áudio', tema:'claro', abaTutor:'tutor', passoFich:3, argSel:'adesao', cartao:0, virado:false,
+  modoLeitura:'limpa', foco:false, logFiltro:'tudo', discAba:'geral', aulaAba:'transcricao', passoTexto:4, marcas:false, abaEsc:'copilot', dlg:'d1', verGrifos:false, verTutor:matchMedia('(min-width:1001px)').matches, versao:'v3', tipoReg:'Áudio', tema:'claro', abaTutor:'tutor', passoFich:3, argSel:'adesao', cartao:0, virado:false,
   conversa:[
     {de:'eu', trecho:'Users still interpret the artefact, and those interpretations shape whether it works.', t:'Isso muda meu argumento pela adesão?'},
     {de:'tutor', t:['Muda o foco, e a seu favor, mas obriga você a separar duas coisas. A economia simulada mede se o roteirizador produz rotas mais curtas no papel. A interpretação das equipes decide se essas rotas são percorridas.','Pergunta para você: na sua avaliação, onde entra o julgamento de quem percorre as rotas? Se ele não aparece em nenhum critério declarado ex ante, a banca pode apontar essa lacuna.']},
@@ -1355,7 +1364,8 @@ V.leitor = (id) => {
     <div class="dir"><span class="mute-2" style="font-size:var(--t-xs)">p. 7 de 12</span><a class="btn prim" href="#fichamento/${l.id}">Concluir e fichar</a></div>
   </div>
   <div class="leitor-grid ${S.verGrifos?'':'sem-grifos'} ${S.verTutor?'':'sem-tutor'}">
-    <aside class="col-grifos">
+    <aside class="col-grifos" aria-label="Grifos neste texto">
+      <button class="fechar-folha" data-alt="verGrifos">Fechar</button>
       <h4>Grifos neste texto</h4>
       <div id="lista-grifos">${listaGrifos(grifos)}</div>
     </aside>
@@ -1363,6 +1373,7 @@ V.leitor = (id) => {
       <article class="doc" id="doc">${DOC_HTML}</article>
     </div>
     <aside class="col-tutor" aria-label="Tutor e notas">
+      <button class="fechar-folha" data-alt="verTutor">Fechar</button>
       <div class="abas" role="tablist">
         <button role="tab" data-aba="tutor" class="${S.abaTutor==='tutor'?'on':''}">Tutor</button>
         <button role="tab" data-aba="notas" class="${S.abaTutor==='notas'?'on':''}">Notas</button>
@@ -2632,7 +2643,11 @@ document.addEventListener('click',e=>{
   if(d.memOk!==undefined){const it=t.closest('.sug-it');it.style.opacity='.4';it.querySelectorAll('button').forEach(b=>b.disabled=true);toast(d.descartar!==undefined?'Descartado':'Guardado na memória consolidada');return}
   if(d.alt){
     if(d.alt==='foco'){S.foco=!S.foco; S.verGrifos=false; S.verTutor=!S.foco; if(S.foco) toast('Modo foco. Tecle F ou Esc para sair.')}
-    else S[d.alt]=!S[d.alt];
+    else {
+      S[d.alt]=!S[d.alt];
+      // No celular, grifos e tutor abrem como folhas por cima do texto: uma de cada vez.
+      if(innerWidth<=1000 && S[d.alt] && (d.alt==='verGrifos'||d.alt==='verTutor')) S[d.alt==='verGrifos'?'verTutor':'verGrifos']=false;
+    }
     render(); return}
   if(d.versao){S.versao=d.versao;render();return}
   if(d.tipoReg){abrirModalRegistro(d.tipoReg);return}
