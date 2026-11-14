@@ -708,6 +708,16 @@ details.prio-grupo > summary > header p{flex-basis:100%;order:3}
 @media (max-width:1100px){.dlg-grid{grid-template-columns:1fr}.dlg-grid > div:first-child{display:flex;gap:8px;overflow-x:auto}.dlg-grid .dlg-item{min-width:220px;margin:0}}
 @media (max-width:640px){.ref-linha{grid-template-columns:1fr;gap:10px}.ori-grid{grid-template-columns:1fr}.conversa-card{min-height:0}.anteriores li{flex-wrap:wrap}}
 
+
+/* ============ Google Agenda (e12) ============ */
+.ag-linha{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;font-size:var(--t-s)}
+.ag-linha .erro-ia{flex:1 1 100%;margin:0}
+.ag-bts{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.aviso-ag{color:#8A4A22}
+.ag-tipos{border:0;padding:0;margin:0 0 14px}
+.ag-tipos legend{font-size:var(--t-s);font-weight:500;margin-bottom:8px;padding:0}
+.g-st.pend{color:var(--grafite)}
+
 /* ============ Diálogos ============ */
 .dlg-grid{display:grid;grid-template-columns:260px 1fr 320px;gap:22px;align-items:start}
 .dlg-grid > *{min-width:0}
@@ -1315,7 +1325,7 @@ a.arg-item{text-decoration:none;color:inherit}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.17.0';
+const APP_VERSAO = '0.18.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -2062,7 +2072,7 @@ V.ajustes = () => `
       <p>Cada cor tem uma função. A função decide para qual etapa do fichamento o grifo vai.</p>
       ${FUNCOES.map(f=>`<div class="cor-func"><span class="sw c-${f.id}"></span><strong style="font-weight:500">${f.nome}</strong><input value="${f.desc}" aria-label="Descrição de ${f.nome}"></div>`).join('')}
     </section>
-    <section id="sec-agenda">
+    ${modoReal()&&window.rb&&window.rb.agendaUI?window.rb.agendaUI.secaoHTML():`<section id="sec-agenda">
       <h2>Google Agenda</h2>
       <p>Aulas, entregas, encontros de orientação e sessões de estudo que você agenda no researchbook viram eventos na sua conta Google, numa agenda separada chamada researchbook.</p>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -2072,7 +2082,7 @@ V.ajustes = () => `
       </div>
       <div class="opcoes"><label><input type="checkbox" checked>Aulas</label><label><input type="checkbox" checked>Entregas</label><label><input type="checkbox" checked>Encontros de orientação</label><label><input type="checkbox" checked>Sessões de estudo</label></div>
       <div class="campo" style="max-width:360px"><label>Lembrete padrão</label><select><option>1 dia antes e 1 hora antes</option><option>1 hora antes</option><option>Sem lembrete</option></select></div>
-    </section>
+    </section>`}
     <section id="sec-pasta">
       <h2>Pasta do researchbook</h2>
       <p>Tudo fica em arquivos comuns numa pasta <b>researchbook</b> do seu Google Drive, iguais nos dois computadores e no celular. O app só enxerga o que ele mesmo criou ali.</p>

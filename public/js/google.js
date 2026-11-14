@@ -7,7 +7,7 @@
 //   e precisa incluir a permissão do Drive;
 // - o token dura cerca de 1 hora e fica só neste aparelho; "Sair" revoga o token no Google.
 // - quem pode entrar é decidido pelo Google: o app está "em teste" e só aceita os usuários de teste.
-import { GOOGLE_CLIENT_ID, ESCOPOS, ESCOPO_DRIVE, ESCOPO_IA } from './config.js';
+import { GOOGLE_CLIENT_ID, ESCOPOS, ESCOPO_DRIVE, ESCOPO_IA, ESCOPO_AGENDA } from './config.js';
 
 // Preferência deste aparelho: usar o Gemini pelo login Google (pede a permissão extra no próximo login).
 const PREF_IA = 'rb.ia.acesso';
@@ -53,7 +53,12 @@ export const definirAcessoIA = (modo) => gravar(localStorage, PREF_IA, modo);
 /** A sessão atual já tem a permissão do Gemini? */
 export const temPermissaoIA = () => !!sessao()?.escopos?.includes(ESCOPO_IA);
 
-export function entrar({ registrar, comIA = acessoIA() === 'google' }) {
+/** O Google Agenda está ligado neste aparelho? (a permissão só é pedida depois disso) */
+export const agendaLigada = () => localStorage.getItem('rb.agenda.ligada') === '1';
+export const definirAgenda = (ligar) => (ligar ? localStorage.setItem('rb.agenda.ligada', '1') : localStorage.removeItem('rb.agenda.ligada'));
+export const temPermissaoAgenda = () => !!sessao()?.escopos?.includes(ESCOPO_AGENDA);
+
+export function entrar({ registrar, comIA = acessoIA() === 'google', comAgenda = agendaLigada() }) {
   if (!configurado()) return;
   const estado = crypto.randomUUID();
   gravar(sessionStorage, 'rb.oauth.estado', estado);
@@ -63,13 +68,13 @@ export function entrar({ registrar, comIA = acessoIA() === 'google' }) {
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: enderecoDeVolta(),
     response_type: 'token',
-    scope: (comIA ? [...ESCOPOS, ESCOPO_IA] : ESCOPOS).join(' '),
+    scope: [...ESCOPOS, ...(comIA ? [ESCOPO_IA] : []), ...(comAgenda ? [ESCOPO_AGENDA] : [])].join(' '),
     include_granted_scopes: 'true',
     state: estado,
   });
   const dica = conta();
   if (dica) p.set('login_hint', dica);
-  registrar('app', 'conta.entrar', { det: comIA ? 'com permissão do Gemini' : '' });
+  registrar('app', 'conta.entrar', { det: [comIA ? 'com permissão do Gemini' : '', comAgenda ? 'com permissão da agenda' : ''].filter(Boolean).join(', ') });
   location.assign(`${AUTORIZAR}?${p}`);
 }
 

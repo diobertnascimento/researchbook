@@ -28,6 +28,8 @@ import { criarDisciplinasUI } from './disciplinas-ui.js';
 import { criarDissertacao } from './dissertacao.js';
 import { criarDialogos } from './dialogos.js';
 import { criarDissertacaoUI } from './dissertacao-ui.js';
+import { criarAgenda } from './agenda.js';
+import { criarAgendaUI } from './agenda-ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -182,6 +184,7 @@ async function iniciar() {
             if (!modalAberto && !digitando && telaDeLeitura()) window.render?.();
             if (!modalAberto) window.desenhaMenu?.(location.hash.slice(1) || 'painel');
             window.rb.disciplinas?.retomarPendentes();
+            window.rb.agenda?.sincronizar();
           });
         }
         atualizarStatus();
@@ -238,6 +241,8 @@ async function iniciar() {
       espaco: arm.espaco,
       salvar,
       apagar: (colecao, id) => salvar(colecao, { id, apagado: true }),
+      // Inclusive os apagados (a agenda do Google precisa saber o que saiu).
+      listarTudo: (colecao) => arm.todos(db, colecao),
       listar: async (colecao) => (await arm.todos(db, colecao)).filter((i) => !i.apagado),
       conflitos: () => arm.todos(db, 'conflitos'),
       // Item como está guardado, inclusive com a marca apagado (a tela de conflitos precisa ver os dois lados).
@@ -303,6 +308,9 @@ async function iniciar() {
       const digitando = document.activeElement?.matches?.('input, textarea, select, [contenteditable]');
       if (re.test(location.hash) && !digitando && !document.getElementById('veu')?.classList.contains('on')) window.render?.();
     };
+    window.rb.agenda = criarAgenda({ dados: window.rb.dados, disc: window.rb.disciplinas, drive: driveSeConectado, token: () => google.sessao()?.token, temPermissao: google.temPermissaoAgenda, ligada: google.agendaLigada, registrar, aoMudar: redesenharSe(/^#(ajustes|disciplina\/|orientacao)/) });
+    window.rb.agendaUI = criarAgendaUI({ agenda: window.rb.agenda, google, registrar });
+    window.rb.disciplinas.aoMudarEventos(() => window.rb.agenda.agendar());
     window.rb.dissertacao = criarDissertacao({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, historico, disc: window.rb.disciplinas, drive: driveSeConectado, registrar, aoMudar: redesenharSe(/^#orientacao/) });
     window.rb.dialogos = criarDialogos({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, registrar });
     window.rb.dissertacaoUI = criarDissertacaoUI({ diss: window.rb.dissertacao, dlg: window.rb.dialogos, disc: window.rb.disciplinas, discUI: window.rb.disciplinasUI, bib: biblioteca, registrar });

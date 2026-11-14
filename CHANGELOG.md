@@ -2,6 +2,13 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.18.0 (14/11/2026)
+- Google Agenda de verdade. Em Ajustes > Google Agenda, "Ligar o Google Agenda" pede ao Google uma permissão só: criar a agenda researchbook e mexer nos eventos dela. O app não vê as suas outras agendas.
+- Aulas (com a repetição semanal e as datas canceladas), entregas, encontros de orientação e sessões de estudo vão para a agenda researchbook. Mudou ou apagou no researchbook, muda ou some lá; desfazer devolve.
+- Você escolhe quais tipos vão e o lembrete (1 dia e 1 hora antes, 1 hora, 30 minutos ou nenhum). As escolhas valem em todos os aparelhos.
+- Cada evento mostra "✓ No Google Agenda" quando já foi enviado. Sem internet, vai quando ela voltar.
+- Antes de ligar, é preciso ativar a Google Calendar API e a permissão no Google Cloud; Ajustes explica os passos.
+
 ## 0.17.0 (14/11/2026)
 - Revisão do projeto de verdade. Envie a versão da dissertação em PDF: a IA lista as obras citadas por prioridade de leitura (alta, média, baixa), com a função de cada uma no texto, onde aparece e o risco em uma frase. As que já estão na biblioteca mostram a etapa de leitura; as de fora vão para "Vou buscar".
 - Problemas nas referências: citação direta sem página, obra fora da lista, obra na lista e nunca citada, ano divergente, citação fora da norma.

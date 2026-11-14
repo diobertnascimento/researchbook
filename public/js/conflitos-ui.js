@@ -32,7 +32,7 @@ export const NOMES_COLECAO = {
 };
 
 // Campos internos: não interessam ao Diobert e mudariam em quase todo conflito.
-const IGNORAR = new Set(['id', 'aparelho', 'rects', 'leituraId', 'grifoId', 'argumentoId', 'pdf', 'disciplinaId', 'audio', 'transcricao']);
+const IGNORAR = new Set(['id', 'aparelho', 'rects', 'leituraId', 'grifoId', 'argumentoId', 'pdf', 'disciplinaId', 'audio', 'transcricao', 'google', 'googleApagado']);
 const ROTULOS = {
   docente: 'Docente',
   semestre: 'Semestre',
