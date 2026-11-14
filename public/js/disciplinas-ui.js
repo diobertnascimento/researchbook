@@ -41,7 +41,13 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     const d = disc.obter(e.disciplinaId);
     return `<div class="ev"><div class="ev-data"><b>${dia}</b><span>${sem} ${MESES[m - 1]}</span></div>
       <div><div class="ev-t">${esc(e.titulo)}</div><div class="ev-m"><span class="chip">${TIPOS_EVENTO[e.tipo] || 'Evento'}</span>${e.inicio ? `${e.tipo === 'entrega' ? 'até ' : ''}${e.inicio}${e.fim ? ` às ${e.fim}` : ''}` : ''}${e.repetir === 'semanal' ? ', toda semana' : ''}${!acoes && d ? `. ${esc(d.nome)}` : ''}</div></div>
-      ${acoes ? `<span class="ev-acoes"><button class="btn fant" data-dsc-evento="${esc(e.id)}">Editar</button></span>` : '<span class="g-st">Só no researchbook</span>'}</div>`;
+      <span class="ev-acoes">${gStatus(e)}${acoes ? `<button class="btn fant" data-dsc-evento="${esc(e.id)}">Editar</button>` : ''}</span></div>`;
+  }
+  function gStatus(e) {
+    const s = window.rb?.agenda?.situacao(e);
+    if (s === 'enviado') return '<span class="g-st on" title="Também no Google Agenda">✓ No Google Agenda</span>';
+    if (s === 'pendente') return '<span class="g-st pend">Indo para o Google Agenda</span>';
+    return '';
   }
   function stAula(a) {
     const t = a.transcricao;
@@ -178,7 +184,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     return `<div class="proj-grid">
       <section class="bloco">${grupos.length ? grupos.map(([g, es]) => `<h3 style="margin-top:6px">${g}</h3><div class="evs">${es.map((e) => linhaEvento(e)).join('')}</div>`).join('') : '<p class="mute">Nada agendado nos próximos meses.</p>'}
         <button class="btn" style="margin-top:12px" data-dsc-agendar="${esc(d.id)}">${icone('mais')}Agendar</button></section>
-      <aside class="lado"><section class="bloco"><h3>Google Agenda</h3><p style="margin:0">Os eventos ficam no researchbook, em todos os seus aparelhos. A ligação com a agenda researchbook do Google ainda não está ativa.</p></section></aside>
+      <aside class="lado"><section class="bloco"><h3>Google Agenda</h3><p style="margin:0 0 12px">${window.rb?.agenda?.estado().ligada ? 'Os eventos vão para a agenda researchbook da sua conta Google. Se você mudar ou apagar aqui, muda ou some lá também.' : 'Os eventos ficam no researchbook, em todos os seus aparelhos. Para vê-los também no Google Agenda, ligue em Ajustes.'}</p><a class="btn fant" href="#ajustes">Ajustes da agenda</a></section></aside>
     </div>`;
   }
 

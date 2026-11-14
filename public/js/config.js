@@ -14,3 +14,7 @@ export const ESCOPO_DRIVE = 'https://www.googleapis.com/auth/drive.file';
 // Permissão extra, pedida só quando o Diobert escolhe usar o Gemini pelo próprio login Google
 // (sem chave guardada em lugar nenhum). É a permissão que a documentação do Gemini usa para OAuth.
 export const ESCOPO_IA = 'https://www.googleapis.com/auth/generative-language.retriever';
+
+// Permissão extra do Google Agenda, pedida só quando o Diobert liga a agenda em Ajustes. É a mais estreita da API:
+// o app cria a própria agenda ("researchbook") e mexe só nos eventos dela; não vê as outras agendas.
+export const ESCOPO_AGENDA = 'https://www.googleapis.com/auth/calendar.app.created';

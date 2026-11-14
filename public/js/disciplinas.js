@@ -148,6 +148,7 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
   let eventos = [];
   let encontros = []; // orientação: usa o mesmo motor de gravação e transcrição das aulas
   let aoTranscreverEncontro = null;
+  let aoMudarEventos = () => {};
   const transcricoes = new Map(); // aulaId -> segmentos (cache em memória)
   let fila = Promise.resolve();
   const emAndamento = new Set();
@@ -191,10 +192,11 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     for (const e of evs) await dados.apagar('eventos', e.id);
     registrar('ui', 'disciplina.apagar', { det: `${as.length} aulas, ${evs.length} eventos` });
     await carregar();
+    aoMudarEventos();
     return async () => {
       await dados.salvar('disciplinas', { ...d, apagado: false });
       for (const a of as) await dados.salvar('aulas', { ...a, apagado: false });
-      for (const e of evs) await dados.salvar('eventos', { ...e, apagado: false });
+      for (const e of evs) await dados.salvar('eventos', { ...e, apagado: false, google: null });
       registrar('ui', 'disciplina.desfazer_apagar');
       await carregar();
     };
@@ -248,6 +250,7 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     await dados.salvar('eventos', novo);
     registrar('ui', e.id ? 'evento.editar' : 'evento.criar', { det: `${novo.tipo}${novo.repetir === 'semanal' ? ', semanal' : ''}` });
     await carregar();
+    aoMudarEventos();
     return novo;
   }
   async function apagarEvento(id) {
@@ -255,9 +258,12 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     await dados.apagar('eventos', id);
     registrar('ui', 'evento.apagar');
     await carregar();
+    aoMudarEventos();
     return async () => {
-      await dados.salvar('eventos', { ...e, apagado: false });
+      // Volta sem a marca de enviado: na agenda do Google ele já foi apagado e precisa ir de novo.
+      await dados.salvar('eventos', { ...e, apagado: false, google: null });
       await carregar();
+      aoMudarEventos();
     };
   }
 
@@ -636,5 +642,6 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     encontro: (id) => encontros.find((e) => e.id === id) || null,
     salvarItem,
     aoTranscreverEncontro: (fn) => (aoTranscreverEncontro = fn),
+    aoMudarEventos: (fn) => (aoMudarEventos = fn),
   };
 }

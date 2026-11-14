@@ -4,11 +4,12 @@
 export const CLIENTE = 'teste-123.apps.googleusercontent.com';
 export const DRIVE_FILE = 'https://www.googleapis.com/auth/drive.file';
 export const ESCOPO_IA = 'https://www.googleapis.com/auth/generative-language.retriever';
+export const ESCOPO_AGENDA = 'https://www.googleapis.com/auth/calendar.app.created';
 const PASTA = 'application/vnd.google-apps.folder';
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-headers': 'authorization, content-type',
-  'access-control-allow-methods': 'GET, POST, PATCH, PUT, OPTIONS',
+  'access-control-allow-methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
   'access-control-expose-headers': 'Location',
 };
 
@@ -17,7 +18,7 @@ export async function googleFalso(context, opcoes = {}) {
   const op = { email: 'autor@exemplo.com', escopos: ['openid', 'https://www.googleapis.com/auth/userinfo.email', DRIVE_FILE], aud: CLIENTE, negar: false, ordem: 'state-primeiro', ...opcoes };
   // Sem escopos fixados pelo teste, o Google simulado concede o que o app pediu (como quando o usuário aceita tudo).
   const escoposFixos = !!opcoes.escopos;
-  const estado = { tokenValido: true, revogado: false, chamadas: [] };
+  const estado = { tokenValido: true, revogado: false, chamadas: [], agendas: new Map(), eventos: new Map(), chamadasAgenda: [] };
   const arquivos = new Map();
   const envios = new Map();
   let seq = 0;
@@ -30,7 +31,8 @@ export async function googleFalso(context, opcoes = {}) {
       body: `export const GOOGLE_CLIENT_ID = '${CLIENTE}';
 export const ESCOPOS = ['openid', 'https://www.googleapis.com/auth/userinfo.email', '${DRIVE_FILE}'];
 export const ESCOPO_DRIVE = '${DRIVE_FILE}';
-export const ESCOPO_IA = '${ESCOPO_IA}';`,
+export const ESCOPO_IA = '${ESCOPO_IA}';
+export const ESCOPO_AGENDA = '${ESCOPO_AGENDA}';`,
     }),
   );
 
@@ -78,6 +80,39 @@ export const ESCOPO_IA = '${ESCOPO_IA}';`,
     const u = new URL(req.url());
     const metodo = req.method();
     if (metodo === 'OPTIONS') return r.fulfill({ status: 204, headers: CORS });
+    // Google Agenda: agendas criadas pelo app e eventos delas.
+    if (u.pathname.startsWith('/calendar/v3/')) {
+      const partes = u.pathname.replace('/calendar/v3/', '').split('/').map(decodeURIComponent);
+      estado.chamadasAgenda.push(`${metodo} ${partes.join('/')}`);
+      if (op.agendaDesligada) return r.fulfill(json({ error: { code: 403, message: 'Google Calendar API has not been used in project 1 before or it is disabled.', errors: [{ reason: 'accessNotConfigured' }] } }, 403));
+      if (!op.escopos.includes(ESCOPO_AGENDA)) return r.fulfill(json({ error: { code: 403, message: 'Request had insufficient authentication scopes.', errors: [{ reason: 'insufficientPermissions' }] } }, 403));
+      if (partes[0] === 'calendars' && partes.length === 1 && metodo === 'POST') {
+        const id = `cal${++seq}@group.calendar.google.com`;
+        estado.agendas.set(id, { id, ...JSON.parse(req.postData() || '{}') });
+        return r.fulfill(json(estado.agendas.get(id)));
+      }
+      const cal = estado.agendas.get(partes[1]);
+      if (!cal) return r.fulfill(json({ error: { code: 404, message: 'Not Found' } }, 404));
+      if (partes.length === 2) return r.fulfill(json(cal));
+      const chave = `${partes[1]}/${partes[3] || ''}`;
+      if (metodo === 'POST') {
+        const corpo = JSON.parse(req.postData() || '{}');
+        if (estado.eventos.has(`${partes[1]}/${corpo.id}`)) return r.fulfill(json({ error: { code: 409, message: 'The requested identifier already exists.' } }, 409));
+        estado.eventos.set(`${partes[1]}/${corpo.id}`, corpo);
+        return r.fulfill(json(corpo));
+      }
+      if (metodo === 'PUT') {
+        if (!estado.eventos.has(chave)) return r.fulfill(json({ error: { code: 404, message: 'Not Found' } }, 404));
+        estado.eventos.set(chave, JSON.parse(req.postData() || '{}'));
+        return r.fulfill(json(estado.eventos.get(chave)));
+      }
+      if (metodo === 'DELETE') {
+        const ev = estado.eventos.get(chave);
+        if (!ev || ev.status === 'cancelled') return r.fulfill(json({ error: { code: 410, message: 'Resource has been deleted' } }, ev ? 410 : 404));
+        estado.eventos.set(chave, { ...ev, status: 'cancelled' });
+        return r.fulfill({ status: 204, headers: CORS, body: '' });
+      }
+    }
     estado.chamadas.push(`${metodo} ${u.pathname}`);
     if (!estado.tokenValido || req.headers().authorization !== 'Bearer tok-falso') return r.fulfill(json({ error: { code: 401 } }, 401));
 

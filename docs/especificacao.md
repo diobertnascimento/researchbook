@@ -128,7 +128,7 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Resumo** (`aula.md` v2.0.0): pontos, conceitos com a definição dada em aula, leituras citadas, perguntas e combinados. Cada ponto e conceito traz um trecho literal; o app confere na transcrição e descarta o que não bate. Leituras citadas são ligadas à biblioteca por id ou por sobrenome e ano; as outras vão para "Para buscar". Tudo vai para o histórico (função `aula`).
 - **Plano de ensino** (`plano-de-ensino.md` v2.0.0): o PDF vai inteiro no pedido (até 14 MB). A tela de conferência mostra aulas, entregas e leituras; nada é salvo antes do autor confirmar. Aula do plano com data substitui, naquele dia, a aula semanal. Opção de criar trilha com as obrigatórias que já estão na biblioteca. O PDF fica em `disciplinas/<disc>/plano-de-ensino.pdf`.
 - **Hoje:** eventos do dia e entregas dos próximos 3 dias entram em "Também para hoje", depois de conflitos e memória.
-- **Google Agenda:** ainda não. Os eventos ficam só no researchbook até a etapa da agenda.
+- **Google Agenda (v0.18.0):** permissão `calendar.app.created` (a mais estreita: só a agenda que o app cria), pedida no login quando o autor liga em Ajustes. O researchbook manda e o Google espelha: agenda "researchbook" criada uma vez, com o id em `agenda/calendario.json` no Drive (junto das preferências: tipos enviados e lembrete). Cada evento vai com id fixo (`rb` + hex do id do app), então dois aparelhos não duplicam; a assinatura do que foi enviado fica no evento (`google.assinatura`) e só o que mudou vai de novo. Apagar envia DELETE uma vez (`googleApagado`); desfazer reenvia. Repetição semanal vira RRULE com UNTIL e EXDATE para as datas canceladas; evento sem horário é de dia todo. Mudanças feitas direto no Google Agenda não voltam para o app.
 
 ## Dissertação e diálogos (v0.17.0)
 - **Revisão do projeto** (`revisao-projeto.md` v2.0.0, modelo de raciocínio): o PDF vai no pedido (até 14 MB; acima, pela área temporária do Gemini) com as fichas da biblioteca (B1…), a revisão anterior e os combinados abertos. Cada obra tem função, prioridade (critérios fixos, combinado sobe um nível), seções, vezes e o risco em uma frase; é ligada à biblioteca por id ou por sobrenome e ano. Coleção `revisoes` (esquema 5), uma por versão; PDF em `dissertacao/versoes/vN.pdf`; resposta completa no histórico (função `revisao_projeto`).
@@ -183,6 +183,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.18.0 (14/11/2026): etapa 12, Google Agenda com a permissão mais estreita, eventos espelhados na agenda researchbook.
 - v0.17.0 (14/11/2026): etapa 11, revisão do projeto por versão, orientação com combinados e temas, diálogos em três modos com posições conferidas.
 - v0.16.0 (14/11/2026): etapa 10, disciplinas, aulas gravadas com transcrição por partes e resumo conferido, plano de ensino lido pela IA, agenda local e menu de Projetos real.
 - v0.15.0 (13/11/2026): etapa 9, escrita e Copilot: preparação, editor com autoria medida e teto de IA, versões no Drive, revisão e exportação .docx em ABNT.
@@ -195,6 +196,5 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Google Agenda pela API oficial (depende de ativar a API e a permissão no Google Cloud).
-2. Cartões e revisão espaçada, comentários do tutor no fichamento, Overview do autor.
-3. Ajustes reais (modelos por tarefa, uso e custo), busca Ctrl+K com dados reais, limpeza de marcas de apagado, código fora do HTML e CSP sem `unsafe-inline`.
+1. Cartões e revisão espaçada, comentários do tutor no fichamento, Overview do autor.
+2. Ajustes reais (modelos por tarefa, uso e custo), busca Ctrl+K com dados reais, limpeza de marcas de apagado, código fora do HTML e CSP sem `unsafe-inline`.
