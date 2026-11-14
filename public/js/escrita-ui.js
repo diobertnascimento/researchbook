@@ -5,6 +5,7 @@ import { gerarDocx } from './docx.js';
 import { referencia, citacao, autorCurto } from './abnt.js';
 import { normalizar } from './contexto.js';
 import { ErroIA } from './gemini.js';
+import { ouvir } from './ui.js';
 
 /* global I, toast, baixar, S */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -29,7 +30,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     const pct = (n) => (a.total ? (n / a.total) * 100 : 0);
     return `<div class="barra-wrap" role="img" aria-label="Seu ${Math.round(pct(a.autor))}%, coautoria ${Math.round(pct(a.coautoria))}%, IA ${Math.round(pct(a.ia))}%${teto != null ? `, teto da IA ${teto}%` : ''}"><div class="barra-a"><span class="a-autor" style="width:${pct(a.autor)}%"></span><span class="a-co" style="width:${pct(a.coautoria)}%"></span><span class="a-ia" style="width:${pct(a.ia)}%"></span></div>${teto != null ? `<i class="meta-l" style="left:calc(${100 - teto}% - 1px)" title="Teto da IA: ${teto}%"></i>` : ''}</div>`;
   }
-  const legenda = '<div class="leg-a"><span><i class="a-autor"></i>Seu</span><span><i class="a-co"></i>Coautoria: versão do Copilot editada por você</span><span><i class="a-ia"></i>IA</span><span><i style="background:#9A3B26;width:2px;height:12px"></i>Teto da IA</span></div>';
+  const legenda = '<div class="leg-a"><span><i class="a-autor"></i>Seu</span><span><i class="a-co"></i>Coautoria: versão do Copilot editada por você</span><span><i class="a-ia"></i>IA</span><span><i class="a-teto"></i>Teto da IA</span></div>';
 
   /* ---------- Lista ---------- */
   function lista() {
@@ -41,10 +42,10 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
         const a = medirAutoria(t);
         const st = t.passo <= 3 ? `Preparando: ${PASSOS[t.passo].toLowerCase()}` : t.passo === 4 ? 'Escrevendo' : 'Em revisão';
         return `<a class="txt-card" href="#texto/${encodeURIComponent(t.id)}"><div><div class="t">${esc(t.titulo)}</div><div class="m">${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.limite ? `. ${a.total} de ${t.limite} palavras` : `. ${a.total} palavras`}${t.entrega ? `, entrega ${t.entrega.split('-').reverse().slice(0, 2).join('/')}` : ''}</div></div>
-          <div class="et"><span class="st"><i style="background:${t.passo <= 3 ? 'var(--linha-2)' : t.passo === 4 ? 'var(--petroleo)' : '#5C8F4E'}"></i>${st}</span></div>
+          <div class="et"><span class="st"><i style="background:${t.passo <= 3 ? 'var(--linha-2)' : t.passo === 4 ? 'var(--petroleo)' : 'var(--sucesso)'}"></i>${st}</span></div>
           <div class="autoria"><span>Participação da IA: <b>${a.participacao}%</b> (teto ${t.teto}%)</span>${barra(a, t.teto)}</div></a>`;
       })
-      .join('')}</div><div style="margin-top:14px">${legenda}</div>`;
+      .join('')}</div><div class="mt-3">${legenda}</div>`;
   }
 
   /* ---------- Cabeçalho e passos da preparação ---------- */
@@ -74,7 +75,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
         <div class="campo"><label for="esc-limite">Limite <small>em palavras</small></label><input id="esc-limite" type="number" min="0" inputmode="numeric" data-esc-campo="limite" value="${esc(t.limite ?? '')}"></div>
         <div class="campo"><label for="esc-entrega">Entrega</label><input id="esc-entrega" type="date" data-esc-campo="entrega" value="${esc(t.entrega ?? '')}"></div>
       </div>
-      <div class="campo"><label for="esc-teto">Teto de participação da IA <small id="esc-teto-v">${t.teto}%</small></label><input id="esc-teto" type="range" min="0" max="100" step="5" data-esc-campo="teto" value="${t.teto}"><p class="mute" style="font-size:var(--t-xs);margin:6px 0 0">Soma de coautoria e trechos da IA. Ao chegar no teto, o Copilot para de propor versões e a exportação espera você reescrever com as suas palavras.</p></div>
+      <div class="campo"><label for="esc-teto">Teto de participação da IA <small id="esc-teto-v">${t.teto}%</small></label><input id="esc-teto" type="range" min="0" max="100" step="5" data-esc-campo="teto" value="${t.teto}"><p class="t-legenda m-0 mt-2 mute">Soma de coautoria e trechos da IA. Ao chegar no teto, o Copilot para de propor versões e a exportação espera você reescrever com as suas palavras.</p></div>
     </section>`;
   }
 
@@ -87,12 +88,12 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
         .map(
           (q, i) =>
             `<div class="qa ${q.resposta ? '' : 'pendente'}"><div class="q">${q.copilot ? `${icone('escrita')}<span>${esc(q.pergunta)}${q.por_que ? `<small>${esc(q.por_que)}</small>` : ''}</span>` : esc(q.pergunta)}</div>${
-              q.resposta ? `<div class="r"><small>Sua resposta</small>${esc(q.resposta)}</div>` : `<div class="campo" style="margin:10px 0 0"><textarea id="esc-resp" rows="3" aria-label="Sua resposta" placeholder="Responda com as suas palavras"></textarea></div><button class="btn prim" data-esc-responder="${i}">Responder</button>`
+              q.resposta ? `<div class="r"><small>Sua resposta</small>${esc(q.resposta)}</div>` : `<div class="m-0 mt-3 campo"><textarea id="esc-resp" rows="3" aria-label="Sua resposta" placeholder="Responda com as suas palavras"></textarea></div><button class="btn prim" data-esc-responder="${i}" data-ocupado="Pensando…">Responder</button>`
             }</div>`,
         )
         .join('')}
-      ${!qs.length ? `<div class="qa pendente"><div class="q">${PRIMEIRA}</div><div class="campo" style="margin:10px 0 0"><textarea id="esc-resp" rows="3" aria-label="Sua resposta"></textarea></div><button class="btn prim" data-esc-responder="-1">Responder</button></div>` : ''}
-      ${qs.length && !pendente ? `<div class="ia-linha"><button class="btn" data-esc-perguntar ${est.ocupado ? 'disabled' : ''}>Pedir a próxima pergunta</button></div>` : ''}
+      ${!qs.length ? `<div class="qa pendente"><div class="q">${PRIMEIRA}</div><div class="m-0 mt-3 campo"><textarea id="esc-resp" rows="3" aria-label="Sua resposta"></textarea></div><button class="btn prim" data-esc-responder="-1" data-ocupado="Pensando…">Responder</button></div>` : ''}
+      ${qs.length && !pendente ? `<div class="ia-linha"><button class="btn" data-esc-perguntar ${est.ocupado ? 'disabled' : ''} data-ocupado="Pensando…">Pedir a próxima pergunta</button></div>` : ''}
       ${ocupadoHTML('entrevista')}${erroHTML()}
       ${t.tese ? `<div class="tese-box"><small>Tese de trabalho: sua frase, sem edição</small><p>${esc(t.tese)}</p></div>` : ''}
     </section>`;
@@ -111,29 +112,29 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
 
   function passo2(t) {
     const d = t.diagnostico;
-    if (!d) return `<section class="editor esc-prep"><h2>Diagnóstico</h2><p class="instr">O Copilot compara a sua tese e as suas respostas com o seu acervo: o que está sustentado, o que está frágil e onde falta fonte.</p><button class="btn prim" data-esc-diagnostico ${est.ocupado || !t.tese ? 'disabled' : ''}>Fazer o diagnóstico</button>${!t.tese ? '<p class="mute">Escreva a tese na etapa Ideia primeiro.</p>' : ''}${ocupadoHTML('diagnostico')}${erroHTML()}</section>`;
+    if (!d) return `<section class="editor esc-prep"><h2>Diagnóstico</h2><p class="instr">O Copilot compara a sua tese e as suas respostas com o seu acervo: o que está sustentado, o que está frágil e onde falta fonte.</p><button class="btn prim" data-esc-diagnostico ${est.ocupado || !t.tese ? 'disabled' : ''} data-ocupado="Diagnosticando…">Fazer o diagnóstico</button>${!t.tese ? '<p class="mute">Escreva a tese na etapa Ideia primeiro.</p>' : ''}${ocupadoHTML('diagnostico')}${erroHTML()}</section>`;
     const col = (classe, titulo, cor, sub) => `<section class="diag"><h3><i style="background:${cor}"></i>${titulo}</h3><p>${sub}</p>${
       d.resultado.pontos.filter((p) => p.classe === classe).map((p) => `<div class="diag-item"><b>${esc(p.afirmacao)}</b><span>${esc(tirarIds(p.comentario))}</span><div class="f">${chipsFontes(p.fontes, d)}</div></div>`).join('') || '<p class="mute">Nada aqui.</p>'
     }</section>`;
-    return `<div class="diag-grid">${col('sustentado', 'Sustentado pelo acervo', '#5C8F4E', 'Você tem grifos para isto')}${col('fragil', 'Frágil', '#C0702F', 'Uma fonte só, ou sustenta em parte')}${col('lacuna', 'Lacuna', '#9A3B26', 'Nada no acervo. Sugestões para você buscar')}</div>
-      ${d.resultado.sugestoes_de_busca?.length ? `<section class="editor" style="margin-top:16px"><h3 style="margin-top:0">Para buscar (fora do seu acervo, não citar ainda)</h3><ul>${d.resultado.sugestoes_de_busca.map((s) => `<li>${esc(s.descricao)}${s.obra_sugerida ? `: <i>${esc(s.obra_sugerida)}</i>` : ''}</li>`).join('')}</ul></section>` : ''}
+    return `<div class="diag-grid">${col('sustentado', 'Sustentado pelo acervo', 'var(--sucesso)', 'Você tem grifos para isto')}${col('fragil', 'Frágil', '#B8862B', 'Uma fonte só, ou sustenta em parte')}${col('lacuna', 'Lacuna', 'var(--perigo)', 'Nada no acervo. Sugestões para você buscar')}</div>
+      ${d.resultado.sugestoes_de_busca?.length ? `<section class="mt-4 editor"><h3 class="mt-0">Para buscar (fora do seu acervo, não citar ainda)</h3><ul>${d.resultado.sugestoes_de_busca.map((s) => `<li>${esc(s.descricao)}${s.obra_sugerida ? `: <i>${esc(s.obra_sugerida)}</i>` : ''}</li>`).join('')}</ul></section>` : ''}
       ${d.conferencia?.ok === false ? `<div class="conf-ia" role="note"><b>Conferência:</b> algumas fontes não batem com o seu acervo e estão marcadas com ⚠.</div>` : ''}
       <div class="nota-grounding">${icone('tutor')}<span>O Copilot só cita o que está no seu acervo, com página. Sugestões de fora ficam pendentes até você adicionar o texto à biblioteca.</span></div>
-      <div class="ia-linha"><button class="btn fant" data-esc-diagnostico ${est.ocupado ? 'disabled' : ''}>Refazer o diagnóstico</button></div>${ocupadoHTML('diagnostico')}${erroHTML()}`;
+      <div class="ia-linha"><button class="btn fant" data-esc-diagnostico ${est.ocupado ? 'disabled' : ''} data-ocupado="Diagnosticando…">Refazer o diagnóstico</button></div>${ocupadoHTML('diagnostico')}${erroHTML()}`;
   }
 
   function passo3(t) {
     const secs = t.estrutura || [];
-    return `<section class="editor esc-prep" style="max-width:1000px">
+    return `<section class="larg-1000 editor esc-prep">
       <h2>Estrutura</h2><p class="instr">Proposta do Copilot a partir da sua tese e do diagnóstico. Renomeie, reordene ou apague seções; nada é escrito até você aprovar.</p>
       ${secs.length ? `<ol class="estr-ed">${secs
         .map(
           (s, i) => `<li><div class="campos"><input aria-label="Título da seção ${i + 1}" data-esc-estr="${i}" data-k="titulo" value="${esc(s.titulo)}"><input aria-label="Objetivo da seção ${i + 1}" data-esc-estr="${i}" data-k="objetivo" value="${esc(s.objetivo || '')}" placeholder="O que esta seção precisa provar">${s.depende_de_lacuna ? '<span class="chip lac">Falta fonte</span>' : ''}</div>
           <span class="x">~${s.palavras || 0} palavras</span><span class="bts"><button class="btn fant" data-esc-mover="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''}>Subir</button><button class="btn fant" data-esc-mover="${i}" data-dir="1" ${i === secs.length - 1 ? 'disabled' : ''}>Descer</button><button class="btn fant" data-esc-tirar="${i}">Tirar</button></span></li>`,
         )
-        .join('')}</ol>` : `<button class="btn prim" data-esc-estrutura ${est.ocupado ? 'disabled' : ''}>Propor estrutura</button>`}
+        .join('')}</ol>` : `<button class="btn prim" data-esc-estrutura ${est.ocupado ? 'disabled' : ''} data-ocupado="Propondo…">Propor estrutura</button>`}
       ${t.observacaoEstrutura ? `<p class="mute">${esc(t.observacaoEstrutura)}</p>` : ''}
-      <div class="ia-linha"><button class="btn" data-esc-add-secao>${icone('mais')}Adicionar seção</button>${secs.length ? `<button class="btn fant" data-esc-estrutura="outra" ${est.ocupado ? 'disabled' : ''}>Pedir outra proposta</button>` : ''}</div>
+      <div class="ia-linha"><button class="btn" data-esc-add-secao>${icone('mais')}Adicionar seção</button>${secs.length ? `<button class="btn fant" data-esc-estrutura="outra" ${est.ocupado ? 'disabled' : ''} data-ocupado="Propondo…">Pedir outra proposta</button>` : ''}</div>
       ${ocupadoHTML('estrutura')}${erroHTML()}
     </section>`;
   }
@@ -174,7 +175,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
       ${ocupadoHTML('copilot')}${erroHTML()}
     </div>
     <div class="atalhos">
-      <button class="btn fant" data-esc-versoes ${noTeto || est.ocupado ? 'disabled' : ''}>Propor versões do parágrafo</button>
+      <button class="btn fant" data-esc-versoes ${noTeto || est.ocupado ? 'disabled' : ''} data-ocupado="Propondo versões…">Propor versões do parágrafo</button>
       <button class="btn fant" data-esc-soa ${est.ocupado ? 'disabled' : ''}>Isso soa como eu?</button>
       ${secaoAtual(t).i < t.secoes.length - 1 ? `<button class="btn fant" data-esc-transicao ${noTeto || est.ocupado ? 'disabled' : ''}>Transição para a próxima seção</button>` : ''}
     </div>
@@ -207,7 +208,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     const texto = `${s.titulo} ${s.objetivo || ''} ${blocos(s.html).map((b) => b.texto).join(' ')} ${t.tese}`;
     const itens = copiloto.acervoPara(texto, 15).itens;
     if (!itens.length) return '<p class="sub">Nenhum grifo na sua biblioteca ainda. Grife os textos no leitor e eles aparecem aqui.</p>';
-    return `<p class="sub">Grifos mais ligados a esta seção. Toque para inserir a citação onde está o cursor.</p>${itens
+    return `<p class="sub">Grifos mais ligados a esta seção. Selecione para inserir a citação onde está o cursor.</p>${itens
       .map((it) => `<button class="grifo-item" data-esc-citar="${esc(it.leituraId)}|${it.pagina || ''}">${esc(it.texto.length > 180 ? it.texto.slice(0, 180) + '…' : it.texto)}<small>${esc(it.citacao)}</small></button>`)
       .join('')}`;
   }
@@ -224,12 +225,12 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     const a = medirAutoria(t);
     const marcas = typeof S !== 'undefined' && S.marcas;
     return `<a class="voltar" href="#escrita">${icone('voltar')}Textos</a>
-      <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.entrega ? `. Entrega em ${t.entrega.split('-').reverse().join('/')}` : ''} <span class="salvo" id="esc-salvo" style="display:inline-flex;padding:0"><i></i>${est.salvando || 'Salvo'}</span></p></div>
+      <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.entrega ? `. Entrega em ${t.entrega.split('-').reverse().join('/')}` : ''} <span class="d-inline-flex p-0 salvo" id="esc-salvo"><i></i>${est.salvando || 'Salvo'}</span></p></div>
         <div class="acoes"><button class="btn" data-esc-passo="0">Briefing</button><button class="btn prim" data-esc-passo="5">Revisar e exportar</button></div></div>
       <div class="esc-grid real" data-texto="${esc(t.id)}">
-        <aside class="lat-esc"><h4 style="font-size:var(--t-s);font-weight:500;margin:0 0 8px">Seções</h4>
+        <aside class="lat-esc"><h4 class="t-meta forte m-0 mb-2">Seções</h4>
           <div class="secoes">${t.secoes.map((x, k) => `<button data-esc-secao="${k}" class="${k === i ? 'on' : ''}"><i class="${contarPalavras(blocos(x.html).map((b) => b.texto).join(' ')) ? 'feita' : ''}"></i>${esc(x.titulo)}</button>`).join('')}</div>
-          <button class="btn fant" data-esc-nova-secao style="margin-top:10px">${icone('mais')}Seção</button>
+          <button class="mt-3 btn fant" data-esc-nova-secao>${icone('mais')}Seção</button>
         </aside>
         <section class="folha ${marcas ? 'marcas' : ''}">
           <div class="folha-barra">
@@ -251,7 +252,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
           ${est.aba === 'material' ? painelMaterial(t, s) : est.aba === 'versoes' ? painelVersoes(t) : painelCopilot(t, s)}
         </aside>
       </div>
-      <div style="margin-top:12px">${legenda}</div>`;
+      <div class="mt-3">${legenda}</div>`;
   }
 
   /* ---------- Revisar e exportar ---------- */
@@ -270,7 +271,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     ];
     const rv = est.revisao[t.id];
     const ic = { ok: '✓', at: '!', bl: '!', obs: 'i' };
-    return `<button class="voltar" style="background:none;border:0;padding:0;cursor:pointer" data-esc-passo="4">${icone('voltar')}Voltar ao texto</button>
+    return `<button class="fundo-0 b-0 p-0 cursor voltar" data-esc-passo="4">${icone('voltar')}Voltar ao texto</button>
       <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>Checagem antes de exportar. Nada aqui altera o texto sem você.</p></div></div>
       <div class="proj-grid">
         <section class="editor"><h2>Revisar e exportar</h2>
@@ -278,13 +279,13 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
           <h3>Revisão do Copilot</h3>
           ${rv ? `<div class="revs">${(rv.json.verificacoes || []).map((v) => `<div class="rev-it"><span class="ic ${v.situacao === 'ok' ? 'ok' : 'at'}">${v.situacao === 'ok' ? '✓' : '!'}</span><div><b>${esc({ afirmacoes_sem_fonte: 'Afirmações sem fonte', fidelidade: 'Fidelidade às fontes', coerencia: 'Coerência com a tese', estrutura: 'Estrutura', clareza: 'Clareza' }[v.item] || v.item)}</b><span>${esc(tirarIds(v.resumo))}</span></div><span></span></div>`).join('')}
             ${(rv.json.problemas || []).map((p) => `<div class="rev-it"><span class="ic ${p.gravidade === 'baixa' ? 'obs' : 'at'}">${p.gravidade === 'baixa' ? 'i' : '!'}</span><div><b>${esc(p.problema)}</b><span>${esc(p.secao)}: “${esc(p.trecho)}”. ${esc(tirarIds(p.como_resolver))}</span></div><button class="btn fant" data-esc-ver-trecho="${esc(p.trecho)}">Ver trecho</button></div>`).join('')}</div>`
-            : `<p class="instr">O Copilot lê o texto inteiro e aponta afirmações sem fonte, paráfrases infiéis, problemas de coerência, estrutura e clareza. Não reescreve nada.</p><button class="btn" data-esc-revisao ${est.ocupado ? 'disabled' : ''}>Pedir revisão do Copilot</button>`}
+            : `<p class="instr">O Copilot lê o texto inteiro e aponta afirmações sem fonte, paráfrases infiéis, problemas de coerência, estrutura e clareza. Não reescreve nada.</p><button class="btn" data-esc-revisao ${est.ocupado ? 'disabled' : ''} data-ocupado="Revisando…">Pedir revisão do Copilot</button>`}
           ${ocupadoHTML('revisao')}${erroHTML()}
         </section>
         <aside class="lado">
-          <section class="bloco cta-trilha"><h3>Exportar</h3><p>Word com formatação ABNT. Os marcadores de autoria ficam aqui; o arquivo sai limpo. Uma cópia vai para o seu Drive.</p><button class="btn ${acima ? '' : 'prim'}" data-esc-docx ${acima ? 'disabled' : ''}>Exportar para Word (.docx)</button>${acima ? '<p class="mute">Disponível quando a participação da IA ficar dentro do teto.</p>' : ''}</section>
+          <section class="bloco cta-trilha"><h3>Exportar</h3><p>Word com formatação ABNT. Os marcadores de autoria ficam aqui; o arquivo sai limpo. Uma cópia vai para o seu Drive.</p><button class="btn ${acima ? '' : 'prim'}" data-esc-docx ${acima ? 'disabled' : ''} data-ocupado="Exportando…">Exportar para Word (.docx)</button>${acima ? '<p class="mute">Disponível quando a participação da IA ficar dentro do teto.</p>' : ''}</section>
           <section class="bloco"><h3>Referências</h3>${refs.length ? `<ul class="refs-abnt">${refs.map((r) => `<li>${referencia(bib.obter(r.id))}</li>`).join('')}</ul>` : '<p class="mute">Nenhuma ainda.</p>'}</section>
-          <section class="bloco"><h3>Autoria deste texto</h3>${barra(a, t.teto)}<div style="margin-top:12px">${legenda}</div></section>
+          <section class="bloco"><h3>Autoria deste texto</h3>${barra(a, t.teto)}<div class="mt-3">${legenda}</div></section>
         </aside>
       </div>`;
   }
@@ -497,7 +498,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     if (document.activeElement?.id === 'esc-corpo') blocoAlvo();
   });
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-esc-novo],[data-esc-apagar],[data-esc-passo],[data-esc-pular],[data-esc-responder],[data-esc-perguntar],[data-esc-diagnostico],[data-esc-estrutura],[data-esc-mover],[data-esc-tirar],[data-esc-add-secao],[data-esc-aprovar],[data-esc-secao],[data-esc-nova-secao],[data-esc-fmt],[data-esc-aba],[data-esc-chat],[data-esc-versoes],[data-esc-usar],[data-esc-fechar-v],[data-esc-soa],[data-esc-transicao],[data-esc-usar-transicao],[data-esc-citar],[data-esc-salvar-versao],[data-esc-restaurar],[data-esc-revisao],[data-esc-docx],[data-esc-ver-trecho]');
     if (!b) return;
     if (b.dataset.escFmt) e.preventDefault();

@@ -1,6 +1,7 @@
 // Ajustes > Gemini: como o app acessa o Gemini, teste de conexão e perfil do autor.
 import { FRASE_MINIMA } from './cofre.js';
 import { ErroIA } from './gemini.js';
+import { ouvir } from './ui.js';
 
 /* global toast */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -36,15 +37,15 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
     const a = ia.ajustes;
     const perm = a.temPermissao();
     return `<div class="ia-bloco">
-      <div class="campo" style="max-width:440px"><label for="ia-projeto">ID do projeto do Google Cloud <small>onde o uso do Gemini é cobrado</small></label>
+      <div class="larg-form campo"><label for="ia-projeto">ID do projeto do Google Cloud <small>onde o uso do Gemini é cobrado</small></label>
         <div class="linha-doi"><input id="ia-projeto" value="${esc(a.projeto())}" placeholder="ex.: researchbook-123456" autocomplete="off" spellcheck="false"><button class="btn" data-ia-projeto>Salvar</button></div></div>
       <p class="ia-status ${perm ? 'ok' : ''}"><i></i>${perm ? 'Permissão do Gemini concedida neste login.' : 'O login atual ainda não tem a permissão do Gemini.'}</p>
-      ${perm ? '' : '<button class="btn prim" data-ia-conectar>Conectar o Gemini</button>'}
+      ${perm ? '' : '<button class="btn prim" data-ia-conectar data-ocupado="Conectando…">Conectar o Gemini</button>'}
       <details class="como"><summary>O que preparar no Google</summary><ol>
         <li>No Google Cloud, no projeto do researchbook (o mesmo do login), ative a <b>Generative Language API</b>.</li>
         <li>Na tela de permissão OAuth do mesmo projeto, acrescente a permissão <code>generative-language.retriever</code>.</li>
         <li>No Google AI Studio, importe esse projeto, ligue a cobrança e defina um <b>limite de gasto mensal</b> (Spend &gt; Monthly spend cap).</li>
-        <li>Cole aqui o ID do projeto e toque em "Conectar o Gemini". O Google vai pedir a permissão nova.</li>
+        <li>Cole aqui o ID do projeto e selecione "Conectar o Gemini". O Google vai pedir a permissão nova.</li>
         <li>Se o projeto do Gemini for de outra conta Google: nessa conta, dê à conta do researchbook o papel <b>Consumidor do Service Usage</b> no projeto (IAM).</li>
       </ol></details>
     </div>`;
@@ -59,16 +60,16 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
     }
     if (estadoCofre === 'trancado') {
       return `<div class="ia-bloco"><p class="ia-status"><i></i>Há um cofre no seu Drive. Digite a frase-senha para abrir neste aparelho.</p>
-        <div class="campo" style="max-width:440px"><label for="ia-frase">Frase-senha</label><input id="ia-frase" type="password" autocomplete="current-password"></div>
+        <div class="larg-form campo"><label for="ia-frase">Frase-senha</label><input id="ia-frase" type="password" autocomplete="current-password"></div>
         <label class="ia-check"><input type="checkbox" id="ia-lembrar"> Lembrar neste aparelho</label>${m}
-        <div class="ia-linha"><button class="btn prim" data-ia-desbloquear>Abrir o cofre</button><button class="btn fant" data-ia-trocar>Guardar outra chave</button></div></div>`;
+        <div class="ia-linha"><button class="btn prim" data-ia-desbloquear data-ocupado="Abrindo…">Abrir o cofre</button><button class="btn fant" data-ia-trocar>Guardar outra chave</button></div></div>`;
     }
     return `<div class="ia-bloco">
-      <div class="campo" style="max-width:440px"><label for="ia-chave">Chave do Gemini <small>do Google AI Studio</small></label><input id="ia-chave" type="password" autocomplete="off" spellcheck="false"></div>
-      <div class="campo" style="max-width:440px"><label for="ia-frase-nova">Frase-senha <small>pelo menos ${FRASE_MINIMA} caracteres; várias palavras são mais fáceis de lembrar</small></label><input id="ia-frase-nova" type="password" autocomplete="new-password"></div>
-      <div class="campo" style="max-width:440px"><label for="ia-frase-conf">Repita a frase-senha</label><input id="ia-frase-conf" type="password" autocomplete="new-password"></div>
+      <div class="larg-form campo"><label for="ia-chave">Chave do Gemini <small>do Google AI Studio</small></label><input id="ia-chave" type="password" autocomplete="off" spellcheck="false"></div>
+      <div class="larg-form campo"><label for="ia-frase-nova">Frase-senha <small>pelo menos ${FRASE_MINIMA} caracteres; várias palavras são mais fáceis de lembrar</small></label><input id="ia-frase-nova" type="password" autocomplete="new-password"></div>
+      <div class="larg-form campo"><label for="ia-frase-conf">Repita a frase-senha</label><input id="ia-frase-conf" type="password" autocomplete="new-password"></div>
       <label class="ia-check"><input type="checkbox" id="ia-lembrar"> Lembrar neste aparelho</label>${m}
-      <button class="btn prim" data-ia-guardar>Guardar no cofre</button>
+      <button class="btn prim" data-ia-guardar data-ocupado="Guardando…">Guardar no cofre</button>
       <p class="mute ia-nota">A chave vai para o seu Drive cifrada com a frase-senha (AES de 256 bits). Sem a frase, nem o app consegue abrir. Se esquecer a frase, guarde a chave de novo.</p>
     </div>`;
   }
@@ -88,11 +89,11 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
           <span><b>Chave num cofre no seu Drive</b><small>A chave fica cifrada com uma frase-senha sua. Use quando a chave for de outra conta Google, ou se o login não funcionar com o Gemini.</small></span></label>
       </div>
       ${modo === 'google' ? blocoGoogle() : modo === 'cofre' ? blocoCofre() : ''}
-      ${modo ? `<div class="ia-linha"><button class="btn" data-ia-testar>Testar conexão</button></div>${t}` : ''}
+      ${modo ? `<div class="ia-linha"><button class="btn" data-ia-testar data-ocupado="Testando…">Testar conexão</button></div>${t}` : ''}
       <h3 class="ia-sub">Perfil do autor</h3>
       <p>Quem você é, como escreve e o que prefere. Entra em todo pedido à IA e fica no seu Drive (memoria/autor.md), fora do código do app.</p>
       <div class="campo"><label for="ia-perfil">Perfil</label><textarea id="ia-perfil" rows="8">${esc(perfilTexto)}</textarea></div>
-      <button class="btn" data-ia-perfil>Salvar perfil</button>
+      <button class="btn" data-ia-perfil data-ocupado="Salvando…">Salvar perfil</button>
       <div class="aviso"><span>ⓘ</span><div>Defina um limite de gasto mensal no Google AI Studio (Spend &gt; Monthly spend cap). Mesmo que algo dê errado, o gasto para no limite.</div></div>
     </section>`;
   }
@@ -109,7 +110,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
       if (e.target.value === 'cofre') atualizar();
     }
   });
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-ia-projeto],[data-ia-conectar],[data-ia-testar],[data-ia-guardar],[data-ia-desbloquear],[data-ia-trancar],[data-ia-trocar],[data-ia-perfil]');
     if (!b) return;
     const v = (id) => document.getElementById(id)?.value || '';

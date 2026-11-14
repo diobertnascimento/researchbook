@@ -9,6 +9,7 @@ import { FUNCOES } from './leitor-pdf.js';
 import { PERGUNTAS } from './fichamento-ui.js';
 import { TIPOS_ARG } from './argumentos-ui.js';
 import { ETAPAS, dataCurta } from './progresso.js';
+import { ouvir } from './ui.js';
 
 /* global toast */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -198,7 +199,7 @@ export function criarConflitosUI({ bib, dados, registrar }) {
       lista.length ? `${lista.length} ${lista.length === 1 ? 'item mudou' : 'itens mudaram'} em dois aparelhos antes de sincronizar. A versão mais recente ficou em uso; a outra está guardada aqui até você decidir.` : 'Nada para revisar.'
     }</p></div>${lista.length > 1 ? '<div class="acoes"><button class="btn" data-conf-manter-todos>Manter todas as versões em uso</button></div>' : ''}</div>`;
     const como = `<details class="como"><summary>Como um conflito acontece?</summary><p>Cada aparelho guarda uma cópia dos dados e sincroniza com o Drive. Se você muda o mesmo item em dois aparelhos antes de um deles sincronizar, o app fica com a mudança mais recente e guarda a outra, em vez de jogá-la fora. Os conflitos ficam só no aparelho onde foram encontrados.</p></details>`;
-    if (!lista.length) return `${topo}<div class="bib-vazia"><h2>Nenhum conflito</h2><p>Quando o mesmo item mudar em dois aparelhos antes de sincronizar, as duas versões aparecem aqui para você escolher.</p><a class="btn" href="#ajustes">Voltar aos ajustes</a></div>${como}`;
+    if (!lista.length) return `${topo}<div class="bib-vazia"><h2>Nenhum conflito</h2><p>Quando o mesmo item mudar em dois aparelhos antes de sincronizar, as duas versões aparecem aqui para você escolher.</p><a class="btn" href="#ajustes/pasta">Voltar aos ajustes</a></div>${como}`;
     return `${topo}${lista.map(cartao).join('')}${como}`;
   }
 
@@ -242,7 +243,7 @@ export function criarConflitosUI({ bib, dados, registrar }) {
     });
   }
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-conf-manter],[data-conf-usar],[data-conf-manter-todos]');
     if (!b) return;
     b.disabled = true;

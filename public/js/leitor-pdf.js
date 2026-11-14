@@ -97,7 +97,7 @@ export async function montarLeitor({ palco, blob, grifos = [], paginaInicial = 1
         const m = document.createElement('div');
         m.className = `pdf-grifo f-${g.funcao}`;
         m.dataset.grifoId = g.id;
-        m.title = 'Grifo: toque para mudar a cor ou apagar';
+        m.title = 'Grifo: selecione para mudar a cor ou apagar';
         Object.assign(m.style, { left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` });
         camada.appendChild(m);
       }

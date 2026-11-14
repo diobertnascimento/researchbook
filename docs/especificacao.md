@@ -20,6 +20,15 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Atalhos para uso diário.** Ctrl+K busca tudo; F e Esc no leitor.
 - **Laço de hábito ético.** Gatilho (Hoje mostra um próximo passo) → ação pequena (continuar do parágrafo exato, 3 cartões) → recompensa variável (pergunta do tutor, conexão nova) → investimento (grifos e fichamentos geram os cartões e o passo de amanhã) + celebração no fim da sessão. Sem sequência de dias que pune falhas, sem notificações, sem urgência falsa.
 
+## Design system v2 (v1.1.0, 14/11/2026)
+Pedido do Diobert: elevar a experiência, com botões consistentes, estado de carregando, tamanhos de letra estáveis e as melhores práticas recentes de UX writing, UX design e UI design de fontes canônicas, na estética de apps de produtividade como Claude e Notion. Detalhes, tokens e regras em `docs/design-system.md`.
+- **Tipografia (decisão do Diobert):** Inter na interface e Literata nos títulos de página, no conteúdo e na leitura. Lexend saiu.
+- **Sistema pequeno:** sete tamanhos de letra (12, 13, 14, 16, 18, 22, 30; 26 no celular), três alturas de botão (28, 34, 40; 34, 40, 44 no toque), quatro raios. Cores neutras quentes, petróleo como única cor de ação. Contraste conferido pela WCAG 2.2 (texto 4,5:1, contorno de campo 3:1, alvo mínimo de 24 px).
+- **Carregando visível:** botão que espera rede ou IA mostra o giro depois de 300 ms, mantém a largura, troca o rótulo pelo gerúndio ("Diagnosticando…") e ignora o clique repetido. Telas abrem com o esqueleto do conteúdo no lugar de "Abrindo seus dados…".
+- **Ajustes em subpáginas:** `#ajustes/ia`, `modelos`, `custo`, `registros`, `aparelho`, `agenda`, `cores` e `pasta`, uma seção por vez com o índice sempre à vista (antes era uma página de quase 9 mil pixels).
+- **Textos:** maiúscula só no início, botão com verbo e objeto, verbos que servem para mouse e toque ("selecione", não "toque em"), erros com o próximo passo. Glossário: "obra" para cada item da biblioteca ("Adicionar obra"), "Nova disciplina"/"Criar disciplina", "Marcar para buscar".
+- **Um teste guarda o sistema** (`tests/design.spec.js`): escala de tipos e alturas de botão em todas as telas, alvos de 24 px, contraste dos tokens, nenhum estilo solto no código, estado de carregando e Ajustes em subpáginas.
+
 ## Armazenamento e acesso (decisão de 13/11/2026: caminho B)
 - O researchbook vira um app web instalável (PWA), servido por HTTPS no GitHub Pages, usado nos dois computadores e no celular. Substitui o HTML aberto direto do computador.
 - Dados numa pasta `researchbook/` no Google Drive, acessada pela API do Drive com login Google (escopo `drive.file`: o app só enxerga o que ele mesmo criou). Cópia local no IndexedDB para funcionar sem internet; sincroniza quando a conexão volta. Conflitos de edição em dois aparelhos: guarda as duas versões e pergunta.
@@ -195,6 +204,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v1.1.0 (14/11/2026): design system v2 (Inter e Literata, tokens, botões com carregando, esqueletos, Ajustes em subpáginas, revisão dos textos).
 - v1.0.0 (14/11/2026): etapa 14, busca real, modelos por tarefa, uso e custo, marca-textos, limpeza das marcas de apagado e código fora do HTML. Primeira versão completa.
 - v0.19.0 (14/11/2026): etapa 13, cartões com revisão espaçada, comentários do tutor no fichamento e Overview do autor.
 - v0.18.0 (14/11/2026): etapa 12, Google Agenda com a permissão mais estreita, eventos espelhados na agenda researchbook.
@@ -210,4 +220,4 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-- Usar a versão 1.0.0 no dia a dia e ajustar o que aparecer. O que ficou de fora: importar de volta um .docx editado no Word; mudanças feitas direto no Google Agenda não voltam para o app; grifos dentro de PDFs de orientação.
+- Usar a versão 1.1.0 no dia a dia e ajustar o que aparecer. O que ficou de fora: importar de volta um .docx editado no Word; mudanças feitas direto no Google Agenda não voltam para o app; grifos dentro de PDFs de orientação.

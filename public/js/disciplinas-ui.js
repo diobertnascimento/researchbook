@@ -6,6 +6,7 @@ import { citacao } from './abnt.js';
 import { medirAutoria } from './escrita.js';
 import { FUNCOES } from './leitor-pdf.js';
 import { ErroIA } from './gemini.js';
+import { ouvir } from './ui.js';
 
 /* global I, toast, S */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -33,7 +34,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   const depois = (fn) => setTimeout(fn, 60); // a troca de tela esconde o aviso: mostra depois dela
 
   /* ---------- Pedaços ---------- */
-  const ponto = (cor, tam = 10) => `<span class="proj-dot" style="display:inline-block;width:${tam}px;height:${tam}px;background:${cor}"></span>`;
+  const ponto = (cor, tam = 10) => `<span class="proj-dot" style="width:${tam}px;height:${tam}px;background:${cor}"></span>`;
   const horario = (d) => [d.dia_semana ? `${NOMES_DIA[d.dia_semana] || d.dia_semana}` : '', d.inicio ? `${d.inicio}${d.fim ? ` às ${d.fim}` : ''}` : ''].filter(Boolean).join(', ');
   function linhaEvento(e, { acoes = true } = {}) {
     const [, m, dia] = e.dia.split('-').map(Number);
@@ -76,18 +77,18 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
         const aula = prox.find((e) => e.tipo === 'aula');
         const n = ent ? diasAte(ent.dia) : null;
         return `<article class="disc">
-          <div><span class="chip">${esc(d.semestre || 'Disciplina')}</span><h2 style="margin-top:10px">${ponto(d.cor, 11)} ${esc(d.nome)}</h2><div class="prof">${esc([d.docente, horario(d)].filter(Boolean).join('. ')) || 'Sem docente cadastrado'}</div></div>
-          <div><div class="mute" style="font-size:var(--t-s)">${ls.length ? `${feitas} de ${ls.length} ${ls.length === 1 ? 'leitura concluída' : 'leituras concluídas'}` : 'Nenhuma obra da biblioteca marcada com esta disciplina'}</div>${ls.length ? `<div class="barra" style="margin-bottom:0"><i style="width:${(feitas / ls.length) * 100}%"></i></div>` : ''}</div>
-          ${aula ? `<div class="mute" style="font-size:var(--t-s)">Próxima aula: ${dataCurta(aula.dia)}${aula.inicio ? `, ${aula.inicio}` : ''}</div>` : ''}
+          <div><span class="chip">${esc(d.semestre || 'Disciplina')}</span><h2 class="mt-3">${ponto(d.cor, 11)} ${esc(d.nome)}</h2><div class="prof">${esc([d.docente, horario(d)].filter(Boolean).join('. ')) || 'Sem docente cadastrado'}</div></div>
+          <div><div class="t-meta mute">${ls.length ? `${feitas} de ${ls.length} ${ls.length === 1 ? 'leitura concluída' : 'leituras concluídas'}` : 'Nenhuma obra da biblioteca marcada com esta disciplina'}</div>${ls.length ? `<div class="barra mb-0"><i style="width:${(feitas / ls.length) * 100}%"></i></div>` : ''}</div>
+          ${aula ? `<div class="t-meta mute">Próxima aula: ${dataCurta(aula.dia)}${aula.inicio ? `, ${aula.inicio}` : ''}</div>` : ''}
           <div class="entrega"><span>${ent ? esc(ent.titulo) : 'Próxima entrega'}</span><b class="${n !== null && n <= 3 ? 'urg' : ''}">${ent ? dataCurta(ent.dia) : 'nenhuma'}</b></div>
           <div class="acoes"><a class="btn" href="#disciplina/${encodeURIComponent(d.id)}">Abrir</a></div>
         </article>`;
       })
       .join('');
     return `<div class="topo"><div><h1>Projetos</h1><p>A dissertação e as disciplinas. Todas usam a mesma biblioteca.</p></div>
-        <div class="acoes"><button class="btn prim" data-dsc-nova>${icone('mais')}Cadastrar disciplina</button></div></div>
+        <div class="acoes"><button class="btn prim" data-dsc-nova>${icone('mais')}Nova disciplina</button></div></div>
       <div class="disc-grid">
-        <article class="disc"><div><span class="chip">Mestrado</span><h2 style="margin-top:10px">${ponto('#1F4A5A', 11)} Dissertação</h2><div class="prof">Revisão do projeto, orientação e argumentos</div></div>
+        <article class="disc"><div><span class="chip">Mestrado</span><h2 class="mt-3">${ponto('#1F4A5A', 11)} Dissertação</h2><div class="prof">Revisão do projeto, orientação e argumentos</div></div>
           <div class="acoes"><a class="btn" href="#projeto">Abrir</a><a class="btn fant" href="#argumentos">Argumentos</a></div></article>
         ${cards}
         ${ds.length ? '' : '<button class="disc nova" data-dsc-nova><span><b>Cadastrar a primeira disciplina</b>Nome, docente e horário. Com o plano de ensino em PDF, a IA lê as aulas, as leituras e as entregas para você conferir.</span></button>'}
@@ -106,7 +107,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     return `<a class="voltar" href="#disciplinas">${icone('voltar')}Projetos</a>
       <div class="topo"><div><h1>${ponto(d.cor, 14)} ${esc(d.nome)}${d.arquivada ? ' <span class="chip">Arquivada</span>' : ''}</h1><p>${esc([d.docente, d.semestre, horario(d)].filter(Boolean).join(', ')) ? `${esc([d.docente, d.semestre, horario(d)].filter(Boolean).join(', '))}.` : 'Complete docente, semestre e horário em Editar.'}${prox ? ` Próxima entrega: ${esc(prox.titulo)}, em ${dataCurta(prox.dia)}.` : ''}</p></div>
         <div class="acoes"><button class="btn fant" data-dsc-editar="${esc(d.id)}">Editar</button><button class="btn" data-dsc-agendar="${esc(d.id)}">${icone('mais')}Agendar</button><button class="btn prim" data-dsc-gravacao="${esc(d.id)}">${icone('upload')}Enviar gravação de aula</button></div></div>
-      <nav class="subnav" style="margin-bottom:22px" aria-label="Seções da disciplina">${abas.map(([k, n]) => `<a href="#disciplina/${encodeURIComponent(d.id)}" data-disc-aba="${k}" class="${k === aba ? 'on' : ''}" ${k === aba ? 'aria-current="page"' : ''}>${n}</a>`).join('')}</nav>
+      <nav class="mb-6 subnav" aria-label="Seções da disciplina">${abas.map(([k, n]) => `<a href="#disciplina/${encodeURIComponent(d.id)}" data-disc-aba="${k}" class="${k === aba ? 'on' : ''}" ${k === aba ? 'aria-current="page"' : ''}>${n}</a>`).join('')}</nav>
       ${corpo(d)}`;
   }
 
@@ -118,25 +119,25 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     const feitas = ls.filter(concluida).length;
     return `<div class="proj-grid">
       <div>
-        <section class="bloco" style="margin-bottom:16px"><h3>Próximos compromissos</h3>${evs.length ? `<div class="evs">${evs.map((e) => linhaEvento(e)).join('')}</div>` : '<p class="mute">Nada agendado. Use "Agendar" para aulas, entregas e sessões de estudo.</p>'}${evs.length ? '<button class="btn fant" style="margin-top:6px" data-disc-aba="agenda">Ver agenda</button>' : ''}</section>
-        ${andamento.map((a) => `<section class="bloco" style="margin-bottom:16px"><h3>Em andamento</h3>${aulaLinha(d, a)}</section>`).join('')}
-        ${ult ? `<section class="bloco"><h3>Última aula transcrita</h3>${aulaLinha(d, ult)}<a class="btn" style="margin-top:8px" href="#aula/${encodeURIComponent(d.id)}/${encodeURIComponent(ult.id)}">Abrir transcrição</a></section>` : `<section class="bloco"><h3>Aulas</h3><p class="mute">Envie a gravação de uma aula: o Gemini transcreve, resume e encontra os conceitos e as leituras citadas.</p><button class="btn" data-dsc-gravacao="${esc(d.id)}">Enviar gravação de aula</button></section>`}
+        <section class="mb-4 bloco"><h3>Próximos compromissos</h3>${evs.length ? `<div class="evs">${evs.map((e) => linhaEvento(e)).join('')}</div>` : '<p class="mute">Nada agendado. Use "Agendar" para aulas, entregas e sessões de estudo.</p>'}${evs.length ? '<button class="mt-2 btn fant" data-disc-aba="agenda">Ver agenda</button>' : ''}</section>
+        ${andamento.map((a) => `<section class="mb-4 bloco"><h3>Em andamento</h3>${aulaLinha(d, a)}</section>`).join('')}
+        ${ult ? `<section class="bloco"><h3>Última aula transcrita</h3>${aulaLinha(d, ult)}<a class="mt-2 btn" href="#aula/${encodeURIComponent(d.id)}/${encodeURIComponent(ult.id)}">Abrir transcrição</a></section>` : `<section class="bloco"><h3>Aulas</h3><p class="mute">Envie a gravação de uma aula: o Gemini transcreve, resume e encontra os conceitos e as leituras citadas.</p><button class="btn" data-dsc-gravacao="${esc(d.id)}">Enviar gravação de aula</button></section>`}
       </div>
       <aside class="lado">
         <section class="bloco"><h3>Anotações da disciplina</h3>
           <form class="nota-rap" data-dsc-anotar="${esc(d.id)}"><input id="dsc-nota" placeholder="Anote algo rápido" aria-label="Nova anotação" autocomplete="off"><button class="btn" type="submit">Salvar</button></form>
           ${(d.anotacoes || []).length ? `<ul class="notas-d">${d.anotacoes.map((n) => `<li><span>${esc(n.texto)}</span><small>${new Date(n.em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} <button class="lnk" data-dsc-tirar-nota="${esc(n.id)}" aria-label="Apagar anotação">Apagar</button></small></li>`).join('')}</ul>` : ''}</section>
-        <section class="bloco"><h3>Leituras</h3>${ls.length ? `<div class="mute" style="font-size:var(--t-s)">${feitas} de ${ls.length} concluídas</div><div class="barra"><i style="width:${(feitas / ls.length) * 100}%"></i></div>` : '<p class="mute" style="font-size:var(--t-s)">Marque obras da biblioteca com esta disciplina no campo Projeto.</p>'}<button class="btn fant" data-disc-aba="leituras">Ver leituras</button></section>
+        <section class="bloco"><h3>Leituras</h3>${ls.length ? `<div class="t-meta mute">${feitas} de ${ls.length} concluídas</div><div class="barra"><i style="width:${(feitas / ls.length) * 100}%"></i></div>` : '<p class="t-meta mute">Marque obras da biblioteca com esta disciplina no campo Projeto.</p>'}<button class="btn fant" data-disc-aba="leituras">Ver leituras</button></section>
         ${(d.paraBuscar || []).length ? `<section class="bloco"><h3>Para buscar</h3><ul class="notas-d">${d.paraBuscar.map((p) => `<li>${esc(p.texto)}<small>${esc(p.origem || '')}</small></li>`).join('')}</ul></section>` : ''}
       </aside></div>`;
   }
 
   function abaAulas(d) {
     const as = disc.aulasDe(d.id);
-    return `<section class="bloco" style="max-width:900px">
+    return `<section class="larg-pagina bloco">
       ${as.length ? `<div class="aulas">${as.map((a) => aulaLinha(d, a)).join('')}</div>` : '<p class="mute">Nenhuma aula ainda.</p>'}
-      <div class="ia-linha" style="margin-top:12px"><button class="btn prim" data-dsc-gravacao="${esc(d.id)}">${icone('upload')}Enviar gravação de aula</button><button class="btn fant" data-dsc-nova-aula="${esc(d.id)}">Registrar aula sem gravação</button></div>
-      <details class="ajuda-det" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--linha)"><summary>Como funcionam as gravações?</summary><p style="margin:10px 0 0;font-size:var(--t-s);color:var(--grafite)">O áudio fica neste aparelho e no seu Drive. O Gemini transcreve em partes de 15 minutos; se você fechar o app, a transcrição continua de onde parou quando você abrir de novo neste aparelho. Depois ele resume, lista os conceitos e as leituras citadas e sugere perguntas para estudar. A transcrição pode ser grifada com as mesmas cores dos textos. Grave só com o consentimento da docência e da turma.</p></details></section>`;
+      <div class="mt-3 ia-linha"><button class="btn prim" data-dsc-gravacao="${esc(d.id)}">${icone('upload')}Enviar gravação de aula</button><button class="btn fant" data-dsc-nova-aula="${esc(d.id)}">Registrar aula sem gravação</button></div>
+      <details class="mt-3 pt-4 borda-topo ajuda-det"><summary>Como funcionam as gravações?</summary><p class="m-0 mt-3 t-meta mute">O áudio fica neste aparelho e no seu Drive. O Gemini transcreve em partes de 15 minutos; se você fechar o app, a transcrição continua de onde parou quando você abrir de novo neste aparelho. Depois ele resume, lista os conceitos e as leituras citadas e sugere perguntas para estudar. A transcrição pode ser grifada com as mesmas cores dos textos. Grave só com o consentimento da docência e da turma.</p></details></section>`;
   }
 
   function abaLeituras(d) {
@@ -144,13 +145,13 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     const plano = d.leiturasPlano || [];
     return `<div class="proj-grid"><section class="bloco">
       <h3>Na biblioteca</h3>
-      ${ls.length ? `<div class="lst-leit">${ls.map((l) => `<a class="lc" href="#leitor/${encodeURIComponent(l.id)}"><b style="font-weight:500">${esc(citacao(l))}</b> ${esc(l.titulo)}<span>${pipsHTML(l.etapa || 0)} ${ETAPAS[l.etapa || 0]}</span></a>`).join('')}</div>` : '<p class="mute">Nenhuma obra marcada com esta disciplina. Na ficha da obra, escreva o nome da disciplina no campo Projeto.</p>'}
-      ${plano.length ? `<h3 style="margin-top:22px">Do plano de ensino</h3><ul class="plano-l">${plano.map((p) => {
+      ${ls.length ? `<div class="lst-leit">${ls.map((l) => `<a class="lc" href="#leitor/${encodeURIComponent(l.id)}"><b class="forte">${esc(citacao(l))}</b> ${esc(l.titulo)}<span>${pipsHTML(l.etapa || 0)} ${ETAPAS[l.etapa || 0]}</span></a>`).join('')}</div>` : '<p class="mute">Nenhuma obra marcada com esta disciplina. Na ficha da obra, escreva o nome da disciplina no campo Projeto.</p>'}
+      ${plano.length ? `<h3 class="mt-6">Do plano de ensino</h3><ul class="plano-l">${plano.map((p) => {
         const l = p.leituraId && bib.obter(p.leituraId);
-        return `<li><span class="chip ${p.obrigatoria ? '' : 'leve'}">${p.obrigatoria ? 'Obrigatória' : 'Complementar'}</span><span>${esc(p.referencia)}</span>${l ? `<a class="btn fant" href="#leitor/${encodeURIComponent(l.id)}">Abrir</a>` : '<span class="mute" style="font-size:var(--t-xs)">Fora da biblioteca</span>'}</li>`;
+        return `<li><span class="chip ${p.obrigatoria ? '' : 'leve'}">${p.obrigatoria ? 'Obrigatória' : 'Complementar'}</span><span>${esc(p.referencia)}</span>${l ? `<a class="btn fant" href="#leitor/${encodeURIComponent(l.id)}">Abrir</a>` : '<span class="t-legenda mute">Fora da biblioteca</span>'}</li>`;
       }).join('')}</ul>` : ''}
       </section>
-      <aside class="lado"><section class="bloco"><h3>Plano de ensino</h3>${d.plano ? `<p style="margin:0 0 10px">${esc(d.plano.nome)} está no seu Drive.</p>` : '<p style="margin:0 0 10px">Envie o PDF: a IA lê as aulas, as leituras e as entregas, e você confere antes de salvar.</p>'}<label class="btn">${d.plano ? 'Ler outro plano' : 'Ler o plano de ensino'}<input type="file" accept="application/pdf" data-dsc-plano="${esc(d.id)}" hidden></label></section>
+      <aside class="lado"><section class="bloco"><h3>Plano de ensino</h3>${d.plano ? `<p class="m-0 mb-3">${esc(d.plano.nome)} está no seu Drive.</p>` : '<p class="m-0 mb-3">Envie o PDF: a IA lê as aulas, as leituras e as entregas, e você confere antes de salvar.</p>'}<label class="btn">${d.plano ? 'Ler outro plano' : 'Ler o plano de ensino'}<input type="file" accept="application/pdf" data-dsc-plano="${esc(d.id)}" hidden></label></section>
       ${(d.paraBuscar || []).length ? `<section class="bloco"><h3>Para buscar</h3><ul class="notas-d">${d.paraBuscar.map((p) => `<li>${esc(p.texto)}<small>${esc(p.origem || '')} <button class="lnk" data-dsc-achei="${esc(p.id)}">Já adicionei</button></small></li>`).join('')}</ul></section>` : ''}
       </aside></div>`;
   }
@@ -161,7 +162,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       const a = medirAutoria(t);
       return `<a class="txt-card" href="#texto/${encodeURIComponent(t.id)}"><div><div class="t">${esc(t.titulo)}</div><div class="m">${esc(t.tipo)}. ${a.total}${t.limite ? ` de ${t.limite}` : ''} palavras${t.entrega ? `, entrega ${dataCurta(t.entrega)}` : ''}</div></div><div class="et"><span>${t.passo <= 3 ? 'Preparando' : t.passo === 4 ? 'Escrevendo' : 'Em revisão'}</span></div><div class="autoria"><span>Participação da IA: <b>${a.participacao}%</b></span></div></a>`;
     }).join('') : '<div class="vazio">Nenhum texto desta disciplina.</div>'}</div>
-    <div class="ia-linha" style="margin-top:14px"><button class="btn" data-dsc-novo-texto="${esc(d.id)}">${icone('mais')}Novo texto desta disciplina</button></div>`;
+    <div class="mt-3 ia-linha"><button class="btn" data-dsc-novo-texto="${esc(d.id)}">${icone('mais')}Novo texto desta disciplina</button></div>`;
   }
 
   function abaAgenda(d) {
@@ -182,9 +183,9 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       grupos.at(-1)[1].push(e);
     }
     return `<div class="proj-grid">
-      <section class="bloco">${grupos.length ? grupos.map(([g, es]) => `<h3 style="margin-top:6px">${g}</h3><div class="evs">${es.map((e) => linhaEvento(e)).join('')}</div>`).join('') : '<p class="mute">Nada agendado nos próximos meses.</p>'}
-        <button class="btn" style="margin-top:12px" data-dsc-agendar="${esc(d.id)}">${icone('mais')}Agendar</button></section>
-      <aside class="lado"><section class="bloco"><h3>Google Agenda</h3><p style="margin:0 0 12px">${window.rb?.agenda?.estado().ligada ? 'Os eventos vão para a agenda researchbook da sua conta Google. Se você mudar ou apagar aqui, muda ou some lá também.' : 'Os eventos ficam no researchbook, em todos os seus aparelhos. Para vê-los também no Google Agenda, ligue em Ajustes.'}</p><a class="btn fant" href="#ajustes">Ajustes da agenda</a></section></aside>
+      <section class="bloco">${grupos.length ? grupos.map(([g, es]) => `<h3 class="mt-2">${g}</h3><div class="evs">${es.map((e) => linhaEvento(e)).join('')}</div>`).join('') : '<p class="mute">Nada agendado nos próximos meses.</p>'}
+        <button class="mt-3 btn" data-dsc-agendar="${esc(d.id)}">${icone('mais')}Agendar</button></section>
+      <aside class="lado"><section class="bloco"><h3>Google Agenda</h3><p class="m-0 mb-3">${window.rb?.agenda?.estado().ligada ? 'Os eventos vão para a agenda researchbook da sua conta Google. Se você mudar ou apagar aqui, muda ou some lá também.' : 'Os eventos ficam no researchbook, em todos os seus aparelhos. Para vê-los também no Google Agenda, ligue em Ajustes.'}</p><a class="btn fant" href="#ajustes/agenda">Ajustes da agenda</a></section></aside>
     </div>`;
   }
 
@@ -206,20 +207,20 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     else main = `<article class="doc transcr transcr-real" data-aula="${esc(a.id)}" lang="pt-BR"><p class="mute">Abrindo a transcrição…</p></article>`;
     const r = a.resumo;
     const proxAula = disc.proximos(d.id, 60).find((e) => e.tipo === 'aula');
-    return `<button class="voltar" style="background:none;border:0;padding:0;cursor:pointer" data-voltar-disc="${esc(d.id)}">${icone('voltar')}${esc(d.nome)}</button>
-      <div class="topo"><div><h1 style="font-size:28px">Aula ${a.numero}${a.tema ? `: ${esc(a.tema)}` : ''}</h1><p>${dataLonga(a.data)}${a.audio?.duracao ? `, ${duracaoTexto(a.audio.duracao)}` : ''}. ${stAula(a)}</p></div>
+    return `<button class="fundo-0 b-0 p-0 cursor voltar" data-voltar-disc="${esc(d.id)}">${icone('voltar')}${esc(d.nome)}</button>
+      <div class="topo"><div><h1 class="t-titulo-1">Aula ${a.numero}${a.tema ? `: ${esc(a.tema)}` : ''}</h1><p>${dataLonga(a.data)}${a.audio?.duracao ? `, ${duracaoTexto(a.audio.duracao)}` : ''}. ${stAula(a)}</p></div>
         <div class="acoes"><button class="btn fant" data-dsc-editar-aula="${esc(a.id)}">Editar aula</button><button class="btn" data-dsc-agendar="${esc(d.id)}" data-tipo="estudo" data-titulo="Revisar a aula ${a.numero}">${icone('mais')}Agendar revisão</button></div></div>
       ${a.audio ? `<div class="audio-real" data-aula-audio="${esc(a.id)}"><audio controls preload="metadata" aria-label="Gravação da aula"></audio><small class="mute" id="audio-msg"></small></div>` : ''}
       <div class="aula-grid">
         <div>
-          ${a.audio && (pronta || aba === 'notas') ? `<nav class="subnav" style="margin-bottom:18px">${[['transcricao', 'Transcrição'], ['resumo', 'Resumo'], ['notas', 'Suas anotações']].map(([x, n]) => `<a href="#aula/${encodeURIComponent(d.id)}/${encodeURIComponent(a.id)}" data-aula-aba="${x}" class="${x === aba ? 'on' : ''}">${n}</a>`).join('')}</nav>` : ''}
+          ${a.audio && (pronta || aba === 'notas') ? `<nav class="mb-4 subnav">${[['transcricao', 'Transcrição'], ['resumo', 'Resumo'], ['notas', 'Suas anotações']].map(([x, n]) => `<a href="#aula/${encodeURIComponent(d.id)}/${encodeURIComponent(a.id)}" data-aula-aba="${x}" class="${x === aba ? 'on' : ''}">${n}</a>`).join('')}</nav>` : ''}
           ${main}
         </div>
         <aside class="lado">
           ${r?.conceitos?.length ? `<section class="bloco"><h3>Conceitos da aula</h3><div class="termos">${r.conceitos.map((c) => `<button class="chip" data-dsc-ir="${esc(c.tempo)}" title="${esc(c.definicao_em_aula)}">${esc(c.nome)}</button>`).join('')}</div></section>` : ''}
           ${r?.leituras?.length ? `<section class="bloco"><h3>Leituras citadas</h3>${leiturasCitadas(d, r.leituras)}</section>` : ''}
-          ${a.grifos?.length ? `<section class="bloco"><h3>Seus grifos</h3><div class="grifos-aula">${a.grifos.map((g) => `<button class="lc" data-dsc-ir="${esc(g.tempo)}"><i class="c-${g.funcao}" style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></i>${esc(g.texto.length > 120 ? g.texto.slice(0, 120) + '…' : g.texto)}<span>${esc(g.tempo)}</span></button>`).join('')}</div></section>` : ''}
-          <section class="bloco"><h3>Próxima aula</h3><p style="margin:0">${proxAula ? `${esc(proxAula.titulo)}, ${dataCurta(proxAula.dia)}${proxAula.inicio ? `, ${proxAula.inicio}` : ''}` : 'Sem aula agendada.'}</p></section>
+          ${a.grifos?.length ? `<section class="bloco"><h3>Seus grifos</h3><div class="grifos-aula">${a.grifos.map((g) => `<button class="lc" data-dsc-ir="${esc(g.tempo)}"><i class="ponto-cor c-${g.funcao}"></i>${esc(g.texto.length > 120 ? g.texto.slice(0, 120) + '…' : g.texto)}<span>${esc(g.tempo)}</span></button>`).join('')}</div></section>` : ''}
+          <section class="bloco"><h3>Próxima aula</h3><p class="m-0">${proxAula ? `${esc(proxAula.titulo)}, ${dataCurta(proxAula.dia)}${proxAula.inicio ? `, ${proxAula.inicio}` : ''}` : 'Sem aula agendada.'}</p></section>
         </aside>
       </div>`;
   }
@@ -241,7 +242,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   }
 
   function notasHTML(a) {
-    return `<section class="editor" style="margin-top:16px"><h2>Suas anotações</h2><p class="instr">O que você anotou da aula. Fica separado da transcrição e salva sozinho.</p><div class="campo"><textarea id="dsc-notas-aula" data-dsc-notas="${esc(a.id)}" style="min-height:180px" aria-label="Suas anotações da aula">${esc(a.notas || '')}</textarea></div><small class="mute" id="dsc-notas-st"></small></section>`;
+    return `<section class="mt-4 editor"><h2>Suas anotações</h2><p class="instr">O que você anotou da aula. Fica separado da transcrição e salva sozinho.</p><div class="campo"><textarea id="dsc-notas-aula" data-dsc-notas="${esc(a.id)}" style="min-height:180px" aria-label="Suas anotações da aula">${esc(a.notas || '')}</textarea></div><small class="mute" id="dsc-notas-st"></small></section>`;
   }
 
   function leiturasCitadas(d, leituras) {
@@ -250,23 +251,23 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
         const l = x.leituraId && bib.obter(x.leituraId);
         if (l) return `<a class="lc" href="#leitor/${encodeURIComponent(l.id)}">${esc(citacao(l))}<span>Na biblioteca, ${ETAPAS[l.etapa || 0].toLowerCase()}. ${esc(x.o_que_foi_dito || '')}</span></a>`;
         const ja = (d.paraBuscar || []).some((p) => p.texto === x.como_foi_dito);
-        return `<div class="lc"><b style="font-weight:500">${esc(x.como_foi_dito)}</b><span>${esc(x.o_que_foi_dito || '')} Fora da biblioteca.</span>${ja ? '<span>Na lista para buscar.</span>' : `<button class="btn" style="margin-top:8px;padding:4px 11px;font-size:var(--t-xs)" data-dsc-buscar="${esc(x.como_foi_dito)}" data-disc="${esc(d.id)}">Vou buscar</button>`}</div>`;
+        return `<div class="lc"><b class="forte">${esc(x.como_foi_dito)}</b><span>${esc(x.o_que_foi_dito || '')} Fora da biblioteca.</span>${ja ? '<span>Na lista para buscar.</span>' : `<button class="mt-2 btn mini" data-dsc-buscar="${esc(x.como_foi_dito)}" data-disc="${esc(d.id)}">Marcar para buscar</button>`}</div>`;
       })
       .join('');
   }
 
   function resumoHTML(d, a) {
     const r = a.resumo;
-    if (!r) return `<section class="editor"><h2>Resumo da aula</h2><p class="instr">O resumo ainda não foi feito.</p><button class="btn prim" data-dsc-resumir="${esc(a.id)}">Resumir a aula</button></section>`;
+    if (!r) return `<section class="editor"><h2>Resumo da aula</h2><p class="instr">O resumo ainda não foi feito.</p><button class="btn prim" data-dsc-resumir="${esc(a.id)}" data-ocupado="Resumindo…">Resumir a aula</button></section>`;
     const tempo = (t) => (t ? `<button class="ts" data-dsc-ir="${esc(t)}">${esc(t)}</button>` : '');
-    return `<section class="editor"><h2>Resumo da aula</h2><p class="instr">Feito pelo Gemini a partir da transcrição. Cada ponto foi conferido no que foi dito; toque no tempo para ouvir.</p>
+    return `<section class="editor"><h2>Resumo da aula</h2><p class="instr">Feito pelo Gemini a partir da transcrição. Cada ponto foi conferido no que foi dito; selecione o tempo para ouvir.</p>
       ${r.aviso ? `<div class="conf-ia">${esc(r.aviso)}</div>` : ''}
       <ul class="resumo-aula">${r.resumo.map((p) => `<li>${tempo(p.tempo)}${esc(p.texto)}</li>`).join('')}</ul>
       ${r.perguntas?.length ? `<h3 class="sub-res">Perguntas para estudar</h3><ul class="resumo-aula">${r.perguntas.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}
       ${r.combinados?.length ? `<h3 class="sub-res">Combinados da aula</h3><ul class="combinados">${r.combinados.map((c, i) => `<li>${tempo(c.tempo)}<span>${esc(c.tarefa)}${c.prazo ? `, até ${dataCurta(c.prazo)}` : ''}</span>${c.prazo ? `<button class="btn fant" data-dsc-combinado="${i}" data-aula="${esc(a.id)}">Agendar entrega</button>` : ''}</li>`).join('')}</ul>` : ''}
       ${r.conceitos?.length ? `<h3 class="sub-res">Conceitos, como foram definidos em aula</h3><dl class="conceitos-aula">${r.conceitos.map((c) => `<dt>${esc(c.nome)} ${tempo(c.tempo)}</dt><dd>${esc(c.definicao_em_aula)}</dd>`).join('')}</dl>` : ''}
-      ${r.descartados ? `<p class="mute" style="font-size:var(--t-xs)">${r.descartados} ${r.descartados === 1 ? 'ponto foi descartado' : 'pontos foram descartados'} porque o trecho não estava na transcrição.</p>` : ''}
-      <div class="pe"><span class="mute" style="font-size:var(--t-xs)">${esc(r.modelo || '')}</span><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn fant" data-dsc-resumir="${esc(a.id)}">Refazer o resumo</button><button class="btn" data-cart-de="aula:${esc(a.id)}">Criar cartões desta aula</button></span></div></section>`;
+      ${r.descartados ? `<p class="t-legenda mute">${r.descartados} ${r.descartados === 1 ? 'ponto foi descartado' : 'pontos foram descartados'} porque o trecho não estava na transcrição.</p>` : ''}
+      <div class="pe"><span class="t-legenda mute">${esc(r.modelo || '')}</span><span class="flex gap-2 wrap"><button class="btn fant" data-dsc-resumir="${esc(a.id)}" data-ocupado="Resumindo…">Refazer o resumo</button><button class="btn" data-cart-de="aula:${esc(a.id)}" data-ocupado="Propondo cartões…">Criar cartões desta aula</button></span></div></section>`;
   }
 
   /** Monta a transcrição com os grifos, o áudio e o seletor de cores (depois que a tela entra). */
@@ -309,7 +310,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
           if (bruto.slice(g.ini, g.fim) !== g.texto) continue;
           bruto = `${bruto.slice(0, g.ini)}\u0001${g.id}\u0002${bruto.slice(g.ini, g.fim)}\u0003${bruto.slice(g.fim)}`;
         }
-        texto = esc(bruto).replace(/\u0001([^\u0002]+)\u0002/g, (_, id) => `<mark class="${esc((a.grifos.find((g) => g.id === id) || {}).funcao)}" data-grifo-aula="${esc(id)}" title="Toque para tirar o grifo">`).replace(/\u0003/g, '</mark>');
+        texto = esc(bruto).replace(/\u0001([^\u0002]+)\u0002/g, (_, id) => `<mark class="${esc((a.grifos.find((g) => g.id === id) || {}).funcao)}" data-grifo-aula="${esc(id)}" title="Selecione para tirar o grifo">`).replace(/\u0003/g, '</mark>');
         return `<p data-seg="${i}"><button class="ts" data-dsc-ir="${esc(s.inicio)}" aria-label="Ouvir a partir de ${esc(s.inicio)}">${esc(s.inicio)}</button><b>${esc(s.falante)}</b><span class="seg-t">${texto}</span></p>`;
       })
       .join('');
@@ -364,7 +365,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   function formDisciplina(d = {}) {
     const editando = !!d.id;
     const cor = d.cor || CORES_DISC[disc.todas().length % CORES_DISC.length];
-    abrirModal(`<h2 id="modal-tit">${editando ? 'Editar disciplina' : 'Cadastrar disciplina'}</h2><p>${editando ? 'O nome também muda nas obras e nos textos marcados com ele.' : 'Só o nome é obrigatório. Com o plano de ensino, a IA lê aulas, leituras e entregas para você conferir antes de salvar.'}</p>
+    abrirModal(`<h2 id="modal-tit">${editando ? 'Editar disciplina' : 'Nova disciplina'}</h2><p>${editando ? 'O nome também muda nas obras e nos textos marcados com ele.' : 'Só o nome é obrigatório. Com o plano de ensino, a IA lê aulas, leituras e entregas para você conferir antes de salvar.'}</p>
       <form id="dsc-form" data-id="${esc(d.id || '')}">
         <div class="campo"><label for="dsc-nome">Nome</label><input id="dsc-nome" required value="${esc(d.nome || '')}" placeholder="Ex.: Teoria das Organizações"></div>
         <div class="linha2">
@@ -378,7 +379,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
         </div>
         <fieldset class="cores-disc"><legend>Cor</legend>${CORES_DISC.map((c, i) => `<label><input type="radio" name="dsc-cor" value="${c}" ${c === cor ? 'checked' : ''}><span style="background:${c}" aria-label="Cor ${i + 1}"></span></label>`).join('')}</fieldset>
         ${editando ? '' : `<div class="campo"><label for="dsc-plano-novo">Plano de ensino <span>PDF, opcional</span></label><input id="dsc-plano-novo" type="file" accept="application/pdf"></div><label class="check"><input type="checkbox" id="dsc-aulas-sem" checked>Agendar as aulas toda semana neste horário</label>`}
-        <div class="pe">${editando ? `<button type="button" class="btn fant" data-dsc-arquivar="${esc(d.id)}">${d.arquivada ? 'Desarquivar' : 'Arquivar'}</button><button type="button" class="btn fant perigo" data-dsc-apagar="${esc(d.id)}">Apagar disciplina</button><span style="flex:1"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${editando ? 'Salvar' : 'Cadastrar disciplina'}</button></div>
+        <div class="pe">${editando ? `<button type="button" class="btn fant" data-dsc-arquivar="${esc(d.id)}">${d.arquivada ? 'Desarquivar' : 'Arquivar'}</button><button type="button" class="btn fant perigo" data-dsc-apagar="${esc(d.id)}">Apagar disciplina</button><span class="cresce"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${editando ? 'Salvar' : 'Criar disciplina'}</button></div>
       </form>`);
   }
 
@@ -396,7 +397,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
           <div class="campo"><label for="ev-repetir">Repetir</label><select id="ev-repetir"><option value="nao">Não repete</option><option value="semanal" ${e.repetir === 'semanal' ? 'selected' : ''}>Toda semana</option></select></div>
           <div class="campo"><label for="ev-ate">Repetir até</label><input id="ev-ate" type="date" value="${esc(e.ate || '')}"></div>
         </div>
-        <div class="pe">${editando ? `<button type="button" class="btn fant perigo" data-dsc-apagar-ev="${esc(e.id)}">Apagar evento</button><span style="flex:1"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${editando ? 'Salvar' : 'Agendar'}</button></div>
+        <div class="pe">${editando ? `<button type="button" class="btn fant perigo" data-dsc-apagar-ev="${esc(e.id)}">Apagar evento</button><span class="cresce"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${editando ? 'Salvar' : 'Agendar'}</button></div>
       </form>`);
   }
 
@@ -411,8 +412,8 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
         </div>
         ${a ? '' : `<div class="campo"><label for="aula-arquivo">Gravação (MP3, M4A, WAV, OGG)</label><input id="aula-arquivo" type="file" accept="audio/*,.m4a,.mp3,.wav,.ogg,.webm" required></div>
         <label class="check"><input type="checkbox" id="aula-transcrever" checked>Transcrever e resumir com o Gemini</label>
-        <p class="mute-2" style="font-size:var(--t-xs);margin:-4px 0 14px">Grave só com o consentimento da docência e da turma.</p>`}
-        <div class="pe">${a ? `<button type="button" class="btn fant perigo" data-dsc-apagar-aula="${esc(a.id)}">Apagar aula</button><span style="flex:1"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${a ? 'Salvar' : 'Enviar e transcrever'}</button></div>
+        <p class="t-legenda m-0 mt-n1 mb-3 mute-2">Grave só com o consentimento da docência e da turma.</p>`}
+        <div class="pe">${a ? `<button type="button" class="btn fant perigo" data-dsc-apagar-aula="${esc(a.id)}">Apagar aula</button><span class="cresce"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${a ? 'Salvar' : 'Enviar e transcrever'}</button></div>
       </form>`);
   }
   function formAulaSemGravacao(discId) {
@@ -452,7 +453,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   }
 
   /* ---------- Eventos de tela ---------- */
-  document.addEventListener('submit', async (e) => {
+  ouvir('submit', async (e) => {
     const f = e.target;
     if (f.id === 'dsc-form') {
       e.preventDefault();
@@ -475,7 +476,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       if (!antes.id) {
         location.hash = `#disciplina/${encodeURIComponent(d.id)}`;
         if (plano) depois(() => lerPlano(d.id, plano));
-        else depois(() => toast('Disciplina cadastrada'));
+        else depois(() => toast('Disciplina criada'));
       } else {
         redesenhar();
         toast('Disciplina salva');
@@ -552,7 +553,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     }, 600);
   });
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-dsc-nova],[data-dsc-editar],[data-dsc-agendar],[data-dsc-gravacao],[data-dsc-nova-aula],[data-dsc-evento],[data-dsc-fechar],[data-dsc-arquivar],[data-dsc-apagar],[data-dsc-apagar-ev],[data-dsc-apagar-aula],[data-dsc-editar-aula],[data-dsc-tirar-nota],[data-dsc-novo-texto],[data-dsc-transcrever],[data-dsc-resumir],[data-dsc-ir],[data-dsc-buscar],[data-dsc-achei],[data-dsc-combinado],[data-dsc-aplicar-plano],[data-grifo-aula-cor],[data-grifo-aula]');
     if (!b) return;
     const d = b.dataset;

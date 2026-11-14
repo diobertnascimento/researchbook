@@ -32,7 +32,7 @@ const idGoogle = (id) => `rb${Buffer.from(id).toString('hex')}`;
 test('ligar a agenda pede só a permissão estreita, cria a agenda researchbook uma vez e envia os eventos', async ({ page, context }) => {
   const g = await entrar(page, context);
   const ids = await eventos(page);
-  await page.goto('/#ajustes');
+  await page.goto('/#ajustes/agenda');
   await expect(page.locator('#sec-agenda')).toContainText('Desligada. Os eventos ficam só no researchbook.');
   expect(g.estado.chamadasAgenda).toHaveLength(0);
   await page.getByRole('button', { name: 'Ligar o Google Agenda' }).click();
@@ -85,7 +85,7 @@ test('editar envia de novo; apagar tira do Google; desfazer devolve; tipo deslig
   await page.locator('#toast button', { hasText: 'Desfazer' }).click();
   await expect.poll(() => ev(ids.ent).status, { timeout: 8000 }).toBe('confirmed');
 
-  await page.goto('/#ajustes');
+  await page.goto('/#ajustes/agenda');
   await page.getByLabel('Sessões de estudo').uncheck();
   await expect.poll(() => ev(ids.est).status, { timeout: 8000 }).toBe('cancelled');
   await page.getByLabel('Lembrete').selectOption('1h');
@@ -97,7 +97,7 @@ test('sem a API ativada no Google Cloud, Ajustes diz o que fazer', async ({ page
   await entrar(page, context, { ligada: true, agendaDesligada: true });
   await eventos(page);
   await page.evaluate(() => window.rb.agenda.sincronizar());
-  await page.goto('/#ajustes');
+  await page.goto('/#ajustes/agenda');
   await expect(page.locator('#sec-agenda .erro-ia')).toContainText('A Google Calendar API não está ativada no projeto do Google Cloud');
 });
 
@@ -105,7 +105,7 @@ test('ligada sem a permissão neste login: pede a permissão em vez de falhar', 
   const g = await entrar(page, context, { escopos: ['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/drive.file'] });
   await page.evaluate(() => localStorage.setItem('rb.agenda.ligada', '1'));
   await page.goto('/#painel');
-  await page.goto('/#ajustes');
+  await page.goto('/#ajustes/agenda');
   await expect(page.locator('#sec-agenda')).toContainText('Falta a permissão da agenda neste login');
   await expect(page.getByRole('button', { name: 'Dar a permissão' })).toBeVisible();
   expect(g.estado.chamadasAgenda).toHaveLength(0);

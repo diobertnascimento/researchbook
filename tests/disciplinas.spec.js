@@ -77,7 +77,7 @@ test.describe('no computador', () => {
     await page.getByLabel('Início').fill('19:00');
     await page.getByLabel('Fim').fill('21:00');
     await page.getByLabel('Plano de ensino').setInputFiles({ name: 'plano.pdf', mimeType: 'application/pdf', buffer: PDF });
-    await page.locator('.modal').getByRole('button', { name: 'Cadastrar disciplina' }).click();
+    await page.locator('.modal').getByRole('button', { name: 'Criar disciplina' }).click();
 
     // Conferência do plano: aula sem data fica desmarcada e bloqueada; nada é salvo antes de confirmar.
     await expect(page.locator('#modal-tit')).toHaveText('Conferir o plano de ensino');
@@ -178,7 +178,7 @@ test.describe('no computador', () => {
     await expect(page.locator('.conceitos-aula dt')).toContainText('Adesão');
     // Leituras citadas: a da biblioteca vira link; a de fora vai para a lista "para buscar".
     await expect(page.locator('.lado .lc').filter({ hasText: 'Moraes; Lins, 2024' })).toHaveAttribute('href', /#leitor\//);
-    await page.getByRole('button', { name: 'Vou buscar' }).click();
+    await page.getByRole('button', { name: 'Marcar para buscar' }).click();
     await expect(page.locator('#toast')).toContainText('Na lista para buscar');
     expect(await page.evaluate((id) => window.rb.disciplinas.obter(id).paraBuscar.map((p) => p.texto), id)).toEqual(['Sonnenberg e vom Brocke']);
     // Combinado com prazo vira entrega na agenda.
@@ -289,10 +289,10 @@ test.describe('no computador', () => {
   test('erro de configuração do Gemini ao ler o plano leva aos Ajustes; a disciplina fica salva', async ({ page, context }) => {
     await entrar(page, context, { cenario: 'api-desligada' });
     await page.goto('/#disciplinas');
-    await page.getByRole('button', { name: 'Cadastrar disciplina' }).first().click();
+    await page.getByRole('button', { name: 'Nova disciplina' }).first().click();
     await page.getByLabel('Nome').fill('Teoria das Organizações');
     await page.getByLabel('Plano de ensino').setInputFiles({ name: 'plano.pdf', mimeType: 'application/pdf', buffer: PDF });
-    await page.locator('.modal').getByRole('button', { name: 'Cadastrar disciplina' }).click();
+    await page.locator('.modal').getByRole('button', { name: 'Criar disciplina' }).click();
     await expect(page.locator('#modal-tit')).toHaveText('Não deu para ler o plano');
     await expect(page.locator('.modal a[href="#ajustes"]')).toBeVisible();
     expect(await page.evaluate(() => window.rb.disciplinas.ativas().map((d) => d.nome))).toEqual(['Teoria das Organizações']);

@@ -2,6 +2,15 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.1.0 (14/11/2026)
+- Visual novo, mais calmo e consistente, no estilo de apps de produtividade: fundo claro, menos cor, títulos em Literata e a interface em Inter. Tudo segue um sistema único de tamanhos de letra, alturas de botão, espaços e cantos.
+- Botões que dependem da internet ou da IA mostram que estão trabalhando ("Diagnosticando…", "Salvando…") e não aceitam clique duplo.
+- Telas abrindo mostram a forma do conteúdo em vez de "Abrindo seus dados…".
+- Ajustes ficou dividido em seções (Gemini, Modelos, Uso e custo, Registros, Este aparelho, Google Agenda, Marca-textos, Conta e pasta), uma por vez, com o índice sempre à vista.
+- Ações discretas ("Editar", "Ver agenda") agora parecem clicáveis; as ações de memória não ficam mais apagadas até passar o mouse.
+- Textos revisados: "Adicionar obra" no lugar de "Adicionar leitura", "Nova disciplina", "Marcar para buscar", instruções que valem para mouse e toque e erros que dizem o que fazer.
+- Campos com contorno mais visível e foco claro em tudo o que dá para usar pelo teclado; a área de escrever não ganha mais moldura ao clicar.
+
 ## 1.0.0 (14/11/2026)
 - Todas as telas usam os seus dados. Esta é a primeira versão completa do researchbook.
 - Busca (Ctrl+K ou o campo Buscar) com os seus dados: obras, grifos, fichamentos, textos, argumentos, trilhas, disciplinas, aulas, diálogos, orientação, cartões e memória, além das páginas. Todas as palavras digitadas precisam aparecer; grifos vêm depois dos outros resultados.

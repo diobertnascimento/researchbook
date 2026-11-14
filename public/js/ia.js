@@ -87,7 +87,7 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
     const modo = google.acessoIA();
     if (modo === 'google') {
       const s = google.sessao();
-      if (s && !google.temPermissaoIA()) throw new ErroIA('permissao', 'Falta a permissão do Gemini no login. Em Ajustes > Gemini, toque em "Conectar o Gemini" e aceite a permissão.');
+      if (s && !google.temPermissaoIA()) throw new ErroIA('permissao', 'Falta a permissão do Gemini no login. Em Ajustes > Gemini, selecione "Conectar o Gemini" e aceite a permissão.');
       return { modo, token: s?.token || null, projeto: lerLS(PROJETO) };
     }
     if (modo === 'cofre') return { modo, chave: await cofre.chave() };

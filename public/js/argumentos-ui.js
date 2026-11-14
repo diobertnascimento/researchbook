@@ -4,6 +4,7 @@
 //
 // A sustentação é uma contagem honesta (quantas obras diferentes têm trechos ligados), não um juízo de qualidade.
 import { autorCurto } from './abnt.js';
+import { ouvir } from './ui.js';
 
 /* global I, toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -194,7 +195,7 @@ export function criarArgumentosUI({ bib, dados, fichUI, registrar }) {
     });
   }
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const t = e.target.closest('[data-arg-novo],[data-arg-editar],[data-arg-salvar],[data-arg-apagar],[data-arg-copiar]');
     if (!t) return;
     if (t.dataset.argNovo !== undefined) abrirModal();

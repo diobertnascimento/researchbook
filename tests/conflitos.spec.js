@@ -43,7 +43,7 @@ test.describe('no computador', () => {
 
   test('sem conflitos, a tela explica e volta aos ajustes', async ({ page, context }) => {
     await entrar(page, context);
-    await page.goto('/#ajustes');
+    await page.goto('/#ajustes/pasta');
     await page.getByRole('link', { name: 'Revisar conflitos' }).click();
     await expect(page.locator('.bib-vazia h2')).toHaveText('Nenhum conflito');
   });

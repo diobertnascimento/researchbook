@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '1.0.0';
+const APP_VERSAO = '1.1.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -190,6 +190,13 @@ function hlbar(hl){
   if(!tot) return '<div class="hlbar"></div>';
   return '<div class="hlbar">'+FUNCOES.map(f=>hl[f.id]?`<span class="c-${f.id}" style="width:${hl[f.id]/tot*100}%"></span>`:'').join('')+'</div>';
 }
+// Tela abrindo: o título real e blocos na forma do conteúdo (esqueleto), nunca "Carregando…" sozinho.
+function esqueleto(titulo,forma){
+  const linhas=n=>Array.from({length:n},(_,i)=>`<span class="esq esq-linha ${i%3===2?'curta':i%3===1?'media':''}"></span>`).join('');
+  const cartao=n=>`<div class="esq-cartao"><span class="esq esq-titulo"></span>${linhas(n)}</div>`;
+  const corpo=forma==='grade'?`<div class="esq-grade">${cartao(2)}${cartao(2)}${cartao(2)}</div>`:forma==='texto'?cartao(8):cartao(2)+cartao(2)+cartao(2);
+  return `<div class="topo"><div><h1>${titulo}</h1><p class="sr">Abrindo seus dados</p></div></div><div aria-busy="true" aria-label="Abrindo ${titulo}">${corpo}</div>`;
+}
 function toast(t,desfazer){const el=document.getElementById('toast');el.innerHTML='<span></span>';el.firstChild.textContent=t;if(desfazer){const b=document.createElement('button');b.textContent='Desfazer';b.onclick=()=>{desfazer();el.classList.remove('on')};el.appendChild(b)}el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('on'),desfazer?5000:2400)}
 
 /* =========================================================
@@ -216,7 +223,7 @@ function desenhaMenu(rota){
     it('diss','#projeto',dot('#1F4A5A'),'Dissertação') +
     (modoReal() ? (window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.menu().map(d=>it('disc'+d.id,'#disciplina/'+encodeURIComponent(d.id),dot(d.cor),esc(d.nome))).join('') : '') : DISCIPLINAS.map((d,i)=>it('disc'+i,'#disciplina/'+i,dot(CORES_DISC[i]),d)).join(''));
   const voceAtivo=sec==='voce';
-  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div id="status-drive">${statusDriveHTML()}</div><span class="selo-demo" style="margin-left:10px;font-size:11px">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
+  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div id="status-drive">${statusDriveHTML()}</div><span class="selo-versao">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
   const tb=[['painel','#painel',I.painel,'Hoje'],['bib','#biblioteca',I.biblioteca,'Biblioteca'],['esc','#escrita',I.escrita,'Escrita'],['todos','#disciplinas',I.disciplinas,'Projetos'],['voce','#autor',I.autor,'Você']];
   document.getElementById('tabbar').innerHTML=tb.map(([k,h,ic,r])=>`<a href="${h}" class="${(k==='voce'?voceAtivo:k==='todos'?(base==='disciplinas'||base==='disciplina'||base==='aula'||sec==='diss'):ativo(k))?'ativo':''}">${ic}${r}</a>`).join('');
 }
@@ -231,7 +238,7 @@ function secaoCab(base){
 const V = {};
 
 V.painel = () => {
-  if(modoReal()) return window.rb&&window.rb.hojeUI ? window.rb.hojeUI.tela() : '<div class="topo"><div><h1>Hoje</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.hojeUI ? window.rb.hojeUI.tela() : esqueleto('Hoje');
   const g=L('goldkuhl2012');
   const tot={}; FUNCOES.forEach(f=>tot[f.id]=0);
   LEITURAS.forEach(l=>FUNCOES.forEach(f=>tot[f.id]+=l.hl[f.id]));
@@ -262,11 +269,11 @@ V.painel = () => {
   <details class="semana-det">
     <summary>Sua semana</summary>
     <div class="bento">
-      <section class="bloco" style="grid-column:span 2"><h3>Minutos de leitura</h3>
+      <section class="span-2 bloco"><h3>Minutos de leitura</h3>
         <div class="semana">${semana.map(([d,m],i)=>`<div class="${i===4?'hoje':''}"><i style="height:${Math.max(m,3)/70*72}px"></i>${d}</div>`).join('')}</div></section>
-      <section class="bloco" style="grid-column:span 2"><h3>Seus grifos, por função</h3>
+      <section class="span-2 bloco"><h3>Seus grifos, por função</h3>
         <div class="dist">${FUNCOES.map(f=>`<div><span>${f.nome}</span><span class="trilho"><i class="c-${f.id}" style="width:${tot[f.id]/maxT*100}%"></i></span><span class="mute-2">${tot[f.id]}</span></div>`).join('')}</div></section>
-      <section class="bloco b-arg" style="grid-column:span 2"><h3>Argumento mais sustentado</h3>
+      <section class="span-2 bloco b-arg"><h3>Argumento mais sustentado</h3>
         <blockquote>${ARGUMENTOS[2].tese}</blockquote><a class="btn" href="#argumentos" data-arg="pragm">Abrir argumento</a></section>
     </div>
   </details>`;
@@ -290,10 +297,10 @@ V.biblioteca = () => {
   const rotVal=(k,v)=>k==='proj'?P(v).nome:k==='etapa'?rotEtapa(v):k==='tag'?'#'+v:v;
   return `
   <div class="topo">
-    <div><h1>Biblioteca</h1><p>${LEITURAS.length} leituras. Clique numa leitura para abrir no leitor.</p></div>
+    <div><h1>Biblioteca</h1><p>${LEITURAS.length} obras. Abra uma obra para ler e grifar.</p></div>
     <div class="acoes">
       <label class="busca">${I.busca}<input id="busca" type="search" placeholder="Buscar título, autor, conceito" value="${esc(S.busca)}"></label>
-      <button class="btn prim" data-acao="adicionar">${I.mais}Adicionar leitura</button>
+      <button class="btn prim" data-acao="adicionar">${I.mais}Adicionar obra</button>
     </div>
   </div>
   <div class="filtros-barra" role="group" aria-label="Filtros">
@@ -332,7 +339,7 @@ function trilhaHTML(t){
     ${feitos.length?`<details class="concluidas"><summary>Ver ${feitos.length} concluída${feitos.length>1?'s':''}</summary><ol class="seq feitas">${feitos.map(i=>{const l=L(i);return `<li><div><div class="t">${esc(l.tit)}</div><div class="a">${citCurta(l)}</div></div>${pips(l.etapa)}<a class="btn fant acao" href="#fichamento/${i}">Rever fichamento</a></li>`}).join('')}</ol></details>`:''}
   </section>`;
 }
-V.trilhas = () => modoReal() ? (window.rb&&window.rb.trilhasUI ? window.rb.trilhasUI.tela() : '<div class="topo"><div><h1>Trilhas</h1><p>Abrindo seus dados…</p></div></div>') : `
+V.trilhas = () => modoReal() ? (window.rb&&window.rb.trilhasUI ? window.rb.trilhasUI.tela() : esqueleto('Trilhas')) : `
   <div class="topo">
     <div><h1>Trilhas</h1><p>Filas de leitura com prazo. Cada leitura passa por pré-leitura, leitura, fichamento e conexão.</p></div>
     <div class="acoes"><button class="btn" data-acao="toast" data-msg="Na versão funcional, você cria trilhas e arrasta leituras para ordenar.">${I.mais}Nova trilha</button></div>
@@ -343,7 +350,7 @@ V.leitor = (id) => {
   if(modoReal()){
     const real=window.rb&&window.rb.bibUI&&window.rb.bibUI.leitor(decodeURIComponent(id||''));
     if(real) return real;
-    if(!window.rb||!window.rb.bibUI) return '<div class="topo"><div><h1>Leitor</h1><p>Abrindo…</p></div></div>';
+    if(!window.rb||!window.rb.bibUI) return esqueleto('Leitor', 'texto');
   }
   const l=L(id)||L('goldkuhl2012');
   const grifos=[...DOC_HTML.matchAll(/<mark class="(\w+)" data-id="(\w+)"[^>]*>(.*?)<\/mark>/g)].map(m=>({cor:m[1],id:m[2],t:m[3]}));
@@ -362,7 +369,7 @@ V.leitor = (id) => {
         <div><label>Tema</label><div class="seg"><button data-tema="claro" class="${S.tema==='claro'?'on':''}">Claro</button><button data-tema="sepia" class="${S.tema==='sepia'?'on':''}">Sépia</button></div></div>
       </div>
     </details>
-    <div class="dir"><span class="mute-2" style="font-size:var(--t-xs)">p. 7 de 12</span><a class="btn prim" href="#fichamento/${l.id}">Concluir e fichar</a></div>
+    <div class="dir"><span class="t-legenda mute-2">p. 7 de 12</span><a class="btn prim" href="#fichamento/${l.id}">Concluir e fichar</a></div>
   </div>
   <div class="leitor-grid ${S.verGrifos?'':'sem-grifos'} ${S.verTutor?'':'sem-tutor'}">
     <aside class="col-grifos" aria-label="Grifos neste texto">
@@ -421,7 +428,7 @@ function notasHTML(){
 }
 
 V.fichamentos = () => {
-  if(modoReal()) return window.rb&&window.rb.fichUI ? window.rb.fichUI.lista() : '<div class="topo"><div><h1>Fichamentos</h1><p>Abrindo…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.fichUI ? window.rb.fichUI.lista() : esqueleto('Fichamentos', 'grade');
   const fich=['venable2016','moraes2024','brans1985','hevner2004','peffers2007','saaty1980'];
   const passosFeitos={venable2016:3,moraes2024:2,brans1985:4,hevner2004:5,peffers2007:5,saaty1980:5};
   return `
@@ -430,9 +437,9 @@ V.fichamentos = () => {
     ${fich.map(id=>{const l=L(id),n=passosFeitos[id];return `
     <a class="fich-card" href="#fichamento/${id}">
       <div class="t">${esc(l.tit)}</div>
-      <div class="mute" style="font-size:var(--t-s)">${citCurta(l)}, ${P(l.proj).nome}</div>
+      <div class="t-meta mute">${citCurta(l)}, ${P(l.proj).nome}</div>
       <div class="etp">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</div>
-      <div class="mute-2" style="font-size:var(--t-xs)">${n>=5?'Completo':`Etapa ${n+1} de 5: ${PASSOS[n].nome}`}</div>
+      <div class="t-legenda mute-2">${n>=5?'Completo':`Etapa ${n+1} de 5: ${PASSOS[n].nome}`}</div>
     </a>`}).join('')}
   </div>`;
 };
@@ -456,7 +463,7 @@ V.fichamento = (id) => {
   if(modoReal()){
     const real=window.rb&&window.rb.fichUI&&window.rb.fichUI.tela(decodeURIComponent(id||''));
     if(real) return real;
-    if(!window.rb||!window.rb.fichUI) return '<div class="topo"><div><h1>Fichamento</h1><p>Abrindo…</p></div></div>';
+    if(!window.rb||!window.rb.fichUI) return esqueleto('Fichamento', 'texto');
   }
   const l=L(id)||L('venable2016'); const p=S.passoFich;
   const cores=PASSOS[p].cores;
@@ -465,10 +472,10 @@ V.fichamento = (id) => {
   if(p===0) corpo=`
     <h2>Referência</h2><p class="instr">Confira os dados puxados pelo DOI. A referência ABNT é gerada a partir deles.</p>
     <div class="campo"><label>DOI</label><input value="10.1057/ejis.2014.36"></div>
-    <div class="campo"><label>Referência ABNT gerada</label><div class="ref-abnt" style="margin:0">${l.abnt}</div></div>`;
+    <div class="campo"><label>Referência ABNT gerada</label><div class="m-0 ref-abnt">${l.abnt}</div></div>`;
   if(p===1) corpo=`
     <h2>Citações</h2><p class="instr">Escolha os trechos que merecem citação direta. Para cada um, diga em uma frase por que ele importa para você.</p>
-    ${GRIFOS_VEN.slice(0,3).map(g=>`<div class="citacao"><blockquote style="border-color:var(--hl-${g.cor})">${g.t}</blockquote><div class="cit">(Venable; Pries-Heje; Baskerville, 2016, p. ${g.p})</div><div class="campo" style="margin:0"><textarea placeholder="Por que este trecho importa?"></textarea></div></div>`).join('')}`;
+    ${GRIFOS_VEN.slice(0,3).map(g=>`<div class="citacao"><blockquote style="border-color:var(--hl-${g.cor})">${g.t}</blockquote><div class="cit">(Venable; Pries-Heje; Baskerville, 2016, p. ${g.p})</div><div class="m-0 campo"><textarea placeholder="Por que este trecho importa?"></textarea></div></div>`).join('')}`;
   if(p===2) corpo=`
     <h2>Resumo</h2><p class="instr">Explique o texto com suas palavras, sem olhar o PDF. Os grifos de conceito e evidência ficam ao lado como apoio.</p>
     <div class="campo"><label>Resumo <span>94 palavras</span></label><textarea style="min-height:220px">O artigo propõe o FEDS, um quadro para planejar a avaliação em pesquisas de design science. A avaliação é organizada em duas dimensões: o propósito (formativo ou somativo) e o paradigma (artificial ou naturalístico). Em vez de um único teste no fim, os autores defendem trajetórias de avaliação ao longo do projeto, escolhidas a partir dos riscos principais do design. Propõem quatro estratégias típicas e um processo em quatro passos para escolher entre elas.</textarea></div>`;
@@ -481,20 +488,20 @@ V.fichamento = (id) => {
   if(p===4) corpo=`
     <h2>Para a dissertação</h2><p class="instr">Escreva trechos que você usaria no texto final, já com a citação. Cada trecho é ligado a um argumento.</p>
     <div class="citacao"><div class="campo"><label>Trecho</label><textarea>A escolha da estratégia de avaliação não é neutra: ela decorre dos riscos que o design enfrenta (Venable; Pries-Heje; Baskerville, 2016). No caso de um roteirizador para cooperativas, o risco central é humano: rotas tecnicamente melhores podem não ser percorridas.</textarea></div>
-    <div class="campo" style="margin:0"><label>Sustenta o argumento</label><select><option>Adesão das equipes como critério de avaliação</option><option>A economia do RotaCoop foi medida em simulação</option><option>Criar novo argumento</option></select></div></div>
+    <div class="m-0 campo"><label>Sustenta o argumento</label><select><option>Adesão das equipes como critério de avaliação</option><option>A economia do RotaCoop foi medida em simulação</option><option>Criar novo argumento</option></select></div></div>
     <button class="btn" data-acao="toast" data-msg="Novo trecho em branco adicionado">${I.mais}Outro trecho</button>`;
   const revisao = p===3 ? `
       <div class="ponto forte"><i></i><div>A descrição do método é precisa: você notou que o quadro não foi testado empiricamente.</div></div>
       <div class="ponto lacuna"><i></i><div>Você grifou como crítica a suposição de que o artefato é usado como projetado, mas não levou isso para a análise. É o ponto mais útil para a sua dissertação.</div></div>
       <div class="ponto pergunta"><i></i><div>Se o FEDS supõe que o artefato é usado como projetado, sua proposta de medir a adesão das equipes estende o quadro ou o contradiz?</div></div>`
-    : `<p class="mute" style="font-size:var(--t-s);margin:0">Quando terminar a etapa, peça comentários. O tutor aponta lacunas e faz perguntas; não reescreve por você.</p>`;
+    : `<p class="t-meta m-0 mute">Quando terminar a etapa, peça comentários. O tutor aponta lacunas e faz perguntas; não reescreve por você.</p>`;
   return `
   <div class="topo"><div><h1>Fichamento</h1><p>${esc(l.tit)}</p></div><div class="acoes"><a class="btn" href="#leitor/${l.id}">Voltar ao texto</a></div></div>
   <ol class="passos">${PASSOS.map((s,i)=>`<li><button data-passo="${i}" class="${i===p?'on':i<p?'feito':''}"><span class="n">${i<p?'✓':i+1}</span><span class="rot">${s.nome}</span></button></li>`).join('')}</ol>
   <div class="fich-grid">
     <aside class="painel-lat">
       <h4>Seus grifos</h4>
-      <p class="sub" style="border:1px dashed var(--linha-2);border-radius:6px;padding:6px 8px">Grifos de exemplo, escritos para o protótipo.</p><p class="sub">${cores.length?'Filtrados para esta etapa: '+cores.map(c=>FUNCOES.find(f=>f.id===c).nome.toLowerCase()).join(', '):'Todos os grifos do texto'}</p>
+      <p class="sub caixa-tracejada">Grifos de exemplo, escritos para o protótipo.</p><p class="sub">${cores.length?'Filtrados para esta etapa: '+cores.map(c=>FUNCOES.find(f=>f.id===c).nome.toLowerCase()).join(', '):'Todos os grifos do texto'}</p>
       ${(grifos.length?grifos:GRIFOS_VEN).map(g=>`<button class="grifo-item" style="border-color:var(--hl-${g.cor})" data-acao="toast" data-msg="Trecho inserido no fichamento com a página">${g.t}<small>p. ${g.p}</small></button>`).join('')}
     </aside>
     <section class="editor">
@@ -508,13 +515,13 @@ V.fichamento = (id) => {
       <h4>Comentários do tutor</h4>
       <p class="sub">${p===3?'Recebidos agora há pouco':'Nenhum comentário nesta etapa'}</p>
       <div class="revisao-tutor">${revisao}</div>
-      <button class="btn" style="margin-top:16px;width:100%;justify-content:center" data-acao="toast" data-msg="Na versão funcional, o Gemini revisa esta etapa.">${I.tutor}Pedir comentários do tutor</button>
+      <button class="mt-4 w-100 j-centro btn" data-acao="toast" data-msg="Na versão funcional, o Gemini revisa esta etapa." data-ocupado="Comentando…">${I.tutor}Pedir comentários do tutor</button>
     </aside>
   </div>`;
 };
 
 V.argumentos = (id) => {
-  if(modoReal()) return window.rb&&window.rb.argUI ? window.rb.argUI.tela(id?decodeURIComponent(id):null) : '<div class="topo"><div><h1>Argumentos</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.argUI ? window.rb.argUI.tela(id?decodeURIComponent(id):null) : esqueleto('Argumentos');
   const a=ARGUMENTOS.find(x=>x.id===S.argSel)||ARGUMENTOS[0];
   const forca=n=>`<span class="forca" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span> Sustentação ${['','fraca','fraca','média','forte','forte'][n]}`;
   return `
@@ -532,18 +539,18 @@ V.argumentos = (id) => {
       <h3>Trechos prontos para o texto</h3>
       ${a.trechos.map(t=>`<div class="trecho-d"><div><p>${t.t} ${t.c}.</p><small>Escrito por você no fichamento</small></div><button class="btn fant" data-acao="toast" data-msg="Trecho copiado com a citação">${I.copiar}Copiar</button></div>`).join('')}
       <h3>Fontes</h3>
-      <div class="fontes">${a.fontes.map(f=>{const l=L(f);return `<a href="#leitor/${f}">${hlbar(l.hl).replace('class="hlbar"','class="hlbar" style="width:60px;flex:none"')}<span>${citCurta(l)}. ${esc(l.tit)}</span></a>`}).join('')}</div>
+      <div class="fontes">${a.fontes.map(f=>{const l=L(f);return `<a href="#leitor/${f}">${hlbar(l.hl).replace('class="hlbar"','class="hlbar" class="fixo" style="width:60px"')}<span>${citCurta(l)}. ${esc(l.tit)}</span></a>`}).join('')}</div>
     </article>
   </div>`;
 };
 
 V.conflitos = () => {
   if(!modoReal()) return `<div class="topo"><div><h1>Conflitos de sincronização</h1><p>Sem conflitos: no modo de exemplo nada é sincronizado.</p></div></div>`;
-  return window.rb&&window.rb.conflitosUI ? window.rb.conflitosUI.tela() : '<div class="topo"><div><h1>Conflitos de sincronização</h1><p>Abrindo seus dados…</p></div></div>';
+  return window.rb&&window.rb.conflitosUI ? window.rb.conflitosUI.tela() : esqueleto('Conflitos de sincronização');
 };
 
 V.cartoes = () => {
-  if(modoReal()) return window.rb&&window.rb.cartoesUI ? window.rb.cartoesUI.tela() : '<div class="topo"><div><h1>Cartões</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.cartoesUI ? window.rb.cartoesUI.tela() : esqueleto('Cartões');
   if(S.cartao>=CARTOES.length) return `
   <a class="voltar" href="#painel">${I.voltar}Hoje</a>
   <div class="topo"><div><h1>Cartões</h1></div></div>
@@ -551,7 +558,7 @@ V.cartoes = () => {
     <h2>Sessão concluída</h2>
     <p>Você revisou os cartões de hoje. Os que errou voltam em 10 minutos; os outros, em intervalos maiores.</p>
     <div class="num"><div><b>3</b>cartões revisados</div><div><b>2</b>lembrados de primeira</div><div><b>5</b>para amanhã</div></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn prim" href="#leitor/goldkuhl2012">Continuar a leitura de Goldkuhl</a><a class="btn" href="#painel">Voltar para Hoje</a></div>
+    <div class="flex gap-3 wrap"><a class="btn prim" href="#leitor/goldkuhl2012">Continuar a leitura de Goldkuhl</a><a class="btn" href="#painel">Voltar para Hoje</a></div>
   </section>`;
   const c=CARTOES[S.cartao%CARTOES.length];
   const f=FUNCOES.find(x=>x.id===c.tipo);
@@ -566,7 +573,7 @@ V.cartoes = () => {
           <div class="face verso"><div class="tipo"><span class="sw c-${c.tipo}"></span>Resposta</div><div class="r">${c.r}</div><div class="origem">${c.origem}</div></div>
         </div>
       </div>
-      ${S.virado?'':`<div style="margin-top:20px;display:flex;justify-content:center"><button class="btn prim" data-acao="virar">Mostrar resposta</button></div>`}
+      ${S.virado?'':`<div class="mt-5 flex j-centro"><button class="btn prim" data-acao="virar">Mostrar resposta</button></div>`}
       <div class="notas-rev" ${S.virado?'':'hidden'}>
         <button data-nota="0">De novo<small>em 10 min</small></button>
         <button data-nota="1">Difícil<small>amanhã</small></button>
@@ -580,7 +587,7 @@ V.cartoes = () => {
       <div class="dist">
         ${[['Novos',1],['Revisão',2],['Aprendidos',41]].map(([n,v])=>`<div style="grid-template-columns:90px 1fr 26px"><span>${n}</span><span class="trilho"><i style="background:var(--petroleo);width:${v/41*100}%"></i></span><span class="mute-2">${v}</span></div>`).join('')}
       </div>
-      <p class="mute" style="font-size:var(--t-s);margin:18px 0 0">Antes de responder, tente dizer a resposta em voz alta. Lembrar é o que fixa.</p>
+      <p class="t-meta m-0 mt-4 mute">Antes de responder, tente dizer a resposta em voz alta. Lembrar é o que fixa.</p>
     </aside>
   </div>`;
 };
@@ -641,7 +648,7 @@ function secModelos(){
       ${AUDIO_IA.map(([g,n,m,mins,pq])=>`<tr><td><b>${n}</b><small>${pq}</small></td><td><select><option selected>gemini-3.5-transcribe</option><option>gemini-3.1-flash-lite</option></select></td><td>não se aplica</td><td class="num">${usd(PRECOS[m].min*100)}<small>por aula de 100 min</small></td></tr>`).join('')}
       <tr><td><b>Busca e conexões entre leituras</b><small>Índice semântico da biblioteca, aulas e memória</small></td><td><select><option>gemini-embedding-2</option></select></td><td>não se aplica</td><td class="num">US$ 0,05<small>por mês</small></td></tr>
     </tbody></table></div>
-    <details class="ajuda-det" style="margin-top:14px"><summary>E se um modelo falhar ou sair do ar?</summary><p style="margin:10px 0 0;font-size:var(--t-s);color:var(--grafite)">Depois de 2 tentativas, o pedido vai para o modelo reserva e isso fica nos registros: ${Object.entries(RESERVA).filter(([a,b])=>b!=='sem reserva').map(([a,b])=>`${a} → ${b}`).join('; ')}.</p></details>
+    <details class="mt-3 ajuda-det"><summary>E se um modelo falhar ou sair do ar?</summary><p class="m-0 mt-3 t-meta mute">Depois de 2 tentativas, o pedido vai para o modelo reserva e isso fica nos registros: ${Object.entries(RESERVA).filter(([a,b])=>b!=='sem reserva').map(([a,b])=>`${a} → ${b}`).join('; ')}.</p></details>
   </section>`;
 }
 function secCusto(){
@@ -659,22 +666,22 @@ function secCusto(){
       <div><b>US$ 25,00</b><span>limite mensal</span><small>aviso em 80%</small></div>
     </div>
     <div class="barras-dia" role="img" aria-label="Custo por dia em novembro">${dias.map((v,i)=>`<div title="${i+1} nov.: ${usd(v)}"><i style="height:${v/maxD*100}%"></i><span>${i+1}</span></div>`).join('')}${Array.from({length:17},(_,i)=>`<div class="fut"><i></i><span>${i+14}</span></div>`).join('')}</div>
-    <p class="mute-2" style="font-size:var(--t-xs);margin:6px 0 18px">Custo por dia. Os picos são dias de aula, por causa da transcrição.</p>
-    <div class="aviso" style="background:var(--petroleo-claro);border-color:#BFD3D9"><span>↗</span><div>Dois preços promocionais acabam em breve. Com o mesmo uso, a projeção sobe para <b>${usd(custoMes('dez'))}</b> por mês em dezembro (Gemini 4 Argon dobra em 1 dez.) e para <b>${usd(custoMes('jan'))}</b> a partir de janeiro (Gemini 3.8 Flash dobra em 1 jan.).</div></div>
+    <p class="t-legenda m-0 mt-2 mb-4 mute-2">Custo por dia. Os picos são dias de aula, por causa da transcrição.</p>
+    <div class="aviso info"><span>↗</span><div>Dois preços promocionais acabam em breve. Com o mesmo uso, a projeção sobe para <b>${usd(custoMes('dez'))}</b> por mês em dezembro (Gemini 4 Argon dobra em 1 dez.) e para <b>${usd(custoMes('jan'))}</b> a partir de janeiro (Gemini 3.8 Flash dobra em 1 jan.).</div></div>
     <div class="tab-wrap"><table class="tab-ia"><thead><tr><th>Tarefa</th><th>Modelo</th><th class="num">Usos</th><th class="num">Tokens</th><th class="num">Custo no mês</th></tr></thead><tbody>
       ${linhas.map(l=>`<tr><td>${l.n}</td><td class="mute">${l.m}</td><td class="num">${l.ch}</td><td class="num">${l.tk!==null?(l.tk>=1000?(l.tk/1000).toFixed(1).replace('.',',')+' mi':Math.round(l.tk)+' mil'):l.mins+' min'}</td><td class="num">${usd(l.c)}</td></tr>`).join('')}
     </tbody></table></div>
-    <div class="aj-linha" style="margin-top:18px">
+    <div class="mt-4 aj-linha">
       <div class="campo"><label>Limite mensal (US$)</label><input value="25,00"></div>
       <div class="campo"><label>Cotação do dólar para mostrar em reais <span>você define</span></label><input placeholder="Ex.: 5,40"></div>
     </div>
     <details class="ajuda-det"><summary>Preços usados no cálculo</summary>
-      <div class="tab-wrap" style="margin-top:10px"><table class="tab-ia"><thead><tr><th>Modelo</th><th class="num">Entrada</th><th class="num">Saída</th><th class="num">Cache</th><th>Muda em</th></tr></thead><tbody>
+      <div class="mt-3 tab-wrap"><table class="tab-ia"><thead><tr><th>Modelo</th><th class="num">Entrada</th><th class="num">Saída</th><th class="num">Cache</th><th>Muda em</th></tr></thead><tbody>
       ${Object.entries(PRECOS).filter(([k,p])=>p.out).map(([k,p])=>`<tr><td>${k}</td><td class="num">${usd(p.inp)}</td><td class="num">${usd(p.out)}</td><td class="num">${usd4(p.cache)}</td><td>${p.fut?`${p.fut.desde}: ${usd(p.fut.inp)} e ${usd(p.fut.out)}`:'sem mudança anunciada'}</td></tr>`).join('')}
       <tr><td>gemini-3.5-transcribe</td><td class="num" colspan="2">US$ 0,005 por minuto</td><td></td><td>sem mudança anunciada</td></tr>
       <tr><td>gemini-embedding-2</td><td class="num">${usd(0.20)}</td><td></td><td></td><td>sem mudança anunciada</td></tr>
       </tbody></table></div>
-      <p class="mute-2" style="font-size:var(--t-xs);margin:8px 0 0">Por milhão de tokens, conferidos na página de preços do Gemini em 13 nov. 2026. Em lote, entrada e saída custam metade.</p>
+      <p class="t-legenda m-0 mt-2 mute-2">Por milhão de tokens, conferidos na página de preços do Gemini em 13 nov. 2026. Em lote, entrada e saída custam metade.</p>
     </details>
   </section>`;
 }
@@ -701,16 +708,16 @@ function secRegistros(){
       <div><b>${deHoje.filter(e=>e.ev==='ia.resposta').length}</b><span>chamadas à IA hoje</span><small>${deHoje.filter(e=>e.ev==='ia.falhou').length} falhas, com nova tentativa</small></div>
       <div><b>v${esc(rb?rb.versao:APP_VERSAO)}</b><span>versão do app</span><small>vai em cada registro</small></div>
     </div>
-    <div class="seg" role="group" aria-label="Filtrar registros" style="margin:4px 0 12px">${LOG_TIPOS.map(([k,n])=>`<button data-log="${k}" class="${k===f?'on':''}">${n}</button>`).join('')}</div>
+    <div class="m-0 mt-1 mb-3 seg" role="group" aria-label="Filtrar registros">${LOG_TIPOS.map(([k,n])=>`<button data-log="${k}" class="${k===f?'on':''}">${n}</button>`).join('')}</div>
     <div class="tab-wrap"><table class="tab-ia logs"><thead><tr><th>Hora</th><th>Evento</th><th>Onde</th><th>Detalhe</th><th class="num">Duração</th></tr></thead><tbody>
       ${linhas}
     </tbody></table></div>
-    <div class="aj-linha" style="margin-top:16px;align-items:center">
-      <label class="check" style="margin:0"><input type="checkbox" disabled>Guardar o texto completo de prompts e respostas <span class="mute-2" style="font-size:var(--t-xs)">(desligado: só tamanhos, modelo e tempo; disponível quando o Gemini entrar)</span></label>
-      <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-baixar="registros">Exportar CSV</button></div>
+    <div class="mt-4 a-centro aj-linha">
+      <label class="m-0 check"><input type="checkbox" disabled>Guardar o texto completo de prompts e respostas <span class="t-legenda mute-2">(desligado: só tamanhos, modelo e tempo; disponível quando o Gemini entrar)</span></label>
+      <div class="flex gap-2 j-fim"><button class="btn" data-baixar="registros">Exportar CSV</button></div>
     </div>
-    <details class="ajuda-det" style="margin-top:12px"><summary>O que cada registro guarda?</summary>
-      <ul style="margin:10px 0 0;padding-left:18px;font-size:var(--t-s);color:var(--grafite);display:flex;flex-direction:column;gap:4px">
+    <details class="mt-3 ajuda-det"><summary>O que cada registro guarda?</summary>
+      <ul class="m-0 mt-3 pl-lista t-meta mute flex coluna gap-1">
         <li>quando, sessão, versão do app, tela, evento e resultado</li>
         <li>no início da sessão: sistema, navegador, se o app está instalado e o tamanho da tela</li>
         <li>em erros: a mensagem e onde aconteceu</li>
@@ -733,22 +740,24 @@ function secAparelho(){
       ${item('Armazenamento',d.disponivel?'Ativo':'Indisponível',d.disponivel?(d.persistente?'protegido contra limpeza automática':'o navegador pode limpar se faltar espaço; o Drive guarda a cópia oficial'):'este navegador não permite guardar dados; use o app instalado')}
       ${item('Formato dos dados','versão '+d.esquema,'muda com migração automática e backup antes')}
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="btn" data-baixar="dados" ${d.disponivel?'':'disabled'}>Baixar cópia dos dados</button></div>
+    <div class="flex gap-2 wrap mt-4"><button class="btn" data-baixar="dados" ${d.disponivel?'':'disabled'}>Baixar cópia dos dados</button></div>
   </section>`;
 }
 
-V.ajustes = () => `
+// Ajustes em subpáginas (#ajustes/<seção>): uma seção por vez, com o índice sempre à vista.
+const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa'],['custo','Uso e custo'],['registros','Registros'],['aparelho','Este aparelho'],['agenda','Google Agenda'],['cores','Marca-textos'],['pasta','Conta e pasta']];
+V.ajustes = (sec) => { const atual=SECOES_AJ.some(([k])=>k===sec)?sec:'ia'; return `
   <div class="topo"><div><h1>Ajustes</h1><p>IA, custos, registros, agenda, cores e a pasta onde tudo fica.</p></div></div>
   <div class="aj-wrap">
-  <nav class="aj-indice" aria-label="Seções dos ajustes">${[['sec-ia','Conexão com o Gemini'],['sec-modelos','Modelos por tarefa'],['sec-custo','Uso e custo'],['sec-registros','Registros'],['sec-aparelho','Este aparelho'],['sec-agenda','Google Agenda'],['sec-cores','Marca-textos'],['sec-pasta','Pasta']].map(([id,n])=>`<button data-sec="${id}">${n}</button>`).join('')}</nav>
-  <div class="aj">
+  <nav class="aj-indice" aria-label="Seções dos ajustes">${SECOES_AJ.map(([k,n])=>`<a href="#ajustes/${k}"${k===atual?' class="on" aria-current="page"':''}>${n}</a>`).join('')}</nav>
+  <div class="aj" data-sec="sec-${atual}">
     ${modoReal()&&window.rb&&window.rb.iaAjustes?window.rb.iaAjustes.secaoHTML():`<section id="sec-ia">
       <h2>Conexão com o Gemini</h2>
       <p>A chave fica só neste navegador e é enviada apenas ao Google quando você usa a IA. O tutor e o copilot têm instruções separadas.</p>
-      <div class="campo" style="max-width:440px"><label>Chave da API</label><input type="password" placeholder="Cole sua chave do Google AI Studio"></div>
-      <div class="campo"><label>Como o tutor deve agir <span>leituras, fichamentos e cartões</span></label><textarea style="font-family:var(--ui);font-size:var(--t-s);min-height:90px">Você é o tutor de um mestrando em Administração. Seu trabalho é garantir a qualidade do estudo: pergunte, provoque, aponte lacunas e leituras apressadas. Não escreva fichamentos nem trechos por ele. Responda em português, de forma direta e sem elogios.</textarea></div>
-      <div class="campo"><label>Como o copilot deve agir <span>textos e diálogos</span></label><textarea style="font-family:var(--ui);font-size:var(--t-s);min-height:110px">Você é o copilot de escrita acadêmica de um mestrando. Nunca escreva do zero: entreviste o autor e proponha versões do que ele escreveu ou disse, no estilo do overview do autor. Cite apenas obras do acervo, com página e em ABNT. Se faltar fonte, diga e sugira obras para ele buscar; não invente referências. Responda em português.</textarea></div>
-      <button class="btn" data-acao="toast" data-msg="Na versão funcional, isto testa a conexão com o Gemini.">Testar conexão</button>
+      <div class="larg-form campo"><label>Chave da API</label><input type="password" placeholder="Cole sua chave do Google AI Studio"></div>
+      <div class="campo"><label>Como o tutor deve agir <span>leituras, fichamentos e cartões</span></label><textarea class="f-ui t-meta" style="min-height:90px">Você é o tutor de um mestrando em Administração. Seu trabalho é garantir a qualidade do estudo: pergunte, provoque, aponte lacunas e leituras apressadas. Não escreva fichamentos nem trechos por ele. Responda em português, de forma direta e sem elogios.</textarea></div>
+      <div class="campo"><label>Como o copilot deve agir <span>textos e diálogos</span></label><textarea class="f-ui t-meta" style="min-height:110px">Você é o copilot de escrita acadêmica de um mestrando. Nunca escreva do zero: entreviste o autor e proponha versões do que ele escreveu ou disse, no estilo do overview do autor. Cite apenas obras do acervo, com página e em ABNT. Se faltar fonte, diga e sugira obras para ele buscar; não invente referências. Responda em português.</textarea></div>
+      <button class="btn" data-acao="toast" data-msg="Na versão funcional, isto testa a conexão com o Gemini." data-ocupado="Testando…">Testar conexão</button>
     </section>`}
     ${modoReal()&&window.rb&&window.rb.iaUso?window.rb.iaUso.secModelos():secModelos()}
     ${modoReal()&&window.rb&&window.rb.iaUso?window.rb.iaUso.secCusto():secCusto()}
@@ -757,18 +766,18 @@ V.ajustes = () => `
     ${modoReal()&&window.rb&&window.rb.iaUso?window.rb.iaUso.secCores(FUNCOES):`<section id="sec-cores">
       <h2>Marca-textos</h2>
       <p>Cada cor tem uma função. A função decide para qual etapa do fichamento o grifo vai.</p>
-      ${FUNCOES.map(f=>`<div class="cor-func"><span class="sw c-${f.id}"></span><strong style="font-weight:500">${f.nome}</strong><input value="${f.desc}" aria-label="Descrição de ${f.nome}"></div>`).join('')}
+      ${FUNCOES.map(f=>`<div class="cor-func"><span class="sw c-${f.id}"></span><strong class="forte">${f.nome}</strong><input value="${f.desc}" aria-label="Descrição de ${f.nome}"></div>`).join('')}
     </section>`}
     ${modoReal()&&window.rb&&window.rb.agendaUI?window.rb.agendaUI.secaoHTML():`<section id="sec-agenda">
       <h2>Google Agenda</h2>
       <p>Aulas, entregas, encontros de orientação e sessões de estudo que você agenda no researchbook viram eventos na sua conta Google, numa agenda separada chamada researchbook.</p>
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
-        <span class="salvo" style="padding:0;font-size:var(--t-s);color:var(--tinta)"><i></i>Conectado à sua conta Google</span>
-        <span class="chip proj" style="font-size:var(--t-s);padding:5px 12px">Agenda: researchbook</span>
-        <button class="btn fant" style="margin-left:auto" data-acao="toast" data-msg="Na versão funcional, desconecta a conta. Os eventos já criados continuam no Google Agenda.">Desconectar</button>
+      <div class="flex gap-3 a-centro wrap mb-4">
+        <span class="p-0 t-meta t-texto salvo"><i></i>Conectado à sua conta Google</span>
+        <span class="chip proj">Agenda: researchbook</span>
+        <button class="ml-auto btn fant" data-acao="toast" data-msg="Na versão funcional, desconecta a conta. Os eventos já criados continuam no Google Agenda.">Desconectar</button>
       </div>
       <div class="opcoes"><label><input type="checkbox" checked>Aulas</label><label><input type="checkbox" checked>Entregas</label><label><input type="checkbox" checked>Encontros de orientação</label><label><input type="checkbox" checked>Sessões de estudo</label></div>
-      <div class="campo" style="max-width:360px"><label>Lembrete padrão</label><select><option>1 dia antes e 1 hora antes</option><option>1 hora antes</option><option>Sem lembrete</option></select></div>
+      <div class="larg-estreita campo"><label>Lembrete padrão</label><select><option>1 dia antes e 1 hora antes</option><option>1 hora antes</option><option>Sem lembrete</option></select></div>
     </section>`}
     <section id="sec-pasta">
       <h2>Pasta do researchbook</h2>
@@ -816,13 +825,13 @@ ${modoReal()?`<pre class="arvore">researchbook/
     ├── conversas/           <span>registro completo, por mês</span>
     └── exportar/</pre>`}
       <div class="aviso"><span>ⓘ</span><div>Pode usar os dois computadores e o celular ao mesmo tempo: cada mudança vai para o Drive e chega aos outros aparelhos na próxima sincronização. Se o mesmo item mudar em dois lugares antes disso, fica a versão mais recente e a outra é guardada para você decidir. A chave do Gemini fica só em cada aparelho, nunca na pasta.</div></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="flex gap-3 wrap">
         <button class="btn" data-acao="toast" data-msg="Na versão funcional, gera um .bib com toda a biblioteca.">Exportar referências (BibTeX)</button>
         <a class="btn fant" href="#memoria">Exportar memória para outras IAs</a>
       </div>
     </section>
   </div>
-  </div>`;
+  </div>`; };
 
 
 /* =========================================================
@@ -848,7 +857,7 @@ const REFS_PROJ = [
 ];
 const prioBar = n => `<span class="prio" aria-label="Prioridade ${['','baixa','média','alta'][n]}">${[1,2,3].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
 V.projeto = () => {
-  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.projeto() : '<div class="topo"><div><h1>Revisão do projeto</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.projeto() : esqueleto('Revisão do projeto');
   const ver=VERSOES.find(v=>v.v===S.versao);
   const grupos=[[3,'Alta','Sustentam decisões do texto e você ainda não domina.'],[2,'Média','Sustentam partes do texto, mas exigem pouco esforço.'],[1,'Baixa','Já lidas ou apenas de contexto. Ficam fora da trilha.']];
   const linha=r=>{
@@ -925,14 +934,14 @@ const ENCONTROS = [
     comb:[['Justificar o pragmatismo por escrito','Seção 3.2',true]]},
 ];
 V.orientacao = () => {
-  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.orientacao() : '<div class="topo"><div><h1>Orientação</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.orientacao() : esqueleto('Orientação');
   const abertos=ENCONTROS.flatMap(e=>e.comb.filter(c=>!c[2]).map(c=>[...c,e.data]));
   const tot=ENCONTROS.flatMap(e=>e.comb).length, feitos=tot-abertos.length;
   const onda=Array.from({length:64},(_,i)=>{const h=8+Math.abs(Math.sin(i*1.7)*14+Math.sin(i*.4)*8);return `<i class="${i<22?'tocado':''}" style="height:${Math.min(h,30)}px"></i>`}).join('');
   return `
   <div class="topo">
     <div><h1>Orientação</h1><p>Tudo o que passa entre você e o orientador, em ordem. A IA resume, extrai combinados e mostra os temas que voltam.</p></div>
-    <div class="acoes"><button class="btn prim" data-acao="registrar">${I.mais}Registrar conversa</button></div>
+    <div class="acoes"><button class="btn prim" data-acao="registrar" data-ocupado="Registrando…">${I.mais}Registrar conversa</button></div>
   </div>
   <div class="aviso-demo-pg">Registros de exemplo, escritos para o protótipo.</div>
   <div class="ori-grid">
@@ -956,7 +965,7 @@ V.orientacao = () => {
       <section class="bloco">
         <h3>Combinados em aberto</h3>
         <ul class="combinados">${abertos.map(c=>`<li><input type="checkbox" data-comb aria-label="${esc(c[0])}"><span>${c[0]}<small>${c[1]}. Combinado em ${c[3]}</small></span></li>`).join('')}</ul>
-        <div class="mute" style="font-size:var(--t-xs);margin-top:14px">${feitos} de ${tot} combinados cumpridos</div>
+        <div class="t-legenda mt-3 mute">${feitos} de ${tot} combinados cumpridos</div>
         <div class="barra"><i style="width:${feitos/tot*100}%"></i></div>
       </section>
       <section class="bloco">
@@ -964,7 +973,7 @@ V.orientacao = () => {
         <div class="dist">
           ${[['Avaliação e critérios',4],['Diferença para o RotaCoop',3],['Escopo da introdução',2],['Cronograma',2]].map(([n,v])=>`<div style="grid-template-columns:1fr 70px 18px"><span>${n}</span><span class="trilho"><i style="background:var(--petroleo);width:${v/4*100}%"></i></span><span class="mute-2">${v}</span></div>`).join('')}
         </div>
-        <p class="mute" style="font-size:var(--t-s);margin:14px 0 0">Avaliação apareceu em todas as conversas. É onde a banca deve insistir.</p>
+        <p class="t-meta m-0 mt-3 mute">Avaliação apareceu em todas as conversas. É onde a banca deve insistir.</p>
       </section>
       <section class="bloco">
         <h3>Próximo encontro: 20 nov.</h3>
@@ -974,7 +983,7 @@ V.orientacao = () => {
           <li>Nova versão da 2.4, contrastando com o RotaCoop</li>
           <li>Os 5 comentários da v2 ainda em aberto</li>
         </ol>
-        <button class="btn" style="margin-top:14px" data-acao="toast" data-msg="Pauta copiada">${I.copiar}Copiar pauta</button>
+        <button class="mt-3 btn" data-acao="toast" data-msg="Pauta copiada">${I.copiar}Copiar pauta</button>
       </section>
     </aside>
   </div>`;
@@ -988,25 +997,25 @@ const DISC_INFO = {
   'Pesquisa Operacional':{doc:'Docente não informado', sem:'2026/2', ent:['Trabalho em grupo, seção 4','20 nov.',true]},
   'Sustentabilidade e Organizações':{doc:'Docente não informado', sem:'2026/2', ent:['Artigo de até 7 páginas','28 nov.',false]},
 };
-V.disciplinas = () => modoReal() ? (window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.lista() : '<div class="topo"><div><h1>Projetos</h1><p>Abrindo seus dados…</p></div></div>') : `
+V.disciplinas = () => modoReal() ? (window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.lista() : esqueleto('Projetos', 'grade')) : `
   <div class="topo">
     <div><h1>Projetos</h1><p>A dissertação e as disciplinas do semestre. Todas compartilham a mesma biblioteca.</p></div>
-    <div class="acoes"><button class="btn prim" data-acao="nova-disciplina">${I.mais}Cadastrar disciplina</button></div>
+    <div class="acoes"><button class="btn prim" data-acao="nova-disciplina">${I.mais}Nova disciplina</button></div>
   </div>
   <div class="disc-grid">
-    <article class="disc"><div><span class="chip">Mestrado</span><h2 style="margin-top:10px">Dissertação</h2><div class="prof">Orientação: nome do orientador (exemplo)</div></div>
-      <div><div class="mute" style="font-size:var(--t-s)">3 de 8 leituras da qualificação concluídas</div><div class="barra" style="margin-bottom:0"><i style="width:37.5%"></i></div></div>
+    <article class="disc"><div><span class="chip">Mestrado</span><h2 class="mt-3">Dissertação</h2><div class="prof">Orientação: nome do orientador (exemplo)</div></div>
+      <div><div class="t-meta mute">3 de 8 leituras da qualificação concluídas</div><div class="barra mb-0"><i style="width:37.5%"></i></div></div>
       <div class="entrega"><span>Qualificação</span><b>mar. 2027</b></div>
       <div class="acoes"><a class="btn" href="#projeto">Abrir</a></div></article>
     ${DISCIPLINAS.map((d,di)=>{const inf=DISC_INFO[d], ls=LEITURAS.filter(l=>l.disc===d && l.proj!=='diss'), todas=LEITURAS.filter(l=>l.disc===d), feitas=todas.filter(l=>l.etapa>=4).length;return `
     <article class="disc">
-      <div><span class="chip">${inf.sem}</span><h2 style="margin-top:10px">${d}</h2><div class="prof">${inf.doc}</div></div>
-      <div><div class="mute" style="font-size:var(--t-s)">${feitas} de ${todas.length} leituras concluídas</div><div class="barra" style="margin-bottom:0"><i style="width:${todas.length?feitas/todas.length*100:0}%"></i></div></div>
+      <div><span class="chip">${inf.sem}</span><h2 class="mt-3">${d}</h2><div class="prof">${inf.doc}</div></div>
+      <div><div class="t-meta mute">${feitas} de ${todas.length} leituras concluídas</div><div class="barra mb-0"><i style="width:${todas.length?feitas/todas.length*100:0}%"></i></div></div>
       <div class="mini-trilha">${todas.slice(0,3).map(l=>`<div><span class="t">${citCurta(l)}</span>${pips(l.etapa)}</div>`).join('')}</div>
       <div class="entrega"><span>${inf.ent[0]}</span><b class="${inf.ent[2]?'urg':''}">${inf.ent[1]}</b></div>
       <div class="acoes"><a class="btn" href="#disciplina/${di}" data-disc-aba="geral">Abrir</a><button class="btn fant" data-acao="toast" data-msg="Na versão funcional, você edita docente, semestre e entregas.">Editar</button></div>
     </article>`}).join('')}
-    <button class="disc nova" data-acao="nova-disciplina"><span><b>Cadastrar disciplina</b>Envie o plano de ensino e a IA sugere as leituras obrigatórias e as datas de entrega.</span></button>
+    <button class="disc nova" data-acao="nova-disciplina"><span><b>Nova disciplina</b>Envie o plano de ensino e a IA sugere as leituras obrigatórias e as datas de entrega.</span></button>
   </div>`;
 
 
@@ -1021,9 +1030,9 @@ const TEXTOS = [
 const PASSOS_TEXTO = ['Enquadrar','Ideia','Diagnóstico','Estrutura','Escrita','Revisão'];
 const partIA = a => a.co + a.ia;
 const barraAutoria = (a,meta) => `<div class="barra-wrap"><div class="barra-a"><span class="a-autor" style="width:${a.autor}%"></span><span class="a-co" style="width:${a.co}%"></span><span class="a-ia" style="width:${a.ia}%"></span></div>${meta?`<i class="meta-l" style="left:calc(${100-meta}% - 1px)" title="Teto da IA: ${meta}%"></i>`:''}</div>`;
-const LEG_AUTORIA = '<div class="leg-a"><span><i class="a-autor"></i>Seu</span><span><i class="a-co"></i>Coautoria</span><span><i class="a-ia"></i>IA</span><span><i style="background:#9A3B26;width:2px;height:12px"></i>Teto da IA</span></div>';
+const LEG_AUTORIA = '<div class="leg-a"><span><i class="a-autor"></i>Seu</span><span><i class="a-co"></i>Coautoria</span><span><i class="a-ia"></i>IA</span><span><i class="a-teto"></i>Teto da IA</span></div>';
 
-V.escrita = () => modoReal() ? (window.rb&&window.rb.escritaUI ? window.rb.escritaUI.lista() : '<div class="topo"><div><h1>Textos</h1><p>Abrindo seus dados…</p></div></div>') : `
+V.escrita = () => modoReal() ? (window.rb&&window.rb.escritaUI ? window.rb.escritaUI.lista() : esqueleto('Textos')) : `
   <div class="topo">
     <div><h1>Textos</h1><p>Artigos, resenhas e trabalhos de disciplina. A dissertação continua no Word.</p></div>
     <div class="acoes"><a class="btn prim" href="#texto/artigo-dt" data-ptexto="0">${I.mais}Novo texto</a></div>
@@ -1032,52 +1041,52 @@ V.escrita = () => modoReal() ? (window.rb&&window.rb.escritaUI ? window.rb.escri
     ${TEXTOS.map(t=>`
     <a class="txt-card" href="#texto/${t.id}" data-ptexto="${t.passo}">
       <div><div class="t">${t.tit}</div><div class="m">${t.tipo}, ${t.disc}. ${t.limite}, entrega ${t.prazo}</div></div>
-      <div class="et"><span class="st"><i style="background:${t.passo<=3?'var(--linha-2)':t.passo===4?'var(--petroleo)':'#5C8F4E'}"></i>${t.passo<=3?'Preparando: '+PASSOS_TEXTO[t.passo].toLowerCase():t.passo===4?'Escrevendo':'Em revisão'}</span><span class="mute-2" style="font-size:var(--t-xs)">${t.palavras.toLocaleString('pt-BR')} de ~${t.alvo.toLocaleString('pt-BR')} palavras</span></div>
+      <div class="et"><span class="st"><i style="background:${t.passo<=3?'var(--linha-2)':t.passo===4?'var(--petroleo)':'var(--sucesso)'}"></i>${t.passo<=3?'Preparando: '+PASSOS_TEXTO[t.passo].toLowerCase():t.passo===4?'Escrevendo':'Em revisão'}</span><span class="t-legenda mute-2">${t.palavras.toLocaleString('pt-BR')} de ~${t.alvo.toLocaleString('pt-BR')} palavras</span></div>
       <div class="autoria"><span>Participação da IA: <b>${partIA(t.a)}%</b> (teto ${t.meta}%)</span>${barraAutoria(t.a,t.meta)}</div>
     </a>`).join('')}
   </div>
-  <div style="margin-top:14px;max-width:1180px">${LEG_AUTORIA}</div>`;
+  <div class="mt-3 larg-1180">${LEG_AUTORIA}</div>`;
 
 V.texto = (id) => {
-  if(modoReal()) return window.rb&&window.rb.escritaUI ? window.rb.escritaUI.tela(decodeURIComponent(id||'')) : '<div class="topo"><div><h1>Texto</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.escritaUI ? window.rb.escritaUI.tela(decodeURIComponent(id||'')) : esqueleto('Texto', 'texto');
   const t=TEXTOS.find(x=>x.id===id)||TEXTOS[0]; const p=S.passoTexto;
   let corpo='';
   if(p===0) corpo=`
-  <section class="editor" style="max-width:900px">
+  <section class="larg-pagina editor">
     <h2>Enquadrar</h2><p class="instr">O que é o texto e quais são as regras. O copilot usa estas informações em todas as etapas.</p>
-    <div class="aj" style="max-width:none;gap:0"><div class="linha2">
+    <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Tipo de texto</label><select><option>Artigo de disciplina</option><option>Artigo para periódico</option><option>Resenha</option><option>Ensaio</option><option>Seção de trabalho em equipe</option></select></div>
       <div class="campo"><label>Disciplina ou projeto</label><select>${DISCIPLINAS.map(d=>`<option ${d===t.disc?'selected':''}>${d}</option>`).join('')}${PROJETOS.map(x=>`<option>${x.nome}</option>`).join('')}</select></div>
     </div></div>
-    <div class="campo"><label>Enunciado da atividade <span>cole o texto ou envie o PDF</span></label><textarea style="font-family:var(--ui);font-size:var(--t-m)">Artigo individual, de até 7 páginas, que discuta um tema do capítulo estudado à luz de um caso concreto. Normas ABNT.</textarea></div>
-    <div class="campo"><label>Critérios de avaliação</label><textarea style="font-family:var(--ui);font-size:var(--t-m);min-height:70px">Clareza do argumento; uso das fontes da disciplina; relação entre teoria e caso.</textarea></div>
-    <div class="aj" style="max-width:none;gap:0"><div class="linha2">
+    <div class="campo"><label>Enunciado da atividade <span>cole o texto ou envie o PDF</span></label><textarea class="f-ui t-ui">Artigo individual, de até 7 páginas, que discuta um tema do capítulo estudado à luz de um caso concreto. Normas ABNT.</textarea></div>
+    <div class="campo"><label>Critérios de avaliação</label><textarea class="f-ui t-ui" style="min-height:70px">Clareza do argumento; uso das fontes da disciplina; relação entre teoria e caso.</textarea></div>
+    <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Limite</label><input value="${t.limite}, ABNT"></div>
       <div class="campo"><label>Entrega</label><input type="date" value="2026-11-28"></div>
     </div></div>
-    <div class="campo"><label>Teto de participação da IA <span id="teto-v">${t.meta}%</span></label><input type="range" min="0" max="100" step="5" value="${t.meta}" id="teto" style="padding:0;accent-color:var(--petroleo)"><div class="mute-2" style="font-size:var(--t-xs);margin-top:6px">Soma de coautoria e trechos da IA. O copilot avisa quando o texto passar do teto. Os marcadores ficam no researchbook, nunca no texto exportado.</div></div>
+    <div class="campo"><label>Teto de participação da IA <span id="teto-v">${t.meta}%</span></label><input type="range" min="0" max="100" step="5" value="${t.meta}" id="teto" class="p-0"><div class="t-legenda mt-2 mute-2">Soma de coautoria e trechos da IA. O copilot avisa quando o texto passar do teto. Os marcadores ficam no researchbook, nunca no texto exportado.</div></div>
   </section>`;
   if(p===1) corpo=`
-  <section class="editor" style="max-width:900px">
+  <section class="larg-pagina editor">
     <h2>A ideia, nas suas palavras</h2><p class="instr">Uma entrevista curta. Responda como falaria com um colega. O copilot não reescreve suas respostas nesta etapa.</p>
     <div class="qa"><div class="q">O que você quer defender, em uma frase?</div><div class="r"><small>Sua resposta</small>Que o greenwashing não é um desvio de comunicação: é consequência de aceitarmos o relatório de sustentabilidade como peça de reputação enquanto isso era conveniente.</div></div>
     <div class="qa"><div class="q">Para quem você está escrevendo?</div><div class="r"><small>Sua resposta</small>Para a turma e o professor, que conhecem o capítulo, mas não necessariamente os casos.</div></div>
     <div class="qa"><div class="q">O que fica de fora?</div><div class="r"><small>Sua resposta</small>Legislação ambiental. Não domino e não é o foco.</div></div>
-    <div class="qa pendente"><div class="q">${I.escrita}<span>Você diz “aceitarmos”. Quem é esse nós: empresas, investidores ou reguladores? A resposta muda a estrutura do artigo.</span></div><div class="campo" style="margin:10px 0 0"><textarea placeholder="Responda com suas palavras"></textarea></div></div>
+    <div class="qa pendente"><div class="q">${I.escrita}<span>Você diz “aceitarmos”. Quem é esse nós: empresas, investidores ou reguladores? A resposta muda a estrutura do artigo.</span></div><div class="m-0 mt-3 campo"><textarea placeholder="Responda com suas palavras"></textarea></div></div>
     <div class="tese-box"><small>Tese de trabalho: sua frase, sem edição</small><p>O greenwashing não é um desvio de comunicação: é consequência de aceitarmos o relatório de sustentabilidade como peça de reputação enquanto isso era conveniente.</p></div>
   </section>`;
   if(p===2) corpo=`
   <div class="diag-grid">
-    <section class="diag"><h3><i style="background:#5C8F4E"></i>Sustentado pelo acervo</h3><p>Você tem grifos e fichamentos para isto</p>
+    <section class="diag"><h3><i style="background:var(--sucesso)"></i>Sustentado pelo acervo</h3><p>Você tem grifos e fichamentos para isto</p>
       <div class="diag-item"><b>A conveniência da reputação suprime o compromisso ambiental</b><span>Teixeira, p. 48. 3 grifos, 1 argumento</span></div>
       <div class="diag-item"><b>O relatório como ativo de reputação</b><span>Nogueira e Prado (2023). 5 grifos; leitura em andamento</span></div>
     </section>
-    <section class="diag"><h3><i style="background:#C0702F"></i>Frágil</h3><p>Uma fonte só, ou fonte ainda não lida</p>
+    <section class="diag"><h3><i style="background:#B8862B"></i>Frágil</h3><p>Uma fonte só, ou fonte ainda não lida</p>
       <div class="diag-item"><b>Os reguladores também se beneficiaram da vitrine</b><span>Só 1 grifo, em Teixeira. Está na sua tese, então precisa de mais base.</span></div>
     </section>
-    <section class="diag"><h3><i style="background:#9A3B26"></i>Lacuna</h3><p>Nada no acervo. Sugestões para você buscar</p>
-      <div class="diag-item"><b>Os dados permitiam inferir traços de personalidade</b><span>Sugestão: Kosinski, Stillwell e Graepel (2013), PNAS</span><button class="btn" data-acao="toast" data-msg="Sugestão salva. Adicione o PDF à biblioteca para o copilot poder citar.">Vou buscar</button></div>
-      <div class="diag-item"><b>Cronologia do caso</b><span>Sugestão: reportagem de Cadwalladr e Graham-Harrison (2018), The Guardian</span><button class="btn" data-acao="toast" data-msg="Sugestão salva. Adicione o texto à biblioteca para o copilot poder citar.">Vou buscar</button></div>
+    <section class="diag"><h3><i style="background:var(--perigo)"></i>Lacuna</h3><p>Nada no acervo. Sugestões para você buscar</p>
+      <div class="diag-item"><b>Os dados permitiam inferir traços de personalidade</b><span>Sugestão: Kosinski, Stillwell e Graepel (2013), PNAS</span><button class="btn" data-acao="toast" data-msg="Sugestão salva. Adicione o PDF à biblioteca para o copilot poder citar.">Marcar para buscar</button></div>
+      <div class="diag-item"><b>Cronologia do caso</b><span>Sugestão: reportagem de Cadwalladr e Graham-Harrison (2018), The Guardian</span><button class="btn" data-acao="toast" data-msg="Sugestão salva. Adicione o texto à biblioteca para o copilot poder citar.">Marcar para buscar</button></div>
     </section>
   </div>
   <div class="nota-grounding">${I.tutor}<span>O copilot só cita o que está no seu acervo, com página. Sugestões de fora ficam pendentes até você adicionar o texto à biblioteca.</span></div>`;
@@ -1090,10 +1099,10 @@ V.texto = (id) => {
       ['Considerações finais','Retomar a tese e os limites',[],'~400','Não iniciada'],
     ];
     corpo=`
-  <section class="editor" style="max-width:1000px">
+  <section class="larg-1000 editor">
     <h2>Estrutura</h2><p class="instr">Proposta do copilot a partir da sua tese e do diagnóstico. Renomeie, reordene ou apague seções; nada é escrito até você aprovar.</p>
     <ol class="estr">${sec.map(([n,o,f,x,st])=>`<li><div><div class="t">${n}</div><div class="o">${o}</div><div class="f">${f.map(y=>`<span class="chip ${y==='lacuna'?'lac':''}">${y==='lacuna'?'Falta fonte':y}</span>`).join('')}</div></div><span class="x">${x} palavras</span><span class="x">${st}</span></li>`).join('')}</ol>
-    <div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-acao="toast" data-msg="Na versão funcional, você arrasta para reordenar.">${I.mais}Adicionar seção</button><button class="btn fant" data-acao="toast" data-msg="O copilot vai propor outra estrutura a partir da mesma tese.">Pedir outra proposta</button></div>
+    <div class="flex gap-3 mt-3"><button class="btn" data-acao="toast" data-msg="Na versão funcional, você arrasta para reordenar.">${I.mais}Adicionar seção</button><button class="btn fant" data-acao="toast" data-msg="O copilot vai propor outra estrutura a partir da mesma tese." data-ocupado="Propondo…">Pedir outra proposta</button></div>
   </section>`;
   }
   if(p===4) corpo=escritaHTML(t);
@@ -1115,10 +1124,10 @@ V.texto = (id) => {
       </div>
     </section>
     <aside class="lado">
-      <section class="bloco cta-trilha"><h3>Exportar</h3><p>Word com formatação ABNT. Os marcadores de autoria ficam aqui; o arquivo sai limpo.</p><button class="btn" data-acao="toast" data-msg="Arquivo gerado: artigo-sustentabilidade.docx">Exportar para Word (.docx)</button></section>
+      <section class="bloco cta-trilha"><h3>Exportar</h3><p>Word com formatação ABNT. Os marcadores de autoria ficam aqui; o arquivo sai limpo.</p><button class="btn" data-acao="toast" data-msg="Arquivo gerado: artigo-sustentabilidade.docx" data-ocupado="Exportando…">Exportar para Word (.docx)</button></section>
       <section class="bloco"><h3>Referências</h3>
         <ul class="refs-abnt"><li>${L('teixeira2021').abnt}</li><li>${L('nogueira2023').abnt}</li></ul></section>
-      <section class="bloco"><h3>Autoria deste texto</h3>${barraAutoria(t.a,t.meta)}<div style="margin-top:12px">${LEG_AUTORIA}</div></section>
+      <section class="bloco"><h3>Autoria deste texto</h3>${barraAutoria(t.a,t.meta)}<div class="mt-3">${LEG_AUTORIA}</div></section>
     </aside>
   </div>`;
   const meta=`${t.tipo}, ${t.disc}. ${t.limite}, entrega em ${t.prazo}`;
@@ -1128,14 +1137,14 @@ V.texto = (id) => {
   <ol class="passos quatro">${PASSOS_TEXTO.slice(0,4).map((n,i)=>`<li><button data-passo-texto="${i}" class="${i===p?'on':i<p?'feito':''}"><span class="n">${i<p?'✓':i+1}</span><span class="rot">${n}</span></button></li>`).join('')}</ol>
   ${p===0?'<p class="setup-intro">O copilot entrevista você e propõe versões do que você escreveu. Ele não escreve do zero e só cita o que está na sua biblioteca.</p>':''}
   ${corpo}
-  <div style="display:flex;justify-content:space-between;max-width:${p===2?1180:p===3?1000:900}px;margin-top:20px">${p>0?`<button class="btn fant" data-passo-texto="${p-1}">Voltar para ${PASSOS_TEXTO[p-1]}</button>`:'<span></span>'}<button class="btn prim" data-passo-texto="${p+1}">${p===3?'Aprovar estrutura e começar a escrever':'Ir para '+PASSOS_TEXTO[p+1]}</button></div>`;
+  <div class="flex entre mt-5 ${p===2?'larg-1180':p===3?'larg-1000':'larg-pagina'}">${p>0?`<button class="btn fant" data-passo-texto="${p-1}">Voltar para ${PASSOS_TEXTO[p-1]}</button>`:'<span></span>'}<button class="btn prim" data-passo-texto="${p+1}">${p===3?'Aprovar estrutura e começar a escrever':'Ir para '+PASSOS_TEXTO[p+1]}</button></div>`;
   if(p===4) return `
   <a class="voltar" href="#escrita">${I.voltar}Textos</a>
-  <div class="esc-cab"><div><h1>${t.tit}</h1><p>${meta} <span class="salvo" style="display:inline-flex;padding:0"><i></i>Salvo há 10 s</span></p></div>
+  <div class="esc-cab"><div><h1>${t.tit}</h1><p>${meta} <span class="d-inline-flex p-0 salvo"><i></i>Salvo há 10 s</span></p></div>
     <div class="acoes"><button class="btn" data-acao="briefing">Briefing</button><button class="btn prim" data-passo-texto="5">Revisar e exportar</button></div></div>
   ${corpo}`;
   return `
-  <button class="voltar" style="background:none;border:0;padding:0;cursor:pointer" data-passo-texto="4">${I.voltar}Voltar ao texto</button>
+  <button class="fundo-0 b-0 p-0 cursor voltar" data-passo-texto="4">${I.voltar}Voltar ao texto</button>
   <div class="esc-cab"><div><h1>${t.tit}</h1><p>${meta}</p></div></div>
   ${corpo}`;
 };
@@ -1144,7 +1153,7 @@ function escritaHTML(t){
   return `
   <div class="esc-grid">
     <aside class="lat-esc">
-      <h4 style="font-size:var(--t-s);font-weight:500;margin:0 0 8px">Seções</h4>
+      <h4 class="t-meta forte m-0 mb-2">Seções</h4>
       <div class="secoes">
         <button><i class="feita"></i>Introdução</button>
         <button><i class="feita"></i>A conveniência que suprime o compromisso</button>
@@ -1157,11 +1166,11 @@ function escritaHTML(t){
       <div class="folha-barra">
         <span>1.840 de ~2.800 palavras</span>
         <span class="aut-mini">IA ${partIA(t.a)}% ${barraAutoria(t.a,t.meta)}</span>
-        <span>7 citações do acervo, <b style="color:#9A4A1F;font-weight:500">1 trecho sem fonte</b></span>
+        <span>7 citações do acervo, <b class="t-aviso forte">1 trecho sem fonte</b></span>
         <label><input type="checkbox" data-marcas ${S.marcas?'checked':''}>Marcadores de autoria</label>
       </div>
       <div class="folha-corpo">
-        <div class="aviso-demo-pg" style="margin-bottom:22px">Texto de exemplo, escrito para o protótipo.</div>
+        <div class="mb-6 aviso-demo-pg">Texto de exemplo, escrito para o protótipo.</div>
         <h2>3. Reputação como modelo de negócio</h2>
         <div class="par autor"><span class="tag-a">Seu</span>O greenwashing costuma ser contado como um exagero de comunicação. Essa leitura é confortável porque trata o problema como falha de redação, que se corrige com mais revisão. Ela esconde a pergunta que importa: por que tantas empresas tinham interesse em parecer mais sustentáveis do que eram?</div>
         <div class="par co"><span class="tag-a">Coautoria: versão do copilot, editada por você</span>A resposta está no modelo de negócio. Para Nogueira e Prado, o relatório de sustentabilidade passou a funcionar como ativo de reputação junto a investidores e consumidores <span class="cit-in" title="Grifo de conceito, cap. 2">(Nogueira; Prado, 2023)</span>. Nesse modelo, a narrativa não é efeito colateral do relatório; é o produto.</div>
@@ -1175,30 +1184,30 @@ function escritaHTML(t){
           <div class="versao-op"><div class="cab"><b>Mais acadêmica</b><span class="chip">tira o coloquial</span><span class="chip">liga à fonte</span></div>
             <p>Tratar o greenwashing como exagero de comunicação ignora que o modelo de negócio dependia justamente da reputação construída pelos relatórios <span class="cit-in">(Nogueira; Prado, 2023)</span>.</p>
             <div class="bts"><button class="btn prim" data-acao="toast" data-msg="Versão aplicada. O parágrafo passa a contar como coautoria.">Usar</button><button class="btn" data-acao="toast" data-msg="Edite à vontade; quanto mais você mudar, mais o trecho conta como seu.">Editar a partir desta</button></div></div>
-          <div class="versao-op" style="padding-bottom:0"><div class="bts"><button class="btn fant" data-acao="toast" data-msg="Mantido como você escreveu. O trecho continua marcado como sem fonte.">Manter o meu</button></div></div>
+          <div class="pb-0 versao-op"><div class="bts"><button class="btn fant" data-acao="toast" data-msg="Mantido como você escreveu. O trecho continua marcado como sem fonte.">Manter o meu</button></div></div>
         </div>
         <div class="par ia"><span class="tag-a">IA: transição aceita com pouca edição</span>A próxima seção examina como essa conveniência operou em três níveis: empresas, investidores e reguladores.</div>
       </div>
     </section>
-    <aside class="painel-lat" style="display:flex;flex-direction:column;gap:14px">
+    <aside class="flex coluna gap-3 painel-lat">
       <div class="abas-lat" role="tablist"><button role="tab" data-aba-esc="copilot" class="${S.abaEsc==='copilot'?'on':''}">Copilot</button><button role="tab" data-aba-esc="material" class="${S.abaEsc==='material'?'on':''}">Material da seção</button></div>
       ${S.abaEsc==='material'?`<div>      
         
-        <p class="sub" style="border:1px dashed var(--linha-2);border-radius:6px;padding:6px 8px">Grifos de exemplo, escritos para o protótipo.</p>
+        <p class="sub caixa-tracejada">Grifos de exemplo, escritos para o protótipo.</p>
         <button class="grifo-item" style="border-color:var(--hl-conceito)" data-acao="toast" data-msg="Citação inserida no parágrafo, com página e em ABNT">O relatório de sustentabilidade como ativo de reputação junto a investidores<small>Nogueira e Prado (2023), cap. 2</small></button>
         <button class="grifo-item" style="border-color:var(--hl-dissert)" data-acao="toast" data-msg="Citação inserida no parágrafo, com página e em ABNT">O consumidor deixa de avaliar práticas e passa a avaliar narrativas<small>Nogueira e Prado (2023), cap. 1</small></button>
         <button class="grifo-item" style="border-color:var(--hl-critica)" data-acao="toast" data-msg="Abrindo o argumento ligado a este grifo">Conveniência da reputação e supressão do compromisso ambiental<small>Teixeira, p. 48</small></button>
       </div>`:`
-      <p class="sub" style="margin:0">Entrevista desta seção</p>
+      <p class="m-0 sub">Entrevista desta seção</p>
       <div class="msg tutor"><span class="av">${I.escrita}</span><div><p>O que esta seção precisa provar para a sua tese funcionar?</p></div></div>
       <div class="msg eu">Que a reputação era o produto, não um efeito colateral. Senão o greenwashing vira só exagero de comunicação.</div>
       <div class="msg tutor"><span class="av">${I.escrita}</span><div><p>Boa. Você tem isso em Nogueira e Prado. Agora: no parágrafo em revisão você vai além e afirma intenção (“sabiam”). Quer sustentar intenção ou basta mostrar que lucravam?</p></div></div>
-      <div class="atalhos" style="padding:0">
+      <div class="p-0 atalhos">
         <button data-acao="toast" data-msg="O copilot propõe versões do parágrafo selecionado">Propor versões</button>
         <button data-acao="toast" data-msg="3 frases desta seção dependem de fonte">Onde falta fonte?</button>
         <button data-acao="toast" data-msg="Comparado ao seu overview: frases mais longas que a sua média">Isso soa como eu?</button>
       </div>
-      <form class="entrada" style="padding:0;border:0" data-demo-toast="Na versão funcional, o copilot responde aqui"><textarea placeholder="Responda ou pergunte ao copilot" aria-label="Mensagem ao copilot"></textarea><button type="submit" aria-label="Enviar">${I.enviar}</button></form>`}
+      <form class="p-0 b-0 entrada" data-demo-toast="Na versão funcional, o copilot responde aqui"><textarea placeholder="Responda ou pergunte ao copilot" aria-label="Mensagem ao copilot"></textarea><button type="submit" aria-label="Enviar">${I.enviar}</button></form>`}
     </aside>
   </div>`;
 }
@@ -1213,7 +1222,7 @@ const DIALOGOS = [
 ];
 const MODOS = {Contraponto:'A IA defende a posição contrária à sua', 'Socrático':'A IA só pergunta, até você chegar à sua posição', Alinhamento:'A IA compara sua visão com a dos autores lidos'};
 V.dialogos = () => {
-  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.dialogos() : '<div class="topo"><div><h1>Diálogos</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.dialogos() : esqueleto('Diálogos');
   const d=DIALOGOS.find(x=>x.id===S.dlg)||DIALOGOS[0];
   return `
   <div class="topo"><div><h1>Diálogos</h1><p>Conversas sobre as ideias das leituras: alinhar visões, testar contrapontos e firmar posições.</p></div>
@@ -1225,11 +1234,11 @@ V.dialogos = () => {
         <h2>${d.tema}</h2>
         <div class="linha-h">
           <div class="seg" role="group" aria-label="Modo do diálogo">${Object.keys(MODOS).map(m=>`<button class="${m===d.modo?'on':''}" title="${MODOS[m]}" data-acao="toast" data-msg="${MODOS[m]}">${m}</button>`).join('')}</div>
-          ${d.leit.map(i=>`<a class="chip proj" href="#leitor/${i}" style="text-decoration:none">${citCurta(L(i))}</a>`).join('')}
+          ${d.leit.map(i=>`<a class="sem-sublinhado chip proj" href="#leitor/${i}">${citCurta(L(i))}</a>`).join('')}
         </div>
       </header>
       <div class="corpo">
-        <div class="aviso-demo-pg" style="margin:0">Diálogo de exemplo, escrito para o protótipo.</div>
+        <div class="m-0 aviso-demo-pg">Diálogo de exemplo, escrito para o protótipo.</div>
         <div class="msg eu">Quero defender que, para roteirizadores em cooperativas, a adesão das equipes às rotas substitui a economia de quilometragem em simulação.</div>
         <div class="msg tutor"><span class="av">${I.dialogos}</span><div><p>Vou defender o lado contrário. Uma equipe pode seguir cem vezes uma rota ruim. Adesão mostra uso, não ganho.</p><p>Se a banca disser que você trocou eficiência por aceitação, o que você responde?</p></div></div>
         <div class="msg eu">Que a utilidade é declarada antes dos testes e o critério é decisional: a coleta melhora ou não.</div>
@@ -1251,7 +1260,7 @@ V.dialogos = () => {
 /* =========================================================
    Overview do autor
    ========================================================= */
-V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overviewUI.tela() : '<div class="topo"><div><h1>Overview do autor</h1><p>Abrindo seus dados…</p></div></div>') : `
+V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overviewUI.tela() : esqueleto('Overview do autor', 'grade')) : `
   <div class="topo"><div><h1>Overview do autor</h1><p>Como você escreve, a partir dos seus textos e das conversas com o tutor e o copilot. O copilot usa isto para proteger a sua voz.</p></div>
     <div class="acoes"><button class="btn prim" data-acao="toast" data-msg="Na versão funcional, você envia .docx, .pdf ou .md com textos seus.">${I.upload}Adicionar textos meus</button></div></div>
   <div class="aviso-demo-pg">Análise de exemplo. Ela só será real depois que você enviar seus textos.</div>
@@ -1260,7 +1269,7 @@ V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overvi
       <h3>Seu estilo, em palavras</h3>
       <p>Você abre os parágrafos com uma afirmação curta e usa as frases seguintes para qualificar. Prefere a voz ativa e evita jargão quando há palavra comum que sirva.</p>
       <p>Nos textos de método, as frases ficam bem mais longas e você empilha orações subordinadas. É ali que o texto perde clareza.</p>
-      <div class="mute-2" style="font-size:var(--t-xs)">Baseado em 9 textos e 214 conversas. Atualizado hoje.</div>
+      <div class="t-legenda mute-2">Baseado em 9 textos e 214 conversas. Atualizado hoje.</div>
     </section>
     <section class="bloco aut-corpus">
       <h3>Textos analisados</h3>
@@ -1280,25 +1289,25 @@ V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overvi
     </section>
     <section class="bloco aut-temas"><h3>Temas recorrentes</h3>
       <div class="dist">${[['Avaliação de sistemas',9],['Logística urbana',7],['Sustentabilidade',5],['Cooperativismo',5],['Método',4]].map(([n,v])=>`<div style="grid-template-columns:1fr 60px 18px"><span>${n}</span><span class="trilho"><i style="background:var(--petroleo);width:${v/9*100}%"></i></span><span class="mute-2">${v}</span></div>`).join('')}</div>
-      <p class="mute-2" style="font-size:var(--t-xs);margin:12px 0 0">Número de textos em que o tema aparece.</p>
+      <p class="t-legenda m-0 mt-3 mute-2">Número de textos em que o tema aparece.</p>
     </section>
     <section class="bloco aut-termos"><h3>Palavras e conectivos que são seus</h3>
       <div class="termos">${[['ou seja',41],['por isso',33],['na prática',27],['utilidade',25],['decisão',22],['de fato',19],['portanto',8]].map(([w,n])=>`<span class="chip"><b>${w}</b> ${n}</span>`).join('')}</div>
-      <p class="mute-2" style="font-size:var(--t-xs);margin:12px 0 0">“Portanto” aparece pouco nos seus textos. Quando o copilot usar, desconfie.</p>
+      <p class="t-legenda m-0 mt-3 mute-2">“Portanto” aparece pouco nos seus textos. Quando o copilot usar, desconfie.</p>
     </section>
     <section class="bloco aut-evol"><h3>Participação da IA por texto</h3>
       <div class="evol">${TEXTOS.map(t=>`<div><span>${t.tit.length>38?t.tit.slice(0,38)+'…':t.tit}</span>${barraAutoria(t.a,t.meta)}</div>`).join('')}</div>
-      <div style="margin-top:12px">${LEG_AUTORIA}</div>
+      <div class="mt-3">${LEG_AUTORIA}</div>
     </section>
     <section class="bloco aut-obs"><h3>Para observar</h3>
-      <ul style="margin:0;padding-left:18px;font-size:var(--t-s);display:flex;flex-direction:column;gap:8px">
+      <ul class="m-0 pl-lista t-meta flex coluna gap-2">
         <li>“De fato” aparece em 19 textos, muitas vezes sem função.</li>
         <li>Nas conclusões, você retoma a tese com as mesmas palavras da introdução.</li>
         <li>Quando escreve com pressa, as citações somem antes das afirmações mais fortes.</li>
       </ul>
     </section>
     <section class="bloco aut-uso"><h3>Como o copilot usa este overview</h3>
-      <ul style="margin:0;padding-left:18px;font-size:var(--t-s);display:flex;flex-direction:column;gap:8px">
+      <ul class="m-0 pl-lista t-meta flex coluna gap-2">
         <li>Propõe versões no seu comprimento de frase e com os seus conectivos.</li>
         <li>Avisa quando um trecho se afasta do seu estilo (“Isso soa como eu?”).</li>
         <li>Nunca imita o seu estilo para escrever do zero.</li>
@@ -1320,9 +1329,9 @@ const MEM_CAT = [
   ['Como você escreve',[['Linguagem simples; uma ideia por título','Você, nas preferências'],['Só afirmar o que a fonte sustenta','Você, nas preferências'],['ABNT sempre','Você, nas preferências']]],
   ['Regras para a IA',[['Tutor provoca e não escreve por você','Você, nas preferências'],['Copilot propõe versões do que você escreveu; nunca escreve do zero','Você, nas preferências'],['Citar só o acervo; sugerir fora dele e pedir que você busque','Você, nas preferências']]],
 ];
-V.memoria = () => modoReal() ? (window.rb&&window.rb.memoriaUI ? window.rb.memoriaUI.tela() : '<div class="topo"><div><h1>Memória</h1><p>Abrindo seus dados…</p></div></div>') : `
+V.memoria = () => modoReal() ? (window.rb&&window.rb.memoriaUI ? window.rb.memoriaUI.tela() : esqueleto('Memória')) : `
   <div class="topo"><div><h1>Memória</h1><p>O que a IA sabe sobre você e seus projetos. Você aprova o que fica, apaga o que não serve e exporta para outras IAs.</p></div></div>
-  <details class="ajuda-det" style="margin-bottom:18px"><summary>Como a memória funciona?</summary><div class="camadas" style="margin-top:12px">
+  <details class="mb-4 ajuda-det"><summary>Como a memória funciona?</summary><div class="mt-3 camadas">
     <div class="camada"><span class="n">1</span><b>Conversas</b><p>Registro completo de tudo que você trocou com o tutor, o copilot e nos diálogos.</p><div class="q">214 conversas, em memoria/conversas</div></div>
     <div class="camada"><span class="n">2</span><b>Memória consolidada</b><p>Fatos, decisões e preferências que você aprovou. É curta de propósito.</p><div class="q">38 itens, em memoria/*.md</div></div>
     <div class="camada"><span class="n">3</span><b>Contexto de cada pedido</b><p>Montado na hora: memória consolidada + o texto ou leitura aberta + trechos relevantes das conversas.</p><div class="q">Cerca de 12 mil tokens por pedido</div></div>
@@ -1366,7 +1375,7 @@ Exportado em 13/11/2026.
 - Não escreva do zero; proponha versões
   do que eu escrevi
 - Cite só fontes que eu fornecer</pre>
-        <button class="btn prim" style="width:100%;justify-content:center" data-acao="toast" data-msg="Arquivo gerado em memoria/exportar/contexto-2026-11-13.md">Exportar contexto</button>
+        <button class="w-100 j-centro btn prim" data-acao="toast" data-msg="Arquivo gerado em memoria/exportar/contexto-2026-11-13.md">Exportar contexto</button>
       </section>
       <section class="bloco"><h3>Onde fica</h3><p>Tudo em <b>researchbook/memoria</b>, na sua pasta do Drive, em arquivos de texto que você pode ler e editar fora do app.</p></section>
     </aside>
@@ -1400,14 +1409,14 @@ function resultadosBusca(q){
 }
 function abrirBusca(){
   const veu=document.getElementById('veu');
-  veu.innerHTML=`<div class="modal busca-modal"><h2 id="modal-tit" class="sr" style="position:absolute;left:-9999px">Buscar</h2><input id="qk" placeholder="Buscar leituras, textos, argumentos e páginas" aria-label="Buscar" autocomplete="off"><div class="res-busca" id="res-busca">${resultadosBusca('')}</div></div>`;
+  veu.innerHTML=`<div class="modal busca-modal"><h2 id="modal-tit" class="sr sr">Buscar</h2><input id="qk" placeholder="Buscar leituras, textos, argumentos e páginas" aria-label="Buscar" autocomplete="off"><div class="res-busca" id="res-busca">${resultadosBusca('')}</div></div>`;
   veu.classList.add('on'); setTimeout(()=>document.getElementById('qk').focus(),20);
 }
 function abrirBriefing(){
   const veu=document.getElementById('veu');
   veu.innerHTML=`<div class="modal"><h2 id="modal-tit">Briefing do texto</h2><p>O que você definiu na preparação. O copilot usa isto em toda a escrita.</p>
-    <div class="tese-box" style="margin:0 0 16px"><small>Tese de trabalho: sua frase</small><p>O greenwashing não é um desvio de comunicação: é consequência de aceitarmos o relatório de sustentabilidade como peça de reputação enquanto isso era conveniente.</p></div>
-    <ul style="margin:0 0 18px;padding-left:18px;font-size:var(--t-s);display:flex;flex-direction:column;gap:6px"><li>Artigo de disciplina, até 7 páginas, ABNT, entrega em 28 nov.</li><li>Fica de fora: legislação ambiental</li><li>Acervo: 2 pontos sustentados, 1 frágil, 2 lacunas</li><li>Teto de participação da IA: 60%</li></ul>
+    <div class="m-0 mb-4 tese-box"><small>Tese de trabalho: sua frase</small><p>O greenwashing não é um desvio de comunicação: é consequência de aceitarmos o relatório de sustentabilidade como peça de reputação enquanto isso era conveniente.</p></div>
+    <ul class="m-0 mb-4 pl-lista t-meta flex coluna gap-2"><li>Artigo de disciplina, até 7 páginas, ABNT, entrega em 28 nov.</li><li>Fica de fora: legislação ambiental</li><li>Acervo: 2 pontos sustentados, 1 frágil, 2 lacunas</li><li>Teto de participação da IA: 60%</li></ul>
     <div class="pe"><button class="btn fant" data-acao="fechar">Fechar</button><button class="btn" data-passo-texto="0" data-acao="fechar">Editar a preparação</button></div></div>`;
   veu.classList.add('on');
 }
@@ -1451,7 +1460,7 @@ function eventoLinha(e){
 }
 const DISC_ABAS = [['geral','Visão geral'],['aulas','Aulas'],['leituras','Leituras'],['textos','Textos'],['agenda','Agenda']];
 V.disciplina = (i) => {
-  if(modoReal()) return window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.tela(decodeURIComponent(i||'')) : '<div class="topo"><div><h1>Disciplina</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.tela(decodeURIComponent(i||'')) : esqueleto('Disciplina');
   i=Number(i)||0; const d=DISCIPLINAS[i]; const inf=DISC_INFO[d]; const aba=S.discAba;
   const ids=LEITURAS.filter(l=>l.disc===d).map(l=>l.id);
   const tr=TRILHAS.find(t=>t.itens.some(x=>L(x).disc===d && L(x).proj!=='diss'));
@@ -1463,33 +1472,33 @@ V.disciplina = (i) => {
   if(aba==='geral') corpo=`
     <div class="proj-grid">
       <div>
-        <section class="bloco" style="margin-bottom:16px"><h3>Próximos compromissos</h3><div class="evs">${evs.slice(0,3).map(eventoLinha).join('')}</div><button class="btn fant" style="margin-top:6px" data-disc-aba="agenda">Ver agenda</button></section>
-        ${ult?`<section class="bloco"><h3>Última aula transcrita</h3><a class="aula-l" href="#aula/${i}/${ult.id}" style="border:0;padding:0 0 10px"><span class="n-a">${ult.n}</span><div><b>${ult.tit}</b><span>${ult.data}, ${ult.dur}. ${ult.cartoes} cartões gerados</span></div></a><a class="btn" href="#aula/${i}/${ult.id}">Abrir transcrição</a></section>`:''}
+        <section class="mb-4 bloco"><h3>Próximos compromissos</h3><div class="evs">${evs.slice(0,3).map(eventoLinha).join('')}</div><button class="mt-2 btn fant" data-disc-aba="agenda">Ver agenda</button></section>
+        ${ult?`<section class="bloco"><h3>Última aula transcrita</h3><a class="b-0 aula-l pt-0 pb-3" href="#aula/${i}/${ult.id}"><span class="n-a">${ult.n}</span><div><b>${ult.tit}</b><span>${ult.data}, ${ult.dur}. ${ult.cartoes} cartões gerados</span></div></a><a class="btn" href="#aula/${i}/${ult.id}">Abrir transcrição</a></section>`:''}
       </div>
       <aside class="lado">
         <section class="bloco"><h3>Anotações da disciplina</h3>
           <form class="nota-rap" data-demo-toast="Anotação salva na disciplina"><input placeholder="Anote algo rápido" aria-label="Nova anotação"><button class="btn" type="submit">Salvar</button></form>
           <ul class="notas-d">${notas.map(([t,dt])=>`<li>${t}<small>${dt}</small></li>`).join('')}</ul></section>
-        <section class="bloco"><h3>Leituras</h3><div class="mute" style="font-size:var(--t-s)">${ids.filter(x=>L(x).etapa>4).length} de ${ids.length} concluídas</div><div class="barra"><i style="width:${ids.length?ids.filter(x=>L(x).etapa>4).length/ids.length*100:0}%"></i></div><button class="btn fant" data-disc-aba="leituras">Ver leituras</button></section>
+        <section class="bloco"><h3>Leituras</h3><div class="t-meta mute">${ids.filter(x=>L(x).etapa>4).length} de ${ids.length} concluídas</div><div class="barra"><i style="width:${ids.length?ids.filter(x=>L(x).etapa>4).length/ids.length*100:0}%"></i></div><button class="btn fant" data-disc-aba="leituras">Ver leituras</button></section>
       </aside>
     </div>`;
   if(aba==='aulas') corpo=`
-    <section class="bloco" style="max-width:900px"><div class="aulas">${aulas.map(aulaLinha).join('')}</div>
-      <details class="ajuda-det" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--linha)"><summary>Como funcionam as gravações?</summary><p style="margin:10px 0 0;font-size:var(--t-s);color:var(--grafite)">Envie o áudio da aula. O Gemini transcreve, resume e encontra os conceitos e as leituras citadas. A transcrição pode ser grifada como qualquer texto, com as mesmas cores, e gera cartões de revisão.</p></details></section>`;
+    <section class="larg-pagina bloco"><div class="aulas">${aulas.map(aulaLinha).join('')}</div>
+      <details class="mt-3 pt-4 borda-topo ajuda-det"><summary>Como funcionam as gravações?</summary><p class="m-0 mt-3 t-meta mute">Envie o áudio da aula. O Gemini transcreve, resume e encontra os conceitos e as leituras citadas. A transcrição pode ser grifada como qualquer texto, com as mesmas cores, e gera cartões de revisão.</p></details></section>`;
   if(aba==='leituras') corpo=trilhaHTML(pseudo);
   if(aba==='textos') corpo=`<div class="txt-lista">${ts.length?ts.map(t=>`<a class="txt-card" href="#texto/${t.id}" data-ptexto="${t.passo}"><div><div class="t">${t.tit}</div><div class="m">${t.tipo}. ${t.limite}, entrega ${t.prazo}</div></div><div class="et"><span>${t.passo<=3?'Preparando':t.passo===4?'Escrevendo':'Em revisão'}</span></div><div class="autoria"><span>Participação da IA: <b>${partIA(t.a)}%</b></span>${barraAutoria(t.a,t.meta)}</div></a>`).join(''):'<div class="vazio">Nenhum texto nesta disciplina. Quando houver uma entrega escrita, use “Novo texto”.</div>'}</div>`;
   if(aba==='agenda') corpo=`
     <div class="proj-grid">
       <section class="bloco">
-        ${[...new Set(evs.map(e=>e.semana))].map(s=>`<h3 style="margin-top:6px">${s}</h3><div class="evs">${evs.filter(e=>e.semana===s).map(eventoLinha).join('')}</div>`).join('')}
+        ${[...new Set(evs.map(e=>e.semana))].map(s=>`<h3 class="mt-2">${s}</h3><div class="evs">${evs.filter(e=>e.semana===s).map(eventoLinha).join('')}</div>`).join('')}
       </section>
-      <aside class="lado"><section class="bloco"><h3>Google Agenda</h3><p style="margin:0 0 12px">Tudo o que você agenda aqui vai para a agenda <b>researchbook</b> da sua conta Google. Se você mudar ou apagar no researchbook, muda ou some lá também.</p><a class="btn fant" href="#ajustes">Configurar</a></section></aside>
+      <aside class="lado"><section class="bloco"><h3>Google Agenda</h3><p class="m-0 mb-3">Tudo o que você agenda aqui vai para a agenda <b>researchbook</b> da sua conta Google. Se você mudar ou apagar no researchbook, muda ou some lá também.</p><a class="btn fant" href="#ajustes/agenda">Configurar</a></section></aside>
     </div>`;
   return `
   <a class="voltar" href="#disciplinas">${I.voltar}Projetos</a>
-  <div class="topo"><div><h1><span class="proj-dot" style="display:inline-block;width:14px;height:14px;background:${CORES_DISC[i]};margin-right:12px;vertical-align:middle"></span>${d}</h1><p>${inf.doc}, ${inf.sem}. Próxima entrega: ${inf.ent[0]}, em ${inf.ent[1]}</p></div>
+  <div class="topo"><div><h1><span class="proj-dot grande" style="background:${CORES_DISC[i]}"></span>${d}</h1><p>${inf.doc}, ${inf.sem}. Próxima entrega: ${inf.ent[0]}, em ${inf.ent[1]}</p></div>
     <div class="acoes"><button class="btn" data-acao="novo-evento" data-disc="${i}">${I.mais}Agendar</button><button class="btn prim" data-acao="enviar-aula" data-disc="${i}">${I.upload}Enviar gravação de aula</button></div></div>
-  <nav class="subnav" style="margin-bottom:22px" aria-label="Seções da disciplina">${DISC_ABAS.map(([k,n])=>`<a href="#disciplina/${i}" data-disc-aba="${k}" class="${k===aba?'on':''}">${n}</a>`).join('')}</nav>
+  <nav class="mb-6 subnav" aria-label="Seções da disciplina">${DISC_ABAS.map(([k,n])=>`<a href="#disciplina/${i}" data-disc-aba="${k}" class="${k===aba?'on':''}">${n}</a>`).join('')}</nav>
   ${corpo}`;
 };
 
@@ -1501,32 +1510,32 @@ const TRANSCR = `
 <p><button class="ts" data-acao="toast" data-msg="O áudio pula para 00:35:02">35:02</button><b>Professora</b> <mark class="dissert" data-id="t2">Então a adesão vira parte do que você avalia, não um detalhe. Você declara antes o que conta como funcionar e mede quanto o artefato é usado de fato.</mark> Vale ler também o trabalho de Sonnenberg e vom Brocke sobre avaliações ao longo do ciclo de construção.</p>
 `;
 V.aula = (i,k) => {
-  if(modoReal()) return window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.telaAula(decodeURIComponent(i||''),decodeURIComponent(k||'')) : '<div class="topo"><div><h1>Aula</h1><p>Abrindo seus dados…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.telaAula(decodeURIComponent(i||''),decodeURIComponent(k||'')) : esqueleto('Aula', 'texto');
   i=Number(i)||0; const d=DISCIPLINAS[i]; const a=(AULAS[i]||[]).find(x=>x.id===k)||AULAS[0][0];
   const onda=Array.from({length:90},(_,j)=>{const h=8+Math.abs(Math.sin(j*1.3)*12+Math.sin(j*.37)*9);return `<i class="${j<30?'tocado':''}" style="height:${Math.min(h,30)}px"></i>`}).join('');
   const ab=S.aulaAba;
   let main='';
-  if(a.st!=='pronta') main=`<div class="vazio" style="background:var(--cartao);border:1px solid var(--linha);border-radius:var(--r-m)">${a.st==='transcrevendo'?`Transcrevendo a gravação: ${a.prog}% concluído. Você pode fechar o researchbook; a transcrição continua na sua pasta quando terminar.`:'Esta aula não tem gravação. Você pode enviar o áudio ou escrever suas anotações.'}</div>`;
+  if(a.st!=='pronta') main=`<div class="vazio bloco">${a.st==='transcrevendo'?`Transcrevendo a gravação: ${a.prog}% concluído. Você pode fechar o researchbook; a transcrição continua na sua pasta quando terminar.`:'Esta aula não tem gravação. Você pode enviar o áudio ou escrever suas anotações.'}</div>`;
   else if(ab==='transcricao') main=`<article class="doc transcr" id="doc"><div class="aviso-demo">Transcrição de exemplo, escrita para o protótipo.</div>${TRANSCR}</article>`;
-  else if(ab==='resumo') main=`<section class="editor"><h2>Resumo da aula</h2><p class="instr">Gerado pelo Gemini a partir da transcrição. Confira antes de usar.</p><ul class="resumo-aula"><li>Construir o artefato não basta: a avaliação é o que gera conhecimento.</li><li>Avaliação ex ante (antes do artefato pronto) e ex post (depois); justificar as escolhas exige as duas.</li><li>A estratégia de avaliação sai do principal risco do design (FEDS).</li><li>Quando o artefato depende de quem o usa, a adesão entra no que se avalia, com critério declarado antes.</li></ul><h3 style="font-size:var(--t-m);font-weight:500;margin:22px 0 10px">Perguntas para estudar</h3><ul class="resumo-aula"><li>Qual é o principal risco do seu roteirizador, e que estratégia do FEDS ele pede?</li><li>O que você vai declarar ex ante como “funcionar”?</li></ul><button class="btn" style="margin-top:12px" data-acao="toast" data-msg="${a.cartoes} cartões criados a partir desta aula">Criar ${a.cartoes} cartões</button></section>`;
+  else if(ab==='resumo') main=`<section class="editor"><h2>Resumo da aula</h2><p class="instr">Gerado pelo Gemini a partir da transcrição. Confira antes de usar.</p><ul class="resumo-aula"><li>Construir o artefato não basta: a avaliação é o que gera conhecimento.</li><li>Avaliação ex ante (antes do artefato pronto) e ex post (depois); justificar as escolhas exige as duas.</li><li>A estratégia de avaliação sai do principal risco do design (FEDS).</li><li>Quando o artefato depende de quem o usa, a adesão entra no que se avalia, com critério declarado antes.</li></ul><h3 class="t-ui forte m-0 mt-6 mb-3">Perguntas para estudar</h3><ul class="resumo-aula"><li>Qual é o principal risco do seu roteirizador, e que estratégia do FEDS ele pede?</li><li>O que você vai declarar ex ante como “funcionar”?</li></ul><button class="mt-3 btn" data-acao="toast" data-msg="${a.cartoes} cartões criados a partir desta aula">Criar ${a.cartoes} cartões</button></section>`;
   else main=`<section class="editor"><h2>Suas anotações</h2><p class="instr">O que você anotou durante a aula. Fica separado da transcrição.</p><div class="campo"><textarea style="min-height:200px">A professora falou de ex ante vs ex post. Conferir se minha avaliação tem as duas.\n\nMinha pergunta sobre adesão das equipes gerou boa discussão (35:02). Usar na seção 3.5.</textarea></div></section>`;
   return `
-  <button class="voltar" style="background:none;border:0;padding:0;cursor:pointer" data-voltar-disc="${i}">${I.voltar}${d}</button>
-  <div class="topo"><div><h1 style="font-size:28px">Aula ${a.n}: ${a.tit}</h1><p>${a.data}${a.dur?`, ${a.dur}`:''}. ${stAula(a)}</p></div>
+  <button class="fundo-0 b-0 p-0 cursor voltar" data-voltar-disc="${i}">${I.voltar}${d}</button>
+  <div class="topo"><div><h1 class="t-titulo-1">Aula ${a.n}: ${a.tit}</h1><p>${a.data}${a.dur?`, ${a.dur}`:''}. ${stAula(a)}</p></div>
     <div class="acoes"><button class="btn" data-acao="novo-evento" data-disc="${i}">${I.mais}Agendar revisão</button></div></div>
-  ${a.st==='pronta'?`<div class="audio" style="margin-bottom:18px"><button class="play" aria-label="Ouvir gravação" data-acao="toast" data-msg="Na versão funcional, o áudio toca aqui">${I.play}</button><div class="onda">${onda}</div><small>34:12 de ${a.dur}</small></div>`:''}
+  ${a.st==='pronta'?`<div class="mb-4 audio"><button class="play" aria-label="Ouvir gravação" data-acao="toast" data-msg="Na versão funcional, o áudio toca aqui">${I.play}</button><div class="onda">${onda}</div><small>34:12 de ${a.dur}</small></div>`:''}
   <div class="aula-grid">
     <div>
-      ${a.st==='pronta'?`<nav class="subnav" style="margin-bottom:18px">${[['transcricao','Transcrição'],['resumo','Resumo'],['notas','Suas anotações']].map(([x,n])=>`<a href="#aula/${i}/${a.id}" data-aula-aba="${x}" class="${x===ab?'on':''}">${n}</a>`).join('')}</nav>`:''}
+      ${a.st==='pronta'?`<nav class="mb-4 subnav">${[['transcricao','Transcrição'],['resumo','Resumo'],['notas','Suas anotações']].map(([x,n])=>`<a href="#aula/${i}/${a.id}" data-aula-aba="${x}" class="${x===ab?'on':''}">${n}</a>`).join('')}</nav>`:''}
       ${main}
     </div>
     <aside class="lado">
       ${a.conc.length?`<section class="bloco"><h3>Conceitos citados</h3><div class="termos">${a.conc.map(c=>`<span class="chip">${c}</span>`).join('')}</div></section>`:''}
       ${a.leit.length||a.fora.length?`<section class="bloco"><h3>Leituras citadas</h3>
         ${a.leit.map(x=>`<a class="lc" href="#leitor/${x}">${citCurta(L(x))}<span>Na biblioteca, ${rotEtapa(L(x).etapa).toLowerCase()}</span></a>`).join('')}
-        ${a.fora.map(([au,ti])=>`<div class="lc"><b style="font-weight:500">${au}</b><span>${ti}. Fora da biblioteca</span><button class="btn" style="margin-top:8px;padding:4px 11px;font-size:var(--t-xs)" data-acao="toast" data-msg="Sugestão salva. Adicione o PDF à biblioteca para o tutor e o copilot poderem usar.">Vou buscar</button></div>`).join('')}
+        ${a.fora.map(([au,ti])=>`<div class="lc"><b class="forte">${au}</b><span>${ti}. Fora da biblioteca</span><button class="mt-2 btn mini" data-acao="toast" data-msg="Sugestão salva. Adicione o PDF à biblioteca para o tutor e o copilot poderem usar.">Marcar para buscar</button></div>`).join('')}
       </section>`:''}
-      <section class="bloco"><h3>Próxima aula</h3><p style="margin:0">${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).tit||'Sem aula agendada'}, ${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).sem||''} ${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).dia||''} nov.</p></section>
+      <section class="bloco"><h3>Próxima aula</h3><p class="m-0">${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).tit||'Sem aula agendada'}, ${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).sem||''} ${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).dia||''} nov.</p></section>
     </aside>
   </div>`;
 };
@@ -1534,14 +1543,14 @@ V.aula = (i,k) => {
 function abrirModalAula(i){
   const veu=document.getElementById('veu');
   veu.innerHTML=`<div class="modal"><h2 id="modal-tit">Enviar gravação de aula</h2><p>O Gemini transcreve, resume e encontra os conceitos e as leituras citadas. A gravação fica na pasta da disciplina.</p>
-    <div class="aj" style="max-width:none;gap:0"><div class="linha2">
+    <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Disciplina</label><select>${DISCIPLINAS.map((d,j)=>`<option ${j===i?'selected':''}>${d}</option>`).join('')}</select></div>
       <div class="campo"><label>Data da aula</label><input type="date" value="2026-11-12"></div>
     </div></div>
     <div class="campo"><label>Tema da aula <span>opcional; a IA sugere a partir da transcrição</span></label><input placeholder="Ex.: Avaliação de artefatos em Design Science"></div>
     <div class="solta">Arraste a gravação (MP3, M4A, WAV) ou <u>escolha um arquivo</u></div>
     <div class="opcoes"><label><input type="checkbox" checked>Transcrever e resumir</label><label><input type="checkbox" checked>Ligar conceitos e leituras citadas à biblioteca</label><label><input type="checkbox">Criar cartões de revisão a partir do resumo</label></div>
-    <p class="mute-2" style="font-size:var(--t-xs);margin:-6px 0 16px">Grave só com o consentimento do professor e da turma.</p>
+    <p class="t-legenda m-0 mt-n2 mb-4 mute-2">Grave só com o consentimento do professor e da turma.</p>
     <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" data-acao="confirmar" data-msg="Gravação enviada. A transcrição fica pronta em alguns minutos.">Enviar e transcrever</button></div></div>`;
   veu.classList.add('on');
 }
@@ -1549,7 +1558,7 @@ function abrirModalEvento(i){
   const veu=document.getElementById('veu');
   veu.innerHTML=`<div class="modal"><h2 id="modal-tit">Agendar</h2><p>O evento aparece na disciplina e no seu Google Agenda.</p>
     <div class="campo"><label>Título</label><input value="Ler Iivari (2007) antes da aula"></div>
-    <div class="aj" style="max-width:none;gap:0"><div class="linha2">
+    <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Tipo</label><select><option>Sessão de estudo</option><option>Aula</option><option>Entrega</option><option>Encontro de orientação</option><option>Outro</option></select></div>
       <div class="campo"><label>Disciplina ou projeto</label><select>${DISCIPLINAS.map((d,j)=>`<option ${j===i?'selected':''}>${d}</option>`).join('')}<option>Dissertação</option></select></div>
       <div class="campo"><label>Data</label><input type="date" value="2026-11-18"></div>
@@ -1569,19 +1578,19 @@ function abrirModal(){
   const veu=document.getElementById('veu');
   veu.innerHTML=`
   <div class="modal">
-    <h2 id="modal-tit">Adicionar leitura</h2>
+    <h2 id="modal-tit">Adicionar obra</h2>
     <p>Cole o DOI para preencher os dados. Sem DOI, preencha à mão.</p>
     <div class="doi-linha"><input id="doi" value="10.25300/MISQ/2013/37.2.01" aria-label="DOI"><button class="btn prim" data-acao="buscar-doi">Buscar dados</button></div>
     <div class="meta-enc" id="meta-enc">
       <div class="ok">✓ Encontrado no Crossref</div>
       <div class="campo"><label>Título</label><input value="Positioning and presenting design science research for maximum impact"></div>
-      <div class="aj" style="max-width:none"><div class="linha2">
+      <div class="larg-total aj"><div class="linha2">
         <div class="campo"><label>Autores</label><input value="Gregor, S.; Hevner, A. R."></div>
         <div class="campo"><label>Ano e veículo</label><input value="2013, MIS Quarterly, 37(2)"></div>
       </div></div>
     </div>
     <div class="solta">Arraste o PDF aqui ou <u>escolha um arquivo</u></div>
-    <div class="aj" style="max-width:none;gap:0"><div class="linha2">
+    <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Projeto</label><select>${PROJETOS.map(p=>`<option>${p.nome}</option>`).join('')}</select></div>
       <div class="campo"><label>Disciplina</label><select><option>Nenhuma</option>${DISCIPLINAS.map(d=>`<option>${d}</option>`).join('')}</select></div>
     </div></div>
@@ -1595,16 +1604,16 @@ function abrirModal(){
 function abrirModalDisciplina(){
   const veu=document.getElementById('veu');
   veu.innerHTML=`<div class="modal">
-    <h2 id="modal-tit">Cadastrar disciplina</h2>
+    <h2 id="modal-tit">Nova disciplina</h2>
     <p>Com o plano de ensino, a IA sugere as leituras obrigatórias e as datas de entrega. Você confirma antes de salvar.</p>
     <div class="campo"><label>Nome</label><input placeholder="Ex.: Teoria das Organizações"></div>
-    <div class="aj" style="max-width:none;gap:0"><div class="linha2">
+    <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Docente</label><input placeholder="Nome do professor ou professora"></div>
       <div class="campo"><label>Semestre</label><input value="2026/2"></div>
     </div></div>
     <div class="solta">Arraste o plano de ensino (PDF) aqui ou <u>escolha um arquivo</u></div>
     <label class="check"><input type="checkbox" checked>Criar uma trilha com as leituras obrigatórias</label>
-    <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" data-acao="confirmar" data-msg="Disciplina cadastrada">Cadastrar disciplina</button></div>
+    <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" data-acao="confirmar" data-msg="Disciplina criada">Criar disciplina</button></div>
   </div>`;
   veu.classList.add('on');
 }
@@ -1619,13 +1628,13 @@ function abrirModalRegistro(tipo){
     <h2 id="modal-tit">Registrar conversa</h2>
     <p>Guarde do jeito que for mais fácil. O resumo da IA fica separado do que você escreveu.</p>
     <div class="tipo-reg" role="group" aria-label="Tipo de registro">${['Anotação','Áudio','Transcrição','E-mail','PDF comentado'].map(x=>`<button data-tipo-reg="${x}" class="${x===t?'on':''}">${x}</button>`).join('')}</div>
-    <div class="aj" style="max-width:none;gap:0"><div class="linha2">
+    <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Título</label><input value="Reunião de orientação"></div>
       <div class="campo"><label>Data</label><input type="date" value="2026-11-13"></div>
     </div></div>
     ${corpo}
     <label class="check"><input type="checkbox" checked>Extrair combinados e atualizar os temas que voltam</label>
-    <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" data-acao="confirmar" data-msg="Conversa registrada na orientação">Registrar conversa</button></div>
+    <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" data-acao="confirmar" data-msg="Conversa registrada na orientação" data-ocupado="Registrando…">Registrar conversa</button></div>
   </div>`;
   veu.classList.add('on');
 }
@@ -1670,7 +1679,7 @@ document.addEventListener('click',e=>{
   if(d.cartoes!==undefined){S.cartao=0;S.virado=false;}
   if(d.sec){const el=document.getElementById(d.sec);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});return}
   if(d.log){S.logFiltro=d.log;const y=scrollY;render();scrollTo(0,y);return}
-  if(d.fb){t.parentElement.innerHTML='<span class="mute-2" style="font-size:11.5px">Avaliação registrada</span>';return}
+  if(d.fb){t.parentElement.innerHTML='<span class="t-legenda mute-2">Avaliação registrada</span>';return}
   if(d.abaEsc){S.abaEsc=d.abaEsc;render();return}
   if(d.discAba){S.discAba=d.discAba;S.manterAba=true;if(location.hash===t.getAttribute('href'))render();return}
   if(d.aulaAba){S.aulaAba=d.aulaAba;if(location.hash===t.getAttribute('href'))render();return}
@@ -1764,7 +1773,7 @@ function statusDriveHTML(){
   if(e.fase==='sincronizando'||e.fase==='parado') return linha('pendente','Sincronizando com o Drive…');
   if(e.fase==='offline') return linha('aviso','Sem internet: salvo neste aparelho');
   if(e.fase==='desconectado') return linha('aviso','Salvo neste aparelho. <button data-google="entrar">Reconectar ao Google</button>');
-  return linha('erro','Erro ao sincronizar. <a href="#ajustes">Ver detalhes</a>');
+  return linha('erro','Não deu para sincronizar. <a href="#ajustes/pasta">Ver detalhes</a>');
 }
 window.statusDriveHTML=statusDriveHTML;
 
@@ -1784,15 +1793,15 @@ V.entrar = () => {
 /* Ajustes > Pasta: conta Google e sincronização */
 function contaHTML(){
   const rb=window.rb; let conta=null; try{conta=localStorage.getItem('rb.conta')}catch(e){}
-  if(!conta) return `<div class="aj-linha" style="margin-bottom:16px"><span class="mute" style="font-size:var(--t-s)">Nenhuma conta conectada neste aparelho.</span><button class="btn prim" data-google="entrar">Entrar com Google</button></div>`;
+  if(!conta) return `<div class="mb-4 aj-linha"><span class="t-meta mute">Nenhuma conta conectada neste aparelho.</span><button class="btn prim" data-google="entrar">Entrar com Google</button></div>`;
   const e=rb&&rb.sincronia?rb.sincronia.estado():null;
   const id=rb&&rb.sincronia?rb.sincronia.idPasta():null;
   const esc=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  return `<div class="ap-grade" style="margin-bottom:12px">
+  return `<div class="mb-3 ap-grade">
       <div class="ap-it"><span>Conta</span><b>${esc(conta)}</b><small>${rb&&rb.google.conectado()?'conectada':'sessão vencida: entre de novo para sincronizar'}</small></div>
       <div class="ap-it"><span>Sincronização</span><div>${statusDriveHTML()}</div>${e&&e.erro?`<small>${esc(e.erro)}</small>`:''}</div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+    <div class="flex gap-2 wrap mb-4">
       <button class="btn" data-google="sincronizar">Sincronizar agora</button>
       <a class="btn fant" href="#conflitos">Revisar conflitos${e&&e.conflitos?` (${e.conflitos})`:''}</a>
       ${id?`<a class="btn fant" href="https://drive.google.com/drive/folders/${encodeURIComponent(id)}" target="_blank" rel="noopener">Abrir a pasta no Drive</a>`:''}

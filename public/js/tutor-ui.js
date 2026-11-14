@@ -4,6 +4,7 @@
 // aparece marcado, nunca escondido.
 import { ErroIA } from './gemini.js';
 import { ROTULOS_PEDIDO } from './ia.js';
+import { ouvir } from './ui.js';
 
 /* global I, toast, S */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -62,7 +63,7 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
     if (e.mensagens === null) return '<p class="mute">Abrindo a conversa…</p>';
     const lista = e.mensagens.map((m, i) => msgHTML(m, i, leituraId)).join('');
     const vazio = !e.mensagens.length
-      ? `<div class="tutor-vazio"><p>Selecione um trecho e toque em <b>Perguntar ao tutor</b>, ou escreva uma pergunta sobre o texto.</p><details class="como"><summary>Como o tutor funciona?</summary><p>Ele pergunta mais do que responde e só cita o que está no seu acervo: o texto desta obra, os seus grifos e fichamentos. Cada fonte é conferida pelo app; o que não bater aparece marcado. A conversa fica guardada no seu Drive.</p></details></div>`
+      ? `<div class="tutor-vazio"><p>Selecione um trecho e escolha <b>Perguntar ao tutor</b>, ou escreva uma pergunta sobre o texto.</p><details class="como"><summary>Como o tutor funciona?</summary><p>Ele pergunta mais do que responde e só cita o que está no seu acervo: o texto desta obra, os seus grifos e fichamentos. Cada fonte é conferida pelo app; o que não bater aparece marcado. A conversa fica guardada no seu Drive.</p></details></div>`
       : '';
     const pensando = e.pensando ? `<div class="msg tutor pensando" role="status"><span class="av">${icone('tutor')}</span><div><p>Pensando…</p><button class="btn fant" data-tutor-cancelar="${esc(leituraId)}">Cancelar</button></div></div>` : '';
     const erro = e.erro ? `<div class="erro-ia" role="alert"><p>${esc(e.erro.mensagem)}</p>${e.erro.acao ? `<a class="btn" href="#ajustes" data-ir-gemini>Abrir Ajustes do Gemini</a>` : ''}</div>` : '';
@@ -75,7 +76,7 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
     return `<div class="tutor-pe">
       ${e.trecho ? `<div class="tutor-trecho"><span>“${esc(e.trecho.texto.length > 160 ? e.trecho.texto.slice(0, 160) + '…' : e.trecho.texto)}”, p. ${e.trecho.pagina}</span><button class="btn fant" data-tutor-tirar="${esc(leituraId)}" aria-label="Tirar o trecho escolhido">Tirar</button></div>` : ''}
       <div class="tutor-acoes" role="group" aria-label="Pedidos sobre o trecho">${Object.entries(ROTULOS_PEDIDO).map(([k, n]) => `<button class="btn fant" data-tutor-acao="${k}" data-id="${esc(leituraId)}" ${e.trecho && !e.pensando ? '' : 'disabled'}>${n}</button>`).join('')}</div>
-      <div class="tutor-escrever"><textarea id="tutor-texto" rows="2" placeholder="Pergunte sobre o texto" aria-label="Pergunta ao tutor" ${e.pensando ? 'disabled' : ''}>${esc(e.rascunho)}</textarea><button class="btn prim" data-tutor-enviar="${esc(leituraId)}" ${e.pensando ? 'disabled' : ''}>Perguntar</button></div>
+      <div class="tutor-escrever"><textarea id="tutor-texto" rows="2" placeholder="Pergunte sobre o texto" aria-label="Pergunta ao tutor" ${e.pensando ? 'disabled' : ''}>${esc(e.rascunho)}</textarea><button class="btn prim" data-tutor-enviar="${esc(leituraId)}" ${e.pensando ? 'disabled' : ''} data-ocupado="Pensando…">Perguntar</button></div>
     </div>`;
   }
 
@@ -170,7 +171,7 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
       if (id) perguntar(id, 'pergunta');
     }
   });
-  document.addEventListener('click', async (ev) => {
+  ouvir('click', async (ev) => {
     const b = ev.target.closest('[data-tutor-enviar],[data-tutor-acao],[data-tutor-tirar],[data-tutor-cancelar],[data-tutor-nova],[data-tutor-avaliar],[data-tutor-fonte],[data-ir-gemini]');
     if (!b) return;
     if (b.dataset.irGemini !== undefined) {

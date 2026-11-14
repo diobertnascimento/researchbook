@@ -83,7 +83,7 @@ function explicar(status, corpo) {
   const msg = corpo?.error?.message || '';
   const motivo = corpo?.error?.details?.find?.((d) => d.reason)?.reason || corpo?.error?.status || '';
   if (status === 401) return new ErroIA('sessao', 'O acesso ao Gemini venceu. Reconecte ao Google e tente de novo.', motivo);
-  if (status === 403 && /SCOPE|scope/.test(msg + motivo)) return new ErroIA('permissao', 'Falta a permissão do Gemini no login. Em Ajustes, toque em "Conectar o Gemini" e aceite a permissão.', motivo);
+  if (status === 403 && /SCOPE|scope/.test(msg + motivo)) return new ErroIA('permissao', 'Falta a permissão do Gemini no login. Em Ajustes, selecione "Conectar o Gemini" e aceite a permissão.', motivo);
   if (status === 403 && /SERVICE_DISABLED|has not been used|disabled/i.test(msg + motivo)) return new ErroIA('api', 'A API do Gemini não está ativada no projeto do Google Cloud. Ative a "Generative Language API" no projeto e tente de novo.', motivo);
   if (status === 403 && /API_KEY|api key/i.test(msg + motivo)) return new ErroIA('chave', 'O Google recusou a chave. Confira se ela está ativa no Google AI Studio ou guarde uma chave nova no cofre.', motivo);
   if (status === 403) return new ErroIA('negado', 'O Google recusou o pedido ao Gemini. Confira em Ajustes o projeto e a permissão.', motivo || msg.slice(0, 120));

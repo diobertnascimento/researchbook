@@ -73,7 +73,7 @@ test('busca (Ctrl+K) encontra obras, textos, grifos, disciplinas e páginas, com
 
 test('modelos por tarefa: a escolha vale no pedido, vai para o Drive e volta ao padrão', async ({ page, context }) => {
   const { g, gem } = await entrar(page, context);
-  await page.goto('/#ajustes');
+  await page.goto('/#ajustes/modelos');
   await page.getByLabel('Modelo para Testar conexão').waitFor({ state: 'detached' }).catch(() => {});
   await page.getByLabel('Pensamento para Memória').selectOption('LOW');
   await page.getByLabel('Modelo para Memória').selectOption('gemini-3.8-flash');
@@ -90,15 +90,17 @@ test('modelos por tarefa: a escolha vale no pedido, vai para o Drive e volta ao 
 test('uso e custo vêm dos registros das chamadas; limite avisa em 80%; marca-textos guardam a descrição', async ({ page, context }) => {
   const { g } = await entrar(page, context);
   await page.evaluate(() => window.rb.ia.testar());
-  await page.goto('/#ajustes');
+  await page.goto('/#ajustes/custo');
   await expect(page.locator('#sec-custo .kpis')).toContainText('chamadas no mês');
   await expect(page.locator('#sec-custo table').first()).toContainText('Testar conexão');
   await page.getByLabel('Limite mensal (US$)').fill('0,0001');
   await page.evaluate(() => window.rb.iaUso.recarregar());
   await page.goto('/#painel');
-  await page.goto('/#ajustes');
+  await page.goto('/#ajustes/custo');
   await expect(page.locator('#sec-custo .aviso')).toContainText('do limite que você definiu');
+  await page.goto('/#ajustes/registros');
   await expect(page.locator('#sec-registros .kpis')).toContainText('1chamadas à IA hoje');
+  await page.goto('/#ajustes/cores');
   await page.getByLabel('Descrição de Crítica').fill('Onde discordo, com motivo');
   await expect.poll(() => g.ler('ajustes/preferencias.json'), { timeout: 5000 }).toContain('Onde discordo, com motivo');
   expect(await page.evaluate(() => window.rb.iaUso.descricoes().critica)).toBe('Onde discordo, com motivo');

@@ -37,6 +37,7 @@ import { criarOverview } from './overview.js';
 import { criarOverviewUI } from './overview-ui.js';
 import { criarBusca } from './busca.js';
 import { criarIAUso } from './ia-uso.js';
+import { ouvir } from './ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -210,7 +211,7 @@ async function iniciar() {
     return novo;
   }
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-google]');
     if (!b) return;
     const acao = b.dataset.google;

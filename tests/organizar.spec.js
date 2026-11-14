@@ -53,7 +53,7 @@ test.describe('no computador', () => {
     await expect(page.locator('.tambem')).toHaveCount(0);
     await expect(page.locator('.topo p')).toHaveCount(0); // sem "ontem" vazio, sem cobrança
     await page.locator('.proximo [data-bib="adicionar"]').click();
-    await expect(page.locator('#modal-tit')).toHaveText('Adicionar leitura');
+    await expect(page.locator('#modal-tit')).toHaveText('Adicionar obra');
   });
 
   test('Hoje mostra a leitura em curso, o último grifo e o que mais há para hoje', async ({ page, context }) => {
