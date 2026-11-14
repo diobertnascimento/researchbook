@@ -10,7 +10,14 @@
 //   para o Diobert decidir. Nada é descartado em silêncio.
 //
 // Custo: quando nada mudou, uma sincronização é uma única chamada (lista a pasta dados/).
+//
+// Limpeza: a marca de apagado (só o id) fica 90 dias, tempo para todos os aparelhos receberem a exclusão.
+// Depois sai do Drive e do aparelho. Um aparelho que ficar mais de 90 dias sem sincronizar pode trazer de volta
+// um item apagado nesse meio tempo (aparece de novo, nada se perde).
 import * as arm from './armazenamento.js';
+
+export const LIMPAR_APAGADOS_DIAS = 90;
+export const marcaVencida = (i, agora = Date.now()) => !!i?.apagado && !!i.atualizadoEm && Date.parse(i.atualizadoEm) < agora - LIMPAR_APAGADOS_DIAS * 86400000;
 
 const INTERVALO_MS = 60_000;
 const ESPERA_MUDANCA_MS = 4_000;
@@ -32,7 +39,8 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
     const locais = await arm.todos(db, c);
     const localMudou = locais.some((i) => meta.base[i.id] !== i.atualizadoEm);
     const remotoMudou = !!remotoInfo && remotoInfo.modifiedTime !== meta.remotoModificado;
-    if (!localMudou && !remotoMudou) return { baixados: 0, enviados: 0, conflitos: 0 };
+    const temVencidas = locais.some((i) => marcaVencida(i));
+    if (!localMudou && !remotoMudou && !temVencidas) return { baixados: 0, enviados: 0, conflitos: 0 };
 
     let remotos = locais.filter((i) => meta.base[i.id] === i.atualizadoEm); // o que o Drive já tem
     if (remotoMudou) {
@@ -46,8 +54,8 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
 
     const L = new Map(locais.map((i) => [i.id, i]));
     const R = new Map(remotos.map((i) => [i.id, i]));
-    const final = [];
-    const paraAqui = [];
+    let final = [];
+    let paraAqui = [];
     const conflitos = [];
     let enviar = !remotoInfo;
 
@@ -91,6 +99,14 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
       }
     }
 
+    const vencidas = final.filter((i) => marcaVencida(i));
+    if (vencidas.length) {
+      final = final.filter((i) => !marcaVencida(i));
+      paraAqui = paraAqui.filter((i) => !marcaVencida(i));
+      for (const i of vencidas) await arm.removerDe(db, c, i.id);
+      enviar = true;
+      registrar('arq', 'sinc.limpeza', { det: `${c}: ${vencidas.length} marcas de apagado com mais de ${LIMPAR_APAGADOS_DIAS} dias` });
+    }
     if (paraAqui.length) await arm.gravarVarios(db, c, paraAqui);
     if (conflitos.length) await arm.gravarVarios(db, 'conflitos', conflitos);
     let remotoModificado = remotoInfo?.modifiedTime ?? null;

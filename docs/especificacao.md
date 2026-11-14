@@ -140,6 +140,13 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Tutor no fichamento** (`fichamento.md` v2.0.0): por etapa, com os grifos da obra como acervo e tudo o que o autor escreveu no fichamento; até 3 pontos (forte, lacuna, pergunta) e o mais importante marcado. Respostas no histórico (função `fichamento`, uma conversa por obra) e mostradas de novo ao voltar à etapa.
 - **Overview do autor** (`overview-autor.md` v2.0.0): corpus = blocos de autoria do autor nos textos da Escrita (coautoria e IA ficam de fora) + textos enviados (.docx lido no aparelho, .txt, .md), cada um podendo sair do retrato. Métricas sem IA (palavras por frase, voz passiva por padrão de particípio, citações por parágrafo, parágrafos que terminam em pergunta, conectivos). Exemplos da IA conferidos literalmente; o que não bate é descartado e contado. Tudo em `autor/` no Drive (corpus.json, textos/, overview.json). O resumo para o Copilot entra como bloco `<voz_do_autor>` só quando o autor marca a opção.
 
+## Acabamento (v1.0.0)
+- **Busca:** Ctrl+K procura em páginas, obras (título, autores, tags, projeto), grifos, fichamentos, textos, argumentos, trilhas, disciplinas, aulas (com os conceitos), diálogos, encontros de orientação, cartões e memória aprovada. Todas as palavras precisam aparecer; sem busca, grifos não entram na lista.
+- **Modelos por tarefa:** o padrão fica em `TAREFAS` (`gemini.js`); as escolhas do autor (modelo e pensamento) ficam em `localStorage` e em `ajustes/preferencias.json`, e valem em toda chamada por `tarefa()`.
+- **Uso e custo:** lidos dos registros `ia.resposta` deste aparelho (tarefa, modelo, tokens e custo estimado, nunca o texto). Limite mensal informativo, com aviso em 80%; o limite que barra o gasto é o do Google AI Studio.
+- **Limpeza:** marcas de apagado com mais de 90 dias saem do Drive e do aparelho na sincronização.
+- **Segurança:** HTML sem código; telas em `public/js/app.js`; CSP sem `unsafe-inline` em `script-src`.
+
 ## Memória
 - Três camadas: (1) conversas, registro completo; (2) memória consolidada, curta, só com itens aprovados pelo Diobert; (3) contexto de cada pedido, montado na hora a partir de 1 e 2 e do material aberto.
 - A IA propõe o que quer lembrar; o Diobert aprova, edita ou descarta. Pode esquecer itens (com desfazer).
@@ -188,6 +195,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v1.0.0 (14/11/2026): etapa 14, busca real, modelos por tarefa, uso e custo, marca-textos, limpeza das marcas de apagado e código fora do HTML. Primeira versão completa.
 - v0.19.0 (14/11/2026): etapa 13, cartões com revisão espaçada, comentários do tutor no fichamento e Overview do autor.
 - v0.18.0 (14/11/2026): etapa 12, Google Agenda com a permissão mais estreita, eventos espelhados na agenda researchbook.
 - v0.17.0 (14/11/2026): etapa 11, revisão do projeto por versão, orientação com combinados e temas, diálogos em três modos com posições conferidas.
@@ -202,4 +210,4 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Ajustes reais (modelos por tarefa, uso e custo), busca Ctrl+K com dados reais, limpeza de marcas de apagado, código fora do HTML e CSP sem `unsafe-inline`.
+- Usar a versão 1.0.0 no dia a dia e ajustar o que aparecer. O que ficou de fora: importar de volta um .docx editado no Word; mudanças feitas direto no Google Agenda não voltam para o app; grifos dentro de PDFs de orientação.

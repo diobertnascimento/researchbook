@@ -60,6 +60,25 @@ export class ErroIA extends Error {
   }
 }
 
+// Escolhas do Diobert em Ajustes > Modelos por tarefa (guardadas neste aparelho e no Drive, em ajustes/modelos.json).
+export const NOMES_TAREFA = {
+  tutor: 'Tutor no leitor', copilot_conversa: 'Copilot: conversa', copilot_versoes: 'Copilot: versões do parágrafo', copilot_plano: 'Copilot: diagnóstico e estrutura', revisao_final: 'Revisar e exportar',
+  transcricao: 'Transcrição de aulas e reuniões', aula_resumo: 'Resumo da aula', plano_ensino: 'Plano de ensino', revisao_projeto: 'Revisão do projeto', orientacao: 'Registro da orientação',
+  dialogo: 'Diálogos', dialogo_encerrar: 'Diálogos: posições firmadas', cartoes: 'Cartões', fichamento: 'Tutor no fichamento', overview: 'Overview do autor', memoria: 'Memória', teste: 'Testar conexão',
+};
+export function escolhasModelos() {
+  try {
+    return JSON.parse(localStorage.getItem('rb.ia.modelos') || '{}');
+  } catch {
+    return {};
+  }
+}
+/** Configuração da tarefa com as escolhas do autor por cima do padrão. */
+export function tarefa(chave) {
+  const e = escolhasModelos()[chave] || {};
+  return { ...TAREFAS[chave], ...(e.modelo ? { modelo: e.modelo } : {}), ...(e.pensamento ? { pensamento: e.pensamento } : {}) };
+}
+
 function explicar(status, corpo) {
   const msg = corpo?.error?.message || '';
   const motivo = corpo?.error?.details?.find?.((d) => d.reason)?.reason || corpo?.error?.status || '';

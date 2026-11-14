@@ -123,7 +123,18 @@ export function criarDrive({ token, registrar }) {
   }
 
   /** Cria ou substitui o arquivo. Devolve {id, modificado}. */
-  async function gravar(caminho, conteudo, tipo = 'application/json') {
+  // Gravações no mesmo caminho, uma de cada vez: duas ao mesmo tempo criariam dois arquivos com o mesmo nome.
+  const filas = new Map();
+  function emFila(caminho, fn) {
+    const p = (filas.get(caminho) || Promise.resolve()).catch(() => {}).then(fn);
+    filas.set(caminho, p);
+    p.finally(() => filas.get(caminho) === p && filas.delete(caminho)).catch(() => {});
+    return p;
+  }
+  const gravar = (caminho, conteudo, tipo) => emFila(caminho, () => gravarAgora(caminho, conteudo, tipo));
+  const enviarArquivo = (caminho, blob, tipo) => emFila(caminho, () => enviarArquivoAgora(caminho, blob, tipo));
+
+  async function gravarAgora(caminho, conteudo, tipo = 'application/json') {
     const a = await arquivo(caminho);
     const det = `${caminho} (${tamanho(conteudo)})`;
     if (a.id) {
@@ -149,7 +160,7 @@ export function criarDrive({ token, registrar }) {
    * Envia um arquivo binário (PDF, áudio) por upload em duas etapas (resumable), que aceita arquivos grandes.
    * Devolve {id, modificado}. Se já existir um arquivo com o mesmo caminho, ele é substituído.
    */
-  async function enviarArquivo(caminho, blob, tipo = blob.type || 'application/octet-stream') {
+  async function enviarArquivoAgora(caminho, blob, tipo = blob.type || 'application/octet-stream') {
     const a = await arquivo(caminho);
     const det = `${caminho} (${tamanho(blob)})`;
     const meta = a.id ? {} : { name: a.nome, parents: [a.pai], mimeType: tipo };

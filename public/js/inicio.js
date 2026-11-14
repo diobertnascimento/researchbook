@@ -35,6 +35,8 @@ import { criarCartoesUI } from './cartoes-ui.js';
 import { criarTutorFichamento } from './tutor-fichamento.js';
 import { criarOverview } from './overview.js';
 import { criarOverviewUI } from './overview-ui.js';
+import { criarBusca } from './busca.js';
+import { criarIAUso } from './ia-uso.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -321,6 +323,8 @@ async function iniciar() {
     window.rb.tutorFich = criarTutorFichamento({ ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, registrar });
     window.rb.overview = criarOverview({ db, ia: window.rb.ia, escrita: window.rb.escrita, drive: driveSeConectado, registrar });
     window.rb.overviewUI = criarOverviewUI({ ov: window.rb.overview, registrar });
+    window.rb.busca = criarBusca({ rb: window.rb });
+    window.rb.iaUso = criarIAUso({ registros: reg, drive: driveSeConectado, registrar });
     window.rb.dissertacao = criarDissertacao({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, historico, disc: window.rb.disciplinas, drive: driveSeConectado, registrar, aoMudar: redesenharSe(/^#orientacao/) });
     window.rb.dialogos = criarDialogos({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, registrar });
     window.rb.dissertacaoUI = criarDissertacaoUI({ diss: window.rb.dissertacao, dlg: window.rb.dialogos, disc: window.rb.disciplinas, discUI: window.rb.disciplinasUI, bib: biblioteca, registrar });

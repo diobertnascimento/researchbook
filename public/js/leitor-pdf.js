@@ -154,7 +154,8 @@ export async function montarLeitor({ palco, blob, grifos = [], paginaInicial = 1
   /* ---------- Grifar: selecionar texto mostra as cores ---------- */
   const pop = document.createElement('div');
   pop.className = 'popover pop-pdf';
-  pop.innerHTML = `<div class="linha-p">${FUNCOES.map((f) => `<button class="cor-n" data-grifo-pdf="${f.id}"><i class="c-${f.id}"></i>${f.nome}</button>`).join('')}</div>${
+  const desc = window.rb?.iaUso?.descricoes() || {};
+  pop.innerHTML = `<div class="linha-p">${FUNCOES.map((f) => `<button class="cor-n" data-grifo-pdf="${f.id}" title="${(desc[f.id] || '').replace(/"/g, '&quot;')}"><i class="c-${f.id}"></i>${f.nome}</button>`).join('')}</div>${
     aoPerguntar ? '<div class="linha-p pergunta-p"><button class="cor-n" data-perguntar-pdf>Perguntar ao tutor</button></div>' : ''
   }`;
   document.body.appendChild(pop);
