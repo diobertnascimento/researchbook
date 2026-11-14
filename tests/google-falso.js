@@ -3,6 +3,7 @@
 
 export const CLIENTE = 'teste-123.apps.googleusercontent.com';
 export const DRIVE_FILE = 'https://www.googleapis.com/auth/drive.file';
+export const ESCOPO_IA = 'https://www.googleapis.com/auth/generative-language.retriever';
 const PASTA = 'application/vnd.google-apps.folder';
 const CORS = {
   'access-control-allow-origin': '*',
@@ -14,6 +15,8 @@ const CORS = {
 export async function googleFalso(context, opcoes = {}) {
   // ordem: o Google real devolve "state" antes do token (#state=...&access_token=...).
   const op = { email: 'autor@exemplo.com', escopos: ['openid', 'https://www.googleapis.com/auth/userinfo.email', DRIVE_FILE], aud: CLIENTE, negar: false, ordem: 'state-primeiro', ...opcoes };
+  // Sem escopos fixados pelo teste, o Google simulado concede o que o app pediu (como quando o usuário aceita tudo).
+  const escoposFixos = !!opcoes.escopos;
   const estado = { tokenValido: true, revogado: false, chamadas: [] };
   const arquivos = new Map();
   const envios = new Map();
@@ -26,7 +29,8 @@ export async function googleFalso(context, opcoes = {}) {
       contentType: 'text/javascript',
       body: `export const GOOGLE_CLIENT_ID = '${CLIENTE}';
 export const ESCOPOS = ['openid', 'https://www.googleapis.com/auth/userinfo.email', '${DRIVE_FILE}'];
-export const ESCOPO_DRIVE = '${DRIVE_FILE}';`,
+export const ESCOPO_DRIVE = '${DRIVE_FILE}';
+export const ESCOPO_IA = '${ESCOPO_IA}';`,
     }),
   );
 
@@ -35,6 +39,7 @@ export const ESCOPO_DRIVE = '${DRIVE_FILE}';`,
     const u = new URL(r.request().url());
     estado.pedidoDeLogin = Object.fromEntries(u.searchParams);
     const st = u.searchParams.get('state');
+    if (!escoposFixos) op.escopos = (u.searchParams.get('scope') || '').split(' ').filter(Boolean);
     const token = `access_token=tok-falso&token_type=Bearer&expires_in=3599&scope=${encodeURIComponent(op.escopos.join(' '))}`;
     const resposta = op.negar ? 'error=access_denied' : token;
     const frag = op.ordem === 'state-primeiro' ? `state=${st}&${resposta}` : `${resposta}&state=${st}`;

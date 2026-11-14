@@ -14,6 +14,11 @@ import { criarArgumentosUI } from './argumentos-ui.js';
 import { criarTrilhasUI } from './trilhas-ui.js';
 import { criarHojeUI } from './hoje-ui.js';
 import { criarConflitosUI } from './conflitos-ui.js';
+import { criarCofre } from './cofre.js';
+import { criarHistorico } from './historico.js';
+import { criarIA } from './ia.js';
+import { criarTutorUI } from './tutor-ui.js';
+import { criarIAAjustes } from './ia-ajustes.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -137,7 +142,9 @@ async function iniciar() {
   const atualizarStatus = () => {
     const el = document.getElementById('status-drive');
     if (el && typeof window.statusDriveHTML === 'function') el.innerHTML = window.statusDriveHTML();
-    if (/^#ajustes/.test(location.hash) && typeof window.render === 'function') window.render();
+    // Ajustes mostra o status da sincronização; não redesenha enquanto o Diobert digita num campo.
+    const digitando = document.activeElement?.matches?.('input, textarea, select');
+    if (/^#ajustes/.test(location.hash) && !digitando && typeof window.render === 'function') window.render();
   };
   function ligarDrive() {
     if (sinc || !db || !google.sessao()) return;
@@ -153,7 +160,8 @@ async function iniciar() {
         if (e.fase === 'ok') {
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
           // Dados de outro aparelho: recarrega e redesenha as telas que só leem (nunca no meio de um formulário).
-          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar()]).then(() => {
+          window.rb.historico?.enviarPendentes();
+          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar(), window.rb.historico?.carregar()]).then(() => {
             const modalAberto = document.getElementById('veu')?.classList.contains('on');
             if (!modalAberto && telaDeLeitura()) window.render?.();
           });
@@ -245,9 +253,16 @@ async function iniciar() {
     window.rb.argUI = criarArgumentosUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
     window.rb.trilhasUI = criarTrilhasUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
     window.rb.conflitosUI = criarConflitosUI({ bib: biblioteca, dados: window.rb.dados, registrar });
+    const driveSeConectado = () => (sinc && google.sessao() ? driveAtual : null);
+    const cofre = criarCofre({ db, drive: driveSeConectado, registrar });
+    const historico = criarHistorico({ db, dados: window.rb.dados, drive: driveSeConectado, registrar });
+    window.rb.historico = historico;
+    window.rb.ia = criarIA({ db, dados: window.rb.dados, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, cofre, drive: driveSeConectado, registrar });
+    window.rb.tutorUI = criarTutorUI({ ia: window.rb.ia, historico, bib: biblioteca, registrar });
+    window.rb.iaAjustes = criarIAAjustes({ ia: window.rb.ia, cofre, registrar });
     window.rb.hojeUI = criarHojeUI({ bib: biblioteca, fichUI: window.rb.fichUI, trilhasUI: window.rb.trilhasUI, argUI: window.rb.argUI, conflitosUI: window.rb.conflitosUI });
     await biblioteca.carregar();
-    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar()]);
+    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar()]);
   }
   ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });

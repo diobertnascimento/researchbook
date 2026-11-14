@@ -53,9 +53,10 @@ const fechar = (doc) => (doc.loadingTask?.destroy ? doc.loadingTask.destroy() : 
 
 /**
  * Monta o leitor dentro de `palco`. Chama:
- *  aoGrifar({pagina, texto, rects, funcao}), aoClicarGrifo(id, elemento), aoMudarPagina(n, total).
+ *  aoGrifar({pagina, texto, rects, funcao}), aoClicarGrifo(id, elemento), aoMudarPagina(n, total),
+ *  aoPerguntar({pagina, texto}) (opcional: mostra "Perguntar ao tutor" junto das cores).
  */
-export async function montarLeitor({ palco, blob, grifos = [], paginaInicial = 1, aoGrifar, aoClicarGrifo, aoMudarPagina, aoErro }) {
+export async function montarLeitor({ palco, blob, grifos = [], paginaInicial = 1, aoGrifar, aoClicarGrifo, aoMudarPagina, aoErro, aoPerguntar }) {
   const L = await pdfjs();
   let doc;
   try {
@@ -153,7 +154,9 @@ export async function montarLeitor({ palco, blob, grifos = [], paginaInicial = 1
   /* ---------- Grifar: selecionar texto mostra as cores ---------- */
   const pop = document.createElement('div');
   pop.className = 'popover pop-pdf';
-  pop.innerHTML = `<div class="linha-p">${FUNCOES.map((f) => `<button class="cor-n" data-grifo-pdf="${f.id}"><i class="c-${f.id}"></i>${f.nome}</button>`).join('')}</div>`;
+  pop.innerHTML = `<div class="linha-p">${FUNCOES.map((f) => `<button class="cor-n" data-grifo-pdf="${f.id}"><i class="c-${f.id}"></i>${f.nome}</button>`).join('')}</div>${
+    aoPerguntar ? '<div class="linha-p pergunta-p"><button class="cor-n" data-perguntar-pdf>Perguntar ao tutor</button></div>' : ''
+  }`;
   document.body.appendChild(pop);
   let selecao = null;
 
@@ -214,6 +217,14 @@ export async function montarLeitor({ palco, blob, grifos = [], paginaInicial = 1
   document.addEventListener('selectionchange', aoMudarSelecao);
 
   pop.addEventListener('click', (e) => {
+    if (e.target.closest('[data-perguntar-pdf]') && selecao) {
+      const { pagina, texto } = selecao;
+      getSelection().removeAllRanges();
+      pop.classList.remove('on');
+      selecao = null;
+      aoPerguntar?.({ pagina, texto });
+      return;
+    }
     const b = e.target.closest('[data-grifo-pdf]');
     if (!b || !selecao) return;
     const { pagina, texto, rects } = selecao;
@@ -237,6 +248,17 @@ export async function montarLeitor({ palco, blob, grifos = [], paginaInicial = 1
 
   return {
     total: doc.numPages,
+    pagina: () => paginaAtual,
+    /** Texto de uma página, para o tutor. */
+    async texto(n) {
+      try {
+        const pg = await doc.getPage(n);
+        const c = await pg.getTextContent();
+        return c.items.map((i) => i.str + (i.hasEOL ? '\n' : ' ')).join('').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+      } catch {
+        return '';
+      }
+    },
     atualizarGrifos(lista) {
       atuais = lista;
       paginas.filter((p) => p.desenhada).forEach((p) => desenharGrifos(p.div));

@@ -7,7 +7,10 @@
 //   e precisa incluir a permissão do Drive;
 // - o token dura cerca de 1 hora e fica só neste aparelho; "Sair" revoga o token no Google.
 // - quem pode entrar é decidido pelo Google: o app está "em teste" e só aceita os usuários de teste.
-import { GOOGLE_CLIENT_ID, ESCOPOS, ESCOPO_DRIVE } from './config.js';
+import { GOOGLE_CLIENT_ID, ESCOPOS, ESCOPO_DRIVE, ESCOPO_IA } from './config.js';
+
+// Preferência deste aparelho: usar o Gemini pelo login Google (pede a permissão extra no próximo login).
+const PREF_IA = 'rb.ia.acesso';
 
 const SESSAO = 'rb.sessao';
 const CONTA = 'rb.conta';
@@ -44,7 +47,13 @@ export const conta = () => ler(localStorage, CONTA);
 /** Endereço de volta do login: a raiz do app, sem "index.html". Precisa estar autorizado no console. */
 export const enderecoDeVolta = () => location.origin + location.pathname.replace(/index\.html$/, '');
 
-export function entrar({ registrar }) {
+/** Como o Gemini é acessado neste aparelho: 'google' (login, sem chave) ou 'cofre' (chave cifrada no Drive). */
+export const acessoIA = () => ler(localStorage, PREF_IA);
+export const definirAcessoIA = (modo) => gravar(localStorage, PREF_IA, modo);
+/** A sessão atual já tem a permissão do Gemini? */
+export const temPermissaoIA = () => !!sessao()?.escopos?.includes(ESCOPO_IA);
+
+export function entrar({ registrar, comIA = acessoIA() === 'google' }) {
   if (!configurado()) return;
   const estado = crypto.randomUUID();
   gravar(sessionStorage, 'rb.oauth.estado', estado);
@@ -54,13 +63,13 @@ export function entrar({ registrar }) {
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: enderecoDeVolta(),
     response_type: 'token',
-    scope: ESCOPOS.join(' '),
+    scope: (comIA ? [...ESCOPOS, ESCOPO_IA] : ESCOPOS).join(' '),
     include_granted_scopes: 'true',
     state: estado,
   });
   const dica = conta();
   if (dica) p.set('login_hint', dica);
-  registrar('app', 'conta.entrar');
+  registrar('app', 'conta.entrar', { det: comIA ? 'com permissão do Gemini' : '' });
   location.assign(`${AUTORIZAR}?${p}`);
 }
 
@@ -102,7 +111,8 @@ export async function concluirRetorno({ registrar }) {
     return falha('escopo', 'Para guardar seus dados, marque a permissão do Google Drive na tela do Google e entre de novo.', 'sem drive.file');
   }
 
-  const s = { token, expira: Date.now() + Number(p.get('expires_in') || info.expires_in || 3600) * 1000, email: info.email || null };
+  const escopos = (info.scope || '').split(' ').filter(Boolean);
+  const s = { token, expira: Date.now() + Number(p.get('expires_in') || info.expires_in || 3600) * 1000, email: info.email || null, escopos };
   gravar(localStorage, SESSAO, JSON.stringify(s));
   if (s.email) gravar(localStorage, CONTA, s.email);
   registrar('app', 'conta.login_ok', { dur: Math.round(performance.now() - inicio) });

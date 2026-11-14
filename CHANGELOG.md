@@ -2,6 +2,18 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.13.0 (13/11/2026)
+- Tutor de verdade no leitor, com o Gemini. Selecione um trecho e toque em "Perguntar ao tutor", ou escreva uma pergunta sobre o texto. Botões Explique, Contraponha e Conecte.
+- O tutor só cita o seu acervo: o texto da obra aberta, os seus grifos, o fichamento dela e os grifos "para a dissertação" e "crítica" das outras obras. Cada citação vem com a página.
+- Cada resposta é conferida pelo app antes de aparecer: a fonte existe, o trecho está mesmo no seu acervo, nenhuma citação direta foi inventada. Se algo não bater, o app pede ao Gemini que corrija uma vez; se continuar, a resposta aparece com um aviso e a fonte marcada.
+- Sugestões de leitura de fora do seu acervo aparecem separadas, como "para buscar", nunca como citação.
+- Uma conversa por obra, que continua de onde parou. "Nova conversa" começa outra; a anterior continua guardada.
+- Tudo o que a IA produz fica guardado no seu Drive (pasta ia/conversas), com o pedido, a resposta, as fontes, a conferência, o modelo e o custo. Os registros continuam sem o texto.
+- Ajustes > Conexão com o Gemini: duas formas de acesso. Pelo seu login Google, sem chave guardada em lugar nenhum (a mais segura); ou com a chave num cofre no seu Drive, cifrada com uma frase-senha sua.
+- "Testar conexão" e mensagens de erro que dizem o que fazer (API desligada, permissão faltando, limite de gasto, sem internet).
+- Perfil do autor em Ajustes: vai para o seu Drive (memoria/autor.md) e entra em todo pedido à IA.
+- Instruções da IA reescritas a partir de um benchmark: guia do Gemini 3, LearnLM, defesa contra instruções escondidas em PDFs e estudos sobre autoria.
+
 ## 0.12.0 (13/11/2026)
 - Nova tela "Conflitos de sincronização". Quando o mesmo item muda em dois aparelhos antes de sincronizar, a versão mais recente fica em uso e a outra fica guardada até você decidir.
 - Cada conflito mostra o que é (obra, grifo, fichamento, argumento, trilha…), só os campos que diferem, lado a lado, e de quando e de qual aparelho é cada versão.
