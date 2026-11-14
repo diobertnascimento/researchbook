@@ -11,6 +11,16 @@ const slug = (s) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
+/** Assinatura SHA-256 do arquivo, em hexadecimal: dois PDFs com a mesma assinatura são o mesmo arquivo. */
+export async function assinatura(blob) {
+  try {
+    const buf = await (blob.arrayBuffer ? blob.arrayBuffer() : new Response(blob).arrayBuffer());
+    return [...new Uint8Array(await crypto.subtle.digest('SHA-256', buf))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return null;
+  }
+}
+
 export function criarBiblioteca({ db, dados, registrar, drive }) {
   let leituras = [];
   let grifos = [];
@@ -76,8 +86,9 @@ export function criarBiblioteca({ db, dados, registrar, drive }) {
 
   async function guardarPDF(id, arquivo) {
     const blob = arquivo instanceof Blob ? arquivo : new Blob([arquivo], { type: 'application/pdf' });
+    const sha256 = await assinatura(blob);
     await arm.gravar(db, 'arquivos', { id, blob, tipo: 'application/pdf', tamanho: blob.size, guardadoEm: new Date().toISOString() });
-    await atualizar(id, { pdf: { nome: arquivo.name || `${id}.pdf`, tamanho: blob.size, pendente: true } });
+    await atualizar(id, { pdf: { nome: arquivo.name || `${id}.pdf`, tamanho: blob.size, pendente: true, sha256 } });
     registrar('arq', 'biblioteca.pdf_guardado', { det: `${Math.round(blob.size / 1024)} KB` });
     enviarPendentes();
   }

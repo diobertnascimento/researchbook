@@ -43,7 +43,9 @@ export const ESCOPO_AGENDA = '${ESCOPO_AGENDA}';`,
     const st = u.searchParams.get('state');
     if (!escoposFixos) op.escopos = (u.searchParams.get('scope') || '').split(' ').filter(Boolean);
     const token = `access_token=tok-falso&token_type=Bearer&expires_in=3599&scope=${encodeURIComponent(op.escopos.join(' '))}`;
-    const resposta = op.negar ? 'error=access_denied' : token;
+    const silencioso = u.searchParams.get('prompt') === 'none';
+    if (silencioso) estado.renovacoes = (estado.renovacoes || 0) + 1;
+    const resposta = op.negar ? 'error=access_denied' : silencioso && op.semSessaoGoogle ? 'error=interaction_required' : token;
     const frag = op.ordem === 'state-primeiro' ? `state=${st}&${resposta}` : `${resposta}&state=${st}`;
     return r.fulfill({ status: 302, headers: { location: `${u.searchParams.get('redirect_uri')}#${frag}` } });
   });
@@ -184,6 +186,7 @@ export const ESCOPO_AGENDA = '${ESCOPO_AGENDA}';`,
 
   return {
     estado,
+    op,
     arquivos,
     raiz: () => [...arquivos.values()].find((a) => a.appProperties?.rb === 'raiz'),
     caminhos: () => [...arquivos.values()].filter((a) => a.mimeType !== PASTA).map(caminho),

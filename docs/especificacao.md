@@ -29,6 +29,14 @@ Pedido do Diobert: elevar a experiência, com botões consistentes, estado de ca
 - **Textos:** maiúscula só no início, botão com verbo e objeto, verbos que servem para mouse e toque ("selecione", não "toque em"), erros com o próximo passo. Glossário: "obra" para cada item da biblioteca ("Adicionar obra"), "Nova disciplina"/"Criar disciplina", "Marcar para buscar".
 - **Um teste guarda o sistema** (`tests/design.spec.js`): escala de tipos e alturas de botão em todas as telas, alvos de 24 px, contraste dos tokens, nenhum estilo solto no código, estado de carregando e Ajustes em subpáginas.
 
+## Importar e organizar a biblioteca (v1.2.0, 14/11/2026)
+Pedido do Diobert: enviar muitos arquivos de uma vez e a biblioteca exportada do Zotero; a IA tenta recuperar o DOI pela internet a partir dos dados, numa lista que ele aprova; sincronização garantida com o celular; deduplicação de conteúdos idênticos.
+- **Formatos do Zotero:** BibTeX/BibLaTeX, RIS, CSL JSON e Zotero RDF (os que o Zotero exporta). Recomendado: "Exportar coleção…" em BibTeX ou Zotero RDF com "Exportar arquivos"; o app recebe a pasta inteira e liga cada PDF pelo caminho gravado (`file` no BibTeX, `link:link` no RDF, `L1` no RIS). RIS e CSL JSON trazem só os dados. Coleções do RDF e palavras-chave viram tags. No celular (sem escolha de pasta), seleciona-se o arquivo de dados e os PDFs juntos. Código em `importar.js`.
+- **Prévia antes de gravar:** nova, completa uma obra (acrescenta o PDF que faltava), já está na biblioteca, parece repetida, repetida no mesmo envio. Só "nova" e "completa" vêm marcadas.
+- **DOI que falta (`organizar.js`):** procura no Crossref por título, autores e ano (`crossref.js`, `procurarPorDados`), nota de 0 a 1 por título, ano e primeiro autor (`duplicatas.js`). Nota alta vira "Muito provável" sem IA. Na dúvida, a IA (tarefa `organizar`, instrução `organizar-biblioteca.md`) lê o começo do PDF e indica um candidato pelo número, nunca um DOI; o app confere a escolha (título parecido, ou mesmo autor e ano) e o título que a IA diz ter lido precisa estar no texto do PDF. As propostas ficam na ficha (`doiBusca`) e sincronizam; aceitar completa só campos vazios; recusar passa ao próximo candidato; "não tem DOI" tira da procura.
+- **Repetidas:** idênticas (mesmo DOI, mesmo PDF por SHA-256, ou mesmo título, ano e autor) e prováveis (título 90% igual, ano e autor compatíveis). Juntar fica com a obra de mais trabalho (grifos, fichamento, etapa, PDF) e reaponta tudo o que citava as outras; não junta automaticamente duas obras com fichamento. Tem desfazer.
+- **Sincronização com o celular:** a junção passou a detectar quando o Drive volta para uma versão mais velha do que a que o aparelho enviou (dois aparelhos gravando juntos) e reenvia a daqui, guardando a outra em conflitos. Sessão vencida ao abrir é renovada em silêncio pelo Google (`prompt=none`, no máximo a cada 10 minutos). No celular, status no Hoje e aviso acima da barra inferior.
+
 ## Armazenamento e acesso (decisão de 13/11/2026: caminho B)
 - O researchbook vira um app web instalável (PWA), servido por HTTPS no GitHub Pages, usado nos dois computadores e no celular. Substitui o HTML aberto direto do computador.
 - Dados numa pasta `researchbook/` no Google Drive, acessada pela API do Drive com login Google (escopo `drive.file`: o app só enxerga o que ele mesmo criou). Cópia local no IndexedDB para funcionar sem internet; sincroniza quando a conexão volta. Conflitos de edição em dois aparelhos: guarda as duas versões e pergunta.
@@ -204,6 +212,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v1.2.0 (14/11/2026): importar vários arquivos e o Zotero, Organizar (DOI com Crossref e IA, repetidas), sincronização com o celular.
 - v1.1.0 (14/11/2026): design system v2 (Inter e Literata, tokens, botões com carregando, esqueletos, Ajustes em subpáginas, revisão dos textos).
 - v1.0.0 (14/11/2026): etapa 14, busca real, modelos por tarefa, uso e custo, marca-textos, limpeza das marcas de apagado e código fora do HTML. Primeira versão completa.
 - v0.19.0 (14/11/2026): etapa 13, cartões com revisão espaçada, comentários do tutor no fichamento e Overview do autor.
@@ -220,4 +229,4 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-- Usar a versão 1.1.0 no dia a dia e ajustar o que aparecer. O que ficou de fora: importar de volta um .docx editado no Word; mudanças feitas direto no Google Agenda não voltam para o app; grifos dentro de PDFs de orientação.
+- Usar a versão 1.2.0 no dia a dia e ajustar o que aparecer. O que ficou de fora: importar de volta um .docx editado no Word; mudanças feitas direto no Google Agenda não voltam para o app; grifos dentro de PDFs de orientação.

@@ -72,3 +72,37 @@ export async function buscarDOI(entrada, { registrar } = {}) {
   registrar?.('arq', 'crossref.buscar', { det: 'ok', dur });
   return { dados: deCrossref(corpo.message || {}) };
 }
+
+/**
+ * Procura obras no Crossref a partir dos dados da ficha (título, autores, ano), para achar o DOI que falta.
+ * Só os dados bibliográficos vão no pedido. Devolve { candidatos: [ficha do Crossref] } ou { erro }.
+ */
+export async function procurarPorDados(f, { registrar, linhas = 5 } = {}) {
+  const q = [f.titulo, f.subtitulo, (f.autores || []).slice(0, 2).map((a) => a.sobrenome).join(' '), f.ano].filter(Boolean).join(' ').slice(0, 300);
+  if (!q.trim()) return { candidatos: [] };
+  const url = `https://api.crossref.org/works?rows=${linhas}&query.bibliographic=${encodeURIComponent(q)}&select=DOI,title,subtitle,author,editor,issued,container-title,type,volume,issue,page,publisher,publisher-location,URL,language`;
+  const inicio = performance.now();
+  for (let tentativa = 1; tentativa <= 2; tentativa++) {
+    let r;
+    try {
+      r = await fetch(url, { headers: { Accept: 'application/json' } });
+    } catch {
+      registrar?.('erro', 'crossref.procurar', { det: 'sem conexão', st: 'aviso' });
+      return { erro: 'Sem conexão para procurar no Crossref.' };
+    }
+    if (r.status === 429 && tentativa === 1) {
+      await new Promise((ok) => setTimeout(ok, 2000));
+      continue;
+    }
+    const dur = Math.round(performance.now() - inicio);
+    if (!r.ok) {
+      registrar?.('erro', 'crossref.procurar', { det: String(r.status), dur, st: 'erro' });
+      return { erro: `O Crossref não respondeu agora (${r.status}).` };
+    }
+    const corpo = await r.json();
+    const candidatos = (corpo.message?.items || []).map(deCrossref).filter((c) => c.doi && c.titulo);
+    registrar?.('arq', 'crossref.procurar', { det: `${candidatos.length} candidatos`, dur });
+    return { candidatos };
+  }
+  return { erro: 'O Crossref está recebendo muitos pedidos. Tente de novo em instantes.' };
+}

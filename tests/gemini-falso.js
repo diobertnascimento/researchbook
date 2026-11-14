@@ -62,6 +62,8 @@ export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) 
     } else if (props.segmentos && opcoes.falharParte && !estado.falhou && new RegExp(`Parte ${opcoes.falharParte} de`).test(todos)) {
       estado.falhou = true;
       return responder(r, 400, { error: { code: 400, message: 'Request payload size exceeds the limit.', status: 'INVALID_ARGUMENT' } });
+    } else if (props.escolha) {
+      texto = JSON.stringify(respostaOrganizar(todos, opcoes));
     } else if (props.cartoes || props.mais_importante || props.tracos) {
       texto = JSON.stringify(respostaEstudo(props, todos));
     } else if (props.obras || props.combinados_anteriores || props.posicoes) {
@@ -242,6 +244,34 @@ function respostaDissertacao(p, todos, opcoes) {
       : [],
     questoes_em_aberto: ['Como medir a utilidade sem avaliadores humanos?'],
   };
+}
+
+// Organizar a biblioteca: lê a primeira linha do PDF (quando houver) e escolhe o candidato com mais palavras em comum.
+function respostaOrganizar(todos, opcoes) {
+  const pal = (t) => new Set(String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter((w) => w.length > 3));
+  const ficha = (todos.match(/<ficha>([\s\S]*?)<\/ficha>/) || [])[1] || '';
+  const tituloFicha = (ficha.match(/^titulo: (.*)$/m) || [])[1] || '';
+  const pdf = (todos.match(/<pdf>\s*<material-\w+>\s*([\s\S]*?)<\/material-/) || [])[1] || '';
+  const tituloPDF = pdf.split('\n').map((l) => l.trim()).find(Boolean) || '';
+  const base = pal(tituloPDF || tituloFicha);
+  const cands = [...todos.matchAll(/^\[(\d+)\] (.+?) — /gm)].map((m) => ({ n: Number(m[1]), t: m[2] }));
+  let melhor = { n: 0, nota: 0 };
+  for (const c of cands) {
+    const p = pal(c.t);
+    let comum = 0;
+    p.forEach((w) => base.has(w) && comum++);
+    const nota = (2 * comum) / ((p.size + base.size) || 1);
+    if (nota > melhor.nota) melhor = { n: c.n, nota };
+  }
+  // Título traduzido: vale o mesmo primeiro autor e o mesmo ano.
+  const autor = ((ficha.match(/^autores: ([^,;\n]+)/m) || [])[1] || '').trim();
+  const ano = ((ficha.match(/^ano: (\d{4})/m) || [])[1] || '');
+  if (melhor.nota < 0.5 && autor && ano) {
+    const porAutor = [...todos.matchAll(/^\[(\d+)\] .+? — (.+?) — (\d{4}|s\.d\.)/gm)].find((m) => m[2].includes(autor) && m[3] === ano);
+    if (porAutor) melhor = { n: Number(porAutor[1]), nota: 0.5 };
+  }
+  const indice = opcoes.organizarIndice ?? (melhor.nota >= 0.5 ? melhor.n : 0);
+  return { dados: { titulo: tituloPDF || tituloFicha, autores: [], ano: '' }, escolha: { indice, confianca: indice ? 'media' : 'baixa', motivo: indice ? 'Título e autor batem com o PDF.' : 'Nenhum candidato tem o mesmo título.' } };
 }
 
 // Estudo: cartões (um com origem inexistente, que o app recusa), comentários do fichamento e overview do autor.

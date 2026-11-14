@@ -57,4 +57,5 @@ Modelos conforme `docs/especificacao.md`. Temperatura: a padrão do modelo (a do
 | `memoria.md` | Propõe o que vale lembrar da sessão | rápido | mínimo | JSON |
 | `revisao-final.md` | "Revisar e exportar" do texto | raciocínio | alto | JSON |
 | `metadados-pdf.md` | Extrai a referência das primeiras páginas do PDF | rápido | mínimo | JSON |
+| `organizar-biblioteca.md` | Organizar: lê o começo do PDF e escolhe, entre os candidatos do Crossref, o que é a mesma obra (v1.0.0, v1.2.0 do app); o autor aprova | rápido | baixo | JSON |
 | `overview-autor.md` | Retrato da escrita do autor, com exemplos conferidos (v2.0.0) | rápido | médio | JSON |

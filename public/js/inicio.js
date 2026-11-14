@@ -38,6 +38,10 @@ import { criarOverviewUI } from './overview-ui.js';
 import { criarBusca } from './busca.js';
 import { criarIAUso } from './ia-uso.js';
 import { ouvir } from './ui.js';
+import { criarOrganizar } from './organizar.js';
+import { criarOrganizarUI } from './organizar-ui.js';
+import { lerInicio } from './leitor-pdf.js';
+import { buscarDOI } from './crossref.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -155,6 +159,8 @@ async function iniciar() {
 
   // Volta do login do Google, se for o caso.
   const retorno = await google.concluirRetorno({ registrar });
+  // Sessão vencida ao abrir: tenta renovar sem mostrar nada (volta em um instante, com o token novo).
+  if (!retorno && google.renovarEmSilencio({ registrar })) return;
 
   let sinc = null;
   let procurouMemoria = false;
@@ -162,6 +168,10 @@ async function iniciar() {
   const atualizarStatus = () => {
     const el = document.getElementById('status-drive');
     if (el && typeof window.statusDriveHTML === 'function') el.innerHTML = window.statusDriveHTML();
+    const movel = document.getElementById('status-movel');
+    if (movel && typeof window.statusMovelHTML === 'function') movel.innerHTML = window.statusMovelHTML();
+    const hoje = document.getElementById('status-hoje');
+    if (hoje && typeof window.statusDriveHTML === 'function') hoje.innerHTML = window.statusDriveHTML();
     // Ajustes mostra o status da sincronização; não redesenha enquanto o Diobert digita num campo.
     const digitando = document.activeElement?.matches?.('input, textarea, select');
     if (/^#ajustes/.test(location.hash) && !digitando && typeof window.render === 'function') window.render();
@@ -223,7 +233,11 @@ async function iniciar() {
       }
       google.entrar({ registrar });
     }
-    if (acao === 'sincronizar') sinc ? sinc.sincronizar() : google.entrar({ registrar });
+    if (acao === 'sincronizar') {
+      if (!sinc) return google.entrar({ registrar });
+      await sinc.sincronizar();
+      window.toast?.(sinc.estado().fase === 'ok' ? 'Sincronizado com o Drive' : 'Não deu para sincronizar agora. Confira a internet e tente de novo.');
+    }
     if (acao === 'sair') {
       await reg.gravar();
       await google.sair({ registrar, esquecerConta: true });
@@ -324,6 +338,8 @@ async function iniciar() {
     window.rb.tutorFich = criarTutorFichamento({ ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, registrar });
     window.rb.overview = criarOverview({ db, ia: window.rb.ia, escrita: window.rb.escrita, drive: driveSeConectado, registrar });
     window.rb.overviewUI = criarOverviewUI({ ov: window.rb.overview, registrar });
+    window.rb.organizar = criarOrganizar({ db, dados: window.rb.dados, bib: biblioteca, ia: window.rb.ia, historico, registrar, lerInicio, buscarDOI });
+    window.rb.organizarUI = criarOrganizarUI({ org: window.rb.organizar, bib: biblioteca, bibUI: window.rb.bibUI, registrar });
     window.rb.busca = criarBusca({ rb: window.rb });
     window.rb.iaUso = criarIAUso({ registros: reg, drive: driveSeConectado, registrar });
     window.rb.dissertacao = criarDissertacao({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, historico, disc: window.rb.disciplinas, drive: driveSeConectado, registrar, aoMudar: redesenharSe(/^#orientacao/) });
