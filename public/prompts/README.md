@@ -47,14 +47,14 @@ Modelos conforme `docs/especificacao.md`. Temperatura: a padrão do modelo (a do
 | `tutor.md` | Tutor no leitor (em uso desde a v0.13.0), depois no fichamento e nas aulas | conversa | baixo | JSON (resposta, pergunta, fontes, fora do acervo) |
 | `copilot.md` | Escrita: entrevista, diagnóstico, estrutura, versões, transições | raciocínio | médio a alto | JSON |
 | `dialogos.md` | Diálogos em três modos, com citações conferidas; encerrar firma posições (v2.0.0) | rápido | médio | JSON |
-| `fichamento.md` | Comentários do tutor em cada etapa do fichamento | conversa | médio | JSON |
+| `fichamento.md` | Comentários do tutor em cada etapa do fichamento (v2.0.0) | rápido | médio | JSON |
 | `revisao-projeto.md` | Lê a versão do projeto e prioriza leituras e problemas de citação (v2.0.0) | raciocínio (lote) | alto | JSON |
 | `transcricao.md` | Transcreve aulas por trechos de 15 minutos (v2.0.0) | rápido | baixo | JSON |
 | `aula.md` | Resumo, conceitos, leituras citadas e perguntas da aula, com trechos conferidos (v2.0.0) | rápido | médio | JSON |
 | `orientacao.md` | Registra orientação: resumo, combinados, trechos conferidos, temas (v2.0.0) | conversa | médio | JSON |
 | `plano-de-ensino.md` | Lê o plano de ensino e monta aulas, leituras e entregas para conferir (v2.0.0) | rápido | baixo | JSON |
-| `cartoes.md` | Cria cartões de revisão a partir de grifos e fichamentos | rápido (lote) | baixo | JSON |
+| `cartoes.md` | Cartões de revisão a partir de grifos ou aulas, conferidos pelo autor (v2.0.0) | rápido | baixo | JSON |
 | `memoria.md` | Propõe o que vale lembrar da sessão | rápido | mínimo | JSON |
 | `revisao-final.md` | "Revisar e exportar" do texto | raciocínio | alto | JSON |
 | `metadados-pdf.md` | Extrai a referência das primeiras páginas do PDF | rápido | mínimo | JSON |
-| `overview-autor.md` | Descreve o estilo do autor a partir dos textos dele | conversa (lote) | médio | JSON |
+| `overview-autor.md` | Retrato da escrita do autor, com exemplos conferidos (v2.0.0) | rápido | médio | JSON |

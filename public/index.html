@@ -718,6 +718,37 @@ details.prio-grupo > summary > header p{flex-basis:100%;order:3}
 .ag-tipos legend{font-size:var(--t-s);font-weight:500;margin-bottom:8px;padding:0}
 .g-st.pend{color:var(--grafite)}
 
+
+/* ============ Cartões, tutor no fichamento e overview (e13) ============ */
+.cart-lista{display:flex;flex-direction:column;gap:10px;max-width:900px}
+.cart-it{display:grid;grid-template-columns:1fr auto;gap:16px;background:var(--cartao);border:1px solid var(--linha);border-radius:var(--r-m);padding:16px 20px}
+.cart-it .tipo{display:flex;align-items:center;gap:6px;font-size:var(--t-xs);color:var(--grafite);margin-bottom:6px}
+.cart-it b{font-weight:500;display:block}
+.cart-it p{margin:6px 0;font-family:var(--leitura);font-size:16px;line-height:1.55;color:var(--grafite)}
+.cart-it small{font-size:var(--t-xs);color:var(--grafite-2)}
+.cart-it .bts{display:flex;gap:6px;align-items:flex-start}
+.cart-it .bts .btn{padding:4px 10px;font-size:var(--t-xs)}
+.coment-tutor{display:flex;flex-direction:column;gap:10px;margin:8px 0 12px}
+.coment-tutor .ct{border-left:3px solid var(--linha-2);padding:6px 0 6px 12px;font-size:var(--t-s)}
+.coment-tutor .ct.forte{border-color:#5C8F4E}
+.coment-tutor .ct.lacuna{border-color:#C0702F}
+.coment-tutor .ct.pergunta{border-color:var(--petroleo)}
+.coment-tutor .ct b{font-weight:500;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.coment-tutor .ct p{margin:4px 0}
+.coment-tutor .ct small{color:var(--grafite-2);font-size:var(--t-xs)}
+.traco{margin:0 0 14px}
+.traco p{margin:0 0 6px}
+.traco blockquote,.obs-l blockquote{margin:0;padding:6px 12px;border-left:3px solid var(--linha-2);font-family:var(--leitura);font-size:15px;color:var(--grafite)}
+.traco blockquote small{display:block;font-family:var(--ui);font-size:var(--t-xs);color:var(--grafite-2);margin-top:4px}
+.obs-l{margin:0;padding-left:18px;font-size:var(--t-s);display:flex;flex-direction:column;gap:10px}
+.obs-l small{display:block;color:var(--grafite-2);font-size:var(--t-xs);margin-top:4px}
+.corpus-lista li{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.corpus-lista li.fora{opacity:.6}
+.corpus-lista .check span small{display:block;font-size:var(--t-xs);color:var(--grafite-2)}
+.aut-copilot{grid-column:1/-1}
+.aut-copilot h4{font-size:var(--t-s);font-weight:500;margin:14px 0 6px}
+@media (max-width:640px){.cart-it{grid-template-columns:1fr}}
+
 /* ============ Diálogos ============ */
 .dlg-grid{display:grid;grid-template-columns:260px 1fr 320px;gap:22px;align-items:start}
 .dlg-grid > *{min-width:0}
@@ -1325,7 +1356,7 @@ a.arg-item{text-decoration:none;color:inherit}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.18.0';
+const APP_VERSAO = '0.19.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -1857,6 +1888,7 @@ V.conflitos = () => {
 };
 
 V.cartoes = () => {
+  if(modoReal()) return window.rb&&window.rb.cartoesUI ? window.rb.cartoesUI.tela() : '<div class="topo"><div><h1>Cartões</h1><p>Abrindo seus dados…</p></div></div>';
   if(S.cartao>=CARTOES.length) return `
   <a class="voltar" href="#painel">${I.voltar}Hoje</a>
   <div class="topo"><div><h1>Cartões</h1></div></div>
@@ -2550,7 +2582,7 @@ V.dialogos = () => {
 /* =========================================================
    Overview do autor
    ========================================================= */
-V.autor = () => `
+V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overviewUI.tela() : '<div class="topo"><div><h1>Overview do autor</h1><p>Abrindo seus dados…</p></div></div>') : `
   <div class="topo"><div><h1>Overview do autor</h1><p>Como você escreve, a partir dos seus textos e das conversas com o tutor e o copilot. O copilot usa isto para proteger a sua voz.</p></div>
     <div class="acoes"><button class="btn prim" data-acao="toast" data-msg="Na versão funcional, você envia .docx, .pdf ou .md com textos seus.">${I.upload}Adicionar textos meus</button></div></div>
   <div class="aviso-demo-pg">Análise de exemplo. Ela só será real depois que você enviar seus textos.</div>

@@ -62,6 +62,8 @@ export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) 
     } else if (props.segmentos && opcoes.falharParte && !estado.falhou && new RegExp(`Parte ${opcoes.falharParte} de`).test(todos)) {
       estado.falhou = true;
       return responder(r, 400, { error: { code: 400, message: 'Request payload size exceeds the limit.', status: 'INVALID_ARGUMENT' } });
+    } else if (props.cartoes || props.mais_importante || props.tracos) {
+      texto = JSON.stringify(respostaEstudo(props, todos));
     } else if (props.obras || props.combinados_anteriores || props.posicoes) {
       texto = JSON.stringify(respostaDissertacao(props, todos, opcoes));
     } else if (props.segmentos || props.resumo || props.entregas) {
@@ -239,5 +241,47 @@ function respostaDissertacao(p, todos, opcoes) {
         ]
       : [],
     questoes_em_aberto: ['Como medir a utilidade sem avaliadores humanos?'],
+  };
+}
+
+// Estudo: cartões (um com origem inexistente, que o app recusa), comentários do fichamento e overview do autor.
+function respostaEstudo(p, todos) {
+  if (p.cartoes) {
+    const itens = [...todos.matchAll(/^\[(O\d+)\] \(([^)]+)\) (.+)$/gm)].map((m) => ({ id: m[1], texto: m[3] }));
+    const a = itens[0];
+    const b = itens[1] || itens[0];
+    if (!a) return { cartoes: [], descartados: 0 };
+    return {
+      cartoes: [
+        { tipo: 'evidencia', pergunta: 'Que evidência sustenta a adesão das equipes e qual é o limite dela?', resposta: a.texto.split(/\s+/).slice(0, 12).join(' '), origem: a.id },
+        { tipo: 'conceito', pergunta: 'O que a obra entende por rota negociada?', resposta: b.texto.split(/\s+/).slice(0, 10).join(' '), origem: b.id },
+        { tipo: 'metodo', pergunta: 'Pergunta sem origem válida', resposta: 'Qualquer coisa.', origem: 'O99' },
+      ],
+      descartados: 0,
+    };
+  }
+  if (p.mais_importante) {
+    return {
+      pontos: [
+        { tipo: 'forte', texto: 'O resumo identifica o problema da obra (Moraes; Lins, 2024, p. 4) [A1].', ref: 'A1' },
+        { tipo: 'lacuna', texto: 'Falta dizer qual foi o método usado pelos autores.', ref: 'resumo' },
+        { tipo: 'pergunta', texto: 'Como esse resultado entra no seu critério de avaliação?', ref: '' },
+      ],
+      mais_importante: 1,
+    };
+  }
+  const mat = todos.match(/<textos>\s*<material-[0-9a-f]+>\n### ([^\n]+)\n([\s\S]*?)\n<\/material-/);
+  const titulo = mat?.[1] || '';
+  const palavras = (mat?.[2] || '').split(/\s+/);
+  return {
+    tracos: [
+      { traco: 'Abre os parágrafos com uma afirmação curta e qualifica depois.', exemplo: palavras.slice(0, 8).join(' '), texto_de_origem: titulo },
+      { traco: 'Um traço com exemplo inventado.', exemplo: 'frase que o autor nunca escreveu em lugar nenhum', texto_de_origem: titulo },
+    ],
+    atencao: [{ padrao: 'Frases longas quando explica o método.', exemplo: palavras.slice(2, 9).join(' '), onde: 'Nos trechos de método' }],
+    temas: [{ tema: 'Cooperativas de reciclagem', textos: 1 }],
+    mudancas: [],
+    resumo_para_copilot: 'Frases de 15 a 20 palavras; voz ativa; usa "ou seja" para explicar.',
+    aviso: 'O retrato ainda é preliminar: há poucos textos.',
   };
 }

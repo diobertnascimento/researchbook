@@ -266,7 +266,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       ${r.combinados?.length ? `<h3 class="sub-res">Combinados da aula</h3><ul class="combinados">${r.combinados.map((c, i) => `<li>${tempo(c.tempo)}<span>${esc(c.tarefa)}${c.prazo ? `, até ${dataCurta(c.prazo)}` : ''}</span>${c.prazo ? `<button class="btn fant" data-dsc-combinado="${i}" data-aula="${esc(a.id)}">Agendar entrega</button>` : ''}</li>`).join('')}</ul>` : ''}
       ${r.conceitos?.length ? `<h3 class="sub-res">Conceitos, como foram definidos em aula</h3><dl class="conceitos-aula">${r.conceitos.map((c) => `<dt>${esc(c.nome)} ${tempo(c.tempo)}</dt><dd>${esc(c.definicao_em_aula)}</dd>`).join('')}</dl>` : ''}
       ${r.descartados ? `<p class="mute" style="font-size:var(--t-xs)">${r.descartados} ${r.descartados === 1 ? 'ponto foi descartado' : 'pontos foram descartados'} porque o trecho não estava na transcrição.</p>` : ''}
-      <div class="pe"><span class="mute" style="font-size:var(--t-xs)">${esc(r.modelo || '')}</span><button class="btn fant" data-dsc-resumir="${esc(a.id)}">Refazer o resumo</button></div></section>`;
+      <div class="pe"><span class="mute" style="font-size:var(--t-xs)">${esc(r.modelo || '')}</span><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn fant" data-dsc-resumir="${esc(a.id)}">Refazer o resumo</button><button class="btn" data-cart-de="aula:${esc(a.id)}">Criar cartões desta aula</button></span></div></section>`;
   }
 
   /** Monta a transcrição com os grifos, o áudio e o seletor de cores (depois que a tela entra). */

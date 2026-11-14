@@ -135,6 +135,11 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Orientação** (`orientacao.md` v2.0.0): formatos anotação, e-mail, transcrição colada, áudio (mesmo motor das aulas; `orientacao/<id>/`) e PDF comentado (o PDF vai no pedido e fica em `orientacao/<id>/comentado.pdf`). Até 3 trechos literais, conferidos no registro (PDF não tem conferência). Combinados com dono, seção e prazo; os anteriores tratados vêm como sugestão e o autor confirma. Temas contados entre encontros. Registro legível em `orientacao/<id>/registro.md`. Eventos da dissertação usam `disciplinaId: 'dissertacao'`.
 - **Diálogos** (`dialogos.md` v2.0.0): coleção `dialogos` (tema, modo, leituras, posições, questões) e mensagens no histórico (função `dialogo`). Acervo: grifos das leituras escolhidas primeiro, depois os mais ligados ao tema. Cada resposta passa pela conferência das citações. Socrático força a resposta vazia (só pergunta). Encerrar: posições com o número da mensagem do autor; o app recusa a que não estiver na mensagem. Guardar na memória cria item aprovado (tipo posição); atualizar argumento troca a tese, guarda a anterior em `tesesAnteriores` e atualiza os trechos ligados, com desfazer.
 
+## Cartões, tutor no fichamento e overview (v0.19.0)
+- **Cartões** (`cartoes.md` v2.0.0): fonte é uma obra (seus grifos, em ordem de página) ou uma aula (pontos do resumo, conceitos e grifos da transcrição). Itens numerados O1…; o app recusa cartão com origem inexistente ou pergunta repetida; o autor marca o que guarda. Intervalos (`proximo()`): novo → De novo 10 min, Difícil 1 dia, Bom 1 dia, Fácil 4 dias; depois Difícil ×1,2, Bom ×facilidade, Fácil ×facilidade×1,3; facilidade começa em 2,5, cai 0,2 no De novo e 0,15 no Difícil, sobe 0,15 no Fácil, entre 1,3 e 3. Aprendido: intervalo de 21 dias ou mais. Hoje mostra "Revisar N cartões" quando há cartão vencido.
+- **Tutor no fichamento** (`fichamento.md` v2.0.0): por etapa, com os grifos da obra como acervo e tudo o que o autor escreveu no fichamento; até 3 pontos (forte, lacuna, pergunta) e o mais importante marcado. Respostas no histórico (função `fichamento`, uma conversa por obra) e mostradas de novo ao voltar à etapa.
+- **Overview do autor** (`overview-autor.md` v2.0.0): corpus = blocos de autoria do autor nos textos da Escrita (coautoria e IA ficam de fora) + textos enviados (.docx lido no aparelho, .txt, .md), cada um podendo sair do retrato. Métricas sem IA (palavras por frase, voz passiva por padrão de particípio, citações por parágrafo, parágrafos que terminam em pergunta, conectivos). Exemplos da IA conferidos literalmente; o que não bate é descartado e contado. Tudo em `autor/` no Drive (corpus.json, textos/, overview.json). O resumo para o Copilot entra como bloco `<voz_do_autor>` só quando o autor marca a opção.
+
 ## Memória
 - Três camadas: (1) conversas, registro completo; (2) memória consolidada, curta, só com itens aprovados pelo Diobert; (3) contexto de cada pedido, montado na hora a partir de 1 e 2 e do material aberto.
 - A IA propõe o que quer lembrar; o Diobert aprova, edita ou descarta. Pode esquecer itens (com desfazer).
@@ -183,6 +188,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.19.0 (14/11/2026): etapa 13, cartões com revisão espaçada, comentários do tutor no fichamento e Overview do autor.
 - v0.18.0 (14/11/2026): etapa 12, Google Agenda com a permissão mais estreita, eventos espelhados na agenda researchbook.
 - v0.17.0 (14/11/2026): etapa 11, revisão do projeto por versão, orientação com combinados e temas, diálogos em três modos com posições conferidas.
 - v0.16.0 (14/11/2026): etapa 10, disciplinas, aulas gravadas com transcrição por partes e resumo conferido, plano de ensino lido pela IA, agenda local e menu de Projetos real.
@@ -196,5 +202,4 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Cartões e revisão espaçada, comentários do tutor no fichamento, Overview do autor.
-2. Ajustes reais (modelos por tarefa, uso e custo), busca Ctrl+K com dados reais, limpeza de marcas de apagado, código fora do HTML e CSP sem `unsafe-inline`.
+1. Ajustes reais (modelos por tarefa, uso e custo), busca Ctrl+K com dados reais, limpeza de marcas de apagado, código fora do HTML e CSP sem `unsafe-inline`.
