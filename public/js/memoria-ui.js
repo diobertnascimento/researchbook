@@ -9,6 +9,7 @@
 import { TIPOS_MEMORIA } from './ia.js';
 import { ErroIA } from './gemini.js';
 import { referenciaTexto } from './abnt.js';
+import { ouvir } from './ui.js';
 
 /* global toast, baixar */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -244,7 +245,7 @@ export function criarMemoriaUI({ ia, historico, dados, bib, fichUI, argUI, drive
     const semIA = !ia.ajustes.modo();
     return `
     <div class="topo"><div><h1>Memória</h1><p>O que a IA sabe sobre você e a sua pesquisa. A IA propõe; só entra nos pedidos o que você guardar.</p></div></div>
-    <details class="ajuda-det" style="margin-bottom:18px"><summary>Como a memória funciona?</summary><div class="camadas" style="margin-top:12px">
+    <details class="mb-4 ajuda-det"><summary>Como a memória funciona?</summary><div class="mt-3 camadas">
       <div class="camada"><span class="n">1</span><b>Conversas</b><p>Tudo o que você trocou com a IA, guardado no seu Drive (ia/conversas).</p><div class="q">${nConversas} ${nConversas === 1 ? 'conversa' : 'conversas'} com o tutor</div></div>
       <div class="camada"><span class="n">2</span><b>Memória guardada</b><p>Decisões, posições, preferências e fatos que você aprovou. Curta de propósito.</p><div class="q">${apr.length} ${apr.length === 1 ? 'item' : 'itens'}</div></div>
       <div class="camada"><span class="n">3</span><b>Contexto de cada pedido</b><p>Montado na hora: perfil, memória guardada, o material aberto e a conversa recente.</p><div class="q">Nada entra sem a sua aprovação</div></div>
@@ -279,7 +280,7 @@ export function criarMemoriaUI({ ia, historico, dados, bib, fichUI, argUI, drive
               .join('')}
           </div>
           <pre class="prev" id="mem-prev" aria-label="Prévia da exportação">Montando a prévia…</pre>
-          <button class="btn prim" style="width:100%;justify-content:center" data-mem-exportar>Exportar</button>
+          <button class="w-100 j-centro btn prim" data-mem-exportar>Exportar</button>
           <p class="mem-nota">O arquivo é baixado e uma cópia fica no seu Drive, em memoria/exportar.</p>
         </section>
       </aside>
@@ -293,7 +294,7 @@ export function criarMemoriaUI({ ia, historico, dados, bib, fichUI, argUI, drive
     else exportar[e.target.value] = e.target.checked;
     atualizarPrevia();
   });
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-mem-aprovar],[data-mem-editar],[data-mem-descartar],[data-mem-esquecer],[data-mem-salvar],[data-mem-cancelar],[data-mem-procurar],[data-mem-adicionar],[data-mem-exportar]');
     if (!b) return;
     if (b.dataset.memAprovar) {

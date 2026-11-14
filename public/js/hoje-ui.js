@@ -34,13 +34,13 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI }) {
       return `<section class="proximo" aria-labelledby="prox-t"><div class="rot" id="prox-t">Próximo passo</div>
         <h2 class="prox-tit">Adicione a primeira obra</h2>
         <p class="prox-txt">Comece pelo DOI ou pelo PDF de um artigo que você vai ler. O app monta a referência em ABNT e guarda o PDF no seu Drive.</p>
-        <div class="acao-l"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar leitura</button></div></section>`;
+        <div class="acao-l"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar obra</button></div></section>`;
     }
     if (p.vazio === 'tudo-fichado') {
       return `<section class="proximo" aria-labelledby="prox-t"><div class="rot" id="prox-t">Próximo passo</div>
         <h2 class="prox-tit">Todas as obras estão fichadas</h2>
         <p class="prox-txt">Escolha a próxima leitura ou veja quais argumentos ainda dependem de uma única fonte.</p>
-        <div class="acao-l"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar leitura</button><a class="btn" href="#argumentos">Ver argumentos</a></div></section>`;
+        <div class="acao-l"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar obra</button><a class="btn" href="#argumentos">Ver argumentos</a></div></section>`;
     }
     const l = p.leitura;
     const ultimo = bib
@@ -78,13 +78,13 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI }) {
     return `<details class="semana-det">
       <summary>Sua semana</summary>
       <div class="bento">
-        <section class="bloco" style="grid-column:span 2"><h3>Grifos por dia</h3>
+        <section class="span-2 bloco"><h3>Grifos por dia</h3>
           <div class="semana" role="img" aria-label="Grifos nos últimos 7 dias: ${dias.map((d) => `${d.nome} ${d.n}`).join(', ')}">${dias.map((d) => `<div class="${d.hoje ? 'hoje' : ''}"><i style="height:${Math.max((d.n / max) * 72, 3)}px"></i>${d.nome}<small>${d.n}</small></div>`).join('')}</div></section>
-        <section class="bloco" style="grid-column:span 2"><h3>Seus grifos, por função</h3>
+        <section class="span-2 bloco"><h3>Seus grifos, por função</h3>
           <div class="dist">${tot.map(({ f, n }) => `<div><span>${f.nome}</span><span class="trilho"><i class="c-${f.id}" style="width:${(n / maxT) * 100}%"></i></span><span class="mute-2">${n}</span></div>`).join('')}</div></section>
         ${
           melhor
-            ? `<section class="bloco b-arg" style="grid-column:span 2"><h3>Argumento com mais fontes</h3><blockquote>${esc(melhor.a.tese)}</blockquote><a class="btn" href="#argumentos/${encodeURIComponent(melhor.a.id)}">Abrir argumento</a></section>`
+            ? `<section class="span-2 bloco b-arg"><h3>Argumento com mais fontes</h3><blockquote>${esc(melhor.a.tese)}</blockquote><a class="btn" href="#argumentos/${encodeURIComponent(melhor.a.id)}">Abrir argumento</a></section>`
             : ''
         }
       </div>

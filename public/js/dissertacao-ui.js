@@ -4,6 +4,7 @@ import { MODOS } from './dialogos.js';
 import { pipsHTML, ETAPAS, diaLocal, dataCurta } from './progresso.js';
 import { citacao } from './abnt.js';
 import { ErroIA } from './gemini.js';
+import { ouvir } from './ui.js';
 
 /* global I, toast, S */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -46,7 +47,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       const buscando = (r.buscar || []).includes(i);
       const st = l
         ? `<span>Na biblioteca</span>${pipsHTML(l.etapa || 0)}<span>${ETAPAS[l.etapa || 0]}</span><a class="btn fant" href="#leitor/${encodeURIComponent(l.id)}">Abrir</a>`
-        : `<span class="fora">Fora da biblioteca</span>${buscando ? '<span>Na lista para buscar</span>' : `<button class="btn" data-rev-buscar="${i}">Vou buscar</button>`}`;
+        : `<span class="fora">Fora da biblioteca</span>${buscando ? '<span>Na lista para buscar</span>' : `<button class="btn" data-rev-buscar="${i}">Marcar para buscar</button>`}`;
       return `<div class="ref-linha"><div><div class="t">${esc(l ? l.titulo : o.como_aparece)}</div><div class="a">${esc(l ? citacao(l) : o.como_aparece)}${o.incompleta ? '. Referência incompleta no texto' : ''}</div><div class="porque">${icone('tutor')}<span>${esc(o.porque)}</span></div></div>
         <div class="onde"><b>${o.vezes || 1}×</b><span>${esc(FUNCOES_OBRA[o.funcao] || '')}</span>${(o.secoes || []).slice(0, 4).map((s) => `<span>${esc(s)}</span>`).join('')}</div>
         <div class="st-bib">${st}</div></div>`;
@@ -67,7 +68,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
             const rs = res.obras.map((o, i) => [o, i]).filter(([o]) => o.prioridade === n);
             const cab = `<header>${prio(n)}<h3>Prioridade ${nome}</h3><p>${rs.length} ${rs.length === 1 ? 'obra' : 'obras'}. ${desc}</p></header>`;
             const corpo = rs.map(([o, i]) => linha(o, i)).join('');
-            return n === 3 ? `<section class="prio-grupo">${cab}${corpo || '<p class="mute" style="padding:0 20px 16px">Nenhuma.</p>'}</section>` : `<details class="prio-grupo"><summary>${cab}</summary>${corpo}</details>`;
+            return n === 3 ? `<section class="prio-grupo">${cab}${corpo || '<p class="mute px-5 pb-4">Nenhuma.</p>'}</section>` : `<details class="prio-grupo"><summary>${cab}</summary>${corpo}</details>`;
           })
           .join('')}
       </div>
@@ -104,15 +105,15 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     const temas = diss.temas();
     const prox = disc.proximos(DISSERTACAO, 120).find((e) => e.tipo === 'orientacao');
     const topo = `<div class="topo"><div><h1>Orientação</h1><p>Tudo o que passa entre você e a orientação, em ordem. A IA resume, extrai combinados e mostra os temas que voltam.</p></div>
-      <div class="acoes"><button class="btn" data-ori-agendar>${icone('mais')}Agendar encontro</button><button class="btn prim" data-ori-registrar>${icone('mais')}Registrar conversa</button></div></div>`;
+      <div class="acoes"><button class="btn" data-ori-agendar>${icone('mais')}Agendar encontro</button><button class="btn prim" data-ori-registrar data-ocupado="Registrando…">${icone('mais')}Registrar conversa</button></div></div>`;
     if (!es.length) return `${topo}<div class="bib-vazia"><h2>Nenhuma conversa registrada</h2><p>Registre do jeito mais fácil: uma anotação, o e-mail recebido, a gravação da reunião ou o PDF com comentários. O que você escreveu fica separado do resumo da IA.</p><button class="btn prim" data-ori-registrar>Registrar a primeira conversa</button></div>`;
     return `${topo}<div class="ori-grid"><div><div class="timeline">${es.map((e, k) => encontroHTML(e, k === 0 || est.abertos.has(e.id))).join('')}</div></div>
       <aside class="lado">
         <section class="bloco"><h3>Combinados em aberto</h3>${abertos.length ? `<ul class="combinados">${abertos.map((c) => `<li><input type="checkbox" data-ori-comb="${esc(c.id)}" data-enc="${esc(c.encontroId)}" aria-label="${esc(c.acao)}"><span>${esc(c.acao)}<small>${[c.secao ? `Seção ${c.secao}` : '', c.prazo ? `até ${dataCurta(c.prazo)}` : '', `combinado em ${dataLonga(c.data)}`].filter(Boolean).map(esc).join(', ')}</small></span></li>`).join('')}</ul>` : '<p class="mute">Nenhum em aberto.</p>'}
-          ${total ? `<div class="mute" style="font-size:var(--t-xs);margin-top:14px">${feitos} de ${total} combinados cumpridos</div><div class="barra"><i style="width:${(feitos / total) * 100}%"></i></div>` : ''}</section>
+          ${total ? `<div class="t-legenda mt-3 mute">${feitos} de ${total} combinados cumpridos</div><div class="barra"><i style="width:${(feitos / total) * 100}%"></i></div>` : ''}</section>
         ${temas.length ? `<section class="bloco"><h3>Temas que voltam</h3><div class="dist">${temas.map((t) => `<div style="grid-template-columns:1fr 70px 18px"><span>${esc(t.tema)}</span><span class="trilho"><i style="background:var(--petroleo);width:${(t.vezes / temas[0].vezes) * 100}%"></i></span><span class="mute-2">${t.vezes}</span></div>`).join('')}</div></section>` : ''}
-        <section class="bloco"><h3>${prox ? `Próximo encontro: ${dataCurta(prox.dia)}${prox.inicio ? `, ${prox.inicio}` : ''}` : 'Próximo encontro'}</h3>${prox ? '' : '<p class="mute" style="margin:0 0 10px">Sem data. Use "Agendar encontro".</p>'}
-          ${abertos.length ? `<p>Pauta a partir dos combinados abertos:</p><ol>${diss.pauta().map((p) => `<li>${esc(p)}</li>`).join('')}</ol><button class="btn" style="margin-top:14px" data-ori-pauta>${icone('copiar')}Copiar pauta</button>` : ''}</section>
+        <section class="bloco"><h3>${prox ? `Próximo encontro: ${dataCurta(prox.dia)}${prox.inicio ? `, ${prox.inicio}` : ''}` : 'Próximo encontro'}</h3>${prox ? '' : '<p class="m-0 mb-3 mute">Sem data. Use "Agendar encontro".</p>'}
+          ${abertos.length ? `<p>Pauta a partir dos combinados abertos:</p><ol>${diss.pauta().map((p) => `<li>${esc(p)}</li>`).join('')}</ol><button class="mt-3 btn" data-ori-pauta>${icone('copiar')}Copiar pauta</button>` : ''}</section>
       </aside></div>`;
   }
 
@@ -133,13 +134,13 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       ${e.texto ? `<details class="meu-reg"><summary>${e.formato === 'anotacao' ? 'Sua anotação' : e.formato === 'email' ? 'O e-mail' : e.formato === 'pdf' ? 'Sua observação' : 'O texto registrado'}</summary><p>${esc(e.texto).replace(/\n/g, '<br>')}</p></details>` : ''}
       ${reg?.anteriores?.length ? `<h4>Combinados anteriores tratados</h4><ul class="anteriores">${reg.anteriores.map((x) => `<li><span>${esc(x.acao)}<small>${{ resolvido: 'Parece resolvido', mantido: 'Mantido', alterado: 'Alterado' }[x.situacao]}${x.detalhe ? `: ${esc(x.detalhe)}` : ''}</small></span>${x.situacao === 'resolvido' && diss.combinadosAbertos().some((c) => c.id === x.combinadoId) ? `<button class="btn fant" data-ori-feito="${esc(x.combinadoId)}" data-enc="${esc(x.encontroId)}">Marcar como feito</button>` : ''}</li>`).join('')}</ul>` : ''}
       <h4>Combinados</h4>
-      ${(e.combinados || []).length ? `<ul class="combinados">${e.combinados.map((c) => `<li class="${c.feito ? 'ok' : ''}"><input type="checkbox" ${c.feito ? 'checked' : ''} data-ori-comb="${esc(c.id)}" data-enc="${esc(e.id)}" aria-label="${esc(c.acao)}"><span>${esc(c.acao)}<small>${[c.responsavel === 'orientacao' ? 'Com a orientação' : c.responsavel === 'ambos' ? 'Dos dois' : '', c.secao ? `Seção ${c.secao}` : '', c.prazo ? `até ${dataCurta(c.prazo)}` : ''].filter(Boolean).map(esc).join(', ')}</small></span></li>`).join('')}</ul>` : '<p class="mute" style="font-size:var(--t-s)">Nenhum.</p>'}
-      <form class="nota-rap" data-ori-novo-comb="${esc(e.id)}" style="margin-top:10px"><input placeholder="Acrescentar um combinado" aria-label="Novo combinado"><button class="btn" type="submit">Acrescentar</button></form>
+      ${(e.combinados || []).length ? `<ul class="combinados">${e.combinados.map((c) => `<li class="${c.feito ? 'ok' : ''}"><input type="checkbox" ${c.feito ? 'checked' : ''} data-ori-comb="${esc(c.id)}" data-enc="${esc(e.id)}" aria-label="${esc(c.acao)}"><span>${esc(c.acao)}<small>${[c.responsavel === 'orientacao' ? 'Com a orientação' : c.responsavel === 'ambos' ? 'Dos dois' : '', c.secao ? `Seção ${c.secao}` : '', c.prazo ? `até ${dataCurta(c.prazo)}` : ''].filter(Boolean).map(esc).join(', ')}</small></span></li>`).join('')}</ul>` : '<p class="t-meta mute">Nenhum.</p>'}
+      <form class="mt-3 nota-rap" data-ori-novo-comb="${esc(e.id)}"><input placeholder="Acrescentar um combinado" aria-label="Novo combinado"><button class="btn" type="submit">Acrescentar</button></form>
       ${reg?.sugestoes?.length ? `<h4>Sugestões</h4><ul>${reg.sugestoes.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
       ${reg?.atencao?.length ? `<div class="conf-ia"><b>Pontos de atenção:</b> ${reg.atencao.map(esc).join(' ')}</div>` : ''}
-      ${reg?.aviso ? `<p class="mute" style="font-size:var(--t-xs)">${esc(reg.aviso)}</p>` : ''}
-      ${reg?.descartados ? `<p class="mute" style="font-size:var(--t-xs)">${reg.descartados} ${reg.descartados === 1 ? 'trecho foi descartado' : 'trechos foram descartados'} porque não estava no registro.</p>` : ''}
-      <div class="ia-linha" style="margin-top:12px">${reg && !e.processando ? `<button class="btn fant" data-ori-processar="${esc(e.id)}">Refazer o registro da IA</button>` : ''}<button class="btn fant perigo" data-ori-apagar="${esc(e.id)}">Apagar registro</button></div>`;
+      ${reg?.aviso ? `<p class="t-legenda mute">${esc(reg.aviso)}</p>` : ''}
+      ${reg?.descartados ? `<p class="t-legenda mute">${reg.descartados} ${reg.descartados === 1 ? 'trecho foi descartado' : 'trechos foram descartados'} porque não estava no registro.</p>` : ''}
+      <div class="mt-3 ia-linha">${reg && !e.processando ? `<button class="btn fant" data-ori-processar="${esc(e.id)}" data-ocupado="Registrando…">Refazer o registro da IA</button>` : ''}<button class="btn fant perigo" data-ori-apagar="${esc(e.id)}">Apagar registro</button></div>`;
     return `<article class="encontro"><header><h3>${esc(e.titulo)}</h3><span class="data">${dataLonga(e.data)}</span><span class="chips"><span class="chip">${FORMATOS[e.formato]}</span></span></header>
       ${aberto ? corpo : `<p class="resumo-l">${(e.combinados || []).length} ${(e.combinados || []).length === 1 ? 'combinado' : 'combinados'}${(e.combinados || []).length ? (ab ? `, ${ab} em aberto` : ', todos cumpridos') : ''}</p><details data-ori-det="${esc(e.id)}"><summary>Ver registro</summary>${corpo}</details>`}</article>`;
   }
@@ -148,7 +149,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     const t = est.tipoReg;
     const campo =
       t === 'audio'
-        ? '<div class="campo"><label for="ori-arq">Gravação (MP3, M4A, WAV)</label><input id="ori-arq" type="file" accept="audio/*,.m4a,.mp3,.wav,.ogg,.webm" required></div><p class="mute-2" style="font-size:var(--t-xs);margin:-6px 0 14px">A IA transcreve e depois registra resumo e combinados. Grave só com o consentimento de quem orienta.</p>'
+        ? '<div class="campo"><label for="ori-arq">Gravação (MP3, M4A, WAV)</label><input id="ori-arq" type="file" accept="audio/*,.m4a,.mp3,.wav,.ogg,.webm" required></div><p class="t-legenda m-0 mt-n2 mb-3 mute-2">A IA transcreve e depois registra resumo e combinados. Grave só com o consentimento de quem orienta.</p>'
         : t === 'pdf'
           ? '<div class="campo"><label for="ori-arq">PDF com os comentários</label><input id="ori-arq" type="file" accept="application/pdf" required></div><div class="campo"><label for="ori-texto">Observação <span>opcional</span></label><textarea id="ori-texto" style="min-height:80px"></textarea></div>'
           : `<div class="campo"><label for="ori-texto">${t === 'transcricao' ? 'Cole a transcrição' : t === 'email' ? 'Cole o e-mail' : 'O que foi conversado'}</label><textarea id="ori-texto" style="min-height:170px" required placeholder="${t === 'anotacao' ? 'Com as suas palavras, o que ficou da conversa' : 'Cole o texto aqui'}"></textarea></div>`;
@@ -156,7 +157,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       <div class="tipo-reg" role="group" aria-label="Tipo de registro">${Object.entries(FORMATOS).map(([k, n]) => `<button type="button" data-ori-tipo="${k}" class="${k === t ? 'on' : ''}" aria-pressed="${k === t}">${n}</button>`).join('')}</div>
       <form id="ori-form"><div class="linha2"><div class="campo"><label for="ori-titulo">Título</label><input id="ori-titulo" value="${t === 'email' ? 'Retorno por e-mail' : t === 'pdf' ? 'PDF com comentários' : 'Reunião de orientação'}"></div><div class="campo"><label for="ori-data">Data</label><input id="ori-data" type="date" value="${diaLocal()}" required></div></div>
       ${campo}
-      <div class="pe"><button type="button" class="btn fant" data-dlg-fechar>Cancelar</button><button class="btn prim" type="submit">Registrar conversa</button></div></form>`);
+      <div class="pe"><button type="button" class="btn fant" data-dlg-fechar>Cancelar</button><button class="btn prim" type="submit" data-ocupado="Registrando…">Registrar conversa</button></div></form>`);
   }
 
   /* =================== Diálogos =================== */
@@ -181,17 +182,17 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       <div>${ds.map((x) => `<button class="dlg-item ${x.id === sel.id ? 'on' : ''}" data-dlg-sel="${esc(x.id)}"><b>${esc(x.tema)}</b><span>${x.modo}, ${new Date(x.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>${x.leituras.length ? `<span>${x.leituras.map((i) => bib.obter(i)).filter(Boolean).map((l) => esc(citacao(l))).join('; ')}</span>` : ''}</button>`).join('')}</div>
       <section class="conversa-card"><header><h2>${esc(sel.tema)}</h2>
         <div class="linha-h"><div class="seg" role="group" aria-label="Modo do diálogo">${Object.keys(MODOS).map((m) => `<button class="${m === sel.modo ? 'on' : ''}" title="${esc(MODOS[m])}" aria-pressed="${m === sel.modo}" data-dlg-modo="${m}">${m}</button>`).join('')}</div>
-        ${sel.leituras.map((i) => bib.obter(i)).filter(Boolean).map((l) => `<a class="chip proj" href="#leitor/${encodeURIComponent(l.id)}" style="text-decoration:none">${esc(citacao(l))}</a>`).join('')}</div>
-        <p class="mute" style="margin:0;font-size:var(--t-xs)">${esc(MODOS[sel.modo])}.</p></header>
+        ${sel.leituras.map((i) => bib.obter(i)).filter(Boolean).map((l) => `<a class="sem-sublinhado chip proj" href="#leitor/${encodeURIComponent(l.id)}">${esc(citacao(l))}</a>`).join('')}</div>
+        <p class="m-0 t-legenda mute">${esc(MODOS[sel.modo])}.</p></header>
         <div class="corpo" id="dlg-corpo">${msgs ? mensagensHTML(msgs) : '<p class="mute">Abrindo a conversa…</p>'}${est.ocupado === sel.id ? '<p class="mute" role="status">A IA está pensando…</p>' : ''}${est.erro && est.erro.id === sel.id ? erroHTML(est.erro.err) : ''}</div>
         <form class="entrada" data-dlg-enviar="${esc(sel.id)}"><textarea id="dlg-msg" placeholder="${msgs && msgs.length ? 'Continue o diálogo' : 'Diga a sua posição ou a sua dúvida'}" aria-label="Mensagem"></textarea><button type="submit" aria-label="Enviar" ${est.ocupado ? 'disabled' : ''}>${icone('enviar')}</button></form>
       </section>
       <aside class="lado">
         <section class="bloco"><h3>Posições que você firmou</h3>
-          ${propostas.map((p) => `<div class="pos">${esc(p.texto)}<small class="mute" style="display:block;margin-top:4px">Das suas palavras, na mensagem ${p.mensagem}.</small><div class="bts"><button class="btn" data-dlg-memoria="${esc(p.id)}">Guardar na memória</button>${p.argumentoId ? `<button class="btn" data-dlg-argumento="${esc(p.id)}">Atualizar argumento</button>` : ''}<button class="btn fant" data-dlg-descartar="${esc(p.id)}">Descartar</button></div></div>`).join('')}
-          ${guardadas.map((p) => `<div class="pos ok">${esc(p.texto)}<small class="mute" style="display:block;margin-top:4px">${[p.memoria ? 'Na memória' : '', p.argumento ? 'Argumento atualizado' : ''].filter(Boolean).join('. ')}</small></div>`).join('')}
-          ${!propostas.length && !guardadas.length ? '<p class="mute" style="font-size:var(--t-s)">Quando a conversa render, toque em "Encerrar e firmar posições". A IA lista o que você firmou, com as suas palavras.</p>' : ''}
-          ${msgs && msgs.some((m) => m.de === 'autor') ? `<button class="btn" style="margin-top:12px" data-dlg-encerrar="${esc(sel.id)}" ${est.ocupado ? 'disabled' : ''}>Encerrar e firmar posições</button>` : ''}</section>
+          ${propostas.map((p) => `<div class="pos">${esc(p.texto)}<small class="d-bloco mt-1 mute">Das suas palavras, na mensagem ${p.mensagem}.</small><div class="bts"><button class="btn" data-dlg-memoria="${esc(p.id)}">Guardar na memória</button>${p.argumentoId ? `<button class="btn" data-dlg-argumento="${esc(p.id)}">Atualizar argumento</button>` : ''}<button class="btn fant" data-dlg-descartar="${esc(p.id)}">Descartar</button></div></div>`).join('')}
+          ${guardadas.map((p) => `<div class="pos ok">${esc(p.texto)}<small class="d-bloco mt-1 mute">${[p.memoria ? 'Na memória' : '', p.argumento ? 'Argumento atualizado' : ''].filter(Boolean).join('. ')}</small></div>`).join('')}
+          ${!propostas.length && !guardadas.length ? '<p class="t-meta mute">Quando a conversa render, selecione "Encerrar e firmar posições". A IA lista o que você firmou, com as suas palavras.</p>' : ''}
+          ${msgs && msgs.some((m) => m.de === 'autor') ? `<button class="mt-3 btn" data-dlg-encerrar="${esc(sel.id)}" ${est.ocupado ? 'disabled' : ''} data-ocupado="Encerrando…">Encerrar e firmar posições</button>` : ''}</section>
         ${sel.questoes?.length ? `<section class="bloco"><h3>Ficou em aberto</h3><ul>${sel.questoes.map((q) => `<li>${esc(q)}</li>`).join('')}</ul></section>` : ''}
         <section class="bloco"><button class="btn fant perigo" data-dlg-apagar="${esc(sel.id)}">Apagar diálogo</button></section>
       </aside></div>`;
@@ -207,7 +208,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
         const conf = new Set(m.conferencia?.conferidas || []);
         const itens = new Map((m.itens || []).map((i) => [i.id, i]));
         const fontes = (r.fontes || []).map((f) => `<span class="chip ${conf.has(f.id) ? '' : 'lac'}" title="${conf.has(f.id) ? 'Trecho conferido no seu acervo' : 'Não conferido'}">${conf.has(f.id) ? '' : '⚠ '}${esc(itens.get(f.id)?.citacao || f.id)}</span>`).join('');
-        return `<div class="msg tutor"><span class="av">${icone('dialogos')}</span><div>${r.resposta ? `<p>${esc(tirarIds(r.resposta))}</p>` : ''}${r.pergunta ? `<p class="pergunta-tutor">${esc(tirarIds(r.pergunta))}</p>` : ''}${fontes ? `<div class="f">${fontes}</div>` : ''}${m.conferencia && !m.conferencia.ok ? '<p class="mute" style="font-size:var(--t-xs)">A conferência encontrou citação que não bate com o seu acervo; ela está marcada.</p>' : ''}</div></div>`;
+        return `<div class="msg tutor"><span class="av">${icone('dialogos')}</span><div>${r.resposta ? `<p>${esc(tirarIds(r.resposta))}</p>` : ''}${r.pergunta ? `<p class="pergunta-tutor">${esc(tirarIds(r.pergunta))}</p>` : ''}${fontes ? `<div class="f">${fontes}</div>` : ''}${m.conferencia && !m.conferencia.ok ? '<p class="t-legenda mute">A conferência encontrou citação que não bate com o seu acervo; ela está marcada.</p>' : ''}</div></div>`;
       })
       .join('');
   }
@@ -244,7 +245,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     true,
   );
 
-  document.addEventListener('submit', async (e) => {
+  ouvir('submit', async (e) => {
     const f = e.target;
     if (f.id === 'ori-form') {
       e.preventDefault();
@@ -317,7 +318,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     }
   });
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-rev-versao],[data-rev-buscar],[data-rev-trilha],[data-ori-registrar],[data-ori-tipo],[data-ori-agendar],[data-ori-pauta],[data-ori-processar],[data-ori-transcrever],[data-ori-apagar],[data-ori-feito],[data-dlg-novo],[data-dlg-fechar],[data-dlg-sel],[data-dlg-modo],[data-dlg-encerrar],[data-dlg-memoria],[data-dlg-argumento],[data-dlg-descartar],[data-dlg-apagar]');
     if (!b) return;
     const d = b.dataset;

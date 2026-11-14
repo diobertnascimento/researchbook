@@ -3,6 +3,7 @@
 // O andamento de cada obra vem da própria obra (etapa), nunca é copiado para a trilha.
 import { autorCurto } from './abnt.js';
 import { pipsHTML, proximaAcao, textoPrazo, diaLocal } from './progresso.js';
+import { ouvir } from './ui.js';
 
 /* global I, toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -139,7 +140,7 @@ export function criarTrilhasUI({ bib, dados, fichUI, registrar }) {
     });
   }
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-trilha-nova],[data-trilha-editar],[data-trilha-salvar],[data-trilha-apagar],[data-tr-mover],[data-tr-tirar],[data-tr-adicionar]');
     if (!b) return;
     if (b.dataset.trilhaNova !== undefined) return abrirModal();

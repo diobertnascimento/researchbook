@@ -6,6 +6,7 @@
 // entram como citação só quando ele escolhe, com página, e a referência sai da ficha da obra.
 import { referencia, referenciaTexto, citacao, autorCurto } from './abnt.js';
 import { FUNCOES } from './leitor-pdf.js';
+import { ouvir } from './ui.js';
 
 /* global toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -101,16 +102,16 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     const prontas = leituras.filter((l) => !doLivro(l.id) && (l.etapa || 0) >= 2);
     const topo = `<div class="topo"><div><h1>Fichamentos</h1><p>Cada fichamento passa por cinco etapas. Os grifos de cada cor alimentam a etapa certa.</p></div></div>`;
     if (!comFich.length && !prontas.length) {
-      return `${topo}<div class="bib-vazia"><h2>Nenhum fichamento ainda</h2><p>Conclua a leitura de uma obra no leitor e toque em “Fazer fichamento”. Os grifos que você fez viram o ponto de partida.</p><a class="btn prim" href="#biblioteca">Ir para a biblioteca</a></div>`;
+      return `${topo}<div class="bib-vazia"><h2>Nenhum fichamento ainda</h2><p>Conclua a leitura de uma obra no leitor e selecione “Fazer fichamento”. Os grifos que você fez viram o ponto de partida.</p><a class="btn prim" href="#biblioteca">Ir para a biblioteca</a></div>`;
     }
     const card = (l) => {
       const f = doLivro(l.id);
       const n = f ? Math.min(f.feitos, 5) : 0;
       return `<a class="fich-card" href="#fichamento/${encodeURIComponent(l.id)}">
         <div class="t">${esc(l.titulo)}</div>
-        <div class="mute" style="font-size:var(--t-s)">${esc(autorCurto(l))}${l.projeto ? ', ' + esc(l.projeto) : ''}</div>
+        <div class="t-meta mute">${esc(autorCurto(l))}${l.projeto ? ', ' + esc(l.projeto) : ''}</div>
         <div class="etp">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</div>
-        <div class="mute-2" style="font-size:var(--t-xs)">${!f ? 'Leitura concluída: começar o fichamento' : n >= 5 ? 'Completo' : `Etapa ${n + 1} de 5: ${PASSOS[n].nome}`}</div>
+        <div class="t-legenda mute-2">${!f ? 'Leitura concluída: começar o fichamento' : n >= 5 ? 'Completo' : `Etapa ${n + 1} de 5: ${PASSOS[n].nome}`}</div>
       </a>`;
     };
     return `${topo}<div class="fich-lista">${[...prontas, ...comFich].map(card).join('')}</div>`;
@@ -123,23 +124,23 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     if (p === 0) {
       const faltam = referencia(l).includes('[a completar]') || referencia(l).includes('[s. d.]');
       return `<h2>Referência</h2><p class="instr">Confira a referência. Ela sai dos dados da obra, pela ABNT NBR 6023:2018.</p>
-        <div class="ref-previa" style="margin-bottom:14px"><small>Referência (ABNT)</small><p>${referencia(l)}</p></div>
-        <p class="mute" style="font-size:var(--t-s)">Citação no texto: <b>${esc(citacao(l))}</b></p>
+        <div class="mb-3 ref-previa"><small>Referência (ABNT)</small><p>${referencia(l)}</p></div>
+        <p class="t-meta mute">Citação no texto: <b>${esc(citacao(l))}</b></p>
         ${faltam ? '<div class="ad-msg erro" role="status">Faltam dados na referência. Corrija antes de usar a obra no texto.</div>' : ''}
         <button class="btn" data-bib-editar="${esc(l.id)}">Corrigir dados da obra</button>`;
     }
     if (p === 1) {
-      if (!grifos.length) return `<h2>Citações</h2><p class="instr">Você ainda não grifou esta obra. Volte ao texto, grife os trechos que importam e eles aparecem aqui.</p><a class="btn" href="#leitor/${encodeURIComponent(l.id)}">Voltar ao texto</a>`;
+      if (!grifos.length) return `<h2>Citações</h2><p class="instr">Você ainda não grifou esta obra. Volte ao texto, grife os trechos que importam e eles aparecem aqui.</p><a class="btn" href="#leitor/${encodeURIComponent(l.id)}">Abrir a obra</a>`;
       const escolhidas = new Map(f.citacoes.map((c) => [c.grifoId, c]));
       return `<h2>Citações</h2><p class="instr">Marque os grifos que merecem citação direta. Para cada um, diga em uma frase por que ele importa para você.</p>
         ${grifos
           .map((g) => {
             const c = escolhidas.get(g.id);
             return `<div class="citacao ${c ? 'on' : ''}">
-              <label class="check" style="margin:0 0 8px"><input type="checkbox" data-fich-cit="${esc(g.id)}" ${c ? 'checked' : ''}>Usar como citação</label>
+              <label class="m-0 mb-2 check"><input type="checkbox" data-fich-cit="${esc(g.id)}" ${c ? 'checked' : ''}>Usar como citação</label>
               <blockquote style="border-color:var(--hl-${g.funcao})">${esc(g.texto)}</blockquote>
               <div class="cit">${esc(citacao(l, g.pagina))}</div>
-              ${c ? `<div class="campo" style="margin:8px 0 0"><textarea data-fich-porque="${esc(g.id)}" placeholder="Por que este trecho importa?">${esc(c.porque)}</textarea></div>` : ''}
+              ${c ? `<div class="m-0 mt-2 campo"><textarea data-fich-porque="${esc(g.id)}" placeholder="Por que este trecho importa?">${esc(c.porque)}</textarea></div>` : ''}
             </div>`;
           })
           .join('')}`;
@@ -159,7 +160,7 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
         .map(
           (t) => `<div class="citacao">
         <div class="campo"><label>Trecho <button class="btn fant mini" data-fich-citar="${esc(t.id)}">Inserir citação</button></label><textarea data-fich-trecho="${esc(t.id)}" style="min-height:110px">${esc(t.texto)}</textarea></div>
-        <div class="campo" style="margin:0"><label>Sustenta o argumento</label><input list="fich-args" data-fich-arg="${esc(t.id)}" placeholder="Escreva a tese ou escolha uma existente" value="${esc(t.argumento)}"></div>
+        <div class="m-0 campo"><label>Sustenta o argumento</label><input list="fich-args" data-fich-arg="${esc(t.id)}" placeholder="Escreva a tese ou escolha uma existente" value="${esc(t.argumento)}"></div>
       </div>`,
         )
         .join('')}
@@ -175,7 +176,7 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     const todos = bib.grifosDe(id);
     const grifos = p === 1 ? todos : todos.filter((g) => !cores.length || cores.includes(g.funcao));
     const modo = p === 4 ? 'citar' : 'ver';
-    return `<div class="topo"><div><h1>Fichamento</h1><p>${esc(l.titulo)}</p></div><div class="acoes"><span class="mute-2" id="fich-salvo" style="font-size:var(--t-xs)">${doLivro(id) ? 'Salvo' : ''}</span><a class="btn" href="#leitor/${encodeURIComponent(l.id)}">Voltar ao texto</a></div></div>
+    return `<div class="topo"><div><h1>Fichamento</h1><p>${esc(l.titulo)}</p></div><div class="acoes"><span class="t-legenda mute-2" id="fich-salvo">${doLivro(id) ? 'Salvo' : ''}</span><a class="btn" href="#leitor/${encodeURIComponent(l.id)}">Abrir a obra</a></div></div>
       <ol class="passos">${PASSOS.map((s, i) => `<li><button data-fpasso="${i}" data-id="${esc(id)}" class="${i === p ? 'on' : i < f.feitos ? 'feito' : ''}"><span class="n">${i < f.feitos ? '✓' : i + 1}</span><span class="rot">${s.nome}</span></button></li>`).join('')}</ol>
       <div class="fich-real">
         <section class="editor" data-fich-id="${esc(id)}">
@@ -186,8 +187,8 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
           </div>
         </section>
         <aside class="painel-lat">
-          ${p === 0 ? '' : `<h4>Seus grifos</h4><p class="sub">${p === 1 ? 'Todos os grifos da obra' : cores.length ? 'Para esta etapa: ' + cores.map((c) => FUNCOES.find((x) => x.id === c).nome.toLowerCase()).join(', ') : ''}${modo === 'citar' ? '. Toque para inserir a citação no trecho.' : ''}</p>
-          ${grifos.length ? grifos.map((g) => grifoBtn(g, l, modo)).join('') : '<p class="mute" style="font-size:var(--t-s)">Nenhum grifo desta cor ainda.</p>'}`}
+          ${p === 0 ? '' : `<h4>Seus grifos</h4><p class="sub">${p === 1 ? 'Todos os grifos da obra' : cores.length ? 'Para esta etapa: ' + cores.map((c) => FUNCOES.find((x) => x.id === c).nome.toLowerCase()).join(', ') : ''}${modo === 'citar' ? '. Selecione para inserir a citação no trecho.' : ''}</p>
+          ${grifos.length ? grifos.map((g) => grifoBtn(g, l, modo)).join('') : '<p class="t-meta mute">Nenhum grifo desta cor ainda.</p>'}`}
           ${window.rb?.tutorFich ? window.rb.tutorFich.painel(id, p) : ''}
         </aside>
       </div>`;
@@ -255,7 +256,7 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     window.render?.();
   });
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const t = e.target.closest('[data-fpasso],[data-fich-concluir],[data-fich-novo-trecho],[data-fich-citar],[data-fich-grifo],[data-bib-editar]');
     if (!t) return;
     if (t.dataset.bibEditar) {

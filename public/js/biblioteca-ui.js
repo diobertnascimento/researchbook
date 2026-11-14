@@ -1,10 +1,11 @@
-// Telas da biblioteca real: lista, "Adicionar leitura" e o leitor de PDF.
+// Telas da biblioteca real: lista, "Adicionar obra" e o leitor de PDF.
 // O HTML principal chama rb.bibUI.lista() e rb.bibUI.leitor(id) quando o app está com dados reais;
 // este módulo monta o PDF depois que a tela é desenhada (evento rb:render).
 import { referencia, referenciaTexto, autorCurto, citacao } from './abnt.js';
 import { buscarDOI, limparDOI } from './crossref.js';
 import { montarLeitor, lerInicio, FUNCOES } from './leitor-pdf.js';
 import { ETAPAS } from './progresso.js';
+import { ouvir } from './ui.js';
 
 /* global I, S, toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -24,7 +25,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
   let busca = '';
   let leitorAtual = null; // { id, controle, palco }
   let montando = null;
-  let rascunho = null; // ficha em edição no "Adicionar leitura"
+  let rascunho = null; // ficha em edição no "Adicionar obra"
   let editando = null; // id da obra quando o modal corrige dados de uma obra existente
   let pdfEscolhido = null;
 
@@ -52,14 +53,14 @@ export function criarBibliotecaUI({ bib, registrar }) {
     const b = busca.toLowerCase();
     const filtradas = todas.filter((l) => !b || [l.titulo, l.subtitulo, l.veiculo, l.projeto, ...(l.tags || []), ...(l.autores || []).map((a) => a.sobrenome)].join(' ').toLowerCase().includes(b));
     const topo = `<div class="topo">
-      <div><h1>Biblioteca</h1><p>${todas.length ? `${todas.length} ${todas.length === 1 ? 'obra' : 'obras'}. Toque numa obra para ler e grifar.` : 'Suas obras, com o PDF guardado no seu Drive.'}</p></div>
+      <div><h1>Biblioteca</h1><p>${todas.length ? `${todas.length} ${todas.length === 1 ? 'obra' : 'obras'}. Abra uma obra para ler e grifar.` : 'Suas obras, com o PDF guardado no seu Drive.'}</p></div>
       <div class="acoes">
         ${todas.length ? `<label class="busca">${icone('busca')}<input id="bib-busca" type="search" placeholder="Buscar título, autor, tag" value="${esc(busca)}"></label>` : ''}
-        <button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar leitura</button>
+        <button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar obra</button>
       </div>
     </div>`;
     if (!todas.length) {
-      return `${topo}<div class="bib-vazia"><h2>Sua biblioteca está vazia</h2><p>Adicione um artigo pelo DOI ou envie o PDF. O app busca os dados da obra, monta a referência em ABNT e guarda o PDF no seu Drive e neste aparelho.</p><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar a primeira leitura</button></div>`;
+      return `${topo}<div class="bib-vazia"><h2>Sua biblioteca está vazia</h2><p>Adicione um artigo pelo DOI ou envie o PDF. O app busca os dados da obra, monta a referência em ABNT e guarda o PDF no seu Drive e neste aparelho.</p><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar a primeira obra</button></div>`;
     }
     return `${topo}<div class="tabela" role="table">
       <div class="linha-lv cab" role="row"><span>Obra</span><span>Etapa</span><span>Progresso</span></div>
@@ -67,7 +68,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     </div>`;
   }
 
-  /* ---------- Adicionar leitura ---------- */
+  /* ---------- Adicionar obra ---------- */
   function campos(f) {
     const v = (k) => esc(f[k] ?? '');
     const autores = (f.autores || []).map((a) => `${a.sobrenome}${a.prenomes ? ', ' + a.prenomes : ''}`).join('\n');
@@ -148,10 +149,10 @@ export function criarBibliotecaUI({ bib, registrar }) {
     const veu = document.getElementById('veu');
     veu.innerHTML = `<div class="modal" role="dialog" aria-labelledby="modal-tit"><h2 id="modal-tit">Corrigir dados da obra</h2>
       <p>A referência ABNT se atualiza enquanto você corrige.</p>
-      <div class="ad-origem"><div class="campo"><label for="ad-doi">Buscar de novo pelo DOI</label><div class="linha-doi"><input id="ad-doi" value="${esc(l.doi || '')}" autocomplete="off"><button class="btn" data-bib="buscar-doi">Buscar</button></div></div></div>
+      <div class="ad-origem"><div class="campo"><label for="ad-doi">Buscar de novo pelo DOI</label><div class="linha-doi"><input id="ad-doi" value="${esc(l.doi || '')}" autocomplete="off"><button class="btn" data-bib="buscar-doi" data-ocupado="Buscando…">Buscar</button></div></div></div>
       <div id="ad-msg"></div>
       <div id="ad-ficha">${campos(l)}</div>
-      <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" id="ad-salvar" data-bib="salvar">Salvar correções</button></div>
+      <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" id="ad-salvar" data-bib="salvar" data-ocupado="Salvando…">Salvar correções</button></div>
     </div>`;
     veu.classList.add('on');
     document.getElementById('f-titulo').focus();
@@ -162,16 +163,16 @@ export function criarBibliotecaUI({ bib, registrar }) {
     rascunho = null;
     pdfEscolhido = null;
     const veu = document.getElementById('veu');
-    veu.innerHTML = `<div class="modal" role="dialog" aria-labelledby="modal-tit"><h2 id="modal-tit">Adicionar leitura</h2>
+    veu.innerHTML = `<div class="modal" role="dialog" aria-labelledby="modal-tit"><h2 id="modal-tit">Adicionar obra</h2>
       <p>Comece pelo DOI ou pelo PDF. Os dados da obra aparecem para você conferir antes de salvar.</p>
       <div class="ad-origem">
-        <div class="campo"><label for="ad-doi">DOI</label><div class="linha-doi"><input id="ad-doi" placeholder="10.1057/ejis.2011.54" autocomplete="off"><button class="btn" data-bib="buscar-doi">Buscar</button></div></div>
+        <div class="campo"><label for="ad-doi">DOI</label><div class="linha-doi"><input id="ad-doi" placeholder="10.1057/ejis.2011.54" autocomplete="off"><button class="btn" data-bib="buscar-doi" data-ocupado="Buscando…">Buscar</button></div></div>
         <div class="campo"><label for="ad-pdf">PDF</label><input type="file" id="ad-pdf" accept="application/pdf,.pdf"></div>
       </div>
       <button class="btn fant" data-bib="manual">Preencher à mão</button>
       <div id="ad-msg"></div>
       <div id="ad-ficha"></div>
-      <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" id="ad-salvar" data-bib="salvar" hidden>Salvar na biblioteca</button></div>
+      <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button><button class="btn prim" id="ad-salvar" data-bib="salvar" hidden data-ocupado="Salvando…">Salvar na biblioteca</button></div>
     </div>`;
     veu.classList.add('on');
     document.getElementById('ad-doi').focus();
@@ -250,7 +251,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
   /* ---------- Leitor ---------- */
   function listaGrifosHTML(id) {
     const gs = bib.grifosDe(id);
-    if (!gs.length) return '<p class="mute" style="font-size:var(--t-s)">Selecione um trecho do texto para grifar. Cada cor tem uma função.</p>';
+    if (!gs.length) return '<p class="t-meta mute">Selecione um trecho do texto para grifar. Cada cor tem uma função.</p>';
     return gs
       .map((g) => `<button class="grifo-item" style="border-color:var(--hl-${g.funcao})" data-bib="ir-grifo" data-pagina="${g.pagina}">${esc(g.texto)}<small>${FUNCOES.find((f) => f.id === g.funcao)?.nome}, p. ${g.pagina}</small></button>`)
       .join('');
@@ -270,7 +271,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
         ${tutor ? `<button class="txt" data-alt="verTutor" aria-pressed="${verTutor}">${icone('tutor')}Tutor</button>` : ''}
         <button class="txt" data-bib="referencia" data-id="${esc(l.id)}">Referência</button>
       </div>
-      <div class="dir"><span class="mute-2" id="pdf-pag" style="font-size:var(--t-xs)">${l.totalPaginas ? `p. ${l.paginaAtual || 1} de ${l.totalPaginas}` : ''}</span>${
+      <div class="dir"><span class="t-legenda mute-2" id="pdf-pag">${l.totalPaginas ? `p. ${l.paginaAtual || 1} de ${l.totalPaginas}` : ''}</span>${
         l.etapa >= 2
           ? `<a class="btn prim" href="#fichamento/${encodeURIComponent(l.id)}">${l.etapa >= 4 ? 'Ver fichamento' : l.etapa === 3 ? 'Continuar fichamento' : 'Fazer fichamento'}</a>`
           : `<button class="btn prim" data-bib="concluir" data-id="${esc(l.id)}">Concluir leitura</button>`
@@ -377,7 +378,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
   }
 
   /* ---------- Eventos ---------- */
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-bib]');
     if (!b) return;
     const acao = b.dataset.bib;

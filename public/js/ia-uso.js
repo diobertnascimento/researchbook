@@ -84,12 +84,12 @@ export function criarIAUso({ registros, drive, registrar }) {
       return `<tr><td><b>${esc(NOMES_TAREFA[k] || k)}</b><small>Reserva: ${esc(padrao.reserva || '-')}</small></td>
         <td><select data-ia-modelo="${k}" aria-label="Modelo para ${esc(NOMES_TAREFA[k] || k)}">${modelos.map((m) => `<option ${m === t.modelo ? 'selected' : ''}>${m}</option>`).join('')}</select></td>
         <td><select data-ia-pensamento="${k}" aria-label="Pensamento para ${esc(NOMES_TAREFA[k] || k)}">${Object.entries(PENSAMENTO).map(([v, n]) => `<option value="${v}" ${v === t.pensamento ? 'selected' : ''}>${n}</option>`).join('')}</select></td>
-        <td>${mudou ? `<button class="btn fant mini" data-ia-padrao="${k}">Voltar ao padrão</button>` : '<span class="mute" style="font-size:var(--t-xs)">padrão</span>'}</td></tr>`;
+        <td>${mudou ? `<button class="btn fant mini" data-ia-padrao="${k}">Voltar ao padrão</button>` : '<span class="t-legenda mute">padrão</span>'}</td></tr>`;
     };
     return `<section id="sec-modelos"><h2>Modelos por tarefa</h2>
       <p>Cada tarefa usa o modelo mais barato que dá conta dela. O nível de pensamento controla quanto o modelo raciocina antes de responder; mais pensamento custa mais. Se o modelo falhar duas vezes, o pedido vai para o reserva, e isso fica nos registros.</p>
       <div class="tab-wrap"><table class="tab-ia"><thead><tr><th>Tarefa</th><th>Modelo</th><th>Pensamento</th><th></th></tr></thead><tbody>${Object.keys(TAREFAS).filter((k) => k !== 'teste').map(linha).join('')}</tbody></table></div>
-      <p class="mute-2" style="font-size:var(--t-xs);margin:8px 0 0">As escolhas valem em todos os seus aparelhos.</p></section>`;
+      <p class="t-legenda m-0 mt-2 mute-2">As escolhas valem em todos os seus aparelhos.</p></section>`;
   }
 
   /* ---------- Uso e custo ---------- */
@@ -137,13 +137,13 @@ export function criarIAUso({ registros, drive, registrar }) {
       <div class="tab-wrap"><table class="tab-ia"><thead><tr><th>Tarefa</th><th>Modelo</th><th class="num">Usos</th><th class="num">Tokens</th><th class="num">Custo no mês</th></tr></thead><tbody>
         ${linhas.map(([k, x]) => `<tr><td>${esc(NOMES_TAREFA[k] || k)}${x.reserva ? `<small>${x.reserva} pelo modelo reserva</small>` : ''}</td><td class="mute">${[...x.modelos].map(esc).join(', ')}</td><td class="num">${x.usos}</td><td class="num">${(x.tokens / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil</td><td class="num">${usd(x.custo)}</td></tr>`).join('')}
       </tbody></table></div>` : '<p class="mute">Nenhuma chamada ao Gemini neste mês, neste aparelho.</p>'}
-      <div class="aj-linha" style="margin-top:18px">
+      <div class="mt-4 aj-linha">
         <div class="campo"><label for="ia-limite">Limite mensal (US$)</label><input id="ia-limite" inputmode="decimal" data-ia-limite value="${limite != null ? String(limite).replace('.', ',') : ''}" placeholder="Ex.: 25,00"></div>
         <div class="campo"><label for="ia-cotacao">Cotação do dólar para mostrar em reais <span>você define</span></label><input id="ia-cotacao" inputmode="decimal" data-ia-cotacao value="${cot != null ? String(cot).replace('.', ',') : ''}" placeholder="Ex.: 5,40"></div>
       </div>
-      <details class="ajuda-det"><summary>Preços usados no cálculo</summary><div class="tab-wrap" style="margin-top:10px"><table class="tab-ia"><thead><tr><th>Modelo</th><th class="num">Entrada</th><th class="num">Saída</th><th class="num">Cache</th><th>Muda em</th></tr></thead><tbody>
+      <details class="ajuda-det"><summary>Preços usados no cálculo</summary><div class="mt-3 tab-wrap"><table class="tab-ia"><thead><tr><th>Modelo</th><th class="num">Entrada</th><th class="num">Saída</th><th class="num">Cache</th><th>Muda em</th></tr></thead><tbody>
         ${Object.entries(PRECOS).map(([k, p]) => `<tr><td>${k}</td><td class="num">${usd(p.entrada)}</td><td class="num">${usd(p.saida)}</td><td class="num">${usd(p.cache)}</td><td>${p.ate ? `${p.ate.split('-').reverse().join('/')}: ${usd(p.depois.entrada)} e ${usd(p.depois.saida)}` : 'sem mudança anunciada'}</td></tr>`).join('')}
-      </tbody></table></div><p class="mute-2" style="font-size:var(--t-xs);margin:8px 0 0">Por milhão de tokens. Modelos fora da tabela ficam sem custo estimado.</p></details></section>`;
+      </tbody></table></div><p class="t-legenda m-0 mt-2 mute-2">Por milhão de tokens. Modelos fora da tabela ficam sem custo estimado.</p></details></section>`;
   }
 
   /* ---------- Marca-textos ---------- */
@@ -151,7 +151,7 @@ export function criarIAUso({ registros, drive, registrar }) {
   function secCores(funcoes) {
     const d = descricoes();
     return `<section id="sec-cores"><h2>Marca-textos</h2><p>Cada cor tem uma função. A função decide para qual etapa do fichamento o grifo vai. A descrição aparece quando você passa o mouse sobre a cor no leitor.</p>
-      ${funcoes.map((f) => `<div class="cor-func"><span class="sw c-${f.id}"></span><strong style="font-weight:500">${esc(f.nome)}</strong><input value="${esc(d[f.id] || '')}" data-cor-desc="${f.id}" aria-label="Descrição de ${esc(f.nome)}"></div>`).join('')}</section>`;
+      ${funcoes.map((f) => `<div class="cor-func"><span class="sw c-${f.id}"></span><strong class="forte">${esc(f.nome)}</strong><input value="${esc(d[f.id] || '')}" data-cor-desc="${f.id}" aria-label="Descrição de ${esc(f.nome)}"></div>`).join('')}</section>`;
   }
 
   let tempo = null;

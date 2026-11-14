@@ -86,9 +86,10 @@ test.describe('registros', () => {
   });
 
   test('Ajustes mostra os registros reais deste aparelho', async ({ page }) => {
-    await abrirApp(page, '#ajustes');
+    await abrirApp(page, '#ajustes/registros');
     await pronto(page);
     await expect(page.locator('#sec-registros table')).toContainText('sessao.inicio');
+    await page.evaluate(() => { location.hash = '#ajustes/aparelho'; });
     await expect(page.locator('#sec-aparelho')).toContainText('Versão do app');
   });
 });

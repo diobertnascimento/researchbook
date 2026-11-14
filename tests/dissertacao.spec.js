@@ -62,7 +62,7 @@ test.describe('no computador', () => {
     await expect(alta.locator('.ref-linha')).toHaveCount(2);
     await expect(alta.locator('.ref-linha').first()).toContainText('Na biblioteca');
     await expect(alta.locator('.ref-linha').first().getByRole('link', { name: 'Abrir' })).toHaveAttribute('href', /#leitor\//);
-    await alta.locator('.ref-linha').nth(1).getByRole('button', { name: 'Vou buscar' }).click();
+    await alta.locator('.ref-linha').nth(1).getByRole('button', { name: 'Marcar para buscar' }).click();
     await expect(alta.locator('.ref-linha').nth(1)).toContainText('Na lista para buscar');
     await expect(page.locator('details.prio-grupo').nth(1)).toContainText('Prioridade baixa');
     await expect(page.locator('.inc li')).toContainText('Citação direta sem página');

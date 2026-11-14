@@ -138,7 +138,7 @@ test('login cancelado mostra o motivo', async ({ page, context }) => {
 
 test('sair revoga o acesso e volta para a tela de entrada', async ({ page, context }) => {
   const g = await googleFalso(context);
-  await entrar(page, '#ajustes');
+  await entrar(page, '#ajustes/pasta');
   await expect.poll(() => fase(page)).toBe('ok');
   await page.locator('#sec-pasta').getByRole('button', { name: 'Sair da conta' }).click();
   await expect(page.locator('h1')).toHaveText('Entre para continuar');

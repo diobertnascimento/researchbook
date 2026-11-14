@@ -3,6 +3,7 @@
 import { TIPOS_CARTAO, proximo, rotuloIntervalo } from './cartoes.js';
 import { ErroIA } from './gemini.js';
 import { citacao } from './abnt.js';
+import { ouvir } from './ui.js';
 
 /* global I, toast */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -42,7 +43,7 @@ export function criarCartoesUI({ cart, bib, disc, registrar }) {
       return `${topo('Os intervalos crescem a cada acerto.')}<section class="fim-sessao"><h2>${s.feitos ? 'Sessão concluída' : 'Nada para revisar agora'}</h2>
         <p>${s.feitos ? 'Os que você marcou "De novo" voltam em 10 minutos; os outros, em intervalos maiores.' : 'Todos os cartões estão em dia.'}${prox ? ` O próximo volta ${new Date(prox.estado.proxima) - Date.now() < 86400000 ? 'ainda hoje' : `em ${new Date(prox.estado.proxima).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`}.` : ''}</p>
         ${s.feitos ? `<div class="num"><div><b>${s.feitos}</b>${s.feitos === 1 ? 'cartão revisado' : 'cartões revisados'}</div><div><b>${s.deCara}</b>lembrados de primeira</div><div><b>${k.aprendidos}</b>aprendidos</div></div>` : ''}
-        <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn prim" href="#painel">Voltar para Hoje</a><button class="btn" data-cart-criar>Criar mais cartões</button></div></section>`;
+        <div class="flex gap-3 wrap"><a class="btn prim" href="#painel">Voltar para Hoje</a><button class="btn" data-cart-criar>Criar mais cartões</button></div></section>`;
     }
     const c = cart.obter(s.fila[0]);
     if (!c) {
@@ -56,13 +57,13 @@ export function criarCartoesUI({ cart, bib, disc, registrar }) {
           <div class="face" aria-hidden="${est.virado}"><div class="tipo"><span class="sw ${cor(c.tipo)}"></span>${TIPOS_CARTAO[c.tipo] || 'Cartão'}</div><div class="q">${esc(c.pergunta)}</div><div class="origem">${esc(c.origem?.citacao || '')}</div></div>
           <div class="face verso" aria-hidden="${!est.virado}"><div class="tipo"><span class="sw ${cor(c.tipo)}"></span>Resposta</div><div class="r">${esc(c.resposta)}</div><div class="origem">${esc(c.origem?.citacao || '')}</div></div>
         </div></div>
-        ${est.virado ? '' : '<div style="margin-top:20px;display:flex;justify-content:center"><button class="btn prim" data-cart-virar>Mostrar resposta</button></div>'}
+        ${est.virado ? '' : '<div class="mt-5 flex j-centro"><button class="btn prim" data-cart-virar>Mostrar resposta</button></div>'}
         <div class="notas-rev" ${est.virado ? '' : 'hidden'}>${NOTAS.map((n, i) => `<button data-cart-nota="${i}">${n}<small>${rotuloIntervalo(opcoes[i])}</small></button>`).join('')}</div>
       </div>
       <aside class="painel-lat"><h4>Hoje</h4><div class="dist">${[['Novos', k.novos], ['Revisão', k.revisao], ['Aprendidos', k.aprendidos]].map(([n, v]) => `<div style="grid-template-columns:90px 1fr 26px"><span>${n}</span><span class="trilho"><i style="background:var(--petroleo);width:${(v / Math.max(1, k.total)) * 100}%"></i></span><span class="mute-2">${v}</span></div>`).join('')}</div>
-        <p class="mute" style="font-size:var(--t-s);margin:18px 0 0">Lembrar antes de ver a resposta é o que fixa. Errar faz parte: o cartão volta logo.</p>
-        ${c.origem?.tipo === 'grifo' ? `<a class="btn fant" style="margin-top:12px" href="#leitor/${encodeURIComponent(c.origem.leituraId)}">Abrir a obra</a>` : c.origem?.tipo === 'aula' ? `<a class="btn fant" style="margin-top:12px" href="#aula/${encodeURIComponent(c.origem.disciplinaId)}/${encodeURIComponent(c.origem.id)}">Abrir a aula</a>` : ''}
-        <button class="btn fant" style="margin-top:8px" data-cart-editar="${esc(c.id)}">Editar este cartão</button></aside></div>`;
+        <p class="t-meta m-0 mt-4 mute">Lembrar antes de ver a resposta é o que fixa. Errar faz parte: o cartão volta logo.</p>
+        ${c.origem?.tipo === 'grifo' ? `<a class="mt-3 btn fant" href="#leitor/${encodeURIComponent(c.origem.leituraId)}">Abrir a obra</a>` : c.origem?.tipo === 'aula' ? `<a class="mt-3 btn fant" href="#aula/${encodeURIComponent(c.origem.disciplinaId)}/${encodeURIComponent(c.origem.id)}">Abrir a aula</a>` : ''}
+        <button class="mt-2 btn fant" data-cart-editar="${esc(c.id)}">Editar este cartão</button></aside></div>`;
   }
 
   function listaHTML(todos) {
@@ -84,8 +85,8 @@ export function criarCartoesUI({ cart, bib, disc, registrar }) {
         ${obras.length ? `<optgroup label="Obras grifadas">${obras.map((l) => `<option value="obra:${esc(l.id)}" ${sel === `obra:${l.id}` ? 'selected' : ''}>${esc(citacao(l))} ${esc(l.titulo)}</option>`).join('')}</optgroup>` : ''}
         ${aulas.length ? `<optgroup label="Aulas">${aulas.map(({ a, d }) => `<option value="aula:${esc(a.id)}" ${sel === `aula:${a.id}` ? 'selected' : ''}>${esc(d.nome)}, aula ${a.numero}${a.tema ? `: ${esc(a.tema)}` : ''}</option>`).join('')}</optgroup>` : ''}
       </select></div>
-      <div class="campo" style="max-width:200px"><label for="cart-qtd">Quantos, no máximo</label><select id="cart-qtd">${[3, 5, 8, 10].map((n) => `<option ${n === 5 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
-      <div class="pe"><button type="button" class="btn fant" data-cart-fechar>Cancelar</button><button class="btn prim" type="submit">Propor cartões</button></div></form>`);
+      <div class="larg-200 campo"><label for="cart-qtd">Quantos, no máximo</label><select id="cart-qtd">${[3, 5, 8, 10].map((n) => `<option ${n === 5 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="pe"><button type="button" class="btn fant" data-cart-fechar>Cancelar</button><button class="btn prim" type="submit" data-ocupado="Propondo cartões…">Propor cartões</button></div></form>`);
   }
 
   function modalPropostas() {
@@ -100,7 +101,7 @@ export function criarCartoesUI({ cart, bib, disc, registrar }) {
       <div class="pe"><button type="button" class="btn fant" data-cart-fechar>Cancelar</button><button class="btn prim" type="submit">Salvar</button></div></form>`);
   }
 
-  document.addEventListener('submit', async (e) => {
+  ouvir('submit', async (e) => {
     const f = e.target;
     if (f.id === 'cart-form') {
       e.preventDefault();
@@ -127,7 +128,7 @@ export function criarCartoesUI({ cart, bib, disc, registrar }) {
     }
   });
 
-  document.addEventListener('click', async (e) => {
+  ouvir('click', async (e) => {
     const b = e.target.closest('[data-cart-criar],[data-cart-fechar],[data-cart-guardar],[data-cart-virar],[data-cart-nota],[data-cart-ver],[data-cart-editar],[data-cart-apagar],[data-cart-de]');
     if (!b) return;
     const d = b.dataset;
