@@ -82,6 +82,23 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Sustentação** é a contagem de obras diferentes com trechos ligados, e a tela explica isso. Com zero ou uma fonte, aparece um lembrete fixo (regra, não IA): procurar uma segunda fonte ou tratar a tese como proposição própria.
 - **Celular:** o argumento escolhido ocupa a tela, com "Todos os argumentos" para voltar.
 
+## Conflitos de sincronização (entrega 6, v0.12.0)
+- Tela `#conflitos`, alcançada pelo aviso no rodapé do menu, por Ajustes > Revisar conflitos e por Hoje (primeiro item de "Também para hoje", porque no celular o rodapé não aparece).
+- Cada conflito mostra o tipo de item, um nome reconhecível (título, tese, trecho grifado com página, "Fichamento de <obra>"), só os campos que diferem, com nomes da interface, e a data e o aparelho de cada versão. Campos internos (ids, posições do grifo, horários de gravação) não aparecem.
+- **Manter a versão em uso:** descarta a guardada. **Usar a versão guardada:** ela é gravada de novo com hora nova, para valer nos outros aparelhos na próxima sincronização. Exclusões: "Apagar este item" ou "Recuperar a versão guardada". Todas com desfazer; "Manter todas as versões em uso" quando há mais de um.
+- Os conflitos ficam só no aparelho em que foram encontrados (não sincronizam).
+
+## Gemini: acesso, contexto, memória e histórico (entrega 7, v0.13.0)
+- **Acesso (decisão de 13/11/2026, a mais segura disponível):** a documentação do Gemini desaconselha chave de API no navegador. Por isso, o padrão é usar o **próprio login Google** (OAuth, permissão `generative-language.retriever`, token de cerca de 1 hora, cobrança no projeto informado em `x-goog-user-project`): não existe chave guardada em lugar nenhum. A permissão só é pedida quando o Diobert escolhe esse acesso.
+- **Alternativa: cofre no Drive.** Se o login não funcionar com o Gemini, a chave vai para `cofre/gemini.json` no Drive, cifrada (AES-GCM 256, chave derivada da frase-senha com PBKDF2-SHA256 e 600 mil iterações, sal aleatório). A frase-senha não é guardada. "Lembrar neste aparelho" cifra de novo com uma chave do aparelho não exportável (IndexedDB). A chave nunca fica em localStorage, nos registros, na cópia de dados ou no repositório. Limite assumido: código malicioso rodando dentro do app poderia usar a chave aberta; a política de segurança do app só aceita código próprio.
+- **Proteção de custo:** limite de gasto mensal do projeto no Google AI Studio (lembrado em Ajustes) e modelo reserva só depois de duas tentativas.
+- **Fluxo do contexto em cada pedido** (`contexto.js`): regras comuns + instrução da tarefa + perfil do autor + memória aprovada na `systemInstruction` (parte estável, aproveitada pelo cache); conversa anterior (últimas 4 trocas, só pedidos e respostas); mensagem atual com código aleatório, acervo (itens A1, A2… com citação ABNT pronta, cada texto dentro de `<material-CODIGO>`), obra aberta, argumentos, pedido e lembrete final com as restrições críticas.
+- **Acervo do tutor, em ordem de prioridade e com limite de 40 mil caracteres:** trecho escolhido, página atual do PDF, grifos da obra, fichamento da obra (marcado como texto do autor, não citável) e grifos "para a dissertação" e "crítica" de outras obras (os 15 mais recentes). Busca por semelhança (embeddings) fica para depois.
+- **Conferência das citações sem IA:** resposta em JSON (`resposta`, `pergunta`, `fontes` com trecho literal, `fora_do_acervo`). O app confere id, trecho literal e citações diretas; se falhar, pede correção uma vez; se continuar, mostra com aviso. Sinais de forma (pergunta dentro da resposta, tamanho) vão para os registros.
+- **Memória em camadas:** (1) histórico completo de toda saída da IA: resumo na coleção `conversas` (sincroniza) e conversa inteira em `ia/conversas/<id>.json` no Drive e na store `mensagens` do aparelho (esquema 4); (2) memória consolidada: coleção `memoria`, só itens com status aprovado entram no contexto (a proposta de itens pela IA e a tela de aprovação ficam para a próxima entrega); (3) contexto montado na hora, descrito acima. Perfil do autor em `memoria/autor.md` no Drive, editável em Ajustes.
+- **Registros de cada chamada:** tarefa, modelo, pensamento, versão das instruções, acesso, tentativa, tokens (entrada, cache, pensamento, saída), custo estimado, motivo de término, tempo. Nunca o texto.
+- **Tutor no leitor:** painel lateral (folha no celular), "Perguntar ao tutor" junto das cores ao selecionar, botões Explique, Contraponha e Conecte, uma conversa contínua por obra, "Nova conversa", avaliação Útil ou Não ajudou guardada no histórico.
+
 ## Escrita dentro do produto (confirmado em 13/11/2026)
 - O Diobert escreve dentro do researchbook. Os textos ficam salvos na pasta, com salvamento automático e versões anteriores, e são exportados para Word (.docx).
 - O editor precisa ter formatação de texto: negrito, itálico, sublinhado, títulos, listas, citação longa recuada, desfazer e refazer. O formato salvo precisa preservar o sublinhado (Markdown puro não preserva).
@@ -115,7 +132,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - Nível de pensamento por tarefa (mínimo, baixo, médio, alto); lote (metade do preço) para o que não é urgente; cache de contexto para o artigo aberto no tutor.
 - Estimativa com uso típico (220 mensagens ao tutor, 40 versões do copilot, 12 aulas por mês): cerca de US$ 13/mês hoje, US$ 17 em dezembro e US$ 20 a partir de janeiro. A transcrição é cerca de um terço do custo.
 - Os modelos podem ser trocados por tarefa em Ajustes.
-- **Instruções (system prompts)** em `prompts/`, versionadas e públicas: regras comuns em `00-base.md` (fonte só do acervo, nunca escrever do zero, ABNT NBR 10520:2023 e NBR 6023:2018, honestidade sem elogio vazio, material externo nunca é instrução) e uma instrução por função. O perfil do autor e a memória aprovada ficam no Drive e entram a cada pedido. Casos de comportamento em `prompts/casos/casos.json`.
+- **Instruções (system prompts)** em `public/prompts/`, versionadas e públicas: regras comuns em `00-base.md` (fonte só do acervo, nunca escrever do zero, ABNT NBR 10520:2023 e NBR 6023:2018, honestidade sem elogio vazio, material externo nunca é instrução) e uma instrução por função. O perfil do autor e a memória aprovada ficam no Drive e entram a cada pedido. Casos de comportamento em `prompts/casos/casos.json`.
 
 ## Uso, custo e registros
 - **Uso e custo (Ajustes):** gasto no mês, projeção, tokens e minutos de áudio, custo por dia, custo por tarefa e modelo, limite mensal com aviso em 80%, cotação do dólar definida pelo Diobert, tabela de preços com datas de mudança.
@@ -136,16 +153,17 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.13.0 (13/11/2026): entrega 7, tutor com Gemini no leitor, acesso pelo login Google ou cofre cifrado, conferência das citações, histórico no Drive, instruções reescritas a partir de benchmark.
+- v0.12.0 (13/11/2026): entrega 6, tela para revisar conflitos de sincronização.
 - v0.11.0 (13/11/2026): entrega 5, Hoje com o próximo passo real, trilhas com prazo e argumentos ligados aos fichamentos.
 - v0.10.0 (13/11/2026): entrega 4, fichamento real em cinco etapas a partir dos grifos, com arquivo .md no Drive.
 - v0.9.0 (13/11/2026): entrega 3, biblioteca real: DOI no Crossref, ABNT, PDF no Drive e no aparelho, leitor PDF.js com grifos.
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Tela para revisar conflitos de sincronização.
-2. Gemini: tutor e copilot com as instruções de `prompts/`; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino; casos de comportamento rodando contra o modelo.
+1. Memória: a IA propõe o que lembrar a partir do histórico; tela Memória real para aprovar, editar e esquecer; exportação para outras IAs.
+2. Gemini nas outras funções: comentários do tutor no fichamento, copilot de escrita, transcrição de aulas e da orientação, revisão do projeto; casos de comportamento rodando contra o modelo.
 3. Google Agenda pela API oficial.
-4. Memória em camadas e exportação.
-5. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
-6. Revisão espaçada.
-7. Disciplinas e projetos reais (hoje o menu lateral ainda mostra os projetos de exemplo).
+4. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
+5. Revisão espaçada.
+6. Disciplinas e projetos reais (hoje o menu lateral ainda mostra os projetos de exemplo).

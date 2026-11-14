@@ -9,7 +9,7 @@
 //    um backup completo na coleção "backups" (ficam os 5 mais recentes).
 
 const NOME = 'researchbook';
-export const ESQUEMA = 3;
+export const ESQUEMA = 4;
 export const ESQUEMA_DADOS = 1;
 
 export const COLECOES = [
@@ -33,6 +33,11 @@ const ESTRUTURA = {
   // v0.9.0: cópia local dos PDFs, para ler sem internet. Não sincroniza como coleção: o PDF vai para o Drive como arquivo.
   3: (db) => {
     db.createObjectStore('arquivos', { keyPath: 'id' });
+  },
+  // v0.13.0: conversas completas com a IA (uma por conversa). O resumo de cada conversa sincroniza na coleção
+  // "conversas"; o texto completo vai para o Drive como arquivo (ia/conversas/<id>.json), para não inchar a sincronização.
+  4: (db) => {
+    db.createObjectStore('mensagens', { keyPath: 'id' });
   },
 };
 
@@ -70,6 +75,11 @@ export function um(db, colecao, id) {
 
 export function gravar(db, colecao, item) {
   return pedido(db.transaction(colecao, 'readwrite').objectStore(colecao).put(item));
+}
+
+/** Remove de vez um registro. Só para coleções internas (ex.: conflitos já resolvidos); dados do usuário usam a marca apagado. */
+export function removerDe(db, colecao, id) {
+  return pedido(db.transaction(colecao, 'readwrite').objectStore(colecao).delete(id));
 }
 
 export function gravarVarios(db, colecao, itens) {

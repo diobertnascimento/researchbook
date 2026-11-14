@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <!-- Segurança: o app só carrega código, estilos, fontes e imagens dele mesmo.
      Quando o login Google e o Gemini entrarem, os endereços do Google são acrescentados aqui, um a um. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://api.crossref.org; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com https://api.crossref.org https://generativelanguage.googleapis.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>researchbook</title>
 <meta name="theme-color" content="#1F4A5A">
@@ -1082,6 +1082,73 @@ a.arg-item{text-decoration:none;color:inherit}
   .trecho-d{grid-template-columns:minmax(0,1fr);gap:10px}
   .trecho-d .btn{justify-self:start}
 }
+
+/* Entrega 6: conflitos de sincronização */
+.conf{background:var(--cartao);border:1px solid var(--linha);border-radius:var(--r-l);padding:24px 28px;margin-bottom:18px}
+.conf header{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:14px}
+.conf h2{font-size:var(--t-l);font-weight:500;margin:0;overflow-wrap:anywhere}
+.conf-nota{margin:0 0 14px;color:var(--grafite);font-size:var(--t-s);max-width:62ch}
+.conf-tab{border:1px solid var(--linha);border-radius:var(--r-m);overflow:hidden;margin-bottom:16px}
+.conf-l{display:grid;grid-template-columns:180px minmax(0,1fr) minmax(0,1fr);gap:16px;padding:12px 16px;border-top:1px solid var(--linha);font-size:var(--t-s)}
+.conf-l:first-child{border-top:0}
+.conf-l.cab{background:var(--papel);font-weight:500}
+.conf-l.cab small{display:block;font-weight:400;color:var(--grafite);font-size:var(--t-xs)}
+.conf-l b{font-weight:500}
+.conf-l p{margin:0;overflow-wrap:anywhere;white-space:normal}
+.conf-acoes{display:flex;gap:10px;flex-wrap:wrap}
+.salvo a{color:inherit}
+@media (max-width:760px){
+  .conf{padding:20px 18px}
+  .conf-l{grid-template-columns:minmax(0,1fr);gap:6px}
+  .conf-l.cab{display:none}
+  .conf-l [data-lado]::before{content:attr(data-lado);display:block;font-size:var(--t-xs);color:var(--grafite)}
+}
+/* Entrega 7: tutor com Gemini e ajustes da IA */
+.tutor-cab{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 18px 0}
+.tutor-cab h4{margin:0}
+.tutor-cab .btn{padding:5px 10px;font-size:var(--t-xs)}
+.tutor-vazio{color:var(--grafite);font-size:var(--t-s)}
+.tutor-vazio p{margin:0 0 10px}
+.tutor-pe{border-top:1px solid var(--linha);padding:12px 16px 14px;display:flex;flex-direction:column;gap:10px;background:var(--cartao)}
+.tutor-trecho{display:flex;gap:8px;align-items:flex-start;font-family:var(--leitura);font-size:13px;color:var(--grafite);border-left:3px solid var(--hl-dissert);padding-left:10px}
+.tutor-trecho span{flex:1;overflow-wrap:anywhere}
+.tutor-trecho .btn{padding:3px 8px;font-size:var(--t-xs);font-family:var(--ui)}
+.tutor-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.tutor-acoes .btn{padding:5px 11px;font-size:var(--t-xs)}
+.tutor-escrever{display:flex;gap:8px;align-items:flex-end}
+.tutor-escrever textarea{flex:1;min-width:0;resize:vertical;font:inherit;font-size:var(--t-s);border:1px solid var(--linha-2);border-radius:var(--r-s);padding:8px 10px;background:var(--papel)}
+.msg.tutor > div{min-width:0;overflow-wrap:anywhere}
+.fonte-ia{display:inline-block;border:1px solid var(--linha-2);background:var(--papel);border-radius:999px;font:500 10.5px/1.4 var(--ui);padding:0 6px;margin:0 1px;color:var(--petroleo);vertical-align:1px;cursor:pointer}
+.fonte-ia.ruim{color:#9A3B26;border-color:#E3B9AC;background:#FBF0EC}
+.pergunta-tutor{font-weight:500;border-left:3px solid var(--petroleo);padding-left:10px}
+.fora-acervo{margin-top:6px;font-size:var(--t-xs);color:var(--grafite)}
+.fora-acervo ul{margin:4px 0 0;padding-left:18px}
+.conf-ia{margin-top:8px;background:#FBF0EC;border:1px solid #E3B9AC;border-radius:var(--r-s);padding:8px 10px;font-size:var(--t-xs)}
+.conf-ia ul{margin:6px 0 0;padding-left:18px}
+.erro-ia{background:#FBF0EC;border:1px solid #E3B9AC;border-radius:var(--r-s);padding:10px 12px;font-size:var(--t-s)}
+.erro-ia p{margin:0 0 8px}
+.msg.pensando p{color:var(--grafite)}
+.pop-pdf .pergunta-p{border-top:1px solid var(--linha);margin-top:6px;padding-top:6px}
+.ia-modos{display:flex;flex-direction:column;gap:10px;margin:0 0 18px;max-width:640px}
+.ia-modo{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--linha);border-radius:var(--r-m);padding:14px 16px;background:var(--cartao);cursor:pointer}
+.ia-modo.on{border-color:var(--tinta)}
+.ia-modo input{margin-top:4px}
+.ia-modo small{display:block;color:var(--grafite);font-size:var(--t-s);margin-top:4px}
+.ia-modo .chip{margin-left:6px;font-size:var(--t-xs)}
+.ia-bloco{max-width:640px;margin-bottom:16px}
+.ia-status{display:flex;gap:8px;align-items:center;font-size:var(--t-s);color:var(--grafite)}
+.ia-status i{width:8px;height:8px;border-radius:50%;background:#C0702F;flex:none}
+.ia-status.ok i{background:#5C8F4E}
+.ia-linha{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 10px}
+.ia-check{display:flex;gap:8px;align-items:center;font-size:var(--t-s);margin:0 0 12px}
+.ia-ok{color:#3F6B35;font-size:var(--t-s)}
+.ia-sub{font-size:var(--t-l);font-weight:500;margin:28px 0 4px}
+.ia-nota{font-size:var(--t-xs);max-width:60ch}
+.ia-bloco .como ol{margin:8px 0 0;padding-left:20px;font-size:var(--t-s);color:var(--grafite);display:flex;flex-direction:column;gap:6px}
+@media (max-width:1000px){
+  .tutor-escrever textarea{font-size:16px}
+  .col-tutor .tutor-corpo{min-height:120px}
+}
 </style>
 </head>
 <body>
@@ -1110,7 +1177,7 @@ a.arg-item{text-decoration:none;color:inherit}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.11.0';
+const APP_VERSAO = '0.13.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -1636,6 +1703,11 @@ V.argumentos = (id) => {
   </div>`;
 };
 
+V.conflitos = () => {
+  if(!modoReal()) return `<div class="topo"><div><h1>Conflitos de sincronização</h1><p>Sem conflitos: no modo de exemplo nada é sincronizado.</p></div></div>`;
+  return window.rb&&window.rb.conflitosUI ? window.rb.conflitosUI.tela() : '<div class="topo"><div><h1>Conflitos de sincronização</h1><p>Abrindo seus dados…</p></div></div>';
+};
+
 V.cartoes = () => {
   if(S.cartao>=CARTOES.length) return `
   <a class="voltar" href="#painel">${I.voltar}Hoje</a>
@@ -1835,14 +1907,14 @@ V.ajustes = () => `
   <div class="aj-wrap">
   <nav class="aj-indice" aria-label="Seções dos ajustes">${[['sec-ia','Conexão com o Gemini'],['sec-modelos','Modelos por tarefa'],['sec-custo','Uso e custo'],['sec-registros','Registros'],['sec-aparelho','Este aparelho'],['sec-agenda','Google Agenda'],['sec-cores','Marca-textos'],['sec-pasta','Pasta']].map(([id,n])=>`<button data-sec="${id}">${n}</button>`).join('')}</nav>
   <div class="aj">
-    <section id="sec-ia">
+    ${modoReal()&&window.rb&&window.rb.iaAjustes?window.rb.iaAjustes.secaoHTML():`<section id="sec-ia">
       <h2>Conexão com o Gemini</h2>
       <p>A chave fica só neste navegador e é enviada apenas ao Google quando você usa a IA. O tutor e o copilot têm instruções separadas.</p>
       <div class="campo" style="max-width:440px"><label>Chave da API</label><input type="password" placeholder="Cole sua chave do Google AI Studio"></div>
       <div class="campo"><label>Como o tutor deve agir <span>leituras, fichamentos e cartões</span></label><textarea style="font-family:var(--ui);font-size:var(--t-s);min-height:90px">Você é o tutor de um mestrando em Administração. Seu trabalho é garantir a qualidade do estudo: pergunte, provoque, aponte lacunas e leituras apressadas. Não escreva fichamentos nem trechos por ele. Responda em português, de forma direta e sem elogios.</textarea></div>
       <div class="campo"><label>Como o copilot deve agir <span>textos e diálogos</span></label><textarea style="font-family:var(--ui);font-size:var(--t-s);min-height:110px">Você é o copilot de escrita acadêmica de um mestrando. Nunca escreva do zero: entreviste o autor e proponha versões do que ele escreveu ou disse, no estilo do overview do autor. Cite apenas obras do acervo, com página e em ABNT. Se faltar fonte, diga e sugira obras para ele buscar; não invente referências. Responda em português.</textarea></div>
       <button class="btn" data-acao="toast" data-msg="Na versão funcional, isto testa a conexão com o Gemini.">Testar conexão</button>
-    </section>
+    </section>`}
     ${secModelos()}
     ${secCusto()}
     ${secRegistros()}
@@ -2827,8 +2899,8 @@ function statusDriveHTML(){
   if(!conta) return linha('pendente','Dados de exemplo, sem Drive');
   if(!rb) return linha('pendente','Abrindo…');
   const e=rb.sincronia?rb.sincronia.estado():{fase:rb.google.conectado()?'parado':'desconectado'};
-  const conf=e.conflitos?`, ${e.conflitos} ${e.conflitos===1?'conflito':'conflitos'}`:'';
-  if(e.fase==='ok') return linha('ok',`Sincronizado às ${new Date(e.ultima).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${conf}`);
+  const conf=e.conflitos?`, <a href="#conflitos">${e.conflitos} ${e.conflitos===1?'conflito para revisar':'conflitos para revisar'}</a>`:'';
+  if(e.fase==='ok') return linha('ok',`<span>Sincronizado às ${new Date(e.ultima).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${conf}</span>`);
   if(e.fase==='sincronizando'||e.fase==='parado') return linha('pendente','Sincronizando com o Drive…');
   if(e.fase==='offline') return linha('aviso','Sem internet: salvo neste aparelho');
   if(e.fase==='desconectado') return linha('aviso','Salvo neste aparelho. <button data-google="entrar">Reconectar ao Google</button>');
@@ -2862,6 +2934,7 @@ function contaHTML(){
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
       <button class="btn" data-google="sincronizar">Sincronizar agora</button>
+      <a class="btn fant" href="#conflitos">Revisar conflitos${e&&e.conflitos?` (${e.conflitos})`:''}</a>
       ${id?`<a class="btn fant" href="https://drive.google.com/drive/folders/${encodeURIComponent(id)}" target="_blank" rel="noopener">Abrir a pasta no Drive</a>`:''}
       <button class="btn fant" data-google="sair">Sair da conta</button>
     </div>`;

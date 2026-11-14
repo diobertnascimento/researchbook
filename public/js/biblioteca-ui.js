@@ -260,11 +260,14 @@ export function criarBibliotecaUI({ bib, registrar }) {
     const l = bib.obter(id);
     if (!l) return null;
     const verGrifos = typeof S !== 'undefined' ? S.verGrifos : false;
+    const tutor = window.rb?.tutorUI;
+    const verTutor = !!tutor && (typeof S !== 'undefined' ? S.verTutor : false);
     return `<div class="leitor-barra">
       <a class="btn fant" href="#biblioteca">${icone('voltar')}Biblioteca</a>
       <div class="tit">${esc(l.titulo)}<small>${esc(autorCurto(l))}, ${ETAPAS[l.etapa] || ETAPAS[0]}</small></div>
       <div class="alterna" role="group" aria-label="Painéis do leitor">
         <button class="txt" data-alt="verGrifos" aria-pressed="${verGrifos}">${icone('painelEsq')}Grifos</button>
+        ${tutor ? `<button class="txt" data-alt="verTutor" aria-pressed="${verTutor}">${icone('tutor')}Tutor</button>` : ''}
         <button class="txt" data-bib="referencia" data-id="${esc(l.id)}">Referência</button>
       </div>
       <div class="dir"><span class="mute-2" id="pdf-pag" style="font-size:var(--t-xs)">${l.totalPaginas ? `p. ${l.paginaAtual || 1} de ${l.totalPaginas}` : ''}</span>${
@@ -273,7 +276,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
           : `<button class="btn prim" data-bib="concluir" data-id="${esc(l.id)}">Concluir leitura</button>`
       }</div>
     </div>
-    <div class="leitor-grid sem-tutor ${verGrifos ? '' : 'sem-grifos'}">
+    <div class="leitor-grid ${verTutor ? '' : 'sem-tutor'} ${verGrifos ? '' : 'sem-grifos'}">
       <aside class="col-grifos" aria-label="Grifos neste texto">
         <button class="fechar-folha" data-alt="verGrifos">Fechar</button>
         <h4>Grifos neste texto</h4>
@@ -282,6 +285,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
       <div class="palco"><div id="pdf-palco" data-id="${esc(l.id)}">${
         l.pdf ? '<div class="pdf-aviso">Abrindo o PDF…</div>' : `<div class="pdf-aviso"><p>Esta obra ainda não tem PDF.</p><label class="btn prim">Adicionar PDF<input type="file" accept="application/pdf,.pdf" data-bib-pdf="${esc(l.id)}" hidden></label><div class="ref-previa"><small>Referência (ABNT)</small><p>${referencia(l)}</p></div></div>`
       }</div></div>
+      ${tutor ? tutor.painel(l.id) : ''}
     </div>`;
   }
 
@@ -322,6 +326,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
         toast(`Grifado como ${nome}`);
       },
       aoClicarGrifo: (gid, el) => menuGrifo(gid, el),
+      aoPerguntar: window.rb?.tutorUI ? (sel) => window.rb.tutorUI.comTrecho(id, sel) : undefined,
       aoMudarPagina: (n, total) => {
         const p = document.getElementById('pdf-pag');
         if (p) p.textContent = `p. ${n} de ${total}`;
@@ -469,5 +474,5 @@ export function criarBibliotecaUI({ bib, registrar }) {
     if (/^#biblioteca/.test(location.hash) && !document.getElementById('veu')?.classList.contains('on')) redesenhar();
   });
 
-  return { lista, leitor, abrirAdicionar, editar };
+  return { lista, leitor, abrirAdicionar, editar, atual: () => leitorAtual };
 }

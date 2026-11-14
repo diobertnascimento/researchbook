@@ -14,7 +14,7 @@ export function titulData(d = new Date()) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export function criarHojeUI({ bib, fichUI, trilhasUI, argUI }) {
+export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI }) {
   /** Resumo de ontem, só com o que existe nos dados (grifos criados e fichamentos concluídos). */
   function ontem(hoje) {
     const d = new Date(hoje);
@@ -95,7 +95,10 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI }) {
     const leituras = bib.leituras();
     const dadosBase = { leituras, fichamentos: fichUI.todos(), trilhas: trilhasUI.todas(), hoje };
     const p = proximoPasso(dadosBase);
-    const outros = p.leitura || p.vazio === 'tudo-fichado' ? tambemHoje({ ...dadosBase, principalId: p.leitura?.id }) : [];
+    let outros = p.leitura || p.vazio === 'tudo-fichado' ? tambemHoje({ ...dadosBase, principalId: p.leitura?.id }) : [];
+    // Conflitos de sincronização entram primeiro: no celular, o rodapé com o status não aparece.
+    const nConf = conflitosUI?.total() || 0;
+    if (nConf) outros = [{ titulo: nConf === 1 ? 'Revisar 1 conflito de sincronização' : `Revisar ${nConf} conflitos de sincronização`, detalhe: 'O mesmo item mudou em dois aparelhos', href: '#conflitos' }, ...outros].slice(0, 3);
     const resumo = ontem(hoje);
     return `
     <div class="topo"><div><h1>${titulData(hoje)}</h1>${resumo ? `<p>${resumo}</p>` : ''}</div></div>

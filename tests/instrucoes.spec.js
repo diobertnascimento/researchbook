@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const PASTA = join(import.meta.dirname, '..', 'prompts');
+const PASTA = join(import.meta.dirname, '..', 'public', 'prompts');
 const ler = (f) => readFileSync(join(PASTA, f), 'utf8');
 const tarefas = readdirSync(PASTA).filter((f) => f.endsWith('.md') && !['README.md', 'perfil-do-autor.exemplo.md'].includes(f));
 

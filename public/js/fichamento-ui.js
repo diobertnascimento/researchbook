@@ -26,7 +26,7 @@ export const PASSOS = [
   { id: 'analise', nome: 'Análise crítica', cores: ['metodo', 'critica'] },
   { id: 'dissertacao', nome: 'Para a dissertação', cores: ['dissert'] },
 ];
-const PERGUNTAS = [
+export const PERGUNTAS = [
   ['problema', 'Qual problema o texto enfrenta?'],
   ['argumento', 'Como os autores constroem o argumento? (método, dados, tipo de evidência)'],
   ['fraco', 'Onde o texto é fraco ou discutível?'],
