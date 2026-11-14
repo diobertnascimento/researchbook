@@ -77,7 +77,8 @@ export function criarCopiloto({ ia, bib, fichUI, historico, registrar }) {
     const r = await ia.gerarTarefa({
       tarefa: TAREFA_IA[tipo],
       acervo,
-      blocos: [briefing(t), estrutura(t), ...blocosExtras],
+      // A voz do autor (Overview do autor), só quando ele escolheu usar no Copilot.
+      blocos: [briefing(t), estrutura(t), ...(window.rb?.overview?.vozParaCopilot() ? [`<voz_do_autor>\n${window.rb.overview.vozParaCopilot()}\n</voz_do_autor>`] : []), ...blocosExtras],
       pedido: `Tarefa: ${tipo}.\n${pedido || ''}`.trim(),
       lembrete: LEMBRETE,
       esquema: ESQUEMAS[tipo],

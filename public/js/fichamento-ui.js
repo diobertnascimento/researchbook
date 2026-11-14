@@ -188,8 +188,7 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
         <aside class="painel-lat">
           ${p === 0 ? '' : `<h4>Seus grifos</h4><p class="sub">${p === 1 ? 'Todos os grifos da obra' : cores.length ? 'Para esta etapa: ' + cores.map((c) => FUNCOES.find((x) => x.id === c).nome.toLowerCase()).join(', ') : ''}${modo === 'citar' ? '. Toque para inserir a citação no trecho.' : ''}</p>
           ${grifos.length ? grifos.map((g) => grifoBtn(g, l, modo)).join('') : '<p class="mute" style="font-size:var(--t-s)">Nenhum grifo desta cor ainda.</p>'}`}
-          <h4 style="margin-top:22px">Comentários do tutor</h4>
-          <p class="sub">O tutor vai comentar cada etapa quando o Gemini for ligado: aponta lacunas e faz perguntas, sem reescrever por você.</p>
+          ${window.rb?.tutorFich ? window.rb.tutorFich.painel(id, p) : ''}
         </aside>
       </div>`;
   }

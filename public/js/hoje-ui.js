@@ -113,6 +113,8 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI }) {
         ...outros,
       ].slice(0, 3);
     }
+    const nCart = window.rb?.cartoes?.paraHoje().length || 0;
+    if (nCart) outros = [{ titulo: nCart === 1 ? 'Revisar 1 cartão' : `Revisar ${nCart} cartões`, detalhe: 'Leva poucos minutos', href: '#cartoes' }, ...outros].slice(0, 3);
     const nMem = window.rb?.memoriaUI?.pendentes().length || 0;
     if (nMem) outros = [{ titulo: nMem === 1 ? 'Revisar 1 item para a memória' : `Revisar ${nMem} itens para a memória`, detalhe: 'A IA propôs a partir das suas conversas', href: '#memoria' }, ...outros].slice(0, 3);
     if (nConf) outros = [{ titulo: nConf === 1 ? 'Revisar 1 conflito de sincronização' : `Revisar ${nConf} conflitos de sincronização`, detalhe: 'O mesmo item mudou em dois aparelhos', href: '#conflitos' }, ...outros].slice(0, 3);

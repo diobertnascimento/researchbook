@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.19.0 (14/11/2026)
+- Cartões de revisão de verdade. "Criar cartões" a partir de uma obra grifada ou de uma aula (também pelo botão no resumo da aula): a IA propõe perguntas que pedem explicação, com a origem de cada uma, e você confere antes de guardar.
+- Revisão em sessões curtas: um cartão por vez, "Mostrar resposta" e quatro notas (De novo, Difícil, Bom, Fácil), cada uma mostrando quando o cartão volta. "De novo" traz o cartão de volta ainda na mesma sessão. Teclado: espaço vira, 1 a 4 dão a nota.
+- O Hoje avisa quando há cartões para revisar. A lista de cartões permite editar e apagar, com desfazer.
+- Comentários do tutor no fichamento: em cada etapa, "Pedir comentários do tutor" traz um ponto forte, uma lacuna e uma pergunta, sem reescrever o que você escreveu. O mais importante vem marcado; os comentários continuam lá quando você volta.
+- Overview do autor de verdade: entram os trechos seus dos textos da Escrita e os textos que você enviar (.docx, .txt, .md). O app mede palavras por frase, voz passiva, citações por parágrafo, perguntas no fim dos parágrafos e os seus conectivos; a IA descreve os traços da sua escrita com exemplos tirados dos seus textos (o app confere cada exemplo).
+- O resumo da sua voz só vai para o Copilot quando você marcar "Usar este resumo nos pedidos ao Copilot". Participação da IA por texto no mesmo lugar.
+
 ## 0.18.0 (14/11/2026)
 - Google Agenda de verdade. Em Ajustes > Google Agenda, "Ligar o Google Agenda" pede ao Google uma permissão só: criar a agenda researchbook e mexer nos eventos dela. O app não vê as suas outras agendas.
 - Aulas (com a repetição semanal e as datas canceladas), entregas, encontros de orientação e sessões de estudo vão para a agenda researchbook. Mudou ou apagou no researchbook, muda ou some lá; desfazer devolve.
