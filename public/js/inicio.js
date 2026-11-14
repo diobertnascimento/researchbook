@@ -10,6 +10,9 @@ import { criarSincronia } from './sincronia.js';
 import { criarBiblioteca } from './biblioteca.js';
 import { criarBibliotecaUI } from './biblioteca-ui.js';
 import { criarFichamentoUI } from './fichamento-ui.js';
+import { criarArgumentosUI } from './argumentos-ui.js';
+import { criarTrilhasUI } from './trilhas-ui.js';
+import { criarHojeUI } from './hoje-ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -148,7 +151,11 @@ async function iniciar() {
         if (e.fase === 'desconectado') google.expirar();
         if (e.fase === 'ok') {
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
-          window.rb.fichUI?.carregar();
+          // Dados de outro aparelho: recarrega e redesenha as telas que só leem (nunca no meio de um formulário).
+          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar()]).then(() => {
+            const modalAberto = document.getElementById('veu')?.classList.contains('on');
+            if (!modalAberto && telaDeLeitura()) window.render?.();
+          });
         }
         atualizarStatus();
       },
@@ -156,6 +163,8 @@ async function iniciar() {
     window.rb.sincronia = sinc;
     sinc.sincronizar();
   }
+
+  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos)?(\/|$)/.test(location.hash || '');
 
   async function salvar(colecao, item) {
     const novo = { ...item, atualizadoEm: new Date().toISOString(), aparelho: idAparelho };
@@ -219,14 +228,17 @@ async function iniciar() {
     window.rb.biblioteca = biblioteca;
     window.rb.bibUI = criarBibliotecaUI({ bib: biblioteca, registrar });
     window.rb.fichUI = criarFichamentoUI({ bib: biblioteca, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
+    window.rb.argUI = criarArgumentosUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
+    window.rb.trilhasUI = criarTrilhasUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
+    window.rb.hojeUI = criarHojeUI({ bib: biblioteca, fichUI: window.rb.fichUI, trilhasUI: window.rb.trilhasUI, argUI: window.rb.argUI });
     await biblioteca.carregar();
-    await window.rb.fichUI.carregar();
+    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar()]);
   }
   ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });
 
   // Redesenha: a tela de entrada depende do login; Ajustes mostra dados desta base.
-  if ((retorno || /^#(ajustes|biblioteca|leitor|fichamento)/.test(location.hash) || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
+  if ((retorno || /^#(ajustes|biblioteca|leitor|fichamento)/.test(location.hash) || telaDeLeitura() || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
   atualizarStatus();
   document.dispatchEvent(new CustomEvent('rb:pronto'));
 }

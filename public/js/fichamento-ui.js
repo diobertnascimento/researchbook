@@ -315,11 +315,12 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
       }
       await salvar(a.f, { exportarJa: true });
       await bib.atualizar(a.id, { etapa: 4 });
+      await window.rb?.argUI?.carregar();
       registrar('ui', 'fichamento.concluir', { det: `${a.f.citacoes.length} citações, ${a.f.trechos.filter((x) => x.texto).length} trechos` });
       toast('Fichamento concluído e salvo no Drive');
       window.render?.();
     }
   });
 
-  return { carregar, lista, tela, markdown, doLivro };
+  return { carregar, lista, tela, markdown, doLivro, todos: () => fichamentos };
 }

@@ -1036,6 +1036,52 @@ a.lc:hover{text-decoration:underline}
   .cor-func{grid-template-columns:28px 1fr}
   .cor-func input{grid-column:1/-1}
 }
+
+/* Entrega 5: Hoje, trilhas e argumentos com dados reais */
+.proximo .prox-tit{font-family:var(--leitura);font-size:26px;line-height:1.35;font-weight:500;margin:0;letter-spacing:-.005em;max-width:30em}
+.proximo .prox-aut{margin:-14px 0 0;color:var(--grafite);font-size:var(--t-s)}
+.proximo .prox-txt{margin:-6px 0 0;color:var(--grafite);max-width:46em}
+.proximo blockquote small{display:block;font-family:var(--interface);font-size:var(--t-xs);color:var(--grafite);margin-top:8px}
+.hoje-grid.so-um{grid-template-columns:minmax(0,1fr)}
+.semana div small{font-size:var(--t-xs);color:var(--grafite-2)}
+.trilha header .btn{align-self:center}
+.trilha-ok{margin:0;color:var(--grafite);font-size:var(--t-s)}
+.seq .a{overflow-wrap:anywhere}
+.tr-sub{font-size:var(--t-m);font-weight:500;margin:6px 0 10px}
+.tr-itens{list-style:none;margin:0 0 16px;padding:0;border:1px solid var(--linha);border-radius:var(--r-m);background:var(--cartao)}
+.tr-itens li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--linha)}
+.tr-itens li:first-child{border-top:0}
+.tr-itens .n{width:26px;height:26px;border-radius:50%;border:1px solid var(--linha-2);display:grid;place-items:center;font-size:var(--t-xs);color:var(--grafite)}
+.tr-itens .tt{font-size:var(--t-s);font-weight:500;overflow-wrap:anywhere}
+.tr-itens .tt small{display:block;font-weight:400;color:var(--grafite)}
+.tr-itens .bts{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.tr-itens .bts .btn{padding:6px 10px;font-size:var(--t-xs)}
+.modal .pe .esp{flex:1}
+.btn.perigo{color:#9A3B26}
+.erro-campo{color:#9A3B26;font-size:var(--t-s);margin:0 0 12px}
+a.arg-item{text-decoration:none;color:inherit}
+.arg-cab{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.arg-det .voltar-arg{display:none;font-size:var(--t-s);margin-bottom:14px}
+.lembrete{border-left:3px solid var(--hl-critica);background:var(--papel);padding:12px 16px;border-radius:0 var(--r-s) var(--r-s) 0;margin-bottom:6px}
+.lembrete b{font-size:var(--t-xs);font-weight:500;color:var(--grafite)}
+.lembrete p{margin:4px 0 0;font-size:var(--t-s);max-width:62ch}
+.trecho-d p{overflow-wrap:anywhere}
+.arg-det .como{margin-top:26px;font-size:var(--t-s);color:var(--grafite)}
+.arg-det .como p{margin:8px 0 0;max-width:62ch}
+@media (max-width:1000px){
+  .arg-grid.com-sel .arg-lista{display:none}
+  .arg-grid.com-sel .voltar-arg{display:inline-block}
+  .tr-itens li{grid-template-columns:26px minmax(0,1fr)}
+  .tr-itens .bts{grid-column:2;justify-content:flex-start}
+  .proximo .prox-tit{font-size:22px}
+}
+@media (max-width:640px){
+  .trilha header{gap:10px}
+  .trilha .prazo{margin-left:0;text-align:left;order:3}
+  .trilha header .btn{order:4;margin-left:auto}
+  .trecho-d{grid-template-columns:minmax(0,1fr);gap:10px}
+  .trecho-d .btn{justify-self:start}
+}
 </style>
 </head>
 <body>
@@ -1064,7 +1110,7 @@ a.lc:hover{text-decoration:underline}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.10.0';
+const APP_VERSAO = '0.11.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -1269,7 +1315,7 @@ function desenhaMenu(rota){
     it('diss','#projeto',dot('#1F4A5A'),'Dissertação') +
     DISCIPLINAS.map((d,i)=>it('disc'+i,'#disciplina/'+i,dot(CORES_DISC[i]),d)).join('');
   const voceAtivo=sec==='voce';
-  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div id="status-drive">${statusDriveHTML()}</div><span class="selo-demo" style="margin-left:10px;font-size:11px">Protótipo v${APP_VERSAO}, dados de exemplo</span>`;
+  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div id="status-drive">${statusDriveHTML()}</div><span class="selo-demo" style="margin-left:10px;font-size:11px">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
   const tb=[['painel','#painel',I.painel,'Hoje'],['bib','#biblioteca',I.biblioteca,'Biblioteca'],['esc','#escrita',I.escrita,'Escrita'],['todos','#disciplinas',I.disciplinas,'Projetos'],['voce','#autor',I.autor,'Você']];
   document.getElementById('tabbar').innerHTML=tb.map(([k,h,ic,r])=>`<a href="${h}" class="${(k==='voce'?voceAtivo:k==='todos'?(base==='disciplinas'||base==='disciplina'||sec==='diss'):ativo(k))?'ativo':''}">${ic}${r}</a>`).join('');
 }
@@ -1284,6 +1330,7 @@ function secaoCab(base){
 const V = {};
 
 V.painel = () => {
+  if(modoReal()) return window.rb&&window.rb.hojeUI ? window.rb.hojeUI.tela() : '<div class="topo"><div><h1>Hoje</h1><p>Abrindo seus dados…</p></div></div>';
   const g=L('goldkuhl2012');
   const tot={}; FUNCOES.forEach(f=>tot[f.id]=0);
   LEITURAS.forEach(l=>FUNCOES.forEach(f=>tot[f.id]+=l.hl[f.id]));
@@ -1384,7 +1431,7 @@ function trilhaHTML(t){
     ${feitos.length?`<details class="concluidas"><summary>Ver ${feitos.length} concluída${feitos.length>1?'s':''}</summary><ol class="seq feitas">${feitos.map(i=>{const l=L(i);return `<li><div><div class="t">${esc(l.tit)}</div><div class="a">${citCurta(l)}</div></div>${pips(l.etapa)}<a class="btn fant acao" href="#fichamento/${i}">Rever fichamento</a></li>`}).join('')}</ol></details>`:''}
   </section>`;
 }
-V.trilhas = () => `
+V.trilhas = () => modoReal() ? (window.rb&&window.rb.trilhasUI ? window.rb.trilhasUI.tela() : '<div class="topo"><div><h1>Trilhas</h1><p>Abrindo seus dados…</p></div></div>') : `
   <div class="topo">
     <div><h1>Trilhas</h1><p>Filas de leitura com prazo. Cada leitura passa por pré-leitura, leitura, fichamento e conexão.</p></div>
     <div class="acoes"><button class="btn" data-acao="toast" data-msg="Na versão funcional, você cria trilhas e arrasta leituras para ordenar.">${I.mais}Nova trilha</button></div>
@@ -1565,7 +1612,8 @@ V.fichamento = (id) => {
   </div>`;
 };
 
-V.argumentos = () => {
+V.argumentos = (id) => {
+  if(modoReal()) return window.rb&&window.rb.argUI ? window.rb.argUI.tela(id?decodeURIComponent(id):null) : '<div class="topo"><div><h1>Argumentos</h1><p>Abrindo seus dados…</p></div></div>';
   const a=ARGUMENTOS.find(x=>x.id===S.argSel)||ARGUMENTOS[0];
   const forca=n=>`<span class="forca" aria-hidden="true">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span> Sustentação ${['','fraca','fraca','média','forte','forte'][n]}`;
   return `

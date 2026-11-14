@@ -173,6 +173,7 @@ export function criarBiblioteca({ db, dados, registrar, drive }) {
     enviarPendentes,
     obterPDF,
     grifosDe,
+    todosGrifos: () => grifos,
     grifar,
     mudarGrifo,
     apagarGrifo,

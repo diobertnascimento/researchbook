@@ -4,11 +4,11 @@
 import { referencia, referenciaTexto, autorCurto, citacao } from './abnt.js';
 import { buscarDOI, limparDOI } from './crossref.js';
 import { montarLeitor, lerInicio, FUNCOES } from './leitor-pdf.js';
+import { ETAPAS } from './progresso.js';
 
 /* global I, S, toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const icone = (n) => (typeof I !== 'undefined' && I[n]) || '';
-const ETAPAS = ['Não iniciada', 'Em leitura', 'Leitura concluída', 'Em fichamento', 'Fichada'];
 const TIPOS = [
   ['artigo', 'Artigo de periódico'],
   ['livro', 'Livro'],

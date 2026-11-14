@@ -5,6 +5,11 @@ import { defineConfig } from '@playwright/test';
 // Em ambientes sem o Chromium do Playwright, aponte CHROME_PATH para um Chrome instalado.
 const launchOptions = process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {};
 
+// O navegador dos testes roda no fuso do Diobert. Os testes também calculam datas (prazos, "ontem"),
+// então o processo dos testes usa o mesmo fuso; senão, perto da meia-noite, os dois discordam do dia.
+const FUSO = 'America/Sao_Paulo';
+process.env.TZ = FUSO;
+
 export default defineConfig({
   testDir: 'tests',
   timeout: 60_000,
@@ -15,7 +20,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
     locale: 'pt-BR',
-    timezoneId: 'America/Sao_Paulo',
+    timezoneId: FUSO,
     screenshot: 'only-on-failure',
     launchOptions,
   },
