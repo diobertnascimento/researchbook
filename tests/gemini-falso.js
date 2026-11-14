@@ -39,6 +39,8 @@ export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) 
           ]
         : [];
       texto = JSON.stringify({ propostas });
+    } else if (copilot(corpo.generationConfig.responseJsonSchema.properties)) {
+      texto = JSON.stringify(respostaCopilot(corpo.generationConfig.responseJsonSchema.properties, todos, opcoes));
     } else {
       // Tira as primeiras palavras do item A1 do próprio pedido, para citar um trecho que existe.
       const m = todos.match(/<item id="A1"[^>]*>\s*<material-[0-9a-f]+>\s*([\s\S]*?)\s*<\/material-/);
@@ -56,4 +58,57 @@ export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) 
     });
   });
   return estado;
+}
+
+// Copilot de escrita: reconhece a tarefa pelo esquema pedido e responde no formato, citando A1 com trecho literal.
+const copilot = (p = {}) => ['versoes', 'pontos', 'secoes', 'verificacoes', 'veredito', 'comentario', 'por_que'].some((k) => k in p) || (Object.keys(p).length === 1 && 'texto' in p);
+function respostaCopilot(p, todos, opcoes) {
+  const m = todos.match(/<item id="A1"[^>]*>\s*<material-[0-9a-f]+>\s*([\s\S]*?)\s*<\/material-/);
+  const literal = (m?.[1] || '').split(/\s+/).slice(0, 6).join(' ');
+  const fontes = literal ? [{ id: 'A1', trecho_literal: literal }] : [];
+  const cita = literal ? ' (Moraes; Lins, 2024, p. 1) [A1]' : '';
+  const doAutor = todos.match(/<texto_do_autor>\s*<material-[0-9a-f]+>\s*([\s\S]*?)\s*<\/material-/)?.[1] || '';
+  if ('versoes' in p) {
+    if (opcoes.recusarVersoes) return { versoes: [], fontes: [], alertas: [], recusa: 'O parágrafo ainda não tem uma ideia sua para trabalhar. Escreva uma frase com o que quer dizer.' };
+    return {
+      versoes: [
+        { tipo: 'proxima', texto: `${doAutor.replace(/\.$/, '')}, como mostra o caso das cooperativas${cita}.`, mudancas: ['liga à fonte', 'mesma ordem'] },
+        { tipo: 'academica', texto: `A coordenação das rotas depende da adesão das equipes de coleta${cita}.`, mudancas: ['tira o coloquial'] },
+      ],
+      fontes,
+      alertas: [{ trecho: doAutor.slice(0, 30), problema: 'sem_fonte', explicacao: 'A segunda parte do parágrafo não tem fonte no seu acervo.', como_resolver: 'Adicione uma obra que sustente o ponto ou retire a afirmação.' }],
+    };
+  }
+  if ('pontos' in p) {
+    return {
+      pontos: [
+        { afirmacao: 'A adesão das equipes define o sucesso das rotas.', classe: 'sustentado', fontes, comentario: `Seu acervo sustenta o ponto${cita}.` },
+        { afirmacao: 'Cooperativas pequenas não usam roteirização.', classe: 'lacuna', fontes: [], comentario: 'Nenhum grifo trata do porte das cooperativas.' },
+      ],
+      sugestoes_de_busca: [{ descricao: 'Estudos sobre o porte das cooperativas de reciclagem', obra_sugerida: '' }],
+    };
+  }
+  if ('secoes' in p) {
+    return {
+      secoes: [
+        { titulo: 'Introdução', objetivo: 'Apresentar a tese e o caso.', fontes: literal ? ['A1'] : [], palavras: 400, depende_de_lacuna: false },
+        { titulo: 'Rotas negociadas', objetivo: 'Mostrar como a adesão muda o resultado.', fontes: literal ? ['A1'] : [], palavras: 900, depende_de_lacuna: false },
+        { titulo: 'Considerações finais', objetivo: 'Retomar a tese.', fontes: [], palavras: 300, depende_de_lacuna: false },
+      ],
+      observacao: 'A seção sobre o porte das cooperativas ficou de fora porque falta fonte.',
+    };
+  }
+  if ('verificacoes' in p) {
+    return {
+      verificacoes: [
+        { item: 'afirmacoes_sem_fonte', situacao: 'atencao', resumo: 'Uma afirmação da introdução não tem fonte.' },
+        { item: 'coerencia', situacao: 'ok', resumo: 'As seções sustentam a tese.' },
+      ],
+      problemas: [{ item: 'afirmacoes_sem_fonte', gravidade: 'media', secao: 'Introdução', trecho: (doAutor || todos.match(/## 1\. [^\n]*\n([^\n]{10,60})/)?.[1] || '').slice(0, 40), problema: 'Afirmação sem fonte', como_resolver: 'Cite uma obra do acervo ou retire.' }],
+    };
+  }
+  if ('veredito' in p) return { veredito: 'soa em parte', diferencas: [{ trecho: doAutor.slice(0, 40), diferenca: 'A frase é mais longa que as suas.', sugestao: 'Divida em duas.' }] };
+  if ('comentario' in p) return { comentario: `A seção pode se apoiar no caso das cooperativas${cita}.`, pergunta: 'O que esta seção precisa provar para a sua tese funcionar?', fontes };
+  if ('por_que' in p) return { pergunta: 'Que caso concreto mostra isso na prática?', por_que: 'Sem um caso, a tese fica abstrata para a banca.' };
+  return { texto: 'A próxima seção examina como as equipes participam da definição das rotas.' };
 }

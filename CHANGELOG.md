@@ -2,6 +2,20 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.15.0 (13/11/2026)
+- Escrita de verdade. "Novo texto" abre a preparação em quatro passos: enquadrar (enunciado, critérios, limite, entrega e o teto de IA), a ideia nas suas palavras, o diagnóstico do que o seu acervo sustenta e a estrutura.
+- A primeira resposta da entrevista, "o que você quer defender, em uma frase?", vira a tese de trabalho como você escreveu, sem edição. O Copilot faz as perguntas seguintes, uma por vez.
+- Diagnóstico em três colunas (sustentado, frágil, lacuna), com as citações do seu acervo conferidas pelo app. Obras de fora aparecem só como sugestão para buscar.
+- Estrutura proposta pelo Copilot, que você renomeia, reordena, apaga ou completa antes de aprovar. Também dá para pular a preparação e escrever direto.
+- Editor com seções, negrito, itálico, sublinhado, subtítulo, lista e citação longa. Salva sozinho. Colar traz só o texto, sem a formatação de fora.
+- Copilot ao lado do texto: conversa sobre a seção, "Propor versões do parágrafo" (uma mais próxima do seu texto e uma mais acadêmica, com alertas de afirmação sem fonte), frase de transição e "Isso soa como eu?". Ele não escreve do zero.
+- Autoria medida parágrafo por parágrafo: seu, coautoria (versão do Copilot que você usou) ou IA. Quanto mais você reescreve uma versão, mais ela volta a contar como sua. Os marcadores aparecem só quando você liga.
+- Teto de IA por texto. Ao chegar nele, o Copilot para de propor versões e a exportação espera você reescrever com as suas palavras.
+- Material da seção: os grifos mais ligados ao que você está escrevendo. Um toque insere a citação ABNT com a página onde está o cursor.
+- Versões guardadas no seu Drive (escrita/…/versoes), com restaurar. Uma cópia legível do texto e da autoria também fica lá.
+- Revisar e exportar: o app confere extensão, participação da IA, citações diretas que não estão nos seus grifos, seções vazias e monta as referências ABNT das obras citadas. O Copilot revisa afirmações sem fonte, fidelidade, coerência, estrutura e clareza, sem reescrever.
+- Exportar para Word (.docx) em formato ABNT (A4, margens 3 e 2 cm, Times 12, espaço 1,5, citação longa recuada, referências em página nova). O arquivo sai sem marcadores de autoria; uma cópia vai para o seu Drive.
+
 ## 0.14.0 (13/11/2026)
 - Memória de verdade (Você > Memória). A IA lê as suas conversas com o tutor e propõe o que vale lembrar: decisões, posições, preferências de trabalho e fatos do projeto.
 - Só entra o que você disse. Cada proposta mostra as suas palavras ("Você disse: …"), e o app confere que elas estão mesmo nas suas mensagens. Sugestões da IA não viram memória.

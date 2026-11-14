@@ -270,5 +270,44 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
     return { aceitas, recusadas, bruto: r.json, modelo: r.modelo, uso: r.uso, custo: r.custo, instrucao: `base ${base.versao}, memoria ${tarefa.versao}` };
   }
 
-  return { ajustes, perfil, salvarPerfil, testar, perguntarTutor, proporMemoria, credenciais };
+  /* ---------- Tarefa genérica (Copilot, revisão final e as próximas funções) ---------- */
+  /**
+   * Monta o pedido com as regras comuns, a instrução da tarefa, perfil e memória aprovada; chama o Gemini;
+   * confere as citações contra o acervo (se houver) e devolve { json, conferencia, ... }.
+   * conferirCom(json) devolve o objeto no formato do tutor ({ resposta, fontes }) para a conferência.
+   */
+  async function gerarTarefa({ tarefa: chave, acervo = null, blocos = [], pedido, lembrete, esquema, anteriores = [], conferirCom = null, sinal }) {
+    const t = TAREFAS[chave];
+    const [base, tarefa, perfilTexto, memoria] = await Promise.all([instrucao('00-base.md'), instrucao(t.instrucao), perfil(), memoriaAprovada()]);
+    const montado = montarPedido({ base, tarefa, perfil: perfilTexto, memoria, acervo, blocos, pedido, lembrete, anteriores });
+    const versao = `base ${base.versao}, ${t.instrucao.replace('.md', '')} ${tarefa.versao}`;
+    const chamar = (conteudos) => gemini.gerar({ tarefa: chave, modelo: t.modelo, reserva: t.reserva, pensamento: t.pensamento, versaoInstrucao: versao, sistema: montado.sistema, conteudos, esquema, maxSaida: t.maxSaida, sinal });
+    let r = await chamar(montado.conteudos);
+    let conf = acervo && conferirCom ? conferir(conferirCom(r.json), acervo) : { ok: true, problemas: [], fontes: [] };
+    let corrigida = false;
+    const uso = { ...r.uso };
+    let custo = r.custo;
+    if (!conf.ok) {
+      registrar('ia', `${chave}.conferencia_reprovada`, { det: `${conf.problemas.length} problemas; pedindo correção`, st: 'aviso' });
+      const correcao = `A conferência automática encontrou problemas na sua resposta:\n${conf.problemas.map((p) => `- ${p}`).join('\n')}\nRefaça usando só itens do acervo, com trechos copiados palavra por palavra. Se o acervo não sustenta a afirmação, retire-a e explique no alerta. Responda só com o objeto JSON.`;
+      const r2 = await chamar([...montado.conteudos, { role: 'model', parts: [{ text: r.texto }] }, { role: 'user', parts: [{ text: correcao }] }]);
+      for (const k of Object.keys(uso)) uso[k] += r2.uso[k] || 0;
+      custo = custo == null || r2.custo == null ? null : custo + r2.custo;
+      r = r2;
+      conf = conferir(conferirCom(r.json), acervo);
+      corrigida = true;
+    }
+    if (acervo && conferirCom) registrar('ia', `${chave}.conferencia`, { det: `${conf.ok ? 'ok' : `${conf.problemas.length} problemas`}${corrigida ? ' após correção' : ''}, ${conf.fontes.length} fontes`, st: conf.ok ? 'ok' : 'aviso' });
+    return {
+      json: r.json,
+      conferencia: { ok: conf.ok, problemas: conf.problemas, conferidas: conf.fontes.filter((f) => f.conferida).map((f) => f.id), corrigida },
+      itens: acervo ? acervo.itens.map((it) => ({ id: it.id, ref: it.ref, leituraId: it.leituraId, pagina: it.pagina || null, citacao: it.citacao || null })) : [],
+      modelo: r.modelo,
+      uso,
+      custo,
+      instrucao: versao,
+    };
+  }
+
+  return { ajustes, perfil, salvarPerfil, testar, perguntarTutor, proporMemoria, gerarTarefa, credenciais };
 }

@@ -585,6 +585,59 @@ body.foco .palco{padding-top:56px}
 .rev-it span{font-size:var(--t-s);color:var(--grafite)}
 .refs-abnt{font-family:var(--leitura);font-size:15px;line-height:1.6;display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
 
+
+/* ============ Escrita real (e9) ============ */
+.esc-prep{max-width:900px}
+.esc-prep h2{margin-top:0}
+.esc-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;max-width:1000px;margin:22px 0 0}
+.esc-prep .linha2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.esc-prep .campo textarea{font-family:var(--ui);font-size:var(--t-m)}
+.esc-prep input[type=range]{padding:0;border:0;accent-color:var(--petroleo)}
+.qa .q small{display:block;font-weight:400;font-size:var(--t-xs);color:var(--grafite-2);margin-top:4px}
+.diag-item .f{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.chip.lac{background:#F7E3D5;color:#8A4A22}
+.estr-ed{list-style:none;margin:0 0 10px;padding:0;counter-reset:est}
+.estr-ed li{display:grid;grid-template-columns:30px 1fr auto auto;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--linha);counter-increment:est}
+.estr-ed li::before{content:counter(est);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:var(--t-s);border:1px solid var(--linha-2);color:var(--grafite)}
+.estr-ed .campos{display:flex;flex-direction:column;gap:6px;min-width:0}
+.estr-ed input{width:100%;border:1px solid var(--linha-2);border-radius:var(--r-s);background:#fff;padding:7px 10px;font-size:var(--t-s)}
+.estr-ed input[data-k=titulo]{font-weight:500;font-size:var(--t-m)}
+.estr-ed .x{font-size:var(--t-xs);color:var(--grafite);white-space:nowrap}
+.estr-ed .bts{display:flex;gap:4px}
+.estr-ed .bts .btn{padding:4px 9px;font-size:var(--t-xs)}
+.ferramentas{display:flex;gap:4px;flex-wrap:wrap;padding:8px 18px;border-bottom:1px solid var(--linha);background:var(--cartao)}
+.ferramentas .btn.fant{padding:4px 8px;font-size:var(--t-xs)}
+.esc-sec-tit{display:block;width:100%;border:0;border-bottom:1px dashed transparent;background:none;font-family:var(--leitura);font-weight:600;font-size:23px;margin:0 0 6px;padding:2px 0;color:var(--tinta)}
+.esc-sec-tit:hover,.esc-sec-tit:focus{border-bottom-color:var(--linha-2);outline:none}
+.esc-obj{font-size:var(--t-s);margin:0 0 18px}
+.esc-corpo{min-height:320px;outline:none;font-family:var(--leitura);font-size:18px;line-height:1.75;max-width:66ch}
+.esc-corpo:focus-visible{box-shadow:0 0 0 3px var(--petroleo-claro);border-radius:6px}
+.esc-corpo p,.esc-corpo li,.esc-corpo blockquote,.esc-corpo h3{margin:0 0 1.1em;padding:2px 0 2px 18px;border-left:3px solid transparent}
+.esc-corpo h3{font-size:19px;font-weight:600}
+.esc-corpo blockquote{margin-left:4em;font-size:15px;line-height:1.5}
+.esc-corpo ul,.esc-corpo ol{padding-left:1.2em;margin:0 0 1.1em}
+.esc-corpo .cit{border-bottom:1.5px dotted var(--petroleo);color:var(--petroleo-escuro)}
+.marcas .esc-corpo [data-autoria=autor]{border-left-color:var(--tinta)}
+.marcas .esc-corpo [data-autoria=coautoria]{border-left-color:var(--petroleo)}
+.marcas .esc-corpo [data-autoria=ia]{border-left:3px dashed var(--petroleo)}
+.marcas .esc-corpo [data-autoria=coautoria]::before,.marcas .esc-corpo [data-autoria=ia]::before{display:block;font-family:var(--ui);font-size:11px;color:var(--grafite-2);margin-bottom:2px;content:'Coautoria'}
+.marcas .esc-corpo [data-autoria=ia]::before{content:'IA'}
+.esc-painel{display:flex;flex-direction:column;gap:14px;position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+.esc-painel .cop-corpo{display:flex;flex-direction:column;gap:14px}
+.esc-painel .msg .f{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.esc-painel .versoes-box{margin:0;max-width:none}
+.esc-painel .atalhos{padding:0}
+.esc-painel .atalhos .btn.fant{font-size:var(--t-xs);padding:4px 10px;border-radius:999px;border:1px solid var(--linha-2);background:var(--papel)}
+.esc-painel .atalhos .btn:disabled,.ferramentas .btn:disabled{opacity:.5;cursor:not-allowed}
+.cta-trilha .btn:disabled{opacity:.55;cursor:not-allowed}
+.vers-lista{list-style:none;margin:12px 0 0;padding:0}
+.vers-lista li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--linha);font-size:var(--t-s)}
+.vers-lista small{display:block;font-size:var(--t-xs);color:var(--grafite-2)}
+.vers-lista .btn{padding:4px 10px;font-size:var(--t-xs)}
+@media (max-width:1200px){.esc-grid.real > .lat-esc{display:block;grid-column:1/-1}.esc-grid.real .secoes{flex-direction:row;flex-wrap:wrap;margin-bottom:6px}.esc-grid.real .lat-esc h4{display:none}}
+@media (max-width:1000px){.esc-painel{position:static;max-height:none}}
+@media (max-width:640px){.esc-prep .linha2{grid-template-columns:1fr}.estr-ed li{grid-template-columns:26px 1fr}.estr-ed .x,.estr-ed .bts{grid-column:2}.folha-corpo{padding:20px 16px 28px}.esc-corpo p,.esc-corpo li,.esc-corpo blockquote,.esc-corpo h3{padding-left:10px}.esc-corpo{font-size:17px}.txt-card{grid-template-columns:1fr;gap:12px}.esc-nav .btn{flex:1 1 100%;justify-content:center}}
+
 /* ============ Diálogos ============ */
 .dlg-grid{display:grid;grid-template-columns:260px 1fr 320px;gap:22px;align-items:start}
 .dlg-grid > *{min-width:0}
@@ -1192,7 +1245,7 @@ a.arg-item{text-decoration:none;color:inherit}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.14.0';
+const APP_VERSAO = '0.15.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -2187,7 +2240,7 @@ const partIA = a => a.co + a.ia;
 const barraAutoria = (a,meta) => `<div class="barra-wrap"><div class="barra-a"><span class="a-autor" style="width:${a.autor}%"></span><span class="a-co" style="width:${a.co}%"></span><span class="a-ia" style="width:${a.ia}%"></span></div>${meta?`<i class="meta-l" style="left:calc(${100-meta}% - 1px)" title="Teto da IA: ${meta}%"></i>`:''}</div>`;
 const LEG_AUTORIA = '<div class="leg-a"><span><i class="a-autor"></i>Seu</span><span><i class="a-co"></i>Coautoria</span><span><i class="a-ia"></i>IA</span><span><i style="background:#9A3B26;width:2px;height:12px"></i>Teto da IA</span></div>';
 
-V.escrita = () => `
+V.escrita = () => modoReal() ? (window.rb&&window.rb.escritaUI ? window.rb.escritaUI.lista() : '<div class="topo"><div><h1>Textos</h1><p>Abrindo seus dados…</p></div></div>') : `
   <div class="topo">
     <div><h1>Textos</h1><p>Artigos, resenhas e trabalhos de disciplina. A dissertação continua no Word.</p></div>
     <div class="acoes"><a class="btn prim" href="#texto/artigo-dt" data-ptexto="0">${I.mais}Novo texto</a></div>
@@ -2203,6 +2256,7 @@ V.escrita = () => `
   <div style="margin-top:14px;max-width:1180px">${LEG_AUTORIA}</div>`;
 
 V.texto = (id) => {
+  if(modoReal()) return window.rb&&window.rb.escritaUI ? window.rb.escritaUI.tela(decodeURIComponent(id||'')) : '<div class="topo"><div><h1>Texto</h1><p>Abrindo seus dados…</p></div></div>';
   const t=TEXTOS.find(x=>x.id===id)||TEXTOS[0]; const p=S.passoTexto;
   let corpo='';
   if(p===0) corpo=`

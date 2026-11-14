@@ -112,6 +112,15 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - A formatação final (ABNT completa, tabelas, figuras, sumário) fica para o Word. A exportação leva o texto com a formatação básica, as citações e as referências geradas da biblioteca.
 - Em aberto: importar de volta um .docx editado no Word (não recupera marcadores de autoria do que mudou fora do app).
 
+### Como funciona (v0.15.0)
+- **Formato salvo:** HTML limpo por seção (`textos` em `rb.dados`), com uma lista fechada de marcas (parágrafo, subtítulo, listas, citação longa, negrito, itálico, sublinhado, citação do acervo). Cada bloco leva `data-pid`, `data-autoria` (autor, coautoria, ia) e, quando veio do Copilot, `data-ia` com o texto proposto. Colar entra só como texto.
+- **Autoria:** contada em palavras, bloco a bloco. Um bloco de coautoria ou IA volta a contar como do autor quando a semelhança com o texto proposto (Dice sobre pares de palavras) cai abaixo de 0,5. Participação da IA = coautoria + IA sobre o total. Teto por texto (padrão 60%): no teto, "Propor versões" e "Transição" ficam bloqueados e a exportação espera.
+- **Tese:** a resposta à primeira pergunta fixa ("O que você quer defender, em uma frase?") é guardada sem edição.
+- **Copilot:** tarefas entrevista, conversa, diagnóstico, estrutura, versões, transição, "soa como eu" e revisão final, todas por `ia.gerarTarefa` (contexto marcado, acervo relevante por palavras em comum, conferência das fontes com uma rodada de correção) e guardadas no histórico (uma conversa por texto, função `copilot`). Modelos: conversa no rápido; versões, diagnóstico, estrutura e revisão no de raciocínio.
+- **Checagens sem IA em "Revisar e exportar":** participação contra o teto, extensão contra o limite, citações diretas que não estão em nenhum grifo, obras citadas (marcadas pelo app ou reconhecidas por sobrenome e ano) com referência ABNT, seções vazias.
+- **Drive:** `escrita/<id>/texto.html` e `autoria.json` (cópia legível, 15 s depois da última mudança), `escrita/<id>/versoes/<data>.json` (guardar versão; restaurar guarda antes a atual) e `escrita/<id>/<titulo>.docx` a cada exportação.
+- **.docx:** gerado no aparelho, sem biblioteca externa: A4, margens 3/2/2/3 cm, Times New Roman 12, espaço 1,5, recuo de 1,25 cm, citação longa com recuo de 4 cm em corpo 10 e espaço simples, seções numeradas em negrito, REFERÊNCIAS em página nova.
+
 ## Memória
 - Três camadas: (1) conversas, registro completo; (2) memória consolidada, curta, só com itens aprovados pelo Diobert; (3) contexto de cada pedido, montado na hora a partir de 1 e 2 e do material aberto.
 - A IA propõe o que quer lembrar; o Diobert aprova, edita ou descarta. Pode esquecer itens (com desfazer).
@@ -160,6 +169,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.15.0 (13/11/2026): etapa 9, escrita e Copilot: preparação, editor com autoria medida e teto de IA, versões no Drive, revisão e exportação .docx em ABNT.
 - v0.14.0 (13/11/2026): entrega 8, memória real: propostas da IA conferidas contra as falas do autor, aprovação, esquecimento e exportação para outras IAs.
 - v0.13.0 (13/11/2026): entrega 7, tutor com Gemini no leitor, acesso pelo login Google ou cofre cifrado, conferência das citações, histórico no Drive, instruções reescritas a partir de benchmark.
 - v0.12.0 (13/11/2026): entrega 6, tela para revisar conflitos de sincronização.
@@ -169,8 +179,8 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Gemini nas outras funções: comentários do tutor no fichamento, copilot de escrita, transcrição de aulas e da orientação, revisão do projeto; casos de comportamento rodando contra o modelo.
-2. Google Agenda pela API oficial.
-3. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
-4. Revisão espaçada.
-5. Disciplinas e projetos reais (hoje o menu lateral ainda mostra os projetos de exemplo).
+1. Disciplinas e projetos reais (aulas, áudio e transcrição, anotações, plano de ensino; o menu lateral ainda mostra os projetos de exemplo).
+2. Dissertação (revisão do projeto, orientação) e Diálogos.
+3. Google Agenda pela API oficial (depende de ativar a API e a permissão no Google Cloud).
+4. Cartões e revisão espaçada, comentários do tutor no fichamento, Overview do autor.
+5. Ajustes reais (modelos por tarefa, uso e custo), busca Ctrl+K com dados reais, limpeza de marcas de apagado, código fora do HTML e CSP sem `unsafe-inline`.
