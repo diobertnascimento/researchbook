@@ -6,7 +6,7 @@
 // muda este arquivo, e é isso que faz o navegador perceber que há versão nova.
 // Arquivo novo em public/ que o app usa ao abrir? Coloque em ARQUIVOS (um teste confere que existem).
 
-const VERSAO = '0.14.0';
+const VERSAO = '0.15.0';
 const CACHE = `researchbook-${VERSAO}`;
 const ARQUIVOS = [
   './',
@@ -47,6 +47,12 @@ const ARQUIVOS = [
   'js/tutor-ui.js',
   'js/ia-ajustes.js',
   'js/memoria-ui.js',
+  'js/escrita.js',
+  'js/docx.js',
+  'js/copiloto.js',
+  'js/escrita-ui.js',
+  'prompts/copilot.md',
+  'prompts/revisao-final.md',
   'prompts/memoria.md',
   'prompts/00-base.md',
   'prompts/tutor.md',

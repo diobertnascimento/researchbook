@@ -20,6 +20,10 @@ export const PRECOS = {
 // Modelo e pensamento por tarefa (docs/especificacao.md). O Diobert pode trocar o modelo em Ajustes.
 export const TAREFAS = {
   tutor: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'tutor.md', maxSaida: 4096 },
+  copilot_conversa: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'MEDIUM', instrucao: 'copilot.md', maxSaida: 3000 },
+  copilot_versoes: { modelo: 'gemini-4-argon', reserva: 'gemini-3.1-pro-preview', pensamento: 'MEDIUM', instrucao: 'copilot.md', maxSaida: 6000 },
+  copilot_plano: { modelo: 'gemini-4-argon', reserva: 'gemini-3.1-pro-preview', pensamento: 'HIGH', instrucao: 'copilot.md', maxSaida: 8000 },
+  revisao_final: { modelo: 'gemini-4-argon', reserva: 'gemini-3.1-pro-preview', pensamento: 'HIGH', instrucao: 'revisao-final.md', maxSaida: 8000 },
   memoria: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: 'memoria.md', maxSaida: 2048 },
   teste: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: null, maxSaida: 256 },
 };

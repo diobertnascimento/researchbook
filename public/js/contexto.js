@@ -174,3 +174,43 @@ export function sinaisDeForma(resposta, { maxPalavras = 160 } = {}) {
   if (palavras > maxPalavras) avisos.push(`resposta com ${palavras} palavras`);
   return { palavras, avisos };
 }
+
+/* ---------- Acervo genérico e relevância (Copilot e próximas funções) ---------- */
+const VAZIAS = new Set('a o as os um uma uns umas de da do das dos em na no nas nos por para com sem que e ou se ao aos à às é ser são foi como mais menos muito pouco isso esse essa este esta aquilo the of and to in is for on with that this not mas também já não sim seu sua seus suas ele ela eles elas nós eu você'.split(' '));
+const raizes = (t) =>
+  new Set(
+    normalizar(t)
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 2 && !VAZIAS.has(w))
+      .map((w) => w.slice(0, 6)),
+  );
+
+/** Ordena candidatos ({texto, ...}) por palavras em comum com a consulta. Empates: os mais recentes primeiro. */
+export function relevantes(consulta, candidatos, n = 30) {
+  const q = raizes(consulta);
+  return candidatos
+    .map((c, i) => {
+      const r = raizes(c.texto);
+      let comum = 0;
+      for (const w of r) if (q.has(w)) comum++;
+      return { c, nota: comum + (c.peso || 0), i };
+    })
+    .sort((a, b) => b.nota - a.nota || a.i - b.i)
+    .slice(0, n)
+    .map((x) => x.c);
+}
+
+/** Monta um acervo a partir de itens já escolhidos, com ids A1, A2… e o mesmo limite de tamanho. */
+export function acervoDe(lista) {
+  const itens = [];
+  let usado = 0;
+  for (const d of lista) {
+    const texto = String(d.texto || '').trim();
+    if (!texto || usado + texto.length > LIMITE_MATERIAL) continue;
+    usado += texto.length;
+    itens.push({ ...d, id: `A${itens.length + 1}`, texto });
+  }
+  return { itens, caracteres: usado };
+}
