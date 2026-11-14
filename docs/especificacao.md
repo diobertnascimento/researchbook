@@ -72,6 +72,16 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Argumentos:** teses digitadas nos trechos viram itens da coleção `argumentos` (só a tese, nas palavras do Diobert), base da tela Argumentos real.
 - **Etapas da obra:** não iniciada, em leitura, leitura concluída, em fichamento, fichada.
 
+## Hoje, trilhas e argumentos reais (entrega 5, v0.11.0)
+- **Próximo passo do Hoje**, numa ordem fixa e explicável (`public/js/progresso.js`): 1) a obra em curso mexida por último (leitura ou fichamento começados); 2) a próxima obra da trilha com o prazo mais perto; 3) uma leitura concluída ainda sem fichamento; 4) a obra não iniciada adicionada por último. A tela diz o motivo ("Próximo passo: leitura em andamento") e mostra o último grifo da obra.
+- **Também para hoje:** no máximo três itens: outras obras em curso, trilhas com prazo em até 14 dias e leituras concluídas sem fichamento.
+- **Sem cobrança:** o resumo de ontem só aparece quando houve grifo ou fichamento concluído; sem sequência de dias. O vermelho de prazo fica só para os últimos três dias com obra pendente; prazo vencido aparece em cinza, com a sugestão de mudar a data.
+- **Sua semana** (recolhida): grifos por dia nos últimos 7 dias, grifos por função e o argumento com mais fontes.
+- **Coleção `trilhas`:** nome, para quê, prazo (data) e a lista ordenada de obras. O andamento vem da etapa de cada obra, nunca é copiado. Ordem editada com Subir, Descer e Tirar (funciona com toque e teclado, sem arrastar). Apagar tem desfazer.
+- **Coleção `argumentos`:** tese, tipo (tese, premissa, objeção a responder) e onde entra no texto. Os trechos não são copiados: vêm dos fichamentos, ligados pelo id do argumento ou pelo texto da tese. Renomear a tese atualiza os trechos ligados. Apagar tem desfazer e não mexe nos fichamentos.
+- **Sustentação** é a contagem de obras diferentes com trechos ligados, e a tela explica isso. Com zero ou uma fonte, aparece um lembrete fixo (regra, não IA): procurar uma segunda fonte ou tratar a tese como proposição própria.
+- **Celular:** o argumento escolhido ocupa a tela, com "Todos os argumentos" para voltar.
+
 ## Escrita dentro do produto (confirmado em 13/11/2026)
 - O Diobert escreve dentro do researchbook. Os textos ficam salvos na pasta, com salvamento automático e versões anteriores, e são exportados para Word (.docx).
 - O editor precisa ter formatação de texto: negrito, itálico, sublinhado, títulos, listas, citação longa recuada, desfazer e refazer. O formato salvo precisa preservar o sublinhado (Markdown puro não preserva).
@@ -126,15 +136,16 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.11.0 (13/11/2026): entrega 5, Hoje com o próximo passo real, trilhas com prazo e argumentos ligados aos fichamentos.
 - v0.10.0 (13/11/2026): entrega 4, fichamento real em cinco etapas a partir dos grifos, com arquivo .md no Drive.
 - v0.9.0 (13/11/2026): entrega 3, biblioteca real: DOI no Crossref, ABNT, PDF no Drive e no aparelho, leitor PDF.js com grifos.
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Argumentos e trilhas reais; Hoje com o próximo passo real (continuar a leitura ou o fichamento).
-2. Tela para revisar conflitos de sincronização.
-3. Gemini: tutor e copilot com as instruções de `prompts/`; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino; casos de comportamento rodando contra o modelo.
-5. Google Agenda pela API oficial.
-6. Memória em camadas e exportação.
-7. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
-8. Revisão espaçada.
+1. Tela para revisar conflitos de sincronização.
+2. Gemini: tutor e copilot com as instruções de `prompts/`; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino; casos de comportamento rodando contra o modelo.
+3. Google Agenda pela API oficial.
+4. Memória em camadas e exportação.
+5. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
+6. Revisão espaçada.
+7. Disciplinas e projetos reais (hoje o menu lateral ainda mostra os projetos de exemplo).
