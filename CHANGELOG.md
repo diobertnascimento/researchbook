@@ -2,6 +2,13 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.12.0 (13/11/2026)
+- Nova tela "Conflitos de sincronização". Quando o mesmo item muda em dois aparelhos antes de sincronizar, a versão mais recente fica em uso e a outra fica guardada até você decidir.
+- Cada conflito mostra o que é (obra, grifo, fichamento, argumento, trilha…), só os campos que diferem, lado a lado, e de quando e de qual aparelho é cada versão.
+- Duas saídas: "Manter a versão em uso" ou "Usar a versão guardada". As duas têm desfazer. Com vários conflitos, dá para manter todas as versões em uso de uma vez.
+- Se o item foi apagado num aparelho e mudado no outro, a tela diz isso e oferece recuperar ou apagar.
+- Como chegar: pelo aviso "conflitos para revisar" no rodapé do menu, por Ajustes > Revisar conflitos, ou por Hoje, que mostra o aviso primeiro (no celular, o rodapé não aparece).
+
 ## 0.11.0 (13/11/2026)
 - Hoje de verdade: mostra um próximo passo, com o motivo. Primeiro a obra que você estava lendo ou fichando; depois a próxima da trilha com o prazo mais perto; depois uma leitura concluída sem fichamento; por último, uma obra ainda não iniciada.
 - O próximo passo traz o seu último grifo da obra e onde você parou (página, ou a etapa do fichamento).

@@ -72,6 +72,11 @@ export function gravar(db, colecao, item) {
   return pedido(db.transaction(colecao, 'readwrite').objectStore(colecao).put(item));
 }
 
+/** Remove de vez um registro. Só para coleções internas (ex.: conflitos já resolvidos); dados do usuário usam a marca apagado. */
+export function removerDe(db, colecao, id) {
+  return pedido(db.transaction(colecao, 'readwrite').objectStore(colecao).delete(id));
+}
+
 export function gravarVarios(db, colecao, itens) {
   return new Promise((ok, erro) => {
     const tx = db.transaction(colecao, 'readwrite');

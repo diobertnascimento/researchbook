@@ -82,6 +82,12 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Sustentação** é a contagem de obras diferentes com trechos ligados, e a tela explica isso. Com zero ou uma fonte, aparece um lembrete fixo (regra, não IA): procurar uma segunda fonte ou tratar a tese como proposição própria.
 - **Celular:** o argumento escolhido ocupa a tela, com "Todos os argumentos" para voltar.
 
+## Conflitos de sincronização (entrega 6, v0.12.0)
+- Tela `#conflitos`, alcançada pelo aviso no rodapé do menu, por Ajustes > Revisar conflitos e por Hoje (primeiro item de "Também para hoje", porque no celular o rodapé não aparece).
+- Cada conflito mostra o tipo de item, um nome reconhecível (título, tese, trecho grifado com página, "Fichamento de <obra>"), só os campos que diferem, com nomes da interface, e a data e o aparelho de cada versão. Campos internos (ids, posições do grifo, horários de gravação) não aparecem.
+- **Manter a versão em uso:** descarta a guardada. **Usar a versão guardada:** ela é gravada de novo com hora nova, para valer nos outros aparelhos na próxima sincronização. Exclusões: "Apagar este item" ou "Recuperar a versão guardada". Todas com desfazer; "Manter todas as versões em uso" quando há mais de um.
+- Os conflitos ficam só no aparelho em que foram encontrados (não sincronizam).
+
 ## Escrita dentro do produto (confirmado em 13/11/2026)
 - O Diobert escreve dentro do researchbook. Os textos ficam salvos na pasta, com salvamento automático e versões anteriores, e são exportados para Word (.docx).
 - O editor precisa ter formatação de texto: negrito, itálico, sublinhado, títulos, listas, citação longa recuada, desfazer e refazer. O formato salvo precisa preservar o sublinhado (Markdown puro não preserva).
@@ -136,16 +142,16 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.12.0 (13/11/2026): entrega 6, tela para revisar conflitos de sincronização.
 - v0.11.0 (13/11/2026): entrega 5, Hoje com o próximo passo real, trilhas com prazo e argumentos ligados aos fichamentos.
 - v0.10.0 (13/11/2026): entrega 4, fichamento real em cinco etapas a partir dos grifos, com arquivo .md no Drive.
 - v0.9.0 (13/11/2026): entrega 3, biblioteca real: DOI no Crossref, ABNT, PDF no Drive e no aparelho, leitor PDF.js com grifos.
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Tela para revisar conflitos de sincronização.
-2. Gemini: tutor e copilot com as instruções de `prompts/`; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino; casos de comportamento rodando contra o modelo.
-3. Google Agenda pela API oficial.
-4. Memória em camadas e exportação.
-5. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
-6. Revisão espaçada.
-7. Disciplinas e projetos reais (hoje o menu lateral ainda mostra os projetos de exemplo).
+1. Gemini: tutor e copilot com as instruções de `prompts/`; análise do PDF do projeto; transcrição da orientação e das aulas; plano de ensino; casos de comportamento rodando contra o modelo.
+2. Google Agenda pela API oficial.
+3. Memória em camadas e exportação.
+4. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
+5. Revisão espaçada.
+6. Disciplinas e projetos reais (hoje o menu lateral ainda mostra os projetos de exemplo).

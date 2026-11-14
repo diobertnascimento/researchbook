@@ -158,5 +158,10 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
   addEventListener('offline', () => mudar({ fase: 'offline' }));
   document.addEventListener('visibilitychange', () => estado.fase !== 'desconectado' && sincronizar());
 
-  return { sincronizar, agendar, estado: () => estado, idPasta: drive.idRaiz };
+  /** Atualiza o número de conflitos depois que o Diobert resolve algum (sem sincronizar de novo). */
+  async function recontar() {
+    mudar({ conflitos: (await arm.todos(db, 'conflitos')).length });
+  }
+
+  return { sincronizar, agendar, recontar, estado: () => estado, idPasta: drive.idRaiz };
 }

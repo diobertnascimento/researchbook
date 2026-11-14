@@ -13,6 +13,7 @@ import { criarFichamentoUI } from './fichamento-ui.js';
 import { criarArgumentosUI } from './argumentos-ui.js';
 import { criarTrilhasUI } from './trilhas-ui.js';
 import { criarHojeUI } from './hoje-ui.js';
+import { criarConflitosUI } from './conflitos-ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -152,7 +153,7 @@ async function iniciar() {
         if (e.fase === 'ok') {
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
           // Dados de outro aparelho: recarrega e redesenha as telas que só leem (nunca no meio de um formulário).
-          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar()]).then(() => {
+          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar()]).then(() => {
             const modalAberto = document.getElementById('veu')?.classList.contains('on');
             if (!modalAberto && telaDeLeitura()) window.render?.();
           });
@@ -164,7 +165,7 @@ async function iniciar() {
     sinc.sincronizar();
   }
 
-  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos)?(\/|$)/.test(location.hash || '');
+  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos|#conflitos)?(\/|$)/.test(location.hash || '');
 
   async function salvar(colecao, item) {
     const novo = { ...item, atualizadoEm: new Date().toISOString(), aparelho: idAparelho };
@@ -213,6 +214,19 @@ async function iniciar() {
       apagar: (colecao, id) => salvar(colecao, { id, apagado: true }),
       listar: async (colecao) => (await arm.todos(db, colecao)).filter((i) => !i.apagado),
       conflitos: () => arm.todos(db, 'conflitos'),
+      // Item como está guardado, inclusive com a marca apagado (a tela de conflitos precisa ver os dois lados).
+      obter: (colecao, id) => arm.um(db, colecao, id),
+      resolverConflito: async (id) => {
+        await arm.removerDe(db, 'conflitos', id);
+        await sinc?.recontar();
+        atualizarStatus();
+      },
+      reabrirConflito: async (c) => {
+        await arm.gravar(db, 'conflitos', c);
+        await sinc?.recontar();
+        atualizarStatus();
+      },
+      aparelho: idAparelho,
     },
     google: {
       configurado: google.configurado(),
@@ -230,9 +244,10 @@ async function iniciar() {
     window.rb.fichUI = criarFichamentoUI({ bib: biblioteca, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
     window.rb.argUI = criarArgumentosUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
     window.rb.trilhasUI = criarTrilhasUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
-    window.rb.hojeUI = criarHojeUI({ bib: biblioteca, fichUI: window.rb.fichUI, trilhasUI: window.rb.trilhasUI, argUI: window.rb.argUI });
+    window.rb.conflitosUI = criarConflitosUI({ bib: biblioteca, dados: window.rb.dados, registrar });
+    window.rb.hojeUI = criarHojeUI({ bib: biblioteca, fichUI: window.rb.fichUI, trilhasUI: window.rb.trilhasUI, argUI: window.rb.argUI, conflitosUI: window.rb.conflitosUI });
     await biblioteca.carregar();
-    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar()]);
+    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar()]);
   }
   ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });
