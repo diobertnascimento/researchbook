@@ -194,6 +194,7 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
       registrar('ui', 'tutor.nova_conversa');
       redesenhar(b.dataset.tutorNova);
       toast('Nova conversa. A anterior continua guardada no seu Drive.');
+      window.rb?.memoriaUI?.procurarEmSegundoPlano({ todas: true });
       return;
     }
     if (b.dataset.tutorAvaliar) {

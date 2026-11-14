@@ -71,6 +71,12 @@ export function criarHistorico({ db, dados, drive, registrar }) {
     return lista;
   }
 
+  /** Atualiza campos do resumo da conversa (ex.: até onde a memória já leu). */
+  async function marcar(id, campos) {
+    const c = conversas.find((x) => x.id === id);
+    if (c) Object.assign(c, await dados.salvar('conversas', { ...c, ...campos }));
+  }
+
   async function avaliar(id, indice, valor) {
     const lista = await mensagens(id);
     if (!lista[indice]) return;
@@ -102,5 +108,5 @@ export function criarHistorico({ db, dados, drive, registrar }) {
     }
   }
 
-  return { carregar, deAlvo, nova, encerrar, mensagens, acrescentar, avaliar, enviarPendentes, todas: () => conversas };
+  return { carregar, deAlvo, nova, encerrar, marcar, mensagens, acrescentar, avaliar, enviarPendentes, todas: () => conversas };
 }

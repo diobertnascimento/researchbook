@@ -19,6 +19,7 @@ import { criarHistorico } from './historico.js';
 import { criarIA } from './ia.js';
 import { criarTutorUI } from './tutor-ui.js';
 import { criarIAAjustes } from './ia-ajustes.js';
+import { criarMemoriaUI } from './memoria-ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -138,6 +139,7 @@ async function iniciar() {
   const retorno = await google.concluirRetorno({ registrar });
 
   let sinc = null;
+  let procurouMemoria = false;
   let driveAtual = null;
   const atualizarStatus = () => {
     const el = document.getElementById('status-drive');
@@ -161,7 +163,12 @@ async function iniciar() {
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
           // Dados de outro aparelho: recarrega e redesenha as telas que só leem (nunca no meio de um formulário).
           window.rb.historico?.enviarPendentes();
-          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar(), window.rb.historico?.carregar()]).then(() => {
+          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar(), window.rb.historico?.carregar(), window.rb.memoriaUI?.carregar()]).then(() => {
+            // Uma vez por sessão, depois da primeira sincronização: a IA procura o que lembrar nas conversas paradas.
+            if (!procurouMemoria) {
+              procurouMemoria = true;
+              window.rb.memoriaUI?.procurarEmSegundoPlano();
+            }
             const modalAberto = document.getElementById('veu')?.classList.contains('on');
             if (!modalAberto && telaDeLeitura()) window.render?.();
           });
@@ -173,7 +180,7 @@ async function iniciar() {
     sinc.sincronizar();
   }
 
-  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos|#conflitos)?(\/|$)/.test(location.hash || '');
+  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos|#conflitos|#memoria)?(\/|$)/.test(location.hash || '');
 
   async function salvar(colecao, item) {
     const novo = { ...item, atualizadoEm: new Date().toISOString(), aparelho: idAparelho };
@@ -260,9 +267,10 @@ async function iniciar() {
     window.rb.ia = criarIA({ db, dados: window.rb.dados, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, cofre, drive: driveSeConectado, registrar });
     window.rb.tutorUI = criarTutorUI({ ia: window.rb.ia, historico, bib: biblioteca, registrar });
     window.rb.iaAjustes = criarIAAjustes({ ia: window.rb.ia, cofre, registrar });
+    window.rb.memoriaUI = criarMemoriaUI({ ia: window.rb.ia, historico, dados: window.rb.dados, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, drive: driveSeConectado, registrar });
     window.rb.hojeUI = criarHojeUI({ bib: biblioteca, fichUI: window.rb.fichUI, trilhasUI: window.rb.trilhasUI, argUI: window.rb.argUI, conflitosUI: window.rb.conflitosUI });
     await biblioteca.carregar();
-    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar()]);
+    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar()]);
   }
   ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });

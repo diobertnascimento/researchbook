@@ -2,6 +2,16 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.14.0 (13/11/2026)
+- Memória de verdade (Você > Memória). A IA lê as suas conversas com o tutor e propõe o que vale lembrar: decisões, posições, preferências de trabalho e fatos do projeto.
+- Só entra o que você disse. Cada proposta mostra as suas palavras ("Você disse: …"), e o app confere que elas estão mesmo nas suas mensagens. Sugestões da IA não viram memória.
+- Você guarda, edita antes de guardar ou descarta. Descartados não voltam a ser propostos. Itens guardados podem ser editados ou esquecidos, com desfazer. Também dá para escrever um item à mão.
+- Quando uma proposta muda algo já guardado, ela mostra o que substitui; ao guardar, o antigo sai.
+- Só o que você guardou entra nos pedidos à IA.
+- A IA procura sozinha ao abrir o app, nas conversas paradas há mais de 10 minutos, e quando você começa uma nova conversa com o tutor. O botão "Procurar nas conversas" faz isso na hora. Hoje avisa quando há itens para revisar.
+- Exportar para outras IAs: um arquivo Markdown ou JSON, com perfil, memória, argumentos, fichamentos e conversas recentes, como você escolher. O arquivo é baixado e uma cópia fica no seu Drive (memoria/exportar).
+- Ajustes do Gemini: a opção do cofre agora diz que serve também para chave de outra conta Google.
+
 ## 0.13.0 (13/11/2026)
 - Tutor de verdade no leitor, com o Gemini. Selecione um trecho e toque em "Perguntar ao tutor", ou escreva uma pergunta sobre o texto. Botões Explique, Contraponha e Conecte.
 - O tutor só cita o seu acervo: o texto da obra aberta, os seus grifos, o fichamento dela e os grifos "para a dissertação" e "crítica" das outras obras. Cada citação vem com a página.

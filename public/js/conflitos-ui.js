@@ -66,6 +66,8 @@ const ROTULOS = {
   prazo: 'Prazo',
   itens: 'Obras',
   apagado: 'Situação',
+  evidencia: 'Suas palavras',
+  status: 'Situação do item da memória',
 };
 for (const [k, p] of PERGUNTAS) ROTULOS[`analise.${k}`] = `Análise: ${p.replace(/\s*\(.*\)\s*/, '').replace(/\?$/, '').toLowerCase()}`;
 

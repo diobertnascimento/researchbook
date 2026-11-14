@@ -98,6 +98,8 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI }) {
     let outros = p.leitura || p.vazio === 'tudo-fichado' ? tambemHoje({ ...dadosBase, principalId: p.leitura?.id }) : [];
     // Conflitos de sincronização entram primeiro: no celular, o rodapé com o status não aparece.
     const nConf = conflitosUI?.total() || 0;
+    const nMem = window.rb?.memoriaUI?.pendentes().length || 0;
+    if (nMem) outros = [{ titulo: nMem === 1 ? 'Revisar 1 item para a memória' : `Revisar ${nMem} itens para a memória`, detalhe: 'A IA propôs a partir das suas conversas', href: '#memoria' }, ...outros].slice(0, 3);
     if (nConf) outros = [{ titulo: nConf === 1 ? 'Revisar 1 conflito de sincronização' : `Revisar ${nConf} conflitos de sincronização`, detalhe: 'O mesmo item mudou em dois aparelhos', href: '#conflitos' }, ...outros].slice(0, 3);
     const resumo = ontem(hoje);
     return `

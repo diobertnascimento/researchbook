@@ -2,7 +2,7 @@
 // Por padrão, responde como um bom tutor: cita o item A1 com um trecho literal tirado do próprio pedido.
 // Cenários: 'inventa-uma-vez' (primeira resposta cita fonte inexistente), 'sempre-inventa',
 // 'api-desligada' (403), 'cota' (429 nas duas primeiras tentativas), 'fora-do-formato'.
-export async function geminiFalso(context, { cenario = 'bom' } = {}) {
+export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) {
   const estado = { pedidos: [] };
   const CORS = {
     'access-control-allow-origin': '*',
@@ -26,6 +26,19 @@ export async function geminiFalso(context, { cenario = 'bom' } = {}) {
     let texto;
     if (!corpo.generationConfig?.responseJsonSchema) {
       texto = 'ok';
+    } else if (corpo.generationConfig.responseJsonSchema.properties?.propostas) {
+      // Tarefa da memória: uma proposta com evidência tirada da última fala do autor (vale) e uma tirada da fala da IA (o app recusa).
+      const falas = [...todos.matchAll(/^\[(\d+)\] autor: (.+)$/gm)].map((m) => ({ n: Number(m[1]), texto: m[2] }));
+      const daIA = todos.match(/^\[\d+\] ia: (.+)$/m)?.[1] || '';
+      const ultima = falas.at(-1);
+      const atualizaId = todos.match(/^\[(mem-[^\]]+)\]/m)?.[1] || '';
+      const propostas = ultima
+        ? [
+            { tipo: 'decisao', texto: ultima.texto, evidencia: ultima.texto.split(/\s+/).slice(0, 6).join(' '), mensagem: ultima.n, atualiza: opcoes.atualizar ? atualizaId : '' },
+            { tipo: 'posicao', texto: 'Uma ideia que só a IA disse', evidencia: daIA.split(/\s+/).slice(0, 5).join(' '), mensagem: ultima.n, atualiza: '' },
+          ]
+        : [];
+      texto = JSON.stringify({ propostas });
     } else {
       // Tira as primeiras palavras do item A1 do próprio pedido, para citar um trecho que existe.
       const m = todos.match(/<item id="A1"[^>]*>\s*<material-[0-9a-f]+>\s*([\s\S]*?)\s*<\/material-/);
