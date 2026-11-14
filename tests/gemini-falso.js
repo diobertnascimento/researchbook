@@ -62,6 +62,8 @@ export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) 
     } else if (props.segmentos && opcoes.falharParte && !estado.falhou && new RegExp(`Parte ${opcoes.falharParte} de`).test(todos)) {
       estado.falhou = true;
       return responder(r, 400, { error: { code: 400, message: 'Request payload size exceeds the limit.', status: 'INVALID_ARGUMENT' } });
+    } else if (props.obras || props.combinados_anteriores || props.posicoes) {
+      texto = JSON.stringify(respostaDissertacao(props, todos, opcoes));
     } else if (props.segmentos || props.resumo || props.entregas) {
       texto = JSON.stringify(respostaAula(props, todos, corpo, opcoes));
     } else if (copilot(corpo.generationConfig.responseJsonSchema.properties)) {
@@ -193,5 +195,49 @@ function respostaAula(p, todos, corpo, opcoes) {
     ],
     entregas: [{ descricao: 'Fichamento crítico', data: emDias(9), peso: '30%' }],
     duvidas: opcoes.duvidas ? ['A data do seminário aparece duas vezes.'] : [],
+  };
+}
+
+// Dissertação: revisão do projeto, registro de orientação e encerramento de diálogo.
+function respostaDissertacao(p, todos, opcoes) {
+  if (p.obras) {
+    const temB1 = /^B1: Moraes/m.test(todos);
+    const segunda = /<versao_anterior>\nVersão 1/.test(todos);
+    return {
+      paginas: 42,
+      obras: [
+        { como_aparece: 'Moraes e Lins (2024)', id_biblioteca: temB1 ? 'B1' : '', secoes: ['3.2 Método', '3.5 Avaliação'], vezes: 3, funcao: 'decisao', prioridade: 3, porque: 'Sustenta o critério de avaliação e a obra ainda não foi fichada.', incompleta: false },
+        { como_aparece: 'Sonnenberg e vom Brocke (2012)', id_biblioteca: '', secoes: ['3.5 Avaliação'], vezes: 1, funcao: 'argumento', prioridade: 3, porque: 'A banca pode perguntar como a avaliação acompanha o ciclo; a obra está fora da biblioteca.', incompleta: false },
+        { como_aparece: 'Hevner et al. (2004)', id_biblioteca: '', secoes: ['1 Introdução'], vezes: 1, funcao: 'contexto', prioridade: 1, porque: 'Só contextualiza o método.', incompleta: false },
+      ],
+      problemas: segunda ? [] : [{ tipo: 'citacao_sem_pagina', trecho: '"a adesão é o que importa"', pagina: 12, secao: '2.4' }],
+      comparacao: segunda ? { novas: ['Hevner et al. (2004)'], removidas: [], problemas_resolvidos: 1 } : { novas: [], removidas: [], problemas_resolvidos: 0 },
+    };
+  }
+  if (p.combinados_anteriores) {
+    const conteudo = todos.match(/<registro>[\s\S]*?<material-[0-9a-f]+>\n([\s\S]*?)\n<\/material-/)?.[1] || '';
+    const fala = conteudo.split(/\s+/).slice(0, 8).join(' ');
+    const temC1 = /^C1: /m.test(todos);
+    return {
+      resumo: 'A conversa tratou do critério de avaliação e da seção de método.',
+      combinados: [{ acao: 'Declarar o critério de utilidade antes dos testes', responsavel: 'autor', secao: '3.5', prazo: emDias(6) }],
+      trechos: [{ tempo: '', fala }, { tempo: '', fala: 'frase que quem orienta nunca disse' }],
+      sugestoes: ['Ler sobre avaliação ao longo do ciclo de construção.'],
+      temas: ['Avaliação e critérios'],
+      combinados_anteriores: temC1 ? [{ id: 'C1', situacao: 'resolvido', detalhe: 'Apresentado nesta conversa.' }] : [],
+      pontos_de_atencao: [],
+      aviso: '',
+    };
+  }
+  const falas = [...todos.matchAll(/^\[(\d+)\] autor: (.+)$/gm)].map((m) => ({ n: Number(m[1]), texto: m[2] }));
+  const arg = todos.match(/^\[(arg-[^\]]+)\]/m)?.[1] || '';
+  return {
+    posicoes: falas.length
+      ? [
+          { texto: falas.at(-1).texto, mensagem: falas.at(-1).n, argumento_relacionado: arg },
+          { texto: 'Uma posição que o autor nunca escreveu', mensagem: 1, argumento_relacionado: '' },
+        ]
+      : [],
+    questoes_em_aberto: ['Como medir a utilidade sem avaliadores humanos?'],
   };
 }

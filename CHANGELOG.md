@@ -2,6 +2,16 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.17.0 (14/11/2026)
+- Revisão do projeto de verdade. Envie a versão da dissertação em PDF: a IA lista as obras citadas por prioridade de leitura (alta, média, baixa), com a função de cada uma no texto, onde aparece e o risco em uma frase. As que já estão na biblioteca mostram a etapa de leitura; as de fora vão para "Vou buscar".
+- Problemas nas referências: citação direta sem página, obra fora da lista, obra na lista e nunca citada, ano divergente, citação fora da norma.
+- Cada versão fica no seu Drive (dissertacao/versoes) e é comparada com a anterior: obras novas, removidas e problemas resolvidos. "Criar trilha" junta as obras de prioridade alta e média que já estão na biblioteca.
+- Orientação de verdade. "Registrar conversa" aceita anotação, e-mail, transcrição colada, gravação (transcrita como as aulas) ou PDF com comentários. A IA resume, separa os combinados e guarda até três falas literais da orientação, conferidas no registro.
+- Combinados com caixa de marcar, também em "Combinados em aberto". Quando um encontro trata um combinado anterior, a IA avisa e você confirma se foi feito.
+- Temas que voltam entre os encontros, próximo encontro agendado e pauta pronta para copiar.
+- Diálogos de verdade, em três modos: Contraponto (a IA defende o lado contrário), Socrático (só perguntas) e Alinhamento (compara com os seus argumentos e posições). O modo muda a qualquer momento. As citações vêm do seu acervo e são conferidas.
+- "Encerrar e firmar posições": a IA lista o que você firmou, com as suas palavras (o app confere na sua mensagem). Cada posição pode ir para a memória ou atualizar a tese de um argumento, com desfazer.
+
 ## 0.16.0 (14/11/2026)
 - Projetos de verdade. O menu lateral mostra a dissertação e as suas disciplinas; "Cadastrar disciplina" pede nome, docente, semestre, dia e horário, e uma cor.
 - Plano de ensino: envie o PDF e a IA lê as aulas, as entregas e as leituras. Você confere item por item antes de salvar; aula sem data no documento fica de fora. As leituras que já estão na biblioteca viram uma trilha, se você quiser.

@@ -22,12 +22,12 @@ const ERROS_DE_CONFIG = ['sem-acesso', 'permissao', 'projeto', 'trancado', 'chav
 
 export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   const est = { plano: null, planoArquivo: null, planoDisc: null, audioUrl: null, audioDe: null };
-  const redesenhar = () => /^#(disciplinas|disciplina\/|aula\/)/.test(location.hash) && window.render?.();
+  const redesenhar = () => /^#(disciplinas|disciplina\/|aula\/|orientacao)/.test(location.hash) && window.render?.();
   const veu = () => document.getElementById('veu');
   const abrirModal = (html) => {
     veu().innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-tit">${html}</div>`;
     veu().classList.add('on');
-    setTimeout(() => veu().querySelector('input:not([type=hidden]):not([type=checkbox]),select,textarea')?.focus(), 30);
+    veu().querySelector('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea')?.focus();
   };
   const fechar = () => veu().classList.remove('on');
   const depois = (fn) => setTimeout(fn, 60); // a troca de tela esconde o aviso: mostra depois dela
@@ -379,8 +379,8 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   function formEvento(discId, e = {}) {
     const editando = !!e.id;
     const d = disc.obter(discId || e.disciplinaId);
-    abrirModal(`<h2 id="modal-tit">${editando ? 'Editar evento' : 'Agendar'}</h2><p>${esc(d?.nome || '')}</p>
-      <form id="dsc-ev-form" data-id="${esc(e.id || '')}" data-disc="${esc(d?.id || '')}">
+    abrirModal(`<h2 id="modal-tit">${editando ? 'Editar evento' : 'Agendar'}</h2><p>${esc(d?.nome || 'Dissertação')}</p>
+      <form id="dsc-ev-form" data-id="${esc(e.id || '')}" data-disc="${esc(discId || e.disciplinaId || '')}">
         <div class="campo"><label for="ev-titulo">Título</label><input id="ev-titulo" required value="${esc(e.titulo || '')}"></div>
         <div class="linha2">
           <div class="campo"><label for="ev-tipo">Tipo</label><select id="ev-tipo">${Object.entries(TIPOS_EVENTO).map(([k, n]) => `<option value="${k}" ${k === (e.tipo || 'estudo') ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
@@ -697,7 +697,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     }
   });
 
-  return { lista, tela, telaAula, montar, menu: () => disc.ativas() };
+  return { lista, tela, telaAula, montar, formEvento, menu: () => disc.ativas() };
 }
 
 export { ocorrencias };

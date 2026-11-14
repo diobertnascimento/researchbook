@@ -9,17 +9,19 @@
 //    um backup completo na coleção "backups" (ficam os 5 mais recentes).
 
 const NOME = 'researchbook';
-export const ESQUEMA = 4;
+export const ESQUEMA = 5;
 export const ESQUEMA_DADOS = 1;
 
-export const COLECOES = [
+// Coleções criadas no esquema 1. As que vieram depois entram por um passo próprio em ESTRUTURA.
+const COLECOES_V1 = [
   'leituras', 'grifos', 'fichamentos', 'argumentos', 'trilhas', 'textos', 'dialogos',
   'cartoes', 'disciplinas', 'aulas', 'eventos', 'encontros', 'memoria', 'conversas',
 ];
+export const COLECOES = [...COLECOES_V1, 'revisoes'];
 
 const ESTRUTURA = {
   1: (db) => {
-    for (const c of COLECOES) db.createObjectStore(c, { keyPath: 'id' });
+    for (const c of COLECOES_V1) db.createObjectStore(c, { keyPath: 'id' });
     db.createObjectStore('meta');
     const r = db.createObjectStore('registros', { keyPath: 'n', autoIncrement: true });
     r.createIndex('t', 't');
@@ -38,6 +40,10 @@ const ESTRUTURA = {
   // "conversas"; o texto completo vai para o Drive como arquivo (ia/conversas/<id>.json), para não inchar a sincronização.
   4: (db) => {
     db.createObjectStore('mensagens', { keyPath: 'id' });
+  },
+  // v0.17.0: revisões do projeto de dissertação (uma por versão enviada), sincronizadas como coleção.
+  5: (db) => {
+    db.createObjectStore('revisoes', { keyPath: 'id' });
   },
 };
 

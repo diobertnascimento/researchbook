@@ -29,6 +29,10 @@ export const TAREFAS = {
   transcricao: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'transcricao.md', maxSaida: 32000 },
   aula_resumo: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'MEDIUM', instrucao: 'aula.md', maxSaida: 6000 },
   plano_ensino: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'plano-de-ensino.md', maxSaida: 8000 },
+  revisao_projeto: { modelo: 'gemini-4-argon', reserva: 'gemini-3.1-pro-preview', pensamento: 'HIGH', instrucao: 'revisao-projeto.md', maxSaida: 24000 },
+  orientacao: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'MEDIUM', instrucao: 'orientacao.md', maxSaida: 6000 },
+  dialogo: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'MEDIUM', instrucao: 'dialogos.md', maxSaida: 3000 },
+  dialogo_encerrar: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'dialogos.md', maxSaida: 3000 },
   memoria: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: 'memoria.md', maxSaida: 2048 },
   teste: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: null, maxSaida: 256 },
 };
