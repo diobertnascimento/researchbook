@@ -121,6 +121,15 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Drive:** `escrita/<id>/texto.html` e `autoria.json` (cópia legível, 15 s depois da última mudança), `escrita/<id>/versoes/<data>.json` (guardar versão; restaurar guarda antes a atual) e `escrita/<id>/<titulo>.docx` a cada exportação.
 - **.docx:** gerado no aparelho, sem biblioteca externa: A4, margens 3/2/2/3 cm, Times New Roman 12, espaço 1,5, recuo de 1,25 cm, citação longa com recuo de 4 cm em corpo 10 e espaço simples, seções numeradas em negrito, REFERÊNCIAS em página nova.
 
+## Disciplinas e aulas (v0.16.0)
+- **Dados:** coleções `disciplinas` (nome, docente, semestre, dia e horário, cor, anotações, leituras do plano, lista "para buscar", arquivada), `aulas` (número, data, tema, gravação, estado da transcrição, resumo, grifos, anotações) e `eventos` (tipo aula, entrega, estudo, orientação ou outro; data, horário, repetição semanal até uma data, datas canceladas). A ligação entre obra e disciplina é o campo Projeto da obra (o nome da disciplina); renomear a disciplina atualiza obras e textos.
+- **Gravação:** o áudio fica no aparelho (store `arquivos`) e em `disciplinas/<disc>/aulas/<aula>/audio.<ext>`. Até 14 MB vai junto do pedido; acima disso, é enviado uma vez para a área temporária do Gemini (Files API, 48 horas) e reaproveitado em todas as partes.
+- **Transcrição:** partes de 15 minutos da mesma gravação, pedidas por intervalo de tempo (`transcricao.md` v2.0.0), com o progresso salvo a cada parte. Se o app fechar ou der erro, retoma da parte seguinte, só no aparelho que começou (é o que tem o áudio); os outros aparelhos mostram o andamento e podem assumir. Falantes: "Docente", "Participante N", sem nomes. O resultado vai para `…/transcricao.json` e `…/transcricao.txt` no Drive, fora do arquivo de sincronização.
+- **Resumo** (`aula.md` v2.0.0): pontos, conceitos com a definição dada em aula, leituras citadas, perguntas e combinados. Cada ponto e conceito traz um trecho literal; o app confere na transcrição e descarta o que não bate. Leituras citadas são ligadas à biblioteca por id ou por sobrenome e ano; as outras vão para "Para buscar". Tudo vai para o histórico (função `aula`).
+- **Plano de ensino** (`plano-de-ensino.md` v2.0.0): o PDF vai inteiro no pedido (até 14 MB). A tela de conferência mostra aulas, entregas e leituras; nada é salvo antes do autor confirmar. Aula do plano com data substitui, naquele dia, a aula semanal. Opção de criar trilha com as obrigatórias que já estão na biblioteca. O PDF fica em `disciplinas/<disc>/plano-de-ensino.pdf`.
+- **Hoje:** eventos do dia e entregas dos próximos 3 dias entram em "Também para hoje", depois de conflitos e memória.
+- **Google Agenda:** ainda não. Os eventos ficam só no researchbook até a etapa da agenda.
+
 ## Memória
 - Três camadas: (1) conversas, registro completo; (2) memória consolidada, curta, só com itens aprovados pelo Diobert; (3) contexto de cada pedido, montado na hora a partir de 1 e 2 e do material aberto.
 - A IA propõe o que quer lembrar; o Diobert aprova, edita ou descarta. Pode esquecer itens (com desfazer).
@@ -169,6 +178,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.16.0 (14/11/2026): etapa 10, disciplinas, aulas gravadas com transcrição por partes e resumo conferido, plano de ensino lido pela IA, agenda local e menu de Projetos real.
 - v0.15.0 (13/11/2026): etapa 9, escrita e Copilot: preparação, editor com autoria medida e teto de IA, versões no Drive, revisão e exportação .docx em ABNT.
 - v0.14.0 (13/11/2026): entrega 8, memória real: propostas da IA conferidas contra as falas do autor, aprovação, esquecimento e exportação para outras IAs.
 - v0.13.0 (13/11/2026): entrega 7, tutor com Gemini no leitor, acesso pelo login Google ou cofre cifrado, conferência das citações, histórico no Drive, instruções reescritas a partir de benchmark.
@@ -179,8 +189,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Disciplinas e projetos reais (aulas, áudio e transcrição, anotações, plano de ensino; o menu lateral ainda mostra os projetos de exemplo).
-2. Dissertação (revisão do projeto, orientação) e Diálogos.
-3. Google Agenda pela API oficial (depende de ativar a API e a permissão no Google Cloud).
-4. Cartões e revisão espaçada, comentários do tutor no fichamento, Overview do autor.
-5. Ajustes reais (modelos por tarefa, uso e custo), busca Ctrl+K com dados reais, limpeza de marcas de apagado, código fora do HTML e CSP sem `unsafe-inline`.
+1. Dissertação (revisão do projeto, orientação) e Diálogos.
+2. Google Agenda pela API oficial (depende de ativar a API e a permissão no Google Cloud).
+3. Cartões e revisão espaçada, comentários do tutor no fichamento, Overview do autor.
+4. Ajustes reais (modelos por tarefa, uso e custo), busca Ctrl+K com dados reais, limpeza de marcas de apagado, código fora do HTML e CSP sem `unsafe-inline`.

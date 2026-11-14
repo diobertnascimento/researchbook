@@ -2,6 +2,19 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 0.16.0 (14/11/2026)
+- Projetos de verdade. O menu lateral mostra a dissertação e as suas disciplinas; "Cadastrar disciplina" pede nome, docente, semestre, dia e horário, e uma cor.
+- Plano de ensino: envie o PDF e a IA lê as aulas, as entregas e as leituras. Você confere item por item antes de salvar; aula sem data no documento fica de fora. As leituras que já estão na biblioteca viram uma trilha, se você quiser.
+- Cada disciplina tem visão geral, aulas, leituras (as da biblioteca marcadas com a disciplina e as do plano), textos e agenda.
+- Agenda: aulas, entregas, sessões de estudo e encontros, com repetição semanal, editar e apagar com desfazer. O que é hoje e as entregas dos próximos dias aparecem no Hoje.
+- Gravação de aula: o áudio fica no aparelho e no seu Drive. O Gemini transcreve em partes de 15 minutos; se o app fechar ou der erro, continua de onde parou. Gravações grandes vão para a área temporária do Gemini (48 horas) uma vez só.
+- A transcrição separa quem fala (docência e participantes, sem nomes), tem o tempo de cada fala, toca o áudio a partir dela e pode ser grifada com as cores de sempre. Uma cópia em texto fica no Drive.
+- Resumo da aula com pontos, conceitos como foram definidos em aula, perguntas para estudar e combinados. Cada ponto é conferido na transcrição; o que não bate é descartado e o app avisa.
+- Leituras citadas em aula: as da biblioteca viram link; as de fora vão para a lista "Para buscar" da disciplina. Combinado com prazo vira entrega na agenda.
+- Anotações rápidas da disciplina e anotações de cada aula, com salvamento automático.
+- Renomear a disciplina leva junto as obras e os textos marcados com ela. Disciplinas podem ser arquivadas; apagar tem desfazer e traz as aulas de volta.
+- Correção: abrir o app direto em um texto da Escrita mostrava "Abrindo seus dados…" até trocar de tela.
+
 ## 0.15.0 (13/11/2026)
 - Escrita de verdade. "Novo texto" abre a preparação em quatro passos: enquadrar (enunciado, critérios, limite, entrega e o teto de IA), a ideia nas suas palavras, o diagnóstico do que o seu acervo sustenta e a estrutura.
 - A primeira resposta da entrevista, "o que você quer defender, em uma frase?", vira a tese de trabalho como você escreveu, sem edição. O Copilot faz as perguntas seguintes, uma por vez.

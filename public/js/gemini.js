@@ -8,6 +8,8 @@
 // Toda chamada gera um registro com tarefa, modelo, nível de pensamento, versão da instrução, tokens
 // (entrada, cache, pensamento, saída), tempo, custo estimado, tentativa e modelo reserva. Nunca o texto.
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const ARQUIVOS_IA = 'https://generativelanguage.googleapis.com/v1beta/files';
+const ENVIO_IA = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
 
 // Preços por milhão de tokens, em US$ (página oficial do Gemini API, conferida em 13/11/2026).
 // "ate": data a partir da qual vale o preço "depois". Modelo sem preço aqui: o custo fica em branco no registro.
@@ -24,6 +26,9 @@ export const TAREFAS = {
   copilot_versoes: { modelo: 'gemini-4-argon', reserva: 'gemini-3.1-pro-preview', pensamento: 'MEDIUM', instrucao: 'copilot.md', maxSaida: 6000 },
   copilot_plano: { modelo: 'gemini-4-argon', reserva: 'gemini-3.1-pro-preview', pensamento: 'HIGH', instrucao: 'copilot.md', maxSaida: 8000 },
   revisao_final: { modelo: 'gemini-4-argon', reserva: 'gemini-3.1-pro-preview', pensamento: 'HIGH', instrucao: 'revisao-final.md', maxSaida: 8000 },
+  transcricao: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'transcricao.md', maxSaida: 32000 },
+  aula_resumo: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'MEDIUM', instrucao: 'aula.md', maxSaida: 6000 },
+  plano_ensino: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'plano-de-ensino.md', maxSaida: 8000 },
   memoria: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: 'memoria.md', maxSaida: 2048 },
   teste: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: null, maxSaida: 256 },
 };
@@ -154,5 +159,59 @@ export function criarGemini({ credenciais, registrar, espera = (ms) => new Promi
     throw ultimoErro || new ErroIA('servico', 'O Gemini não respondeu agora. Tente de novo em instantes.');
   }
 
-  return { gerar };
+  /**
+   * Envia um arquivo grande (áudio de aula) para a área temporária do Gemini (Files API, guarda por 48 horas)
+   * e espera ele ficar pronto. Devolve { nome, uri, tipo, expira }.
+   */
+  async function enviarArquivo(blob, { nome = 'arquivo', tipo = blob.type || 'application/octet-stream', sinal } = {}) {
+    const inicio = performance.now();
+    const { h } = await cabecalhos();
+    let r;
+    try {
+      r = await fetch(ENVIO_IA, {
+        method: 'POST',
+        headers: { ...h, 'X-Goog-Upload-Protocol': 'resumable', 'X-Goog-Upload-Command': 'start', 'X-Goog-Upload-Header-Content-Length': String(blob.size), 'X-Goog-Upload-Header-Content-Type': tipo },
+        body: JSON.stringify({ file: { display_name: nome } }),
+        signal: sinal,
+      });
+    } catch (e) {
+      if (e.name === 'AbortError') throw new ErroIA('cancelado', 'Envio cancelado.');
+      throw new ErroIA('rede', 'Sem conexão com o Gemini. Confira a internet e tente de novo.', e.message);
+    }
+    if (!r.ok) {
+      const erro = explicar(r.status, await r.json().catch(() => ({})));
+      registrar('ia', 'ia.arquivo_falhou', { det: `inicio, ${r.status} ${erro.codigo}`, st: 'erro' });
+      throw erro;
+    }
+    const destino = r.headers.get('x-goog-upload-url');
+    if (!destino) throw new ErroIA('servico', 'O Gemini não devolveu o endereço de envio. Tente de novo.');
+    let j;
+    try {
+      const r2 = await fetch(destino, { method: 'POST', headers: { 'X-Goog-Upload-Offset': '0', 'X-Goog-Upload-Command': 'upload, finalize' }, body: blob, signal: sinal });
+      j = await r2.json().catch(() => ({}));
+      if (!r2.ok) throw explicar(r2.status, j);
+    } catch (e) {
+      if (e instanceof ErroIA) throw e;
+      if (e.name === 'AbortError') throw new ErroIA('cancelado', 'Envio cancelado.');
+      throw new ErroIA('rede', 'O envio do áudio para o Gemini parou. Confira a internet e tente de novo.', e.message);
+    }
+    let arq = j.file || j;
+    for (let i = 0; arq.state === 'PROCESSING' && i < 120; i++) {
+      await espera(2000);
+      arq = await consultarArquivo(arq.name);
+    }
+    if (arq.state && arq.state !== 'ACTIVE') throw new ErroIA('servico', 'O Gemini não conseguiu abrir o áudio. Confira se o arquivo toca no computador e envie de novo.', arq.state);
+    registrar('ia', 'ia.arquivo_enviado', { det: `${Math.round(blob.size / 1024 / 1024)} MB, ${tipo}`, dur: Math.round(performance.now() - inicio) });
+    return { nome: arq.name, uri: arq.uri, tipo: arq.mimeType || tipo, expira: arq.expirationTime || new Date(Date.now() + 47 * 3600 * 1000).toISOString() };
+  }
+
+  async function consultarArquivo(nome) {
+    const { h } = await cabecalhos();
+    const r = await fetch(`${ARQUIVOS_IA}/${encodeURIComponent(nome.replace(/^files\//, ''))}`, { headers: h });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw explicar(r.status, j);
+    return j;
+  }
+
+  return { gerar, enviarArquivo, consultarArquivo };
 }

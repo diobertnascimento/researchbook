@@ -3,26 +3,46 @@
 // Cenários: 'inventa-uma-vez' (primeira resposta cita fonte inexistente), 'sempre-inventa',
 // 'api-desligada' (403), 'cota' (429 nas duas primeiras tentativas), 'fora-do-formato'.
 export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) {
-  const estado = { pedidos: [] };
+  const estado = { pedidos: [], arquivos: [] };
   const CORS = {
     'access-control-allow-origin': '*',
-    'access-control-allow-headers': 'authorization, content-type, x-goog-api-key, x-goog-user-project',
-    'access-control-allow-methods': 'POST, OPTIONS',
+    'access-control-allow-headers': 'authorization, content-type, x-goog-api-key, x-goog-user-project, x-goog-upload-protocol, x-goog-upload-command, x-goog-upload-header-content-length, x-goog-upload-header-content-type, x-goog-upload-offset',
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
+    'access-control-expose-headers': 'x-goog-upload-url',
   };
   const responder = (r, status, corpo) => r.fulfill({ status, headers: CORS, contentType: 'application/json', body: JSON.stringify(corpo) });
 
   await context.route('https://generativelanguage.googleapis.com/**', (r) => {
     const req = r.request();
     if (req.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: CORS });
+    const url = new URL(req.url());
+    // Área temporária de arquivos (Files API): início do envio, envio dos bytes e consulta.
+    if (url.pathname === '/upload/v1beta/files' && !url.searchParams.get('upload_id')) {
+      if (cenario === 'api-desligada') return responder(r, 403, { error: { code: 403, message: 'Generative Language API has not been used in project 123 before or it is disabled.', status: 'PERMISSION_DENIED', details: [{ reason: 'SERVICE_DISABLED' }] } });
+      const h = req.headers();
+      estado.arquivos.push({ tamanho: Number(h['x-goog-upload-header-content-length']), tipo: h['x-goog-upload-header-content-type'], cabecalhos: h });
+      return r.fulfill({ status: 200, headers: { ...CORS, 'x-goog-upload-url': `https://generativelanguage.googleapis.com/upload/v1beta/files?upload_id=up${estado.arquivos.length}` }, contentType: 'application/json', body: '{}' });
+    }
+    if (url.pathname === '/upload/v1beta/files') {
+      const n = url.searchParams.get('upload_id').slice(2);
+      estado.arquivos[n - 1].recebido = (req.postDataBuffer() || Buffer.alloc(0)).length;
+      return responder(r, 200, { file: { name: `files/arq${n}`, uri: `https://generativelanguage.googleapis.com/v1beta/files/arq${n}`, mimeType: estado.arquivos[n - 1].tipo, state: 'PROCESSING' } });
+    }
+    if (url.pathname.startsWith('/v1beta/files/')) {
+      const nome = url.pathname.split('/v1beta/')[1];
+      return responder(r, 200, { name: nome, uri: `https://generativelanguage.googleapis.com/v1beta/${nome}`, mimeType: 'audio/wav', state: 'ACTIVE', expirationTime: new Date(Date.now() + 48 * 3600 * 1000).toISOString() });
+    }
     const corpo = JSON.parse(req.postData() || '{}');
     const modelo = decodeURIComponent(new URL(req.url()).pathname.split('/models/')[1].split(':')[0]);
     const n = estado.pedidos.push({ modelo, cabecalhos: req.headers(), corpo });
     if (cenario === 'api-desligada') return responder(r, 403, { error: { code: 403, message: 'Generative Language API has not been used in project 123 before or it is disabled.', status: 'PERMISSION_DENIED', details: [{ reason: 'SERVICE_DISABLED' }] } });
     if (cenario === 'cota' && n <= 2) return responder(r, 429, { error: { code: 429, message: 'Resource has been exhausted (e.g. check quota).', status: 'RESOURCE_EXHAUSTED' } });
 
-    const ultimo = corpo.contents?.at(-1)?.parts?.[0]?.text || '';
+    const textoDe = (c) => (c?.parts || []).filter((p) => typeof p.text === 'string').map((p) => p.text).join('\n');
+    const ultimo = textoDe(corpo.contents?.at(-1));
     // Na correção, o acervo está numa mensagem anterior: procura em todas as mensagens do autor.
-    const todos = (corpo.contents || []).filter((c) => c.role === 'user').map((c) => c.parts?.[0]?.text || '').join('\n');
+    const todos = (corpo.contents || []).filter((c) => c.role === 'user').map(textoDe).join('\n');
+    const props = corpo.generationConfig?.responseJsonSchema?.properties || {};
     let texto;
     if (!corpo.generationConfig?.responseJsonSchema) {
       texto = 'ok';
@@ -39,6 +59,11 @@ export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) 
           ]
         : [];
       texto = JSON.stringify({ propostas });
+    } else if (props.segmentos && opcoes.falharParte && !estado.falhou && new RegExp(`Parte ${opcoes.falharParte} de`).test(todos)) {
+      estado.falhou = true;
+      return responder(r, 400, { error: { code: 400, message: 'Request payload size exceeds the limit.', status: 'INVALID_ARGUMENT' } });
+    } else if (props.segmentos || props.resumo || props.entregas) {
+      texto = JSON.stringify(respostaAula(props, todos, corpo, opcoes));
     } else if (copilot(corpo.generationConfig.responseJsonSchema.properties)) {
       texto = JSON.stringify(respostaCopilot(corpo.generationConfig.responseJsonSchema.properties, todos, opcoes));
     } else {
@@ -111,4 +136,62 @@ function respostaCopilot(p, todos, opcoes) {
   if ('comentario' in p) return { comentario: `A seção pode se apoiar no caso das cooperativas${cita}.`, pergunta: 'O que esta seção precisa provar para a sua tese funcionar?', fontes };
   if ('por_que' in p) return { pergunta: 'Que caso concreto mostra isso na prática?', por_que: 'Sem um caso, a tese fica abstrata para a banca.' };
   return { texto: 'A próxima seção examina como as equipes participam da definição das rotas.' };
+}
+
+// Aulas: transcrição por trecho, resumo com trechos (um deles inventado, que o app descarta) e plano de ensino.
+const emDias = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+function respostaAula(p, todos, corpo, opcoes) {
+  if (p.segmentos) {
+    const ini = todos.match(/<trecho>\s*inicio: ([\d:]+)/)?.[1] || '00:00';
+    const s0 = ini.split(':').map(Number).reduce((a, n) => a * 60 + n, 0);
+    const parte = Number(todos.match(/Parte (\d+) de/)?.[1] || 1);
+    const temAudio = corpo.contents.at(-1).parts.some((x) => x.inlineData || x.fileData);
+    if (!temAudio) return { segmentos: [] };
+    return {
+      segmentos: [
+        { inicio: mmss(s0 + 5), falante: 'Docente', texto: `Na parte ${parte}, a pergunta é como sabemos que um artefato funciona.` },
+        { inicio: mmss(s0 + 65), falante: 'Participante 1', texto: 'E quando a equipe pode ignorar a rota sugerida?' },
+        { inicio: mmss(s0 + 125), falante: 'Docente', texto: `Então a adesão das equipes vira parte do que se avalia. Leiam Moraes e Lins, de 2024, e também Sonnenberg e vom Brocke.` },
+      ],
+    };
+  }
+  if (p.resumo) {
+    const temB1 = /^B1: Moraes/m.test(todos);
+    return {
+      resumo: [
+        { tempo: '00:05', texto: 'A aula pergunta como saber se um artefato funciona.', trecho: 'a pergunta é como sabemos que um artefato funciona' },
+        { tempo: '02:05', texto: 'A adesão das equipes entra no que se avalia.', trecho: 'a adesão das equipes vira parte do que se avalia' },
+        { tempo: '03:00', texto: 'Um ponto que ninguém disse.', trecho: 'frase que não está na transcrição de jeito nenhum' },
+      ],
+      conceitos: [{ tempo: '02:05', nome: 'Adesão', definicao_em_aula: 'Quanto a equipe segue de fato o que o artefato propõe.', trecho: 'a adesão das equipes vira parte do que se avalia' }],
+      leituras: [
+        { tempo: '02:05', como_foi_dito: 'Moraes e Lins, de 2024', id_biblioteca: temB1 ? 'B1' : '', autor: 'Moraes', ano: '2024', titulo: '', o_que_foi_dito: 'Leitura pedida para a próxima aula.' },
+        { tempo: '02:05', como_foi_dito: 'Sonnenberg e vom Brocke', id_biblioteca: '', autor: 'Sonnenberg', ano: '', titulo: '', o_que_foi_dito: 'Citado sobre avaliação ao longo do ciclo.' },
+      ],
+      perguntas: ['O que você vai declarar antes como funcionar?'],
+      combinados: [{ tempo: '02:05', tarefa: 'Entregar o fichamento crítico', prazo: emDias(9) }],
+      aviso: '',
+    };
+  }
+  return {
+    docente: 'Docente de exemplo',
+    dia_semana: 'qui',
+    inicio: '19:00',
+    fim: '21:00',
+    aulas: [
+      { data: emDias(5), tema: 'Métodos mistos em design', referencia_no_documento: '' },
+      { data: '', tema: 'Seminários finais', referencia_no_documento: 'semana 15' },
+    ],
+    leituras: [
+      { referencia: 'MORAES, T.; LINS, R. Roteirização colaborativa. Revista de Exemplo, 2024.', sobrenome: 'Moraes', ano: '2024', obrigatoria: true },
+      { referencia: 'SONNENBERG, C.; VOM BROCKE, J. Evaluations in the science of the artificial. 2012.', sobrenome: 'Sonnenberg', ano: '2012', obrigatoria: false },
+    ],
+    entregas: [{ descricao: 'Fichamento crítico', data: emDias(9), peso: '30%' }],
+    duvidas: opcoes.duvidas ? ['A data do seminário aparece duas vezes.'] : [],
+  };
 }

@@ -31,8 +31,27 @@ export const NOMES_COLECAO = {
 };
 
 // Campos internos: não interessam ao Diobert e mudariam em quase todo conflito.
-const IGNORAR = new Set(['id', 'aparelho', 'rects', 'leituraId', 'grifoId', 'argumentoId', 'pdf']);
+const IGNORAR = new Set(['id', 'aparelho', 'rects', 'leituraId', 'grifoId', 'argumentoId', 'pdf', 'disciplinaId', 'audio', 'transcricao']);
 const ROTULOS = {
+  docente: 'Docente',
+  semestre: 'Semestre',
+  cor: 'Cor',
+  dia_semana: 'Dia da aula',
+  inicio: 'Início',
+  fim: 'Fim',
+  anotacoes: 'Anotações',
+  leiturasPlano: 'Leituras do plano de ensino',
+  paraBuscar: 'Para buscar',
+  arquivada: 'Arquivada',
+  numero: 'Número',
+  data: 'Data',
+  tema: 'Tema',
+  notas: 'Suas anotações',
+  grifos: 'Grifos',
+  repetir: 'Repetição',
+  ate: 'Repetir até',
+  excecoes: 'Datas canceladas',
+  lembrete: 'Lembrete',
   titulo: 'Título',
   subtitulo: 'Subtítulo',
   autores: 'Autores',
