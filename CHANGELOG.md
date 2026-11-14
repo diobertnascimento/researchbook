@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.2.0 (14/11/2026)
+- Importar para a biblioteca: vários PDFs de uma vez, um arquivo exportado do Zotero (BibTeX, RIS, CSL JSON ou Zotero RDF) ou a pasta inteira que o Zotero exporta com "Exportar arquivos". Cada PDF é ligado à sua obra; palavras-chave e coleções do Zotero viram tags. Antes de gravar, você confere o que é novo, o que já está na biblioteca e o que parece repetido.
+- Organizar (nova aba da Biblioteca): o app procura no Crossref o DOI das obras que não têm. Quando o resultado bate muito bem, aparece como "Muito provável"; quando fica em dúvida, a IA lê o começo do PDF e indica o candidato certo (nunca inventa DOI). Você aceita, recusa ou marca que a obra não tem DOI. Aceitar completa só os campos vazios.
+- Obras repetidas: mesmo DOI, mesmo PDF ou mesmo título, ano e autor. "Juntar" fica com a obra que tem mais trabalho seu e leva para ela grifos, PDF, tags, trilhas, cartões e citações, com desfazer. Adicionar à mão uma obra que já existe avisa antes de salvar.
+- O Hoje avisa quando há DOIs para conferir ou obras repetidas.
+- Sincronização mais segura com o celular: quando o celular e o computador gravam ao mesmo tempo, a mudança mais nova não se perde mais (a outra fica em conflitos). Ao abrir o app com a sessão do Google vencida, ele renova sozinho; se não der, segue com os seus dados e oferece reconectar.
+- No celular, o Hoje mostra quando foi a última sincronização, com "Sincronizar agora", e um aviso aparece acima da barra inferior quando a sincronização precisa de você.
+
 ## 1.1.0 (14/11/2026)
 - Visual novo, mais calmo e consistente, no estilo de apps de produtividade: fundo claro, menos cor, títulos em Literata e a interface em Inter. Tudo segue um sistema único de tamanhos de letra, alturas de botão, espaços e cantos.
 - Botões que dependem da internet ou da IA mostram que estão trabalhando ("Diagnosticando…", "Salvando…") e não aceitam clique duplo.

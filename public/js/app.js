@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '1.1.0';
+const APP_VERSAO = '1.2.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -51,6 +51,7 @@ const I = {
   foco:'<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
   play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="#fff" stroke="none"/></svg>',
   upload:'<svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"/></svg>',
+  pasta:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
   escrita:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></svg>',
   dialogos:'<svg viewBox="0 0 24 24"><path d="M3 5h12v8H8l-3 3v-3H3z"/><path d="M15 9h6v8h-2v3l-3-3h-4v-2"/></svg>',
   autor:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 8h5M16 12h5M18 16h3"/></svg>',
@@ -204,7 +205,7 @@ function toast(t,desfazer){const el=document.getElementById('toast');el.innerHTM
    ========================================================= */
 const CORES_DISC = ['#8A6D3B','#7A8B3C','#B8645A'];
 const SECOES = {
-  bib:{nome:'Biblioteca', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos']]},
+  bib:{nome:'Biblioteca', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos'],['organizar','Organizar']]},
   esc:{nome:'Escrita', tabs:[['escrita','Textos'],['dialogos','Diálogos']]},
   diss:{nome:'Dissertação', tabs:[['projeto','Revisão do projeto'],['orientacao','Orientação'],['argumentos','Argumentos']]},
   voce:{nome:'Você', tabs:[['autor','Overview do autor'],['memoria','Memória'],['ajustes','Ajustes']]},
@@ -339,6 +340,7 @@ function trilhaHTML(t){
     ${feitos.length?`<details class="concluidas"><summary>Ver ${feitos.length} concluída${feitos.length>1?'s':''}</summary><ol class="seq feitas">${feitos.map(i=>{const l=L(i);return `<li><div><div class="t">${esc(l.tit)}</div><div class="a">${citCurta(l)}</div></div>${pips(l.etapa)}<a class="btn fant acao" href="#fichamento/${i}">Rever fichamento</a></li>`}).join('')}</ol></details>`:''}
   </section>`;
 }
+V.organizar = () => modoReal() ? (window.rb&&window.rb.organizarUI ? window.rb.organizarUI.tela() : esqueleto('Organizar')) : `<div class="topo"><div><h1>Organizar</h1><p>Com os seus dados, aqui aparecem os DOIs encontrados para conferir e as obras repetidas.</p></div></div><div class="vazio-estado"><h2>Nada para organizar no exemplo</h2><p>Entre com o Google para importar PDFs ou a biblioteca do Zotero e organizar as suas obras.</p></div>`;
 V.trilhas = () => modoReal() ? (window.rb&&window.rb.trilhasUI ? window.rb.trilhasUI.tela() : esqueleto('Trilhas')) : `
   <div class="topo">
     <div><h1>Trilhas</h1><p>Filas de leitura com prazo. Cada leitura passa por pré-leitura, leitura, fichamento e conexão.</p></div>
@@ -1776,6 +1778,18 @@ function statusDriveHTML(){
   return linha('erro','Não deu para sincronizar. <a href="#ajustes/pasta">Ver detalhes</a>');
 }
 window.statusDriveHTML=statusDriveHTML;
+// Celular: o menu lateral (com o status) some; um aviso acima da barra inferior aparece quando a sincronização precisa de você.
+function statusMovelHTML(){
+  const rb=window.rb; if(!rb||!rb.sincronia) return '';
+  const e=rb.sincronia.estado();
+  const aviso=(cls,txt)=>`<div class="status-movel-caixa ${cls}">${txt}</div>`;
+  if(e.fase==='offline') return aviso('aviso','Sem internet. O que você fizer fica neste aparelho e vai para o Drive quando a internet voltar.');
+  if(e.fase==='desconectado') return aviso('aviso','A sessão do Google venceu. Suas mudanças estão guardadas neste aparelho. <button class="btn mini" data-google="entrar">Reconectar</button>');
+  if(e.fase==='erro') return aviso('erro','Não deu para sincronizar com o Drive. <button class="btn mini" data-google="sincronizar">Tentar de novo</button>');
+  if(e.conflitos) return aviso('info',`<a href="#conflitos">${e.conflitos===1?'1 conflito para revisar':`${e.conflitos} conflitos para revisar`}</a>`);
+  return '';
+}
+window.statusMovelHTML=statusMovelHTML;
 
 V.entrar = () => {
   const rb=window.rb; const erro=rb&&rb.google.erro;

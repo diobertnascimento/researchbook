@@ -115,12 +115,17 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI }) {
     }
     const nCart = window.rb?.cartoes?.paraHoje().length || 0;
     if (nCart) outros = [{ titulo: nCart === 1 ? 'Revisar 1 cartão' : `Revisar ${nCart} cartões`, detalhe: 'Leva poucos minutos', href: '#cartoes' }, ...outros].slice(0, 3);
+    const org = window.rb?.organizar?.contagem();
+    if (org && (org.propostas || org.repetidas)) {
+      const partes = [org.propostas ? (org.propostas === 1 ? '1 DOI para conferir' : `${org.propostas} DOIs para conferir`) : null, org.repetidas ? (org.repetidas === 1 ? '1 obra repetida' : `${org.repetidas} obras repetidas`) : null].filter(Boolean);
+      outros = [{ titulo: 'Organizar a biblioteca', detalhe: partes.join(', '), href: '#organizar' }, ...outros].slice(0, 3);
+    }
     const nMem = window.rb?.memoriaUI?.pendentes().length || 0;
     if (nMem) outros = [{ titulo: nMem === 1 ? 'Revisar 1 item para a memória' : `Revisar ${nMem} itens para a memória`, detalhe: 'A IA propôs a partir das suas conversas', href: '#memoria' }, ...outros].slice(0, 3);
     if (nConf) outros = [{ titulo: nConf === 1 ? 'Revisar 1 conflito de sincronização' : `Revisar ${nConf} conflitos de sincronização`, detalhe: 'O mesmo item mudou em dois aparelhos', href: '#conflitos' }, ...outros].slice(0, 3);
     const resumo = ontem(hoje);
     return `
-    <div class="topo"><div><h1>${titulData(hoje)}</h1>${resumo ? `<p>${resumo}</p>` : ''}</div></div>
+    <div class="topo"><div><h1>${titulData(hoje)}</h1><div class="so-celular status-hoje"><span id="status-hoje">${typeof window.statusDriveHTML === 'function' ? window.statusDriveHTML() : ''}</span><button class="btn fant mini" data-google="sincronizar">Sincronizar agora</button></div>${resumo ? `<p>${resumo}</p>` : ''}</div></div>
     <div class="hoje-grid ${outros.length ? '' : 'so-um'}">
       ${principalHTML(p)}
       ${

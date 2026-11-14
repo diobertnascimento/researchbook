@@ -8,6 +8,9 @@
 // - mudou só aqui: vai para o Drive; mudou só no Drive: vem para cá;
 // - mudou nos dois: fica a versão mais recente e a outra vai para "conflitos",
 //   para o Diobert decidir. Nada é descartado em silêncio.
+// - o Drive voltou a uma versão mais velha do que a que este aparelho enviou (dois aparelhos gravaram ao
+//   mesmo tempo): vale a daqui, que é reenviada. Sem isso, o celular e o computador abertos juntos
+//   podiam apagar a mudança um do outro.
 //
 // Custo: quando nada mudou, uma sincronização é uma única chamada (lista a pasta dados/).
 //
@@ -58,6 +61,7 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
     let paraAqui = [];
     const conflitos = [];
     let enviar = !remotoInfo;
+    let regressoes = 0;
 
     for (const id of new Set([...L.keys(), ...R.keys()])) {
       const l = L.get(id);
@@ -89,6 +93,15 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
           final.push(vence);
           if (vence === r) paraAqui.push(r);
           else enviar = true;
+        } else if (mudouLa && b && r.atualizadoEm < b) {
+          // O Drive voltou a uma versão mais antiga do que a que este aparelho já tinha enviado: outro aparelho
+          // gravou o arquivo ao mesmo tempo, a partir de uma cópia velha. Vale a versão daqui, que vai de novo.
+          // Se a versão velha veio de outro aparelho, ela fica guardada em "conflitos" (nada some em silêncio).
+          if (r.aparelho && r.aparelho !== aparelho)
+            conflitos.push({ id: `${c}:${id}:${r.atualizadoEm}`, colecao: c, itemId: id, versao: r, vencedora: l.atualizadoEm, origemDaPerdedora: 'Drive', em: new Date().toISOString() });
+          final.push(l);
+          enviar = true;
+          regressoes++;
         } else if (mudouLa) {
           final.push(r);
           paraAqui.push(r);
@@ -99,6 +112,7 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
       }
     }
 
+    if (regressoes) registrar('arq', 'sinc.regressao', { det: `${c}: ${regressoes} itens reenviados (o Drive tinha uma versão mais antiga)`, st: 'aviso' });
     const vencidas = final.filter((i) => marcaVencida(i));
     if (vencidas.length) {
       final = final.filter((i) => !marcaVencida(i));

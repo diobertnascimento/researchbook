@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+ xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ xmlns:z="http://www.zotero.org/namespaces/export#"
+ xmlns:dcterms="http://purl.org/dc/terms/"
+ xmlns:bib="http://purl.org/net/biblio#"
+ xmlns:foaf="http://xmlns.com/foaf/0.1/"
+ xmlns:link="http://purl.org/rss/1.0/modules/link/"
+ xmlns:dc="http://purl.org/dc/elements/1.1/"
+ xmlns:prism="http://prismstandard.org/namespaces/1.2/basic/">
+    <bib:Article rdf:about="https://exemplo.org/artigo-rdf">
+        <z:itemType>journalArticle</z:itemType>
+        <dcterms:isPartOf>
+            <bib:Journal>
+                <prism:volume>7</prism:volume>
+                <prism:number>2</prism:number>
+                <dc:title>Revista Fictícia de Logística</dc:title>
+            </bib:Journal>
+        </dcterms:isPartOf>
+        <bib:authors>
+            <rdf:Seq>
+                <rdf:li>
+                    <foaf:Person>
+                        <foaf:surname>Albuquerque</foaf:surname>
+                        <foaf:givenName>Marina</foaf:givenName>
+                    </foaf:Person>
+                </rdf:li>
+            </rdf:Seq>
+        </bib:authors>
+        <link:link rdf:resource="#item_201"/>
+        <dc:subject>logística reversa</dc:subject>
+        <dc:title>Rotas negociadas e adesão de catadores</dc:title>
+        <dc:date>2023-05</dc:date>
+        <bib:pages>45-60</bib:pages>
+        <dc:identifier>DOI 10.0000/exemplo.rdf</dc:identifier>
+    </bib:Article>
+    <z:Attachment rdf:about="#item_201">
+        <z:itemType>attachment</z:itemType>
+        <rdf:resource rdf:resource="files/201/Albuquerque - 2023 - Rotas negociadas.pdf"/>
+        <dc:title>Full Text PDF</dc:title>
+        <link:type>application/pdf</link:type>
+    </z:Attachment>
+    <z:Collection rdf:about="#collection_1">
+        <dc:title>Capítulo 2</dc:title>
+        <dcterms:hasPart rdf:resource="https://exemplo.org/artigo-rdf"/>
+    </z:Collection>
+</rdf:RDF>

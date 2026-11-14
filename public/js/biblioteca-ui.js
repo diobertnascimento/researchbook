@@ -5,6 +5,8 @@ import { referencia, referenciaTexto, autorCurto, citacao } from './abnt.js';
 import { buscarDOI, limparDOI } from './crossref.js';
 import { montarLeitor, lerInicio, FUNCOES } from './leitor-pdf.js';
 import { ETAPAS } from './progresso.js';
+import { compararObras } from './duplicatas.js';
+import { assinatura } from './biblioteca.js';
 import { ouvir } from './ui.js';
 
 /* global I, S, toast, fecharModal */
@@ -28,6 +30,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
   let rascunho = null; // ficha em edição no "Adicionar obra"
   let editando = null; // id da obra quando o modal corrige dados de uma obra existente
   let pdfEscolhido = null;
+  let confirmarRepetida = false;
 
   const redesenhar = () => typeof window.render === 'function' && window.render();
 
@@ -56,11 +59,12 @@ export function criarBibliotecaUI({ bib, registrar }) {
       <div><h1>Biblioteca</h1><p>${todas.length ? `${todas.length} ${todas.length === 1 ? 'obra' : 'obras'}. Abra uma obra para ler e grifar.` : 'Suas obras, com o PDF guardado no seu Drive.'}</p></div>
       <div class="acoes">
         ${todas.length ? `<label class="busca">${icone('busca')}<input id="bib-busca" type="search" placeholder="Buscar título, autor, tag" value="${esc(busca)}"></label>` : ''}
+        <button class="btn" data-org-importar>${icone('upload')}Importar</button>
         <button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar obra</button>
       </div>
     </div>`;
     if (!todas.length) {
-      return `${topo}<div class="bib-vazia"><h2>Sua biblioteca está vazia</h2><p>Adicione um artigo pelo DOI ou envie o PDF. O app busca os dados da obra, monta a referência em ABNT e guarda o PDF no seu Drive e neste aparelho.</p><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar a primeira obra</button></div>`;
+      return `${topo}<div class="bib-vazia"><h2>Sua biblioteca está vazia</h2><p>Adicione um artigo pelo DOI ou envie o PDF. O app busca os dados da obra, monta a referência em ABNT e guarda o PDF no seu Drive e neste aparelho.</p><div class="linha-acoes j-centro"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar a primeira obra</button><button class="btn" data-org-importar>${icone('upload')}Importar PDFs ou o Zotero</button></div></div>`;
     }
     return `${topo}<div class="tabela" role="table">
       <div class="linha-lv cab" role="row"><span>Obra</span><span>Etapa</span><span>Progresso</span></div>
@@ -160,6 +164,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
 
   function abrirAdicionar() {
     editando = null;
+    confirmarRepetida = false;
     rascunho = null;
     pdfEscolhido = null;
     const veu = document.getElementById('veu');
@@ -167,8 +172,9 @@ export function criarBibliotecaUI({ bib, registrar }) {
       <p>Comece pelo DOI ou pelo PDF. Os dados da obra aparecem para você conferir antes de salvar.</p>
       <div class="ad-origem">
         <div class="campo"><label for="ad-doi">DOI</label><div class="linha-doi"><input id="ad-doi" placeholder="10.1057/ejis.2011.54" autocomplete="off"><button class="btn" data-bib="buscar-doi" data-ocupado="Buscando…">Buscar</button></div></div>
-        <div class="campo"><label for="ad-pdf">PDF</label><input type="file" id="ad-pdf" accept="application/pdf,.pdf"></div>
+        <div class="campo"><label for="ad-pdf">PDF</label><input type="file" id="ad-pdf" accept="application/pdf,.pdf" multiple></div>
       </div>
+      <p class="meta">Vários PDFs ou a biblioteca do Zotero? <button class="lnk m-0" data-org-importar>Importar de uma vez</button></p>
       <button class="btn fant" data-bib="manual">Preencher à mão</button>
       <div id="ad-msg"></div>
       <div id="ad-ficha"></div>
@@ -241,6 +247,16 @@ export function criarBibliotecaUI({ bib, registrar }) {
       redesenhar();
       return;
     }
+    if (!confirmarRepetida) {
+      const sha256 = pdfEscolhido ? await assinatura(pdfEscolhido) : null;
+      const igual = bib.leituras().map((l) => ({ l, c: compararObras({ ...f, pdf: sha256 ? { sha256 } : null }, l) })).find((x) => x.c);
+      if (igual) {
+        confirmarRepetida = true;
+        mensagem(`${igual.c.tipo === 'identica' ? 'Esta obra já está' : 'Parece que esta obra já está'} na biblioteca (${igual.c.motivo}): “${igual.l.titulo}”. Para salvar mesmo assim, selecione Salvar de novo.`, 'erro');
+        return;
+      }
+    }
+    confirmarRepetida = false;
     const id = await bib.adicionar(f, pdfEscolhido);
     fecharModal();
     toast(pdfEscolhido ? 'Obra salva. O PDF vai para o seu Drive.' : 'Obra salva na biblioteca');
@@ -420,7 +436,11 @@ export function criarBibliotecaUI({ bib, registrar }) {
     }
   });
   document.addEventListener('change', async (e) => {
-    if (e.target.id === 'ad-pdf') aoEscolherPDF(e.target.files[0]);
+    if (e.target.id === 'ad-pdf') {
+      // Mais de um PDF: vai para Importar, que confere repetidas e liga tudo de uma vez.
+      if (e.target.files.length > 1) return window.rb?.organizarUI?.abrirImportar([...e.target.files]);
+      aoEscolherPDF(e.target.files[0]);
+    }
     if (e.target.dataset?.bibPdf) {
       const arquivo = e.target.files[0];
       if (!arquivo) return;

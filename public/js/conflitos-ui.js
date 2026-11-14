@@ -33,7 +33,7 @@ export const NOMES_COLECAO = {
 };
 
 // Campos internos: não interessam ao Diobert e mudariam em quase todo conflito.
-const IGNORAR = new Set(['id', 'aparelho', 'rects', 'leituraId', 'grifoId', 'argumentoId', 'pdf', 'disciplinaId', 'audio', 'transcricao', 'google', 'googleApagado']);
+const IGNORAR = new Set(['id', 'aparelho', 'rects', 'leituraId', 'grifoId', 'argumentoId', 'pdf', 'disciplinaId', 'audio', 'transcricao', 'google', 'googleApagado', 'doiBusca', 'naoRepetida']);
 const ROTULOS = {
   docente: 'Docente',
   semestre: 'Semestre',
@@ -60,6 +60,7 @@ const ROTULOS = {
   ano: 'Ano',
   tipo: 'Tipo',
   veiculo: 'Publicado em',
+  importadaDe: 'Importada de',
   volume: 'Volume',
   numero: 'Número',
   paginas: 'Páginas',

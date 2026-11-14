@@ -58,7 +58,7 @@ export const agendaLigada = () => localStorage.getItem('rb.agenda.ligada') === '
 export const definirAgenda = (ligar) => (ligar ? localStorage.setItem('rb.agenda.ligada', '1') : localStorage.removeItem('rb.agenda.ligada'));
 export const temPermissaoAgenda = () => !!sessao()?.escopos?.includes(ESCOPO_AGENDA);
 
-export function entrar({ registrar, comIA = acessoIA() === 'google', comAgenda = agendaLigada() }) {
+export function entrar({ registrar, comIA = acessoIA() === 'google', comAgenda = agendaLigada(), silencioso = false }) {
   if (!configurado()) return;
   const estado = crypto.randomUUID();
   gravar(sessionStorage, 'rb.oauth.estado', estado);
@@ -74,7 +74,11 @@ export function entrar({ registrar, comIA = acessoIA() === 'google', comAgenda =
   });
   const dica = conta();
   if (dica) p.set('login_hint', dica);
-  registrar('app', 'conta.entrar', { det: [comIA ? 'com permissão do Gemini' : '', comAgenda ? 'com permissão da agenda' : ''].filter(Boolean).join(', ') });
+  // Renovação silenciosa: o Google devolve um token novo sem mostrar nada, se a conta ainda estiver aberta
+  // neste navegador; se não estiver, volta com erro e o app segue com a cópia local e o botão "Reconectar".
+  if (silencioso) p.set('prompt', 'none');
+  gravar(sessionStorage, 'rb.oauth.silencioso', silencioso ? '1' : null);
+  registrar('app', silencioso ? 'conta.renovar' : 'conta.entrar', { det: [comIA ? 'com permissão do Gemini' : '', comAgenda ? 'com permissão da agenda' : ''].filter(Boolean).join(', ') });
   location.assign(`${AUTORIZAR}?${p}`);
 }
 
@@ -89,11 +93,18 @@ export async function concluirRetorno({ registrar }) {
   const esperado = ler(sessionStorage, 'rb.oauth.estado');
   gravar(sessionStorage, 'rb.oauth.estado', null);
   const p = new URLSearchParams(bruto);
+  const silencioso = ler(sessionStorage, 'rb.oauth.silencioso') === '1';
+  gravar(sessionStorage, 'rb.oauth.silencioso', null);
   const falha = (erro, mensagem, det = erro) => {
     registrar('erro', 'conta.login_falhou', { det, st: 'erro' });
     return { erro, mensagem };
   };
 
+  if (p.get('error') && silencioso) {
+    // A renovação silenciosa não deu (conta fechada neste navegador): sem mensagem de erro; o app oferece reconectar.
+    registrar('app', 'conta.renovar_falhou', { det: p.get('error'), st: 'aviso' });
+    return { silencioso: true };
+  }
   if (p.get('error')) {
     return p.get('error') === 'access_denied'
       ? falha('negado', 'O login foi cancelado. Para usar o researchbook, entre com a conta autorizada.')
@@ -137,6 +148,19 @@ export async function sair({ registrar, esquecerConta = false }) {
 }
 
 /** Marca a sessão como vencida (ex.: o Drive respondeu 401). */
+/**
+ * Ao abrir o app com a sessão vencida (comum no celular, que guarda o app aberto por horas), tenta renovar
+ * em silêncio, no máximo uma vez a cada 10 minutos. Devolve true se mandou para o Google.
+ */
+export function renovarEmSilencio({ registrar }) {
+  if (!configurado() || sessao() || !conta() || !navigator.onLine) return false;
+  const ultima = Number(ler(localStorage, 'rb.renovacao.em') || 0);
+  if (Date.now() - ultima < 10 * 60_000) return false;
+  gravar(localStorage, 'rb.renovacao.em', String(Date.now()));
+  entrar({ registrar, silencioso: true });
+  return true;
+}
+
 export function expirar() {
   gravar(localStorage, SESSAO, null);
 }
