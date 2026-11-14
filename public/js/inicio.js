@@ -23,6 +23,8 @@ import { criarMemoriaUI } from './memoria-ui.js';
 import { criarEscrita } from './escrita.js';
 import { criarCopiloto } from './copiloto.js';
 import { criarEscritaUI } from './escrita-ui.js';
+import { criarDisciplinas } from './disciplinas.js';
+import { criarDisciplinasUI } from './disciplinas-ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -166,14 +168,17 @@ async function iniciar() {
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
           // Dados de outro aparelho: recarrega e redesenha as telas que só leem (nunca no meio de um formulário).
           window.rb.historico?.enviarPendentes();
-          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar(), window.rb.historico?.carregar(), window.rb.memoriaUI?.carregar(), window.rb.escrita?.carregar()]).then(() => {
+          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar(), window.rb.historico?.carregar(), window.rb.memoriaUI?.carregar(), window.rb.escrita?.carregar(), window.rb.disciplinas?.carregar()]).then(() => {
             // Uma vez por sessão, depois da primeira sincronização: a IA procura o que lembrar nas conversas paradas.
             if (!procurouMemoria) {
               procurouMemoria = true;
               window.rb.memoriaUI?.procurarEmSegundoPlano();
             }
             const modalAberto = document.getElementById('veu')?.classList.contains('on');
-            if (!modalAberto && telaDeLeitura()) window.render?.();
+            const digitando = document.activeElement?.matches?.('input, textarea, select, [contenteditable]');
+            if (!modalAberto && !digitando && telaDeLeitura()) window.render?.();
+            if (!modalAberto) window.desenhaMenu?.(location.hash.slice(1) || 'painel');
+            window.rb.disciplinas?.retomarPendentes();
           });
         }
         atualizarStatus();
@@ -183,7 +188,7 @@ async function iniciar() {
     sinc.sincronizar();
   }
 
-  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos|#conflitos|#memoria)?(\/|$)/.test(location.hash || '');
+  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos|#conflitos|#memoria|#disciplinas|#disciplina|#aula|#escrita)?(\/|$)/.test(location.hash || '');
 
   async function salvar(colecao, item) {
     const novo = { ...item, atualizadoEm: new Date().toISOString(), aparelho: idAparelho };
@@ -274,15 +279,33 @@ async function iniciar() {
     window.rb.escrita = criarEscrita({ dados: window.rb.dados, bib: biblioteca, drive: driveSeConectado, registrar });
     window.rb.copiloto = criarCopiloto({ ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, historico, registrar });
     window.rb.escritaUI = criarEscritaUI({ escrita: window.rb.escrita, copiloto: window.rb.copiloto, ia: window.rb.ia, bib: biblioteca, drive: driveSeConectado, registrar });
+    window.rb.disciplinas = criarDisciplinas({
+      db,
+      dados: window.rb.dados,
+      ia: window.rb.ia,
+      bib: biblioteca,
+      historico,
+      drive: driveSeConectado,
+      registrar,
+      // Progresso da transcrição: redesenha a aula ou a disciplina aberta, nunca no meio da digitação.
+      aoMudar: () => {
+        const digitando = document.activeElement?.matches?.('input, textarea, select, [contenteditable]');
+        const modalAberto = document.getElementById('veu')?.classList.contains('on');
+        if (/^#(aula\/|disciplina\/|disciplinas)/.test(location.hash) && !digitando && !modalAberto) window.render?.();
+      },
+    });
+    window.rb.disciplinasUI = criarDisciplinasUI({ disc: window.rb.disciplinas, bib: biblioteca, escrita: window.rb.escrita, registrar });
+    document.addEventListener('rb:render', () => window.rb.disciplinasUI.montar());
     window.rb.hojeUI = criarHojeUI({ bib: biblioteca, fichUI: window.rb.fichUI, trilhasUI: window.rb.trilhasUI, argUI: window.rb.argUI, conflitosUI: window.rb.conflitosUI });
     await biblioteca.carregar();
-    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar()]);
+    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar(), window.rb.disciplinas.carregar()]);
+    window.rb.disciplinas.retomarPendentes();
   }
   ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });
 
   // Redesenha: a tela de entrada depende do login; Ajustes mostra dados desta base.
-  if ((retorno || /^#(ajustes|biblioteca|leitor|fichamento)/.test(location.hash) || telaDeLeitura() || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
+  if ((retorno || /^#(ajustes|biblioteca|leitor|fichamento|texto)/.test(location.hash) || telaDeLeitura() || document.body.classList.contains('bloqueado')) && typeof window.render === 'function') window.render();
   atualizarStatus();
   document.dispatchEvent(new CustomEvent('rb:pronto'));
 }

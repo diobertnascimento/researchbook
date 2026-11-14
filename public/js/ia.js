@@ -276,10 +276,13 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
    * confere as citações contra o acervo (se houver) e devolve { json, conferencia, ... }.
    * conferirCom(json) devolve o objeto no formato do tutor ({ resposta, fontes }) para a conferência.
    */
-  async function gerarTarefa({ tarefa: chave, acervo = null, blocos = [], pedido, lembrete, esquema, anteriores = [], conferirCom = null, sinal }) {
+  async function gerarTarefa({ tarefa: chave, acervo = null, blocos = [], pedido, lembrete, esquema, anteriores = [], conferirCom = null, sinal, partes = [], semAutor = false }) {
     const t = TAREFAS[chave];
-    const [base, tarefa, perfilTexto, memoria] = await Promise.all([instrucao('00-base.md'), instrucao(t.instrucao), perfil(), memoriaAprovada()]);
+    // semAutor: tarefas mecânicas (transcrição, plano de ensino) não precisam do perfil nem da memória.
+    const [base, tarefa, perfilTexto, memoria] = await Promise.all([instrucao('00-base.md'), instrucao(t.instrucao), semAutor ? '' : perfil(), semAutor ? [] : memoriaAprovada()]);
     const montado = montarPedido({ base, tarefa, perfil: perfilTexto, memoria, acervo, blocos, pedido, lembrete, anteriores });
+    // Arquivos (áudio, PDF) vão antes do texto do pedido, como recomenda a documentação do Gemini.
+    if (partes.length) montado.conteudos.at(-1).parts.unshift(...partes);
     const versao = `base ${base.versao}, ${t.instrucao.replace('.md', '')} ${tarefa.versao}`;
     const chamar = (conteudos) => gemini.gerar({ tarefa: chave, modelo: t.modelo, reserva: t.reserva, pensamento: t.pensamento, versaoInstrucao: versao, sistema: montado.sistema, conteudos, esquema, maxSaida: t.maxSaida, sinal });
     let r = await chamar(montado.conteudos);
@@ -309,5 +312,6 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
     };
   }
 
-  return { ajustes, perfil, salvarPerfil, testar, perguntarTutor, proporMemoria, gerarTarefa, credenciais };
+  const enviarArquivo = (blob, opcoes) => gemini.enviarArquivo(blob, opcoes);
+  return { ajustes, perfil, salvarPerfil, testar, perguntarTutor, proporMemoria, gerarTarefa, credenciais, enviarArquivo };
 }

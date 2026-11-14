@@ -638,6 +638,53 @@ body.foco .palco{padding-top:56px}
 @media (max-width:1000px){.esc-painel{position:static;max-height:none}}
 @media (max-width:640px){.esc-prep .linha2{grid-template-columns:1fr}.estr-ed li{grid-template-columns:26px 1fr}.estr-ed .x,.estr-ed .bts{grid-column:2}.folha-corpo{padding:20px 16px 28px}.esc-corpo p,.esc-corpo li,.esc-corpo blockquote,.esc-corpo h3{padding-left:10px}.esc-corpo{font-size:17px}.txt-card{grid-template-columns:1fr;gap:12px}.esc-nav .btn{flex:1 1 100%;justify-content:center}}
 
+
+/* ============ Disciplinas reais (e10) ============ */
+.linha3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px}
+.modal .linha2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.modal .pe{flex-wrap:wrap;align-items:center}
+.btn.perigo{color:#9A3B26}
+.cores-disc{border:0;padding:0;margin:0 0 16px;display:flex;gap:8px;flex-wrap:wrap}
+.cores-disc legend{font-size:var(--t-s);font-weight:500;margin-bottom:8px;padding:0}
+.cores-disc label{cursor:pointer}
+.cores-disc input{position:absolute;opacity:0;width:1px;height:1px}
+.cores-disc span{display:block;width:28px;height:28px;border-radius:50%;border:3px solid var(--papel);box-shadow:0 0 0 1px var(--linha-2)}
+.cores-disc input:checked + span{box-shadow:0 0 0 2px var(--tinta)}
+.cores-disc input:focus-visible + span{outline:3px solid var(--petroleo-claro);outline-offset:2px}
+.arq-disc{margin-top:22px;font-size:var(--t-s)}
+.arq-disc summary{cursor:pointer;color:var(--grafite)}
+.arq-disc ul{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:8px}
+.ev-acoes .btn{padding:4px 10px;font-size:var(--t-xs)}
+.lnk{background:none;border:0;padding:0;margin-left:8px;color:var(--grafite);text-decoration:underline;font-size:inherit;cursor:pointer}
+.notas-d li{display:flex;flex-direction:column}
+.st-a.erro{background:#F7E3D5;color:#8A4A22!important}
+.plano-l{list-style:none;padding:0;margin:0}
+.plano-l li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--linha);font-size:var(--t-s)}
+.chip.leve{background:transparent;border:1px solid var(--linha-2)}
+.plano-rev{max-height:min(56vh,520px);overflow:auto;margin:0 -6px 12px;padding:0 6px}
+.plano-rev h3{font-size:var(--t-m);font-weight:500;margin:16px 0 6px}
+.pl-it{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--linha);font-size:var(--t-s);cursor:pointer}
+.pl-it input{margin-top:3px}
+.pl-it b{font-weight:500;display:block}
+.pl-it small{color:var(--grafite-2)}
+.pl-it.off{opacity:.55;cursor:default}
+.audio-real{margin-bottom:18px}
+.audio-real audio{width:100%;max-width:720px;display:block}
+.transcr-real .seg-t{white-space:pre-wrap}
+.transcr-real mark{cursor:pointer}
+.sub-res{font-size:var(--t-m);font-weight:500;margin:22px 0 10px}
+.resumo-aula .ts,.combinados .ts,.conceitos-aula .ts{font-family:var(--ui);font-size:11.5px;border:1px solid var(--linha-2);background:var(--papel);border-radius:4px;padding:1px 6px;margin-right:8px;color:var(--grafite);vertical-align:2px;cursor:pointer}
+.combinados{list-style:none;padding:0;margin:0}
+.combinados li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--linha);font-size:var(--t-s)}
+.combinados li span{flex:1;min-width:180px}
+.conceitos-aula{margin:0;font-size:var(--t-s)}
+.conceitos-aula dt{font-weight:500;margin-top:10px}
+.conceitos-aula dd{margin:2px 0 0;color:var(--grafite);font-family:var(--leitura);font-size:16px;line-height:1.55}
+.grifos-aula .lc{background:none;border:0;border-top:1px solid var(--linha);width:100%;text-align:left;cursor:pointer;color:var(--tinta)}
+.grifos-aula .lc:first-child{border-top:0}
+.termos button.chip{cursor:pointer;border:0}
+@media (max-width:640px){.topo .acoes{flex-wrap:wrap;margin-left:0}.subnav a{white-space:nowrap}.linha3,.modal .linha2{grid-template-columns:1fr}.plano-l li{grid-template-columns:1fr}.doc.transcr{padding:20px 16px;font-size:16.5px}.modal{padding:22px 18px}.modal .pe .btn{flex:1 1 auto}}
+
 /* ============ Diálogos ============ */
 .dlg-grid{display:grid;grid-template-columns:260px 1fr 320px;gap:22px;align-items:start}
 .dlg-grid > *{min-width:0}
@@ -1245,7 +1292,7 @@ a.arg-item{text-decoration:none;color:inherit}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.15.0';
+const APP_VERSAO = '0.16.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -1441,18 +1488,18 @@ Object.assign(SECAO_DE,{leitor:'bib',fichamento:'bib',texto:'esc',cartoes:'hoje'
 function desenhaMenu(rota){
   const [base,arg]=rota.split('/');
   const sec=SECAO_DE[base];
-  const ativo=(k)=> (k==='painel'&&(base==='painel'||base==='cartoes'||!base)) || (k==='bib'&&sec==='bib') || (k==='esc'&&sec==='esc') || (k==='diss'&&sec==='diss') || (k==='disc'+arg&&(base==='disciplina'||base==='aula')) || (k==='todos'&&base==='disciplinas');
+  const ativo=(k)=> (k==='painel'&&(base==='painel'||base==='cartoes'||!base)) || (k==='bib'&&sec==='bib') || (k==='esc'&&sec==='esc') || (k==='diss'&&sec==='diss') || (arg!==undefined&&k==='disc'+decodeURIComponent(arg)&&(base==='disciplina'||base==='aula')) || (k==='todos'&&base==='disciplinas');
   const it=(k,href,ic,rot)=>`<li><a class="item ${ativo(k)?'ativo':''}" href="${href}" ${ativo(k)?'aria-current="page"':''}>${ic}<span class="rot">${rot}</span></a></li>`;
   const dot=c=>`<span class="proj-dot" style="background:${c}"></span>`;
   document.getElementById('menu').innerHTML =
     it('painel','#painel',I.painel,'Hoje') + it('bib','#biblioteca',I.biblioteca,'Biblioteca') + it('esc','#escrita',I.escrita,'Escrita') +
     `<li class="grupo"><span>Projetos</span><a href="#disciplinas">Ver todos</a></li>` +
     it('diss','#projeto',dot('#1F4A5A'),'Dissertação') +
-    DISCIPLINAS.map((d,i)=>it('disc'+i,'#disciplina/'+i,dot(CORES_DISC[i]),d)).join('');
+    (modoReal() ? (window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.menu().map(d=>it('disc'+d.id,'#disciplina/'+encodeURIComponent(d.id),dot(d.cor),esc(d.nome))).join('') : '') : DISCIPLINAS.map((d,i)=>it('disc'+i,'#disciplina/'+i,dot(CORES_DISC[i]),d)).join(''));
   const voceAtivo=sec==='voce';
   document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div id="status-drive">${statusDriveHTML()}</div><span class="selo-demo" style="margin-left:10px;font-size:11px">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
   const tb=[['painel','#painel',I.painel,'Hoje'],['bib','#biblioteca',I.biblioteca,'Biblioteca'],['esc','#escrita',I.escrita,'Escrita'],['todos','#disciplinas',I.disciplinas,'Projetos'],['voce','#autor',I.autor,'Você']];
-  document.getElementById('tabbar').innerHTML=tb.map(([k,h,ic,r])=>`<a href="${h}" class="${(k==='voce'?voceAtivo:k==='todos'?(base==='disciplinas'||base==='disciplina'||sec==='diss'):ativo(k))?'ativo':''}">${ic}${r}</a>`).join('');
+  document.getElementById('tabbar').innerHTML=tb.map(([k,h,ic,r])=>`<a href="${h}" class="${(k==='voce'?voceAtivo:k==='todos'?(base==='disciplinas'||base==='disciplina'||base==='aula'||sec==='diss'):ativo(k))?'ativo':''}">${ic}${r}</a>`).join('');
 }
 function secaoCab(base){
   const k=SECAO_DE[base]; const sec=SECOES[k]; if(!sec) return '';
@@ -2205,7 +2252,7 @@ const DISC_INFO = {
   'Pesquisa Operacional':{doc:'Docente não informado', sem:'2026/2', ent:['Trabalho em grupo, seção 4','20 nov.',true]},
   'Sustentabilidade e Organizações':{doc:'Docente não informado', sem:'2026/2', ent:['Artigo de até 7 páginas','28 nov.',false]},
 };
-V.disciplinas = () => `
+V.disciplinas = () => modoReal() ? (window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.lista() : '<div class="topo"><div><h1>Projetos</h1><p>Abrindo seus dados…</p></div></div>') : `
   <div class="topo">
     <div><h1>Projetos</h1><p>A dissertação e as disciplinas do semestre. Todas compartilham a mesma biblioteca.</p></div>
     <div class="acoes"><button class="btn prim" data-acao="nova-disciplina">${I.mais}Cadastrar disciplina</button></div>
@@ -2662,6 +2709,7 @@ function eventoLinha(e){
 }
 const DISC_ABAS = [['geral','Visão geral'],['aulas','Aulas'],['leituras','Leituras'],['textos','Textos'],['agenda','Agenda']];
 V.disciplina = (i) => {
+  if(modoReal()) return window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.tela(decodeURIComponent(i||'')) : '<div class="topo"><div><h1>Disciplina</h1><p>Abrindo seus dados…</p></div></div>';
   i=Number(i)||0; const d=DISCIPLINAS[i]; const inf=DISC_INFO[d]; const aba=S.discAba;
   const ids=LEITURAS.filter(l=>l.disc===d).map(l=>l.id);
   const tr=TRILHAS.find(t=>t.itens.some(x=>L(x).disc===d && L(x).proj!=='diss'));
@@ -2711,6 +2759,7 @@ const TRANSCR = `
 <p><button class="ts" data-acao="toast" data-msg="O áudio pula para 00:35:02">35:02</button><b>Professora</b> <mark class="dissert" data-id="t2">Então a adesão vira parte do que você avalia, não um detalhe. Você declara antes o que conta como funcionar e mede quanto o artefato é usado de fato.</mark> Vale ler também o trabalho de Sonnenberg e vom Brocke sobre avaliações ao longo do ciclo de construção.</p>
 `;
 V.aula = (i,k) => {
+  if(modoReal()) return window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.telaAula(decodeURIComponent(i||''),decodeURIComponent(k||'')) : '<div class="topo"><div><h1>Aula</h1><p>Abrindo seus dados…</p></div></div>';
   i=Number(i)||0; const d=DISCIPLINAS[i]; const a=(AULAS[i]||[]).find(x=>x.id===k)||AULAS[0][0];
   const onda=Array.from({length:90},(_,j)=>{const h=8+Math.abs(Math.sin(j*1.3)*12+Math.sin(j*.37)*9);return `<i class="${j<30?'tocado':''}" style="height:${Math.min(h,30)}px"></i>`}).join('');
   const ab=S.aulaAba;

@@ -49,10 +49,10 @@ Modelos conforme `docs/especificacao.md`. Temperatura: a padrão do modelo (a do
 | `dialogos.md` | Diálogos: Contraponto, Socrático, Alinhamento | conversa | médio | texto |
 | `fichamento.md` | Comentários do tutor em cada etapa do fichamento | conversa | médio | JSON |
 | `revisao-projeto.md` | Lê o PDF da dissertação e monta a trilha por prioridade | raciocínio (lote) | alto | JSON |
-| `transcricao.md` | Transcreve aulas e reuniões | áudio | — | texto |
-| `aula.md` | Resumo, conceitos, leituras citadas e perguntas da aula | conversa | baixo | JSON |
+| `transcricao.md` | Transcreve aulas por trechos de 15 minutos (v2.0.0) | rápido | baixo | JSON |
+| `aula.md` | Resumo, conceitos, leituras citadas e perguntas da aula, com trechos conferidos (v2.0.0) | rápido | médio | JSON |
 | `orientacao.md` | Resumo e combinados de cada encontro de orientação | conversa | médio | JSON |
-| `plano-de-ensino.md` | Lê a ementa e monta aulas, leituras e entregas | rápido | mínimo | JSON |
+| `plano-de-ensino.md` | Lê o plano de ensino e monta aulas, leituras e entregas para conferir (v2.0.0) | rápido | baixo | JSON |
 | `cartoes.md` | Cria cartões de revisão a partir de grifos e fichamentos | rápido (lote) | baixo | JSON |
 | `memoria.md` | Propõe o que vale lembrar da sessão | rápido | mínimo | JSON |
 | `revisao-final.md` | "Revisar e exportar" do texto | raciocínio | alto | JSON |

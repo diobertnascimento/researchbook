@@ -2,7 +2,7 @@
 // Sem sequência de dias, sem cobrança: quando não há registro de ontem, a tela simplesmente não fala de ontem.
 import { autorCurto } from './abnt.js';
 import { FUNCOES } from './leitor-pdf.js';
-import { proximoPasso, tambemHoje, diaLocal } from './progresso.js';
+import { proximoPasso, tambemHoje, diaLocal, diasAte, dataCurta } from './progresso.js';
 
 /* global I */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -98,6 +98,21 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI }) {
     let outros = p.leitura || p.vazio === 'tudo-fichado' ? tambemHoje({ ...dadosBase, principalId: p.leitura?.id }) : [];
     // Conflitos de sincronização entram primeiro: no celular, o rodapé com o status não aparece.
     const nConf = conflitosUI?.total() || 0;
+    // Agenda: o que é hoje e as entregas dos próximos 3 dias (sem alarme: vermelho só no último dia).
+    const disc = window.rb?.disciplinas;
+    if (disc) {
+      const hojeStr = diaLocal(hoje);
+      const ag = disc.proximos(null, 3, hoje).filter((e) => e.dia === hojeStr || e.tipo === 'entrega').slice(0, 2);
+      const nomes = { aula: 'Aula', entrega: 'Entrega', estudo: 'Sessão de estudo', orientacao: 'Orientação', outro: 'Agenda' };
+      outros = [
+        ...ag.map((e) => {
+          const n = diasAte(e.dia, hoje);
+          const quando = n === 0 ? 'Hoje' : n === 1 ? 'Amanhã' : `Em ${dataCurta(e.dia)}`;
+          return { titulo: `${nomes[e.tipo] || 'Agenda'}: ${e.titulo}`, detalhe: `${quando}${e.inicio ? `, ${e.tipo === 'entrega' ? 'até ' : ''}${e.inicio}` : ''}. ${disc.obter(e.disciplinaId)?.nome || ''}`, href: `#disciplina/${encodeURIComponent(e.disciplinaId)}`, urgente: e.tipo === 'entrega' && n === 0 };
+        }),
+        ...outros,
+      ].slice(0, 3);
+    }
     const nMem = window.rb?.memoriaUI?.pendentes().length || 0;
     if (nMem) outros = [{ titulo: nMem === 1 ? 'Revisar 1 item para a memória' : `Revisar ${nMem} itens para a memória`, detalhe: 'A IA propôs a partir das suas conversas', href: '#memoria' }, ...outros].slice(0, 3);
     if (nConf) outros = [{ titulo: nConf === 1 ? 'Revisar 1 conflito de sincronização' : `Revisar ${nConf} conflitos de sincronização`, detalhe: 'O mesmo item mudou em dois aparelhos', href: '#conflitos' }, ...outros].slice(0, 3);
