@@ -45,6 +45,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
         <li>Na tela de permissão OAuth do mesmo projeto, acrescente a permissão <code>generative-language.retriever</code>.</li>
         <li>No Google AI Studio, importe esse projeto, ligue a cobrança e defina um <b>limite de gasto mensal</b> (Spend &gt; Monthly spend cap).</li>
         <li>Cole aqui o ID do projeto e toque em "Conectar o Gemini". O Google vai pedir a permissão nova.</li>
+        <li>Se o projeto do Gemini for de outra conta Google: nessa conta, dê à conta do researchbook o papel <b>Consumidor do Service Usage</b> no projeto (IAM).</li>
       </ol></details>
     </div>`;
   }
@@ -84,7 +85,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
         <label class="ia-modo ${modo === 'google' ? 'on' : ''}"><input type="radio" name="ia-modo" value="google" ${modo === 'google' ? 'checked' : ''} data-ia-modo>
           <span><b>Pelo seu login Google</b> <span class="chip">mais seguro</span><small>Nenhuma chave guardada em lugar nenhum. O acesso vence junto com o login, em cerca de uma hora.</small></span></label>
         <label class="ia-modo ${modo === 'cofre' ? 'on' : ''}"><input type="radio" name="ia-modo" value="cofre" ${modo === 'cofre' ? 'checked' : ''} data-ia-modo>
-          <span><b>Chave num cofre no seu Drive</b><small>A chave fica cifrada com uma frase-senha sua. Use se o login Google não funcionar com o Gemini.</small></span></label>
+          <span><b>Chave num cofre no seu Drive</b><small>A chave fica cifrada com uma frase-senha sua. Use quando a chave for de outra conta Google, ou se o login não funcionar com o Gemini.</small></span></label>
       </div>
       ${modo === 'google' ? blocoGoogle() : modo === 'cofre' ? blocoCofre() : ''}
       ${modo ? `<div class="ia-linha"><button class="btn" data-ia-testar>Testar conexão</button></div>${t}` : ''}
