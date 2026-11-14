@@ -99,6 +99,13 @@ Base: 10 heurísticas e artigos da Nielsen Norman Group, princípios e barras la
 - **Registros de cada chamada:** tarefa, modelo, pensamento, versão das instruções, acesso, tentativa, tokens (entrada, cache, pensamento, saída), custo estimado, motivo de término, tempo. Nunca o texto.
 - **Tutor no leitor:** painel lateral (folha no celular), "Perguntar ao tutor" junto das cores ao selecionar, botões Explique, Contraponha e Conecte, uma conversa contínua por obra, "Nova conversa", avaliação Útil ou Não ajudou guardada no histórico.
 
+## Memória real (entrega 8, v0.14.0)
+- **Coleção `memoria`:** tipo (decisão, posição, preferência, fato), texto, situação (proposta, aprovada, descartada, substituída), evidência (as palavras do autor) e origem (conversa, mensagem, função, obra). Só itens aprovados entram nos pedidos à IA.
+- **Propostas** (`prompts/memoria.md`, modelo rápido, pensamento mínimo): a IA lê as mensagens novas de cada conversa e propõe até 3 itens. O app aceita só propostas cuja evidência está, palavra por palavra, numa fala do autor (perguntas livres; botões não contam) e que não repetem item existente, inclusive descartado. Recusas vão para os registros. A saída da IA fica no histórico (conversa da função "memoria").
+- **Quando:** uma vez por sessão, depois da primeira sincronização, nas conversas paradas há mais de 10 minutos com mensagens novas (até 3 por vez); ao começar uma nova conversa no tutor; e pelo botão "Procurar nas conversas". Cada conversa guarda até onde já foi lida (`memoriaAte`).
+- **Decisões do autor:** guardar, editar antes de guardar, descartar, editar e esquecer, todas com desfazer, e escrever um item à mão. Proposta que atualiza um item mostra o que substitui; ao guardar, o antigo fica como substituído.
+- **Exportação para outras IAs:** Markdown ou JSON, com escolha do que entra (perfil, memória guardada, argumentos, fichamentos, conversas dos últimos 30 dias); sempre com as regras de trabalho (não escrever do zero, só fontes fornecidas, ABNT, honestidade). Download e cópia em `memoria/exportar/` no Drive. Pasta completa (.zip) ficou de fora: o JSON já leva tudo.
+
 ## Escrita dentro do produto (confirmado em 13/11/2026)
 - O Diobert escreve dentro do researchbook. Os textos ficam salvos na pasta, com salvamento automático e versões anteriores, e são exportados para Word (.docx).
 - O editor precisa ter formatação de texto: negrito, itálico, sublinhado, títulos, listas, citação longa recuada, desfazer e refazer. O formato salvo precisa preservar o sublinhado (Markdown puro não preserva).
@@ -153,6 +160,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v0.14.0 (13/11/2026): entrega 8, memória real: propostas da IA conferidas contra as falas do autor, aprovação, esquecimento e exportação para outras IAs.
 - v0.13.0 (13/11/2026): entrega 7, tutor com Gemini no leitor, acesso pelo login Google ou cofre cifrado, conferência das citações, histórico no Drive, instruções reescritas a partir de benchmark.
 - v0.12.0 (13/11/2026): entrega 6, tela para revisar conflitos de sincronização.
 - v0.11.0 (13/11/2026): entrega 5, Hoje com o próximo passo real, trilhas com prazo e argumentos ligados aos fichamentos.
@@ -161,9 +169,8 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.8.2 (13/11/2026): revisão do celular: leitor com o texto na largura toda e Grifos e Tutor como folhas; campos com 16 px (sem zoom no iPhone); filtros dentro da tela; espaço para a barra inferior.
 
 ## Próximas etapas
-1. Memória: a IA propõe o que lembrar a partir do histórico; tela Memória real para aprovar, editar e esquecer; exportação para outras IAs.
-2. Gemini nas outras funções: comentários do tutor no fichamento, copilot de escrita, transcrição de aulas e da orientação, revisão do projeto; casos de comportamento rodando contra o modelo.
-3. Google Agenda pela API oficial.
-4. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
-5. Revisão espaçada.
-6. Disciplinas e projetos reais (hoje o menu lateral ainda mostra os projetos de exemplo).
+1. Gemini nas outras funções: comentários do tutor no fichamento, copilot de escrita, transcrição de aulas e da orientação, revisão do projeto; casos de comportamento rodando contra o modelo.
+2. Google Agenda pela API oficial.
+3. Editor de escrita com formatação, salvamento automático, versões, marcadores de autoria e exportação .docx.
+4. Revisão espaçada.
+5. Disciplinas e projetos reais (hoje o menu lateral ainda mostra os projetos de exemplo).

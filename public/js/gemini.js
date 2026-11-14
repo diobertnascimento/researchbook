@@ -20,6 +20,7 @@ export const PRECOS = {
 // Modelo e pensamento por tarefa (docs/especificacao.md). O Diobert pode trocar o modelo em Ajustes.
 export const TAREFAS = {
   tutor: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'tutor.md', maxSaida: 4096 },
+  memoria: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: 'memoria.md', maxSaida: 2048 },
   teste: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: null, maxSaida: 256 },
 };
 

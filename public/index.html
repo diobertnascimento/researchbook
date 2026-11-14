@@ -1149,6 +1149,21 @@ a.arg-item{text-decoration:none;color:inherit}
   .tutor-escrever textarea{font-size:16px}
   .col-tutor .tutor-corpo{min-height:120px}
 }
+
+/* Entrega 8: memória real */
+.sug-it small.ev{font-family:var(--leitura);font-style:italic}
+.sug-it small.subst{color:#9A3B26}
+.sug-it textarea,.mem-it textarea{width:100%;font:inherit;font-size:var(--t-s);border:1px solid var(--linha-2);border-radius:var(--r-s);padding:8px 10px;background:var(--papel)}
+.mem-vazio{margin:0 0 10px;font-size:var(--t-s);color:var(--grafite)}
+.mem-cat .mem-vazio{padding:0 20px 16px;margin:0}
+.mem-novo > .linha2,.mem-novo > .campo,.mem-novo > .btn{margin-left:20px;margin-right:20px}
+.mem-novo > .btn{margin-bottom:18px}
+.mem-procurar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.mem-aviso{font-size:var(--t-s);color:var(--grafite)}
+.mem-nota{font-size:var(--t-xs);color:var(--grafite);margin:8px 0 0}
+.mem-novo .linha2{margin-top:12px}
+.lado .prev{max-height:340px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+@media (max-width:1000px){.sug-it textarea,.mem-it textarea{font-size:16px}}
 </style>
 </head>
 <body>
@@ -1177,7 +1192,7 @@ a.arg-item{text-decoration:none;color:inherit}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.13.0';
+const APP_VERSAO = '0.14.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -2467,7 +2482,7 @@ const MEM_CAT = [
   ['Como você escreve',[['Linguagem simples; uma ideia por título','Você, nas preferências'],['Só afirmar o que a fonte sustenta','Você, nas preferências'],['ABNT sempre','Você, nas preferências']]],
   ['Regras para a IA',[['Tutor provoca e não escreve por você','Você, nas preferências'],['Copilot propõe versões do que você escreveu; nunca escreve do zero','Você, nas preferências'],['Citar só o acervo; sugerir fora dele e pedir que você busque','Você, nas preferências']]],
 ];
-V.memoria = () => `
+V.memoria = () => modoReal() ? (window.rb&&window.rb.memoriaUI ? window.rb.memoriaUI.tela() : '<div class="topo"><div><h1>Memória</h1><p>Abrindo seus dados…</p></div></div>') : `
   <div class="topo"><div><h1>Memória</h1><p>O que a IA sabe sobre você e seus projetos. Você aprova o que fica, apaga o que não serve e exporta para outras IAs.</p></div></div>
   <details class="ajuda-det" style="margin-bottom:18px"><summary>Como a memória funciona?</summary><div class="camadas" style="margin-top:12px">
     <div class="camada"><span class="n">1</span><b>Conversas</b><p>Registro completo de tudo que você trocou com o tutor, o copilot e nos diálogos.</p><div class="q">214 conversas, em memoria/conversas</div></div>

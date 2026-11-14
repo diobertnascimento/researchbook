@@ -2,7 +2,7 @@
 // contexto, chamada ao Gemini, conferência das citações e histórico. As telas só chamam daqui.
 import * as google from './google.js';
 import { criarGemini, ErroIA, TAREFAS } from './gemini.js';
-import { instrucao, juntarAcervo, montarPedido, conferir, sinaisDeForma } from './contexto.js';
+import { instrucao, juntarAcervo, montarPedido, conferir, sinaisDeForma, normalizar } from './contexto.js';
 import { autorCurto, citacao } from './abnt.js';
 import * as arm from './armazenamento.js';
 
@@ -40,6 +40,34 @@ export const ESQUEMA_TUTOR = {
     fora_do_acervo: { type: 'array', items: { type: 'string' }, description: 'Sugestões para o autor buscar; nunca citadas.' },
   },
   required: ['resposta', 'pergunta', 'fontes', 'fora_do_acervo'],
+};
+
+export const TIPOS_MEMORIA = [
+  ['decisao', 'Decisão', 'Decisões'],
+  ['posicao', 'Posição', 'Posições'],
+  ['preferencia', 'Preferência', 'Preferências de trabalho'],
+  ['fato', 'Fato do projeto', 'Fatos do projeto'],
+];
+
+export const ESQUEMA_MEMORIA = {
+  type: 'object',
+  properties: {
+    propostas: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          tipo: { type: 'string', enum: TIPOS_MEMORIA.map(([k]) => k) },
+          texto: { type: 'string', description: 'O item, nas palavras do autor, em uma frase.' },
+          evidencia: { type: 'string', description: 'Trecho copiado palavra por palavra de uma mensagem do autor, de até 30 palavras.' },
+          mensagem: { type: 'integer', description: 'Número da mensagem do autor de onde veio.' },
+          atualiza: { type: 'string', description: 'Id do item da memória que esta proposta substitui, ou texto vazio.' },
+        },
+        required: ['tipo', 'texto', 'evidencia', 'mensagem', 'atualiza'],
+      },
+    },
+  },
+  required: ['propostas'],
 };
 
 const PEDIDOS = {
@@ -189,5 +217,58 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
     return { ...msg, indice: lista.length - 1 };
   }
 
-  return { ajustes, perfil, salvarPerfil, testar, perguntarTutor, credenciais };
+  /* ---------- Memória: propostas a partir de uma conversa ---------- */
+  /**
+   * Lê as mensagens novas de uma conversa e devolve propostas conferidas: a evidência precisa estar,
+   * palavra por palavra, numa mensagem do autor. Também devolve as recusadas (para o registro).
+   */
+  async function proporMemoria({ conversa, mensagens, desde = 0, memoria }) {
+    const t = TAREFAS.memoria;
+    const [base, tarefa] = await Promise.all([instrucao('00-base.md'), instrucao(t.instrucao)]);
+    const linhas = mensagens.map((m, i) => {
+      if (m.de === 'autor') {
+        const p = m.pedido || {};
+        const fala = p.tipo === 'pergunta' ? p.texto : `(apertou o botão ${p.mostrado})`;
+        return `[${i}] autor${i < desde ? ' (já lida antes)' : ''}: ${fala}${p.trecho ? `\n    trecho escolhido: "${p.trecho.texto}"` : ''}`;
+      }
+      const r = m.resposta || {};
+      return `[${i}] ia: ${[r.resposta, r.pergunta].filter(Boolean).join(' ')}`;
+    });
+    const atuais = memoria.filter((m) => m.status === 'aprovada');
+    const blocos = [
+      (cod) => `<sessao funcao="${conversa.funcao}" titulo="${String(conversa.titulo || '').replace(/["<>]/g, '')}">\n<material-${cod}>\n${linhas.join('\n')}\n</material-${cod}>\n</sessao>`,
+      (cod) => `<memoria_atual>\n<material-${cod}>\n${atuais.length ? atuais.map((m) => `[${m.id}] (${m.tipo}) ${m.texto}`).join('\n') : '(vazia)'}\n</material-${cod}>\n</memoria_atual>`,
+    ];
+    const montado = montarPedido({
+      base,
+      tarefa,
+      perfil: '(não se aplica a esta tarefa)',
+      memoria: [],
+      acervo: null,
+      blocos,
+      pedido: `Proponha o que vale guardar das mensagens do autor a partir da mensagem [${desde}].`,
+      lembrete: 'Responda só com o objeto JSON. Só o que o autor disse ou decidiu, nas palavras dele, com a evidência copiada palavra por palavra de uma mensagem do autor. No máximo 3 propostas. Na dúvida, nenhuma.',
+    });
+    const r = await gemini.gerar({ tarefa: 'memoria', modelo: t.modelo, reserva: t.reserva, pensamento: t.pensamento, versaoInstrucao: `base ${base.versao}, memoria ${tarefa.versao}`, sistema: montado.sistema, conteudos: montado.conteudos, esquema: ESQUEMA_MEMORIA, maxSaida: t.maxSaida });
+
+    const falasDoAutor = mensagens.map((m, i) => (m.de === 'autor' && m.pedido?.tipo === 'pergunta' && i >= desde ? normalizar(m.pedido.texto) : null));
+    const ja = new Set(memoria.map((m) => normalizar(m.texto)));
+    const aceitas = [];
+    const recusadas = [];
+    for (const p of (r.json?.propostas || []).slice(0, 3)) {
+      const ev = normalizar(p.evidencia);
+      const i = falasDoAutor.findIndex((f) => f && ev && f.includes(ev));
+      if (i < 0) recusadas.push('evidência fora das falas do autor');
+      else if (!p.texto?.trim() || ja.has(normalizar(p.texto))) recusadas.push('repetida ou vazia');
+      else if (!TIPOS_MEMORIA.some(([k]) => k === p.tipo)) recusadas.push('tipo desconhecido');
+      else {
+        aceitas.push({ tipo: p.tipo, texto: p.texto.trim(), evidencia: p.evidencia.trim(), mensagem: i, atualiza: atuais.some((m) => m.id === p.atualiza) ? p.atualiza : null });
+        ja.add(normalizar(p.texto));
+      }
+    }
+    registrar('ia', 'memoria.propostas', { det: `${aceitas.length} aceitas, ${recusadas.length} recusadas${recusadas.length ? ` (${[...new Set(recusadas)].join('; ')})` : ''}`, st: recusadas.length ? 'aviso' : 'ok' });
+    return { aceitas, recusadas, bruto: r.json, modelo: r.modelo, uso: r.uso, custo: r.custo, instrucao: `base ${base.versao}, memoria ${tarefa.versao}` };
+  }
+
+  return { ajustes, perfil, salvarPerfil, testar, perguntarTutor, proporMemoria, credenciais };
 }
