@@ -178,7 +178,7 @@ test.describe('no computador', () => {
     await page.getByRole('button', { name: 'Guardar na memória' }).click();
     await expect(page.locator('#toast')).toContainText('Posição guardada na memória');
     const mem = await page.evaluate(async () => (await window.rb.dados.listar('memoria')).map((m) => [m.status, m.tipo, m.texto]));
-    expect(mem).toEqual([['aprovado', 'posicao', 'Quem valida é a utilidade decisional.']]);
+    expect(mem).toEqual([['aprovada', 'posicao', 'Quem valida é a utilidade decisional.']]);
 
     await page.getByRole('button', { name: 'Apagar diálogo' }).click();
     await expect(page.locator('.bib-vazia')).toBeVisible();

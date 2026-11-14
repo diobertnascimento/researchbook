@@ -1,7 +1,7 @@
 // Núcleo da IA no app: acesso (login Google ou cofre), perfil do autor, memória aprovada, montagem do
 // contexto, chamada ao Gemini, conferência das citações e histórico. As telas só chamam daqui.
 import * as google from './google.js';
-import { criarGemini, ErroIA, TAREFAS } from './gemini.js';
+import { criarGemini, ErroIA, tarefa as configDaTarefa } from './gemini.js';
 import { instrucao, juntarAcervo, montarPedido, conferir, sinaisDeForma, normalizar } from './contexto.js';
 import { autorCurto, citacao } from './abnt.js';
 import * as arm from './armazenamento.js';
@@ -138,7 +138,7 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
 
   /* ---------- Teste de conexão ---------- */
   async function testar() {
-    const t = TAREFAS.teste;
+    const t = configDaTarefa('teste');
     const r = await gemini.gerar({ tarefa: 'teste', modelo: t.modelo, reserva: t.reserva, pensamento: t.pensamento, maxSaida: t.maxSaida, conteudos: [{ role: 'user', parts: [{ text: 'Responda apenas: ok' }] }] });
     return { modelo: r.modelo, dur: r.dur };
   }
@@ -148,7 +148,7 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
     const leitura = bib.obter(leituraId);
     if (!leitura) throw new ErroIA('pedido', 'Esta obra não está mais na biblioteca.');
     if (tipo !== 'pergunta' && !trecho) throw new ErroIA('trecho', 'Selecione um trecho no texto primeiro.');
-    const t = TAREFAS.tutor;
+    const t = configDaTarefa('tutor');
     const [base, tarefa, perfilTexto, memoria] = await Promise.all([instrucao('00-base.md'), instrucao(t.instrucao), perfil(), memoriaAprovada()]);
 
     const outros = bib
@@ -223,7 +223,7 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
    * palavra por palavra, numa mensagem do autor. Também devolve as recusadas (para o registro).
    */
   async function proporMemoria({ conversa, mensagens, desde = 0, memoria }) {
-    const t = TAREFAS.memoria;
+    const t = configDaTarefa('memoria');
     const [base, tarefa] = await Promise.all([instrucao('00-base.md'), instrucao(t.instrucao)]);
     const linhas = mensagens.map((m, i) => {
       if (m.de === 'autor') {
@@ -277,7 +277,7 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
    * conferirCom(json) devolve o objeto no formato do tutor ({ resposta, fontes }) para a conferência.
    */
   async function gerarTarefa({ tarefa: chave, acervo = null, blocos = [], pedido, lembrete, esquema, anteriores = [], conferirCom = null, sinal, partes = [], semAutor = false }) {
-    const t = TAREFAS[chave];
+    const t = configDaTarefa(chave);
     // semAutor: tarefas mecânicas (transcrição, plano de ensino) não precisam do perfil nem da memória.
     const [base, tarefa, perfilTexto, memoria] = await Promise.all([instrucao('00-base.md'), instrucao(t.instrucao), semAutor ? '' : perfil(), semAutor ? [] : memoriaAprovada()]);
     const montado = montarPedido({ base, tarefa, perfil: perfilTexto, memoria, acervo, blocos, pedido, lembrete, anteriores });

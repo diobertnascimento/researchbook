@@ -2,6 +2,18 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.0.0 (14/11/2026)
+- Todas as telas usam os seus dados. Esta é a primeira versão completa do researchbook.
+- Busca (Ctrl+K ou o campo Buscar) com os seus dados: obras, grifos, fichamentos, textos, argumentos, trilhas, disciplinas, aulas, diálogos, orientação, cartões e memória, além das páginas. Todas as palavras digitadas precisam aparecer; grifos vêm depois dos outros resultados.
+- Ajustes > Modelos por tarefa: escolha o modelo e o nível de pensamento de cada tarefa da IA, com "Voltar ao padrão". As escolhas valem em todos os aparelhos.
+- Ajustes > Uso e custo: gasto do mês, projeção, chamadas, tokens e custo por dia e por tarefa, calculados a partir dos registros de cada chamada. Limite mensal com aviso em 80% e cotação do dólar para ver em reais.
+- Ajustes > Marca-textos: a descrição de cada cor fica guardada e aparece ao passar o mouse sobre a cor no leitor.
+- Ajustes > Pasta mostra onde cada coisa fica no seu Drive.
+- Segurança: todo o código saiu de dentro da página, e a política de segurança deixou de aceitar código embutido.
+- Limpeza: as marcas de itens apagados somem do Drive e dos aparelhos depois de 90 dias.
+- Correção: posições firmadas nos Diálogos e guardadas na memória agora entram nos pedidos à IA.
+- Correção: duas gravações seguidas no mesmo arquivo do Drive não criam mais arquivos duplicados.
+
 ## 0.19.0 (14/11/2026)
 - Cartões de revisão de verdade. "Criar cartões" a partir de uma obra grifada ou de uma aula (também pelo botão no resumo da aula): a IA propõe perguntas que pedem explicação, com a origem de cada uma, e você confere antes de guardar.
 - Revisão em sessões curtas: um cartão por vez, "Mostrar resposta" e quatro notas (De novo, Difícil, Bom, Fácil), cada uma mostrando quando o cartão volta. "De novo" traz o cartão de volta ainda na mesma sessão. Teclado: espaço vira, 1 a 4 dão a nota.

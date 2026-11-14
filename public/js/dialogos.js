@@ -145,7 +145,7 @@ export function criarDialogos({ dados, ia, bib, fichUI, argUI, historico, regist
     const d = obter(id);
     const p = d.posicoes.find((x) => x.id === posId);
     const agora = new Date().toISOString();
-    await dados.salvar('memoria', { id: `mem-${crypto.randomUUID().slice(0, 10)}`, tipo: 'posicao', texto: p.texto, evidencia: p.texto, status: 'aprovado', origem: { conversaId: d.conversaId, mensagem: p.mensagem, funcao: 'dialogo', titulo: d.tema.slice(0, 80) }, criadoEm: agora, aprovadoEm: agora });
+    await dados.salvar('memoria', { id: `mem-${crypto.randomUUID().slice(0, 10)}`, tipo: 'posicao', texto: p.texto, evidencia: p.texto, status: 'aprovada', origem: { conversaId: d.conversaId, mensagem: p.mensagem, funcao: 'dialogo', titulo: d.tema.slice(0, 80) }, criadoEm: agora, aprovadoEm: agora });
     await mudarPosicao(id, posId, { estado: 'guardada', memoria: true });
     await window.rb?.memoriaUI?.carregar();
     registrar('ui', 'dialogo.posicao_memoria');
