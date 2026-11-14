@@ -674,9 +674,9 @@ body.foco .palco{padding-top:56px}
 .transcr-real mark{cursor:pointer}
 .sub-res{font-size:var(--t-m);font-weight:500;margin:22px 0 10px}
 .resumo-aula .ts,.combinados .ts,.conceitos-aula .ts{font-family:var(--ui);font-size:11.5px;border:1px solid var(--linha-2);background:var(--papel);border-radius:4px;padding:1px 6px;margin-right:8px;color:var(--grafite);vertical-align:2px;cursor:pointer}
-.combinados{list-style:none;padding:0;margin:0}
-.combinados li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--linha);font-size:var(--t-s)}
-.combinados li span{flex:1;min-width:180px}
+.editor .combinados{gap:0}
+.editor .combinados li{gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--linha)}
+.editor .combinados li span{flex:1;min-width:180px}
 .conceitos-aula{margin:0;font-size:var(--t-s)}
 .conceitos-aula dt{font-weight:500;margin-top:10px}
 .conceitos-aula dd{margin:2px 0 0;color:var(--grafite);font-family:var(--leitura);font-size:16px;line-height:1.55}
@@ -684,6 +684,29 @@ body.foco .palco{padding-top:56px}
 .grifos-aula .lc:first-child{border-top:0}
 .termos button.chip{cursor:pointer;border:0}
 @media (max-width:640px){.topo .acoes{flex-wrap:wrap;margin-left:0}.subnav a{white-space:nowrap}.linha3,.modal .linha2{grid-template-columns:1fr}.plano-l li{grid-template-columns:1fr}.doc.transcr{padding:20px 16px;font-size:16.5px}.modal{padding:22px 18px}.modal .pe .btn{flex:1 1 auto}}
+
+
+/* ============ Dissertação e diálogos reais (e11) ============ */
+details.prio-grupo > summary > header{display:flex;align-items:center;gap:12px;padding:16px 20px;flex-wrap:wrap}
+details.prio-grupo > summary > header p{flex-basis:100%;order:3}
+.meu-reg{margin:0 0 14px;font-size:var(--t-s)}
+.meu-reg summary{cursor:pointer;color:var(--grafite)}
+.meu-reg p{margin:8px 0 0;max-width:68ch;line-height:1.55}
+.anteriores{list-style:none;padding:0;margin:0 0 12px}
+.anteriores li{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--linha);font-size:var(--t-s)}
+.anteriores small{display:block;color:var(--grafite-2);font-size:var(--t-xs)}
+.anteriores .btn{padding:4px 10px;font-size:var(--t-xs);flex:none}
+.pos.ok{opacity:.8}
+.pos .bts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pos .bts .btn{padding:4px 10px;font-size:var(--t-xs)}
+.conversa-card .msg .f{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.modos-dlg,.leit-dlg{border:0;padding:0;margin:0 0 16px}
+.modos-dlg legend,.leit-dlg legend{font-size:var(--t-s);font-weight:500;margin-bottom:8px;padding:0}
+.modos-dlg .check,.leit-dlg .check{display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;font-size:var(--t-s)}
+.modos-dlg b{font-weight:500}
+.leit-lista{max-height:220px;overflow:auto;border:1px solid var(--linha);border-radius:var(--r-s);padding:10px 12px;background:#fff}
+@media (max-width:1100px){.dlg-grid{grid-template-columns:1fr}.dlg-grid > div:first-child{display:flex;gap:8px;overflow-x:auto}.dlg-grid .dlg-item{min-width:220px;margin:0}}
+@media (max-width:640px){.ref-linha{grid-template-columns:1fr;gap:10px}.ori-grid{grid-template-columns:1fr}.conversa-card{min-height:0}.anteriores li{flex-wrap:wrap}}
 
 /* ============ Diálogos ============ */
 .dlg-grid{display:grid;grid-template-columns:260px 1fr 320px;gap:22px;align-items:start}
@@ -1292,7 +1315,7 @@ a.arg-item{text-decoration:none;color:inherit}
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '0.16.0';
+const APP_VERSAO = '0.17.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -2114,6 +2137,7 @@ const REFS_PROJ = [
 ];
 const prioBar = n => `<span class="prio" aria-label="Prioridade ${['','baixa','média','alta'][n]}">${[1,2,3].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
 V.projeto = () => {
+  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.projeto() : '<div class="topo"><div><h1>Revisão do projeto</h1><p>Abrindo seus dados…</p></div></div>';
   const ver=VERSOES.find(v=>v.v===S.versao);
   const grupos=[[3,'Alta','Sustentam decisões do texto e você ainda não domina.'],[2,'Média','Sustentam partes do texto, mas exigem pouco esforço.'],[1,'Baixa','Já lidas ou apenas de contexto. Ficam fora da trilha.']];
   const linha=r=>{
@@ -2190,6 +2214,7 @@ const ENCONTROS = [
     comb:[['Justificar o pragmatismo por escrito','Seção 3.2',true]]},
 ];
 V.orientacao = () => {
+  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.orientacao() : '<div class="topo"><div><h1>Orientação</h1><p>Abrindo seus dados…</p></div></div>';
   const abertos=ENCONTROS.flatMap(e=>e.comb.filter(c=>!c[2]).map(c=>[...c,e.data]));
   const tot=ENCONTROS.flatMap(e=>e.comb).length, feitos=tot-abertos.length;
   const onda=Array.from({length:64},(_,i)=>{const h=8+Math.abs(Math.sin(i*1.7)*14+Math.sin(i*.4)*8);return `<i class="${i<22?'tocado':''}" style="height:${Math.min(h,30)}px"></i>`}).join('');
@@ -2477,6 +2502,7 @@ const DIALOGOS = [
 ];
 const MODOS = {Contraponto:'A IA defende a posição contrária à sua', 'Socrático':'A IA só pergunta, até você chegar à sua posição', Alinhamento:'A IA compara sua visão com a dos autores lidos'};
 V.dialogos = () => {
+  if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.dialogos() : '<div class="topo"><div><h1>Diálogos</h1><p>Abrindo seus dados…</p></div></div>';
   const d=DIALOGOS.find(x=>x.id===S.dlg)||DIALOGOS[0];
   return `
   <div class="topo"><div><h1>Diálogos</h1><p>Conversas sobre as ideias das leituras: alinhar visões, testar contrapontos e firmar posições.</p></div>

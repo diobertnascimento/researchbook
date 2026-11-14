@@ -146,12 +146,15 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
   let disciplinas = [];
   let aulas = [];
   let eventos = [];
+  let encontros = []; // orientação: usa o mesmo motor de gravação e transcrição das aulas
+  let aoTranscreverEncontro = null;
   const transcricoes = new Map(); // aulaId -> segmentos (cache em memória)
   let fila = Promise.resolve();
   const emAndamento = new Set();
 
   async function carregar() {
-    [disciplinas, aulas, eventos] = await Promise.all([dados.listar('disciplinas'), dados.listar('aulas'), dados.listar('eventos')]);
+    [disciplinas, aulas, eventos, encontros] = await Promise.all([dados.listar('disciplinas'), dados.listar('aulas'), dados.listar('eventos'), dados.listar('encontros')]);
+    encontros.sort((a, b) => (b.data || '').localeCompare(a.data || '') || (b.criadoEm || '').localeCompare(a.criadoEm || ''));
     disciplinas.sort((a, b) => (a.criadoEm || '').localeCompare(b.criadoEm || ''));
     aulas.sort((a, b) => (b.data || '').localeCompare(a.data || '') || (b.numero || 0) - (a.numero || 0));
   }
@@ -285,15 +288,24 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     };
   }
   const pastaAula = (a) => `disciplinas/${a.disciplinaId}/aulas/${a.id}`;
+  // Gravações de aula e de orientação passam pelo mesmo caminho; o prefixo do id diz de onde é.
+  const ehEncontro = (id) => String(id).startsWith('enc-');
+  const item = (id) => (ehEncontro(id) ? encontros.find((e) => e.id === id) || null : aula(id));
+  const salvarItem = async (it) => {
+    const s2 = await dados.salvar(ehEncontro(it.id) ? 'encontros' : 'aulas', it);
+    await carregar();
+    return s2;
+  };
+  const pasta = (it) => (ehEncontro(it.id) ? `orientacao/${it.id}` : pastaAula(it));
 
   /** Guarda a gravação no aparelho e no Drive e começa a transcrição. */
   async function guardarAudio(aulaId, arquivo, { transcrever = true } = {}) {
-    const a = aula(aulaId);
+    const a = item(aulaId);
     const tipo = arquivo.type || 'audio/mpeg';
     const duracao = await duracaoDoAudio(arquivo);
     await arm.gravar(db, 'arquivos', { id: `aula-${aulaId}`, blob: arquivo, tipo, tamanho: arquivo.size, guardadoEm: new Date().toISOString() });
     const ext = (arquivo.name || '').split('.').pop() || 'audio';
-    await salvarAula({ ...a, audio: { nome: arquivo.name || `aula.${ext}`, tipo, tamanho: arquivo.size, duracao, pendente: true }, transcricao: transcrever ? { status: 'na_fila', feitos: 0, total: Math.max(1, Math.ceil((duracao || TRECHO_S) / TRECHO_S)), aparelho: dados.aparelho } : null });
+    await salvarItem({ ...a, audio: { nome: arquivo.name || `aula.${ext}`, tipo, tamanho: arquivo.size, duracao, pendente: true }, transcricao: transcrever ? { status: 'na_fila', feitos: 0, total: Math.max(1, Math.ceil((duracao || TRECHO_S) / TRECHO_S)), aparelho: dados.aparelho } : null });
     registrar('arq', 'aula.audio_guardado', { det: `${Math.round(arquivo.size / 1024 / 1024)} MB, ${duracao ? Math.round(duracao / 60) + ' min' : 'duração desconhecida'}` });
     enviarAudioAoDrive(aulaId);
     if (transcrever) iniciarTranscricao(aulaId);
@@ -301,15 +313,15 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
 
   async function enviarAudioAoDrive(aulaId) {
     const d = drive();
-    const a = aula(aulaId);
+    const a = item(aulaId);
     if (!d || !a?.audio?.pendente) return;
     const local = await arm.um(db, 'arquivos', `aula-${aulaId}`);
     if (!local) return;
     try {
       const ext = a.audio.nome.split('.').pop();
-      const r = await d.enviarArquivo(`${pastaAula(a)}/audio.${ext}`, local.blob, a.audio.tipo);
-      const atual = aula(aulaId);
-      await salvarAula({ ...atual, audio: { ...atual.audio, pendente: false, driveId: r.id } });
+      const r = await d.enviarArquivo(`${pasta(a)}/audio.${ext}`, local.blob, a.audio.tipo);
+      const atual = item(aulaId);
+      await salvarItem({ ...atual, audio: { ...atual.audio, pendente: false, driveId: r.id } });
     } catch (e) {
       registrar('erro', 'aula.audio_envio', { det: e.message, st: 'erro' });
     }
@@ -319,8 +331,8 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
   async function obterAudio(aulaId) {
     const local = await arm.um(db, 'arquivos', `aula-${aulaId}`);
     if (local) return { blob: local.blob };
-    const a = aula(aulaId);
-    if (!a?.audio) return { erro: 'Esta aula não tem gravação.' };
+    const a = item(aulaId);
+    if (!a?.audio) return { erro: 'Não há gravação.' };
     if (!a.audio.driveId) return { erro: 'A gravação foi enviada em outro aparelho e ainda não chegou ao Drive.' };
     const d = drive();
     if (!d) return { erro: 'Para ouvir a gravação neste aparelho, entre com o Google.' };
@@ -342,11 +354,11 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
       transcricoes.set(aulaId, segs);
       return segs;
     }
-    const a = aula(aulaId);
+    const a = item(aulaId);
     const d = drive();
     if (!a?.transcricao?.feitos || !d) return [];
     try {
-      const txt = await d.ler(`${pastaAula(a)}/transcricao.json`);
+      const txt = await d.ler(`${pasta(a)}/transcricao.json`);
       const segs = txt ? JSON.parse(txt).segmentos || [] : [];
       await guardarTranscricaoLocal(aulaId, segs);
       return segs;
@@ -363,9 +375,9 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     const d = drive();
     if (!d) return;
     try {
-      await d.gravar(`${pastaAula(a)}/transcricao.json`, JSON.stringify({ aula: a.id, disciplina: a.disciplinaId, segmentos: segs }, null, 1));
+      await d.gravar(`${pasta(a)}/transcricao.json`, JSON.stringify({ id: a.id, disciplina: a.disciplinaId || null, segmentos: segs }, null, 1));
       const legivel = segs.map((s) => `[${s.inicio}] ${s.falante}: ${s.texto}`).join('\n');
-      await d.gravar(`${pastaAula(a)}/transcricao.txt`, legivel, 'text/plain; charset=UTF-8');
+      await d.gravar(`${pasta(a)}/transcricao.txt`, legivel, 'text/plain; charset=UTF-8');
     } catch (e) {
       registrar('erro', 'aula.transcricao_drive', { det: e.message, st: 'aviso' });
     }
@@ -379,16 +391,17 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
   }
 
   async function atualizarTranscricao(aulaId, mudancas) {
-    const a = aula(aulaId);
-    const s = await salvarAula({ ...a, transcricao: { ...(a.transcricao || {}), ...mudancas } });
+    const a = item(aulaId);
+    const s = await salvarItem({ ...a, transcricao: { ...(a.transcricao || {}), ...mudancas } });
     aoMudar(aulaId);
     return s;
   }
 
   async function transcrever(aulaId) {
-    let a = aula(aulaId);
+    let a = item(aulaId);
     if (!a?.audio) return;
-    const disc = obter(a.disciplinaId);
+    const enc = ehEncontro(aulaId);
+    const disc = enc ? { nome: 'Dissertação (reunião de orientação)' } : obter(a.disciplinaId);
     const audio = await obterAudio(aulaId);
     if (audio.erro) return atualizarTranscricao(aulaId, { status: 'erro', erro: audio.erro });
     const inicio = performance.now();
@@ -418,20 +431,21 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
           tarefa: 'transcricao',
           semAutor: true,
           partes: [parte],
-          blocos: [(c) => `<aula>\n<material-${c}>\nDisciplina: ${disc?.nome || ''}\nTema previsto: ${a.tema || '(não informado)'}\n</material-${c}>\n</aula>`, `<trecho>\ninicio: ${relogio(de)}\nfim: ${relogio(ate)}\n</trecho>`],
+          blocos: [(c) => `<aula>\n<material-${c}>\n${enc ? 'Reunião de orientação de mestrado: "Docente" é quem orienta; o autor da pesquisa é "Participante 1".' : `Disciplina: ${disc?.nome || ''}`}\nTema previsto: ${a.tema || a.titulo || '(não informado)'}\n</material-${c}>\n</aula>`, `<trecho>\ninicio: ${relogio(de)}\nfim: ${relogio(ate)}\n</trecho>`],
           pedido: `Transcreva o áudio de ${relogio(de)} a ${relogio(ate)}. Parte ${i + 1} de ${total}.`,
           lembrete: 'Só o intervalo pedido, palavra por palavra, com o tempo desde o começo da gravação. Responda só com o objeto JSON.',
           esquema: ESQ_TRANSCRICAO,
         });
         segs = emendar(segs, r.json?.segmentos || [], de);
         await guardarTranscricaoLocal(aulaId, segs);
-        a = aula(aulaId);
+        a = item(aulaId);
         await atualizarTranscricao(aulaId, { feitos: i + 1, segmentos: segs.length });
         registrar('ia', 'aula.trecho_transcrito', { det: `parte ${i + 1} de ${total}, ${(r.json?.segmentos || []).length} falas` });
       }
-      await gravarTranscricaoDrive(aula(aulaId), segs);
+      await gravarTranscricaoDrive(item(aulaId), segs);
       await atualizarTranscricao(aulaId, { status: 'resumindo' });
-      await resumir(aulaId);
+      if (enc) await aoTranscreverEncontro?.(aulaId, segs);
+      else await resumir(aulaId);
       await atualizarTranscricao(aulaId, { status: 'pronta', arquivoIA: null });
       registrar('ia', 'aula.transcrita', { det: `${segs.length} falas, ${Math.round(dur / 60)} min de áudio`, dur: Math.round(performance.now() - inicio) });
     } catch (err) {
@@ -486,10 +500,10 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
   /** Continua, neste aparelho, as transcrições que pararam no meio. */
   async function retomarPendentes() {
     const eu = dados.aparelho;
-    for (const a of aulas.filter((x) => ['na_fila', 'enviando', 'transcrevendo', 'resumindo'].includes(x.transcricao?.status) && x.transcricao.aparelho === eu)) {
+    for (const a of [...aulas, ...encontros].filter((x) => ['na_fila', 'enviando', 'transcrevendo', 'resumindo'].includes(x.transcricao?.status) && x.transcricao.aparelho === eu)) {
       if (await arm.um(db, 'arquivos', `aula-${a.id}`)) iniciarTranscricao(a.id);
     }
-    for (const a of aulas.filter((x) => x.audio?.pendente)) enviarAudioAoDrive(a.id);
+    for (const a of [...aulas, ...encontros].filter((x) => x.audio?.pendente)) enviarAudioAoDrive(a.id);
   }
 
   async function grifar(aulaId, grifo) {
@@ -617,5 +631,10 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     aplicarPlano,
     religarLeiturasPlano,
     emAndamento: (id) => emAndamento.has(id),
+    // Orientação (a tela e a IA ficam em dissertacao.js).
+    encontros: () => encontros,
+    encontro: (id) => encontros.find((e) => e.id === id) || null,
+    salvarItem,
+    aoTranscreverEncontro: (fn) => (aoTranscreverEncontro = fn),
   };
 }

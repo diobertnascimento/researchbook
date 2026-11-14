@@ -25,6 +25,9 @@ import { criarCopiloto } from './copiloto.js';
 import { criarEscritaUI } from './escrita-ui.js';
 import { criarDisciplinas } from './disciplinas.js';
 import { criarDisciplinasUI } from './disciplinas-ui.js';
+import { criarDissertacao } from './dissertacao.js';
+import { criarDialogos } from './dialogos.js';
+import { criarDissertacaoUI } from './dissertacao-ui.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -168,7 +171,7 @@ async function iniciar() {
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
           // Dados de outro aparelho: recarrega e redesenha as telas que só leem (nunca no meio de um formulário).
           window.rb.historico?.enviarPendentes();
-          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar(), window.rb.historico?.carregar(), window.rb.memoriaUI?.carregar(), window.rb.escrita?.carregar(), window.rb.disciplinas?.carregar()]).then(() => {
+          Promise.all([window.rb.fichUI?.carregar(), window.rb.argUI?.carregar(), window.rb.trilhasUI?.carregar(), window.rb.conflitosUI?.carregar(), window.rb.historico?.carregar(), window.rb.memoriaUI?.carregar(), window.rb.escrita?.carregar(), window.rb.disciplinas?.carregar(), window.rb.dissertacao?.carregar(), window.rb.dialogos?.carregar()]).then(() => {
             // Uma vez por sessão, depois da primeira sincronização: a IA procura o que lembrar nas conversas paradas.
             if (!procurouMemoria) {
               procurouMemoria = true;
@@ -188,7 +191,7 @@ async function iniciar() {
     sinc.sincronizar();
   }
 
-  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos|#conflitos|#memoria|#disciplinas|#disciplina|#aula|#escrita)?(\/|$)/.test(location.hash || '');
+  const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos|#conflitos|#memoria|#disciplinas|#disciplina|#aula|#escrita|#projeto|#orientacao)?(\/|$)/.test(location.hash || '');
 
   async function salvar(colecao, item) {
     const novo = { ...item, atualizadoEm: new Date().toISOString(), aparelho: idAparelho };
@@ -291,14 +294,21 @@ async function iniciar() {
       aoMudar: () => {
         const digitando = document.activeElement?.matches?.('input, textarea, select, [contenteditable]');
         const modalAberto = document.getElementById('veu')?.classList.contains('on');
-        if (/^#(aula\/|disciplina\/|disciplinas)/.test(location.hash) && !digitando && !modalAberto) window.render?.();
+        if (/^#(aula\/|disciplina\/|disciplinas|orientacao)/.test(location.hash) && !digitando && !modalAberto) window.render?.();
       },
     });
     window.rb.disciplinasUI = criarDisciplinasUI({ disc: window.rb.disciplinas, bib: biblioteca, escrita: window.rb.escrita, registrar });
     document.addEventListener('rb:render', () => window.rb.disciplinasUI.montar());
+    const redesenharSe = (re) => () => {
+      const digitando = document.activeElement?.matches?.('input, textarea, select, [contenteditable]');
+      if (re.test(location.hash) && !digitando && !document.getElementById('veu')?.classList.contains('on')) window.render?.();
+    };
+    window.rb.dissertacao = criarDissertacao({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, historico, disc: window.rb.disciplinas, drive: driveSeConectado, registrar, aoMudar: redesenharSe(/^#orientacao/) });
+    window.rb.dialogos = criarDialogos({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, registrar });
+    window.rb.dissertacaoUI = criarDissertacaoUI({ diss: window.rb.dissertacao, dlg: window.rb.dialogos, disc: window.rb.disciplinas, discUI: window.rb.disciplinasUI, bib: biblioteca, registrar });
     window.rb.hojeUI = criarHojeUI({ bib: biblioteca, fichUI: window.rb.fichUI, trilhasUI: window.rb.trilhasUI, argUI: window.rb.argUI, conflitosUI: window.rb.conflitosUI });
     await biblioteca.carregar();
-    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar(), window.rb.disciplinas.carregar()]);
+    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar(), window.rb.disciplinas.carregar(), window.rb.dissertacao.carregar(), window.rb.dialogos.carregar()]);
     window.rb.disciplinas.retomarPendentes();
   }
   ligarDrive();

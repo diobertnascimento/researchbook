@@ -28,6 +28,7 @@ export const NOMES_COLECAO = {
   encontros: 'Encontro de orientação',
   memoria: 'Item da memória',
   conversas: 'Conversa',
+  revisoes: 'Revisão do projeto',
 };
 
 // Campos internos: não interessam ao Diobert e mudariam em quase todo conflito.
