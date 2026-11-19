@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.0.0 (19/11/2026)
+Visual novo, primeira parte: sistema visual e navegação.
+- Papel branco e cinzas neutros no lugar do fundo amarelado. Um azul só, o petróleo (#1D5A7A), para o que se pode tocar e para onde você está. A cor do conteúdo continua sendo a dos grifos.
+- Navegação no topo, com os itens no centro: Hoje, Ler, Escrever, Dissertação e Projetos. Os seus projetos aparecem ao passar o mouse em Projetos. Busca e Você (overview, memória e ajustes) ficam à direita, junto do estado da sincronização. O menu lateral saiu.
+- No celular, a barra de baixo tem só Hoje, Ler e Mais. Em Mais ficam Escrever, Dissertação, Projetos, Você e Ajustes.
+- Botões em pílula: o principal de cada tela é o azul; os outros são cinza ou texto. Títulos de tela maiores, em Literata.
+- Biblioteca passou a se chamar Ler e Escrita passou a se chamar Escrever. As telas por dentro ainda têm a organização antiga; elas mudam nas próximas entregas.
+
 ## 1.9.0 (19/11/2026)
 Primeira abertura num aparelho.
 - Ao entrar pela primeira vez num aparelho, a tela mostra "Abrindo os seus dados", com o andamento do que desce do Drive. Antes, enquanto a primeira sincronização rodava, as telas apareciam como se a biblioteca estivesse vazia.
