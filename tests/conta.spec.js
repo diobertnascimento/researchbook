@@ -86,6 +86,8 @@ test('apagar chega aos outros aparelhos', async ({ page, context }) => {
 test('mudança nos dois lados: fica a mais recente e a outra é guardada como conflito', async ({ page, context }) => {
   const g = await googleFalso(context);
   await entrar(page);
+  // A sincronização é ligada um instante depois de o app ficar pronto.
+  await expect.poll(() => fase(page)).toBe('ok');
   await page.evaluate(async () => {
     await window.rb.dados.salvar('argumentos', { id: 'a1', tese: 'versão inicial' });
     await window.rb.sincronia.sincronizar();

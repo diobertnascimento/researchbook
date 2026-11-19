@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '1.9.0';
+const APP_VERSAO = '2.0.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -205,28 +205,30 @@ function toast(t,desfazer){const el=document.getElementById('toast');el.innerHTM
    ========================================================= */
 const CORES_DISC = ['#8A6D3B','#7A8B3C','#B8645A'];
 const SECOES = {
-  bib:{nome:'Biblioteca', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos']]},
-  esc:{nome:'Escrita', tabs:[['escrita','Textos'],['dialogos','Diálogos']]},
+  bib:{nome:'Ler', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos']]},
+  esc:{nome:'Escrever', tabs:[['escrita','Textos'],['dialogos','Diálogos']]},
   diss:{nome:'Dissertação', tabs:[['projeto','Revisão do projeto'],['orientacao','Orientação'],['argumentos','Argumentos']]},
   voce:{nome:'Você', tabs:[['autor','Overview do autor'],['memoria','Memória'],['ajustes','Ajustes']]},
 };
 const SECAO_DE = {}; Object.entries(SECOES).forEach(([k,v])=>v.tabs.forEach(([r])=>SECAO_DE[r]=k));
 Object.assign(SECAO_DE,{leitor:'bib',fichamento:'bib',texto:'esc',cartoes:'hoje',organizar:'voce'});
 function desenhaMenu(rota){
-  const [base,arg]=rota.split('/');
+  const [base]=rota.split('/');
   const sec=SECAO_DE[base];
-  const ativo=(k)=> (k==='painel'&&(base==='painel'||base==='cartoes'||!base)) || (k==='bib'&&sec==='bib') || (k==='esc'&&sec==='esc') || (k==='diss'&&sec==='diss') || (arg!==undefined&&k==='disc'+decodeURIComponent(arg)&&(base==='disciplina'||base==='aula')) || (k==='todos'&&base==='disciplinas');
-  const it=(k,href,ic,rot)=>`<li><a class="item ${ativo(k)?'ativo':''}" href="${href}" ${ativo(k)?'aria-current="page"':''}>${ic}<span class="rot">${rot}</span></a></li>`;
-  const dot=c=>`<span class="proj-dot" style="background:${c}"></span>`;
+  const emProjeto=base==='disciplinas'||base==='disciplina'||base==='aula';
+  const ativo=(k)=> (k==='painel'&&(base==='painel'||base==='cartoes'||!base)) || (k==='bib'&&sec==='bib') || (k==='esc'&&sec==='esc') || (k==='diss'&&sec==='diss') || (k==='proj'&&emProjeto);
+  const it=(k,href,rot,sub='')=>`<li${sub?' class="tem-sub"':''}><a class="item ${ativo(k)?'ativo':''}" href="${href}" ${ativo(k)?'aria-current="page"':''}><span class="rot">${rot}</span></a>${sub}</li>`;
+  const projetos=modoReal() ? (window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.menu().map(d=>['#disciplina/'+encodeURIComponent(d.id),esc(d.nome)]) : []) : DISCIPLINAS.map((d,i)=>['#disciplina/'+i,d]);
+  const sub=`<ul class="sub" aria-label="Projetos">${projetos.map(([h,n])=>`<li><a href="${h}">${n}</a></li>`).join('')}<li><a href="#disciplinas">Ver todos</a></li></ul>`;
+  // Barra do topo, com os cinco lugares do app. Você (overview, memória e ajustes) fica no avatar.
   document.getElementById('menu').innerHTML =
-    it('painel','#painel',I.painel,'Hoje') + it('bib','#biblioteca',I.biblioteca,'Biblioteca') + it('esc','#escrita',I.escrita,'Escrita') +
-    `<li class="grupo"><span>Projetos</span><a href="#disciplinas">Ver todos</a></li>` +
-    it('diss','#projeto',dot('#1F4A5A'),'Dissertação') +
-    (modoReal() ? (window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.menu().map(d=>it('disc'+d.id,'#disciplina/'+encodeURIComponent(d.id),dot(d.cor),esc(d.nome))).join('') : '') : DISCIPLINAS.map((d,i)=>it('disc'+i,'#disciplina/'+i,dot(CORES_DISC[i]),d)).join(''));
+    it('painel','#painel','Hoje') + it('bib','#biblioteca','Ler') + it('esc','#escrita','Escrever') + it('diss','#projeto','Dissertação') + it('proj','#disciplinas','Projetos',sub);
   const voceAtivo=sec==='voce';
-  document.getElementById('voce').innerHTML=`<a class="item ${voceAtivo?'ativo':''}" href="#autor"><span class="av">V</span><span class="rot">Você<small>Memória e ajustes</small></span></a><div id="status-drive">${statusDriveHTML()}</div><span class="selo-versao">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
-  const tb=[['painel','#painel',I.painel,'Hoje'],['bib','#biblioteca',I.biblioteca,'Biblioteca'],['esc','#escrita',I.escrita,'Escrita'],['todos','#disciplinas',I.disciplinas,'Projetos'],['voce','#autor',I.autor,'Você']];
-  document.getElementById('tabbar').innerHTML=tb.map(([k,h,ic,r])=>`<a href="${h}" class="${(k==='voce'?voceAtivo:k==='todos'?(base==='disciplinas'||base==='disciplina'||base==='aula'||sec==='diss'):ativo(k))?'ativo':''}">${ic}${r}</a>`).join('');
+  document.getElementById('voce').innerHTML=`<div id="status-drive">${statusDriveHTML()}</div><button class="busca-k" data-acao="busca" aria-label="Buscar (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="rot">Buscar</span><kbd>Ctrl K</kbd></button><a class="item ${voceAtivo?'ativo':''}" href="#autor" title="Você: overview, memória e ajustes"><span class="av">V</span><span class="rot-voce">Você<small>Memória e ajustes</small></span></a><span class="selo-versao">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
+  // Celular: ler e o dia em primeiro lugar; o resto fica em Mais.
+  const maisAtivo=!ativo('painel')&&!ativo('bib');
+  const tb=[['#painel','Hoje',ativo('painel')],['#biblioteca','Ler',ativo('bib')],['#mais','Mais',maisAtivo]];
+  document.getElementById('tabbar').innerHTML=tb.map(([h,r,on])=>`<a href="${h}" class="${on?'ativo':''}" ${on?'aria-current="page"':''}>${r}</a>`).join('');
 }
 function secaoCab(base){
   const k=SECAO_DE[base]; const sec=SECOES[k]; if(!sec) return '';
@@ -750,6 +752,17 @@ function secAparelho(){
 
 // Ajustes em subpáginas (#ajustes/<seção>): uma seção por vez, com o índice sempre à vista.
 const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa'],['custo','Uso e custo'],['registros','Registros'],['aparelho','Este aparelho'],['seguranca','Cópias de segurança'],['sincronizacao','Sincronização'],['acervo','Acervo'],['agenda','Google Agenda'],['cores','Marca-textos'],['pasta','Conta e pasta']];
+// Mais (celular): os lugares que não são ler nem o dia, e o estado da sincronização.
+V.mais = () => `<div class="topo"><div><h1>Mais</h1></div></div>
+  <nav class="mais-lista" aria-label="Mais lugares do app">
+    <a href="#escrita">Escrever<small>Seus textos e diálogos</small></a>
+    <a href="#projeto">Dissertação<small>Projeto, orientação e argumentos</small></a>
+    <a href="#disciplinas">Projetos<small>Disciplinas e aulas</small></a>
+    <a href="#autor">Você<small>Overview do autor e memória</small></a>
+    <a href="#ajustes">Ajustes<small>Gemini, cópias de segurança, sincronização e acervo</small></a>
+  </nav>
+  <div id="status-mais">${statusDriveHTML()}</div>
+  <p class="meta mt-4">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</p>`;
 V.ajustes = (sec) => { if(sec==='acervo'){location.hash='#organizar';return ''} const atual=SECOES_AJ.some(([k])=>k===sec)?sec:'ia'; return `
   <div class="topo"><div><h1>Ajustes</h1><p>IA, custos, registros, agenda, cores e a pasta onde tudo fica.</p></div></div>
   <div class="aj-wrap">

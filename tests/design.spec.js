@@ -8,7 +8,8 @@ import { geminiFalso } from './gemini-falso.js';
 
 test.use({ serviceWorkers: 'block' });
 
-const TAMANHOS = [12, 13, 14, 16, 18, 22, 26, 30];
+// v2.0.0: o título de tela no computador subiu para 44 px (redesenho v3).
+const TAMANHOS = [12, 13, 14, 16, 18, 22, 26, 30, 44];
 
 async function entrarComDados(page, context) {
   await googleFalso(context);
@@ -62,7 +63,7 @@ async function medir(page) {
 test('todas as telas usam só a escala de tipos e alvos de pelo menos 24 × 24 px', async ({ page, context }, info) => {
   test.setTimeout(120_000);
   const ids = await entrarComDados(page, context);
-  const alturas = info.project.name === 'celular' ? [34, 40, 44] : [28, 34, 40];
+  const alturas = info.project.name === 'celular' ? [34, 40, 44] : [30, 38, 44];
   const problemas = [];
   for (const r of rotasDe(ids)) {
     await page.evaluate((h) => { location.hash = h; }, r);

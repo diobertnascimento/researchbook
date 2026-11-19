@@ -340,6 +340,7 @@ test.describe('no celular', () => {
     await enviarGravacao(page, id, 60);
     await expect(page.locator('.transcr-real p')).toHaveCount(3, { timeout: 15000 });
     expect(await sobra()).toBeLessThanOrEqual(0);
-    await expect(page.locator('#tabbar a.ativo')).toHaveText(/Projetos/);
+    // No celular, Projetos fica dentro de Mais (a barra tem só Hoje, Ler e Mais).
+    await expect(page.locator('#tabbar a.ativo')).toHaveText(/Mais/);
   });
 });
