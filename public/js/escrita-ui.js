@@ -35,9 +35,16 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   /* ---------- Lista ---------- */
   function lista() {
     const ts = escrita.todos();
-    const topo = `<div class="topo"><div><h1>Textos</h1><p>Artigos, resenhas e trabalhos de disciplina, com o Copilot e exportação para o Word.</p></div><div class="acoes"><button class="btn prim" data-esc-novo>${icone('mais')}Novo texto</button></div></div>`;
+    const topo = `<div class="topo"><div><h1>Textos</h1><p>Artigos, resenhas e trabalhos de disciplina, com o Copilot e exportação para o Word.</p></div><div class="acoes"><button class="btn" data-esc-novo>${icone('mais')}Novo texto</button></div></div>`;
     if (!ts.length) return `${topo}<div class="bib-vazia"><h2>Nenhum texto ainda</h2><p>Comece pelo enunciado da atividade. O Copilot entrevista você, confere o que o seu acervo sustenta e propõe uma estrutura. Ele não escreve do zero: propõe versões do que você escreveu.</p><button class="btn prim" data-esc-novo>${icone('mais')}Começar um texto</button></div>`;
-    return `${topo}<div class="txt-lista">${ts
+    // O texto mexido por último, em destaque: é por onde a escrita continua.
+    const ultimo = [...ts].sort((x, y) => (y.atualizadoEm || '').localeCompare(x.atualizadoEm || ''))[0];
+    const quando = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' }) : '');
+    const continuar = `<section class="proximo continue-escrevendo" aria-labelledby="ce-t"><div class="rot" id="ce-t">Continue escrevendo</div>
+      <h2 class="prox-tit">${esc(ultimo.titulo)}</h2>
+      <p class="prox-aut">${esc([ultimo.projeto, `${medirAutoria(ultimo).total} palavras`, ultimo.atualizadoEm ? `mexido em ${quando(ultimo.atualizadoEm)}` : ''].filter(Boolean).join(', '))}</p>
+      <div class="acao-l"><a class="btn prim" href="#texto/${encodeURIComponent(ultimo.id)}">Continuar o texto</a></div></section>`;
+    return `${topo}${continuar}<div class="txt-lista">${ts
       .map((t) => {
         const a = medirAutoria(t);
         const st = t.passo <= 3 ? `Preparando: ${PASSOS[t.passo].toLowerCase()}` : t.passo === 4 ? 'Escrevendo' : 'Em revisão';
@@ -222,14 +229,24 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     }`;
   }
 
+  // O Copilot e as versões ficam num painel fechado até serem chamados. A escolha é lembrada neste aparelho.
+  const PAINEL = 'rb.esc.painel';
+  function painelAberto() {
+    try {
+      return localStorage.getItem(PAINEL) === '1';
+    } catch {
+      return false;
+    }
+  }
+
   function editor(t) {
     const { i, s } = secaoAtual(t);
     const a = medirAutoria(t);
     const marcas = typeof S !== 'undefined' && S.marcas;
-    return `<a class="voltar" href="#escrita">${icone('voltar')}Textos</a>
-      <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.entrega ? `. Entrega em ${t.entrega.split('-').reverse().join('/')}` : ''} <span class="d-inline-flex p-0 salvo" id="esc-salvo"><i></i>${est.salvando || 'Salvo'}</span></p></div>
-        <div class="acoes"><button class="btn" data-esc-passo="0">Briefing</button><button class="btn prim" data-esc-passo="5">Revisar e exportar</button></div></div>
-      <div class="esc-grid real" data-texto="${esc(t.id)}">
+    return `${window.rb?.visaoUI?.barraSessao(t) || ''}<a class="voltar" href="#escrita">${icone('voltar')}Textos</a>
+      <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.entrega ? `. Entrega em ${t.entrega.split('-').reverse().join('/')}` : ''} <span class="d-inline-flex p-0 salvo" id="esc-salvo"><i></i>${est.salvando || 'Salvo'}</span> <button class="btn fant mini" data-esc-painel="versoes">Versões</button></p></div>
+        <div class="acoes"><button class="btn" data-esc-painel="copilot" aria-pressed="${painelAberto() && est.aba !== 'versoes'}">Copilot</button><button class="btn" data-esc-passo="0">Briefing</button><button class="btn prim" data-esc-passo="5">Revisar e exportar</button></div></div>
+      <div class="esc-grid real ${painelAberto() ? '' : 'sem-painel'}" data-texto="${esc(t.id)}">
         <aside class="lat-esc"><h4 class="t-meta forte m-0 mb-2">Seções</h4>
           <div class="secoes">${t.secoes.map((x, k) => `<button data-esc-secao="${k}" class="${k === i ? 'on' : ''}"><i class="${contarPalavras(blocos(x.html).map((b) => b.texto).join(' ')) ? 'feita' : ''}"></i>${esc(x.titulo)}</button>`).join('')}</div>
           <button class="mt-3 btn fant" data-esc-nova-secao>${icone('mais')}Seção</button>
@@ -239,9 +256,6 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
             <span id="esc-palavras">${a.total}${t.limite ? ` de ~${t.limite}` : ''} palavras</span>
             <span class="aut-mini" id="esc-aut">IA ${a.participacao}% ${barra(a, t.teto)}</span>
             <label><input type="checkbox" data-marcas ${marcas ? 'checked' : ''}>Marcadores de autoria</label>
-          </div>
-          <div class="ferramentas" role="toolbar" aria-label="Formatação">
-            ${[['bold', 'Negrito'], ['italic', 'Itálico'], ['underline', 'Sublinhado'], ['h3', 'Subtítulo'], ['lista', 'Lista'], ['blockquote', 'Citação longa'], ['undo', 'Desfazer'], ['redo', 'Refazer']].map(([c, n]) => `<button class="btn fant" data-esc-fmt="${c}" aria-label="${n}">${n}</button>`).join('')}
           </div>
           <div class="folha-corpo">
             <input class="esc-sec-tit" aria-label="Título da seção" data-esc-sec-titulo value="${esc(s.titulo)}">
@@ -254,7 +268,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
           ${est.aba === 'material' ? painelMaterial(t, s) : est.aba === 'versoes' ? painelVersoes(t) : painelCopilot(t, s)}
         </aside>
       </div>
-      <div class="mt-3">${legenda}</div>`;
+      <div class="mt-3 esc-legenda">${legenda}</div>`;
   }
 
   /* ---------- Revisar e exportar ---------- */
@@ -316,7 +330,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     if (!corpo) return null;
     // O navegador copia os atributos do parágrafo anterior ao criar um novo (Enter): o repetido vira um bloco seu.
     const vistos = new Set();
-    for (const b of corpo.querySelectorAll('p, h3, li, blockquote')) {
+    for (const b of corpo.querySelectorAll('p, h2, h3, li, blockquote, pre')) {
       if (!b.dataset.pid || vistos.has(b.dataset.pid)) {
         b.dataset.pid = novoId();
         b.dataset.autoria = 'autor';
@@ -376,7 +390,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   function blocoAlvo() {
     const sel = getSelection();
     const no = sel?.anchorNode ? (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement) : null;
-    const b = no?.closest?.('#esc-corpo p, #esc-corpo li, #esc-corpo blockquote, #esc-corpo h3');
+    const b = no?.closest?.('#esc-corpo p, #esc-corpo li, #esc-corpo blockquote, #esc-corpo h2, #esc-corpo h3, #esc-corpo pre');
     if (b) est.alvo = b.dataset.pid || (b.dataset.pid = novoId());
     return est.alvo ? document.querySelector(`#esc-corpo [data-pid="${est.alvo}"]`) : null;
   }
@@ -445,7 +459,11 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   }
 
   document.addEventListener('input', (e) => {
-    if (e.target.id === 'esc-corpo') return agendarSalvar();
+    if (e.target.id === 'esc-corpo') {
+      listaAoDigitar();
+      posicionarMais();
+      return agendarSalvar();
+    }
     const campo = e.target.dataset?.escCampo;
     if (campo) {
       if (!atual()) return;
@@ -485,8 +503,173 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   });
   document.addEventListener('mousedown', (e) => {
     // A barra de formatação não tira o cursor do texto.
-    if (e.target.closest('[data-esc-fmt]')) e.preventDefault();
+    if (e.target.closest('[data-esc-fmt],[data-esc-mais],[data-esc-inserir]')) e.preventDefault();
   });
+
+  ouvir('click', async (e) => {
+    const b = e.target.closest('[data-esc-painel]');
+    const t = b && atual();
+    if (!t) return;
+    const aba = b.dataset.escPainel;
+    const fechar = painelAberto() && (aba === 'versoes' ? est.aba === 'versoes' : est.aba !== 'versoes');
+    await salvarCorpo();
+    try {
+      localStorage.setItem(PAINEL, fechar ? '0' : '1');
+    } catch {
+      // Sem armazenamento local, o painel abre só nesta tela.
+    }
+    if (!fechar) {
+      est.aba = aba;
+      if (aba === 'versoes') await escrita.carregarVersoes(t.id);
+    }
+    window.render?.();
+  });
+
+  /* ---------- Formatação como no Medium: sem barra fixa ----------
+     Ao selecionar um trecho, aparece uma barra com negrito, itálico, link, título, subtítulo e citação.
+     Numa linha vazia, o "+" oferece separador e bloco de código. */
+  const flut = document.createElement('div');
+  flut.className = 'esc-flut';
+  flut.setAttribute('role', 'toolbar');
+  flut.setAttribute('aria-label', 'Formatar o trecho selecionado');
+  const BOTOES = [['bold', 'B', 'Negrito'], ['italic', 'i', 'Itálico'], ['link', 'Link', 'Link'], ['h2', 'T', 'Título'], ['h3', 't', 'Subtítulo'], ['blockquote', '“ ”', 'Citação']];
+  const botoesHTML = BOTOES.map(([c, r, n]) => `<button type="button" class="f-${c}" data-esc-fmt="${c}" aria-label="${n}" title="${n}">${r}</button>`).join('');
+  flut.innerHTML = botoesHTML;
+  const mais = document.createElement('div');
+  mais.className = 'esc-mais';
+  mais.innerHTML = '<button type="button" data-esc-mais aria-label="Inserir separador ou código" aria-expanded="false">+</button><span class="ops" hidden><button type="button" data-esc-inserir="hr">Separador</button><button type="button" data-esc-inserir="pre">Código</button></span>';
+  // As duas peças só existem na página enquanto o editor está aberto.
+  const garantir = () => flut.isConnected || document.body.append(flut, mais);
+  document.addEventListener('rb:render', () => {
+    if (!document.getElementById('esc-corpo')) {
+      flut.remove();
+      mais.remove();
+    }
+  });
+  let trechoGuardado = null;
+
+  const noCorpo = () => {
+    const sel = getSelection();
+    const corpo = document.getElementById('esc-corpo');
+    return corpo && sel.rangeCount && corpo.contains(sel.anchorNode) && corpo.contains(sel.focusNode) ? sel : null;
+  };
+  function posicionarFlutuante() {
+    if (flut.classList.contains('link')) return;
+    const sel = noCorpo();
+    if (!sel || sel.isCollapsed || !sel.toString().trim()) return flut.classList.remove('on');
+    garantir();
+    const r = sel.getRangeAt(0).getBoundingClientRect();
+    flut.classList.add('on');
+    const w = flut.offsetWidth;
+    flut.style.left = `${Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + scrollX}px`;
+    const acima = r.top + scrollY - flut.offsetHeight - 10;
+    flut.style.top = `${acima > scrollY + 8 ? acima : r.bottom + scrollY + 10}px`;
+    const bloco = blocoAlvo();
+    for (const b of flut.querySelectorAll('[data-esc-fmt]')) {
+      const c = b.dataset.escFmt;
+      const ligado = c === 'bold' || c === 'italic' ? document.queryCommandState(c) : c === 'link' ? !!sel.anchorNode.parentElement?.closest('a') : bloco?.tagName === c.toUpperCase();
+      b.setAttribute('aria-pressed', String(!!ligado));
+    }
+  }
+  function posicionarMais() {
+    const sel = noCorpo();
+    const bloco = sel && sel.isCollapsed ? blocoAlvo() : null;
+    const vazio = bloco && bloco.tagName === 'P' && !bloco.textContent.trim();
+    if (vazio) garantir();
+    mais.classList.toggle('on', !!vazio);
+    if (!vazio) {
+      mais.querySelector('.ops').hidden = true;
+      mais.querySelector('[data-esc-mais]').setAttribute('aria-expanded', 'false');
+      return;
+    }
+    const r = bloco.getBoundingClientRect();
+    mais.style.left = `${Math.max(4, r.left - 40) + scrollX}px`;
+    mais.style.top = `${r.top + scrollY + (r.height - 32) / 2}px`;
+  }
+  /** "- " ou "1. " no começo da linha vira lista, como no Medium. */
+  function listaAoDigitar() {
+    const sel = noCorpo();
+    const bloco = sel && sel.isCollapsed ? blocoAlvo() : null;
+    if (!bloco || bloco.tagName !== 'P') return;
+    const t = bloco.textContent.replace(/\u00a0/g, ' ');
+    if (t !== '- ' && t !== '* ' && t !== '1. ') return;
+    bloco.textContent = '';
+    const r = document.createRange();
+    r.selectNodeContents(bloco);
+    sel.removeAllRanges();
+    sel.addRange(r);
+    document.execCommand(t === '1. ' ? 'insertOrderedList' : 'insertUnorderedList');
+  }
+  /** Link: a barra vira um campo; Enter grava, Esc desiste. Num trecho que já é link, o botão tira o link. */
+  function abrirLink() {
+    const sel = noCorpo();
+    if (!sel) return;
+    if (sel.anchorNode.parentElement?.closest('a')) {
+      document.execCommand('unlink');
+      posicionarFlutuante();
+      return agendarSalvar();
+    }
+    trechoGuardado = sel.getRangeAt(0).cloneRange();
+    flut.classList.add('link');
+    flut.innerHTML = '<label class="sr" for="esc-link">Endereço do link</label><input id="esc-link" type="url" placeholder="Cole ou escreva o link e tecle Enter" autocomplete="off"><button type="button" data-esc-link-fechar aria-label="Desistir do link">Fechar</button>';
+    flut.querySelector('input').focus();
+  }
+  function fecharLink(url) {
+    flut.classList.remove('link');
+    flut.innerHTML = botoesHTML;
+    const sel = getSelection();
+    if (trechoGuardado) {
+      document.getElementById('esc-corpo')?.focus();
+      sel.removeAllRanges();
+      sel.addRange(trechoGuardado);
+    }
+    trechoGuardado = null;
+    if (url) {
+      const limpo = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+      document.execCommand('createLink', false, limpo);
+      agendarSalvar();
+    }
+    posicionarFlutuante();
+  }
+  flut.addEventListener('keydown', (e) => {
+    if (!e.target.matches('#esc-link')) return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      fecharLink(e.target.value.trim());
+    } else if (e.key === 'Escape') fecharLink(null);
+  });
+  flut.addEventListener('click', (e) => e.target.closest('[data-esc-link-fechar]') && fecharLink(null));
+  mais.addEventListener('click', (e) => {
+    const abrir = e.target.closest('[data-esc-mais]');
+    if (abrir) {
+      const ops = mais.querySelector('.ops');
+      ops.hidden = !ops.hidden;
+      return abrir.setAttribute('aria-expanded', String(!ops.hidden));
+    }
+    const ins = e.target.closest('[data-esc-inserir]');
+    if (!ins) return;
+    document.getElementById('esc-corpo')?.focus();
+    if (ins.dataset.escInserir === 'hr') document.execCommand('insertHTML', false, '<hr><p><br></p>');
+    else document.execCommand('formatBlock', false, 'pre');
+    posicionarMais();
+    agendarSalvar();
+  });
+  document.addEventListener('selectionchange', () => {
+    if (!document.getElementById('esc-corpo')) {
+      flut.classList.remove('on', 'link');
+      return mais.classList.remove('on');
+    }
+    posicionarFlutuante();
+    posicionarMais();
+  });
+  document.addEventListener('keydown', (e) => {
+    // Ctrl+K: link no trecho selecionado.
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && noCorpo() && !getSelection().isCollapsed) {
+      e.preventDefault();
+      e.stopPropagation();
+      abrirLink();
+    }
+  }, true);
   document.addEventListener('paste', (e) => {
     if (!e.target.closest?.('#esc-corpo')) return;
     // Cola só o texto: formatação de fora (Word, sites) não entra no texto.
@@ -605,9 +788,11 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
       corpo?.focus();
       const atualBloco = blocoAlvo();
       const c = d.escFmt;
-      if (c === 'h3' || c === 'blockquote') document.execCommand('formatBlock', false, atualBloco?.tagName === c.toUpperCase() ? 'p' : c);
+      if (c === 'link') return abrirLink();
+      if (c === 'h2' || c === 'h3' || c === 'blockquote') document.execCommand('formatBlock', false, atualBloco?.tagName === c.toUpperCase() ? 'p' : c);
       else if (c === 'lista') document.execCommand('insertUnorderedList');
       else document.execCommand(c);
+      posicionarFlutuante();
       return agendarSalvar();
     }
     if (d.escAba) {
@@ -772,5 +957,5 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     await guardar(tt, { entrevista: [...(tt.entrevista || []), { pergunta: r.json.pergunta, por_que: r.json.por_que, copilot: true, resposta: '' }] });
   }
 
-  return { lista, tela };
+  return { lista, tela, salvarAgora: () => salvarCorpo(), abrirSecao: (id, i) => (est.secao[id] = i), secaoAberta: (t) => secaoAtual(t).i };
 }

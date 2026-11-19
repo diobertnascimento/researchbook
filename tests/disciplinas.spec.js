@@ -68,7 +68,9 @@ test.describe('no computador', () => {
   test('cadastrar disciplina com plano de ensino: a IA lê, o autor confere, e agenda, leituras, trilha e menu ficam prontos', async ({ page, context }) => {
     const { gem, g } = await entrar(page, context);
     await page.goto('/#disciplinas');
-    await expect(page.locator('.disc').first()).toContainText('Dissertação');
+    // v2.4.0: a Dissertação tem lugar próprio no menu e saiu da lista de projetos.
+    await expect(page.locator('.topo h1')).toHaveText('Projetos');
+    await expect(page.locator('#vista')).not.toContainText('Dissertação');
     await page.getByRole('button', { name: 'Cadastrar a primeira disciplina' }).click();
     await page.getByLabel('Nome').fill('Avaliação de Artefatos');
     await page.getByLabel('Docente').fill('Docente de exemplo');
@@ -99,7 +101,7 @@ test.describe('no computador', () => {
     await expect(page.locator('#menu')).not.toContainText('Pesquisa Operacional');
     await expect(page.locator('.topo h1')).toContainText('Avaliação de Artefatos');
     await expect(page.locator('.topo p')).toContainText('Docente de exemplo, 2026/2, quinta, 19:00 às 21:00.');
-    await expect(page.locator('.topo p')).toContainText('Próxima entrega: Fichamento crítico');
+    await expect(page.locator('.prazos')).toContainText('Fichamento crítico');
 
     // Agenda: aulas semanais, a aula do plano e a entrega.
     await page.locator('[data-disc-aba="agenda"]').first().click();
@@ -118,9 +120,9 @@ test.describe('no computador', () => {
 
     // Lista de projetos com o cartão da disciplina.
     await page.goto('/#disciplinas');
-    const card = page.locator('.disc').filter({ hasText: 'Avaliação de Artefatos' });
-    await expect(card).toContainText('0 de 1 leitura concluída');
-    await expect(card.locator('.entrega')).toContainText('Fichamento crítico');
+    const card = page.locator('.proj-atencao, .proj-l').filter({ hasText: 'Avaliação de Artefatos' });
+    await expect(card).toContainText('1 obra');
+    await expect(card).toContainText('Fichamento crítico');
   });
 
   test('agenda: agendar, repetir, editar e apagar com desfazer; o que é hoje aparece no Hoje', async ({ page, context }) => {
@@ -266,7 +268,7 @@ test.describe('no computador', () => {
 
     // Anotação rápida, com apagar e desfazer.
     await page.getByLabel('Nova anotação').fill('Perguntar sobre o seminário.');
-    await page.getByRole('button', { name: 'Salvar', exact: true }).click();
+    await page.getByRole('button', { name: 'Anotar', exact: true }).click();
     await expect(page.locator('.notas-d')).toContainText('Perguntar sobre o seminário.');
 
     // Arquivar tira do menu e leva para Arquivadas.
@@ -274,7 +276,7 @@ test.describe('no computador', () => {
     await page.getByRole('button', { name: 'Arquivar' }).click();
     await expect(page.locator('#menu')).not.toContainText('Avaliação em Design');
     await page.goto('/#disciplinas');
-    await expect(page.locator('.arq-disc summary')).toHaveText('Arquivadas (1)');
+    await expect(page.locator('.arq-disc summary')).toHaveText('Projetos encerrados (1)');
 
     // Apagar leva as aulas; desfazer traz tudo de volta.
     await page.goto(`/#disciplina/${id}`);
@@ -290,7 +292,7 @@ test.describe('no computador', () => {
   test('erro de configuração do Gemini ao ler o plano leva aos Ajustes; a disciplina fica salva', async ({ page, context }) => {
     await entrar(page, context, { cenario: 'api-desligada' });
     await page.goto('/#disciplinas');
-    await page.getByRole('button', { name: 'Nova disciplina' }).first().click();
+    await page.getByRole('button', { name: 'Cadastrar a primeira disciplina' }).click();
     await page.getByLabel('Nome').fill('Teoria das Organizações');
     await page.getByLabel('Plano de ensino').setInputFiles({ name: 'plano.pdf', mimeType: 'application/pdf', buffer: PDF });
     await page.locator('.modal').getByRole('button', { name: 'Criar disciplina' }).click();
@@ -329,7 +331,7 @@ test.describe('no celular', () => {
     const id = await disciplinaPronta(page);
     const sobra = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     await page.goto('/#disciplinas');
-    await expect(page.locator('.disc')).toHaveCount(2);
+    await expect(page.locator('.proj-atencao, .proj-l')).toHaveCount(1);
     expect(await sobra()).toBeLessThanOrEqual(0);
     await page.goto(`/#disciplina/${id}`);
     await expect(page.locator('.topo h1')).toContainText('Avaliação de Artefatos');

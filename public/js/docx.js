@@ -86,6 +86,12 @@ function secaoParaXml(html) {
     const t = el.tagName;
     if (t === 'P') {
       if (el.textContent.trim()) saida.push(par(runs(trechos(el)), P_CORPO));
+    } else if (t === 'H2') {
+      saida.push(par(runs(trechos(el, { b: true }), { tamanho: 28 }), `<w:keepNext/><w:spacing w:before="360" w:after="120" w:line="360" w:lineRule="auto"/>`));
+    } else if (t === 'PRE') {
+      for (const linha of el.textContent.split('\n')) saida.push(par(`<w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/><w:sz w:val="20"/></w:rPr><w:t xml:space="preserve">${xml(linha)}</w:t></w:r>`, `<w:spacing w:line="240" w:lineRule="auto" w:after="0"/>`));
+    } else if (t === 'HR') {
+      saida.push(par('<w:r><w:t>* * *</w:t></w:r>', `<w:spacing w:before="240" w:after="240"/><w:jc w:val="center"/>`));
     } else if (t === 'H3') {
       saida.push(par(runs(trechos(el, { b: true })), `<w:keepNext/><w:spacing w:before="240" w:after="120" w:line="360" w:lineRule="auto"/>`));
     } else if (t === 'BLOCKQUOTE') {

@@ -2,6 +2,40 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.5.0 (19/11/2026)
+Dissertação: sessões de escrita.
+- A Dissertação abre na Visão: a sua tese em uma frase (gravada sozinha), a sessão de hoje, o plano da semana, os capítulos e os combinados em aberto com a orientação.
+- Sessão de escrita: "Escrever por 25 minutos" abre o capítulo só com o texto, um relógio discreto e o botão de encerrar. Ao encerrar, o app mostra os minutos, as palavras e a frase onde você parou; a próxima sessão começa naquela seção.
+- Plano da semana: 3 sessões de 25 minutos por padrão, e você muda quando quiser. Não há sequência de dias: uma semana sem sessão não apaga nada.
+- Capítulos: são textos do Escrever guardados no projeto Dissertação. Capítulo novo abre direto no editor. A lista mostra o que já tem texto, sem meta de palavras.
+- Nada disso usa IA: a tela não sugere o que escrever.
+- Sessão com menos de um minuto e sem texto novo não é registrada. Sessão esquecida aberta por mais de 3 horas é largada sem registro; o texto continua gravado.
+- "Revisão do projeto" passou a se chamar "Projeto" no menu da Dissertação. O conteúdo dessa página ainda é o anterior.
+- Ainda não entrou: Mapa em matriz, Jornada do mestrado, o parecer do projeto por partes e o botão "Pedir" durante a sessão.
+
+## 2.4.0 (19/11/2026)
+Projetos.
+- A lista de projetos destaca um só: o que tem aula ou compromisso hoje ou, sem isso, o prazo mais próximo dentro de 7 dias. Os outros ficam numa lista, cada um com o que vem a seguir. A Dissertação saiu desta lista, porque tem lugar próprio no menu.
+- Dentro do projeto, um menu flutuante à esquerda com cinco seções: Início, Artigos, Linha do tempo, Estúdio e Aprendizado. Os nomes aparecem ao passar o mouse. No celular, a barra de baixo vira esse menu enquanto você está no projeto.
+- Início: o próximo compromisso num painel, os prazos com o dia em destaque, as últimas aulas e as anotações rápidas.
+- Linha do tempo: o que vem a seguir e, embaixo, o que já aconteceu (aulas, entregas, obras adicionadas, fichamentos concluídos, textos começados), mês a mês.
+- Estúdio: tudo o que faz parte do projeto. O que você escreveu (textos e notas) aparece com ícone preto e título com serifa; o que veio de fora (gravações, plano de ensino, links), com ícone de contorno. Dá para filtrar entre os dois.
+- Novo no Estúdio: notas e links. A nota é gravada sozinha enquanto você escreve, sincroniza entre os aparelhos e, apagada, fica na lixeira até você esvaziar. Do link fica só o endereço (http ou https).
+- Aprendizado: obras por etapa, grifos por função e cartões firmes, em revisão e difíceis do projeto. É contado pelo app, sem IA.
+- "Arquivadas" passou a se chamar "Projetos encerrados".
+- Ainda não entrou no Estúdio: foto com leitura do texto e envio de outros arquivos.
+
+## 2.3.0 (19/11/2026)
+Escrever.
+- A barra fixa de formatação saiu. Ao selecionar um trecho aparece uma barra pequena sobre ele: negrito, itálico, link, título, subtítulo e citação. O link abre um campo na própria barra (Ctrl+K também abre); endereço sem "https://" é completado.
+- Numa linha vazia aparece um "+" à esquerda, para separador e bloco de código.
+- Lista ao digitar: "- " ou "* " no começo da linha vira lista com marcadores, e "1. " vira lista numerada.
+- O texto agora aceita título de seção dentro da seção, bloco de código, separador e link (só http e https). Os quatro saem no Word.
+- Copilot fechado até ser chamado: o painel da direita só abre pelo botão Copilot, e "Versões" fica ao lado do "Salvo". O app lembra, em cada aparelho, se você deixou o painel aberto.
+- No editor, a barra do app sai: ficam o voltar e os comandos do texto.
+- O Escrever mostra "Continue escrevendo" no topo, com o texto mexido por último.
+- Ainda não entrou: inserir imagem pelo "+".
+
 ## 2.2.0 (19/11/2026)
 Ler e leitor.
 - Modo leitura: o artigo só com o texto e as figuras, numa coluna estreita em Literata, com a marca de cada página. No celular é o padrão; no computador o padrão continua sendo o PDF. A troca fica no topo do leitor e é lembrada em cada aparelho.

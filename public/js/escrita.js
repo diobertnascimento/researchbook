@@ -8,12 +8,13 @@
 // (palavras de coautoria + palavras da IA) / total, e aparece fora do texto exportado.
 import { autorCurto, referenciaTexto } from './abnt.js';
 
-const BLOCOS = new Set(['P', 'H3', 'LI', 'BLOCKQUOTE']);
-const PERMITIDAS = { P: [], H3: [], UL: [], OL: [], LI: [], BLOCKQUOTE: [], B: [], STRONG: [], I: [], EM: [], U: [], BR: [], SPAN: ['data-obra', 'data-pag'] };
+const BLOCOS = new Set(['P', 'H2', 'H3', 'LI', 'BLOCKQUOTE', 'PRE']);
+// v2.3.0: título (H2), código (PRE), separador (HR) e link (A, só com endereço http ou https).
+const PERMITIDAS = { P: [], H2: [], H3: [], UL: [], OL: [], LI: [], BLOCKQUOTE: [], PRE: [], HR: [], B: [], STRONG: [], I: [], EM: [], U: [], BR: [], A: ['href'], SPAN: ['data-obra', 'data-pag'] };
 const ATRIBUTOS_BLOCO = ['data-pid', 'data-autoria', 'data-ia'];
 export const AUTORIAS = { autor: 'Seu', coautoria: 'Coautoria: versão do Copilot editada por você', ia: 'IA' };
 
-/** Limpa o HTML do editor: só as marcações de texto permitidas, sem scripts, estilos ou links. */
+/** Limpa o HTML do editor: só as marcações de texto permitidas, sem scripts nem estilos; link só para http e https. */
 export function limpar(html) {
   const doc = new DOMParser().parseFromString(`<div>${html || ''}</div>`, 'text/html');
   const raiz = doc.body.firstChild;
@@ -43,6 +44,11 @@ export function limpar(html) {
         const ok = PERMITIDAS[tag].includes(at.name) || (BLOCOS.has(tag) && ATRIBUTOS_BLOCO.includes(at.name)) || (tag === 'SPAN' && at.name === 'class' && at.value === 'cit');
         if (!ok) filho.removeAttribute(at.name);
       }
+      if (tag === 'A' && !/^https?:\/\//i.test(filho.getAttribute('href') || '')) {
+        andar(filho);
+        filho.replaceWith(...filho.childNodes);
+        continue;
+      }
       if (tag === 'SPAN' && !filho.classList.contains('cit')) {
         andar(filho);
         filho.replaceWith(...filho.childNodes);
@@ -58,7 +64,7 @@ export function limpar(html) {
       const p = doc.createElement('p');
       filho.replaceWith(p);
       p.appendChild(filho);
-    } else if (filho.nodeType === 1 && ['B', 'STRONG', 'I', 'EM', 'U', 'SPAN', 'BR'].includes(filho.tagName)) {
+    } else if (filho.nodeType === 1 && ['B', 'STRONG', 'I', 'EM', 'U', 'SPAN', 'BR', 'A'].includes(filho.tagName)) {
       const p = doc.createElement('p');
       filho.replaceWith(p);
       p.appendChild(filho);
@@ -73,7 +79,7 @@ export const contarPalavras = (t) => palavrasDe(t).length;
 /** Blocos de um HTML de seção: [{tag, texto, autoria, ia}]. */
 export function blocos(html) {
   const doc = new DOMParser().parseFromString(`<div>${html || ''}</div>`, 'text/html');
-  return [...doc.body.firstChild.querySelectorAll('p, h3, li, blockquote')].filter((b) => !b.querySelector('p, li')).map((b) => ({ tag: b.tagName.toLowerCase(), texto: b.textContent, autoria: b.getAttribute('data-autoria') || 'autor', ia: b.getAttribute('data-ia') }));
+  return [...doc.body.firstChild.querySelectorAll('p, h2, h3, li, blockquote, pre')].filter((b) => !b.querySelector('p, li')).map((b) => ({ tag: b.tagName.toLowerCase(), texto: b.textContent, autoria: b.getAttribute('data-autoria') || 'autor', ia: b.getAttribute('data-ia') }));
 }
 
 /** Semelhança entre dois textos (coeficiente de Dice sobre pares de palavras), de 0 a 1. */

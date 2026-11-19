@@ -13,6 +13,8 @@ async function entrar(page, context) {
   await geminiFalso(context);
   await page.goto('/#escrita', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.rb && window.rb.pronto);
+  // v2.3.0: o painel do Copilot e das versões fica fechado por padrão; estes testes trabalham com ele aberto.
+  await page.evaluate(() => localStorage.setItem('rb.esc.painel', '1'));
   await page.getByRole('button', { name: 'Entrar com Google' }).click();
   await page.waitForFunction(() => window.rb && window.rb.sincronia && window.rb.sincronia.estado().fase === 'ok' && window.rb.segurancaUI);
   return g;

@@ -73,6 +73,7 @@ test('o que muda aqui vai para o Drive, e o que muda no Drive chega aqui', async
 test('apagar chega aos outros aparelhos', async ({ page, context }) => {
   const g = await googleFalso(context);
   await entrar(page);
+  await expect.poll(() => fase(page)).toBe('ok');
   await page.evaluate(async () => {
     await window.rb.dados.salvar('cartoes', { id: 'c1', pergunta: 'x' });
     await window.rb.sincronia.sincronizar();
