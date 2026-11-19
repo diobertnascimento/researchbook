@@ -49,6 +49,7 @@ Modelos conforme `docs/especificacao.md`. Temperatura: a padrão do modelo (a do
 | `dialogos.md` | Diálogos em três modos, com citações conferidas; encerrar firma posições (v2.0.0) | rápido | médio | JSON |
 | `fichamento.md` | Comentários do tutor em cada etapa do fichamento (v2.0.0) | rápido | médio | JSON |
 | `revisao-projeto.md` | Lê a versão do projeto e prioriza leituras e problemas de citação (v2.0.0) | raciocínio (lote) | alto | JSON |
+| `parecer-projeto.md` | Parecer da versão do projeto para a qualificação, parte por parte, sem reescrever o texto (v1.0.0) | raciocínio (lote) | alto | JSON |
 | `transcricao.md` | Transcreve aulas por trechos de 15 minutos (v2.0.0) | rápido | baixo | JSON |
 | `aula.md` | Resumo, conceitos, leituras citadas e perguntas da aula, com trechos conferidos (v2.0.0) | rápido | médio | JSON |
 | `orientacao.md` | Registra orientação: resumo, combinados, trechos conferidos, temas (v2.0.0) | conversa | médio | JSON |

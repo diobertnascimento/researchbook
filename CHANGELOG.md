@@ -2,6 +2,17 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.7.0 (19/11/2026)
+Dissertação: parecer do projeto.
+- Ao enviar uma versão do projeto, a IA passa a fazer também um parecer do que ajustar para a qualificação, parte por parte: introdução e problema, propósito, perguntas, literatura e teoria, método, ética, coerência entre as partes, cronograma e forma.
+- Cada ponto traz a gravidade (compromete a aprovação, importante ou ajuste), o trecho do seu projeto com a página, o que se espera ali e como resolver. A IA aponta o que falta; ela não reescreve o seu texto.
+- O app confere, sem IA, se cada trecho citado está mesmo no PDF. Trecho não encontrado aparece com aviso.
+- Você decide ponto por ponto: adicionar às suas pendências ou ignorar, com desfazer. As pendências ficam ao lado, com caixa de marcar.
+- O parecer só muda quando você envia outra versão. Na versão seguinte, ele diz o que foi resolvido desde a anterior.
+- Se o parecer falhar, a versão e a lista de obras continuam gravadas e dá para tentar de novo.
+- A lista de obras por prioridade e os problemas de citação continuam na mesma página, em "Leituras e citações".
+- Cada envio agora faz duas chamadas ao modelo de raciocínio em vez de uma; o custo por versão sobe na mesma proporção.
+
 ## 2.6.0 (19/11/2026)
 Dissertação: Mapa e Jornada.
 - Mapa: os argumentos viraram uma matriz. Cada linha é uma afirmação sua, cada coluna é uma obra com trechos ligados, e o número é quantos trechos aquela obra dá àquele argumento. A última coluna diz a sustentação: firme (3 obras ou mais), razoável (2), frágil (1) ou sem fonte. Tocar na linha abre o argumento, como antes. No celular fica a lista, porque a matriz não cabe.

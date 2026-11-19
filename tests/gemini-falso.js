@@ -66,6 +66,11 @@ export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) 
       texto = JSON.stringify(respostaOrganizar(todos, opcoes));
     } else if (props.cartoes || props.mais_importante || props.tracos) {
       texto = JSON.stringify(respostaEstudo(props, todos));
+    } else if (props.achados && opcoes.falharParecer && !estado.falhouParecer) {
+      estado.falhouParecer = true;
+      return responder(r, 400, { error: { code: 400, message: 'Request payload size exceeds the limit.', status: 'INVALID_ARGUMENT' } });
+    } else if (props.achados) {
+      texto = JSON.stringify(respostaParecer(todos, opcoes));
     } else if (props.obras || props.combinados_anteriores || props.posicoes) {
       texto = JSON.stringify(respostaDissertacao(props, todos, opcoes));
     } else if (props.segmentos || props.resumo || props.entregas) {
@@ -203,6 +208,21 @@ function respostaAula(p, todos, corpo, opcoes) {
 }
 
 // Dissertação: revisão do projeto, registro de orientação e encerramento de diálogo.
+// Parecer do projeto: três achados (um com trecho que o teste escolhe, um com trecho inventado, um sem trecho),
+// um com parte fora da lista (o app descarta) e, na segunda versão, o primeiro achado resolvido.
+function respostaParecer(todos, opcoes) {
+  const segunda = /^P1: /m.test(todos);
+  return {
+    achados: [
+      { parte: 'forma', gravidade: 'ajuste', titulo: 'Figura sem fonte', trecho: 'trecho que não existe no arquivo enviado', pagina: 2, esperado: 'Toda figura traz a fonte.', como_resolver: 'Acrescente a fonte na legenda da figura 1.' },
+      ...(segunda ? [] : [{ parte: 'proposito', gravidade: 'compromete', titulo: 'O propósito não está declarado', trecho: opcoes.trechoDoParecer || '', pagina: 1, esperado: 'Uma declaração única do que será estudado, com quem e por qual abordagem.', como_resolver: 'Decida o recorte e declare o propósito no fim da introdução.' }]),
+      { parte: 'viabilidade', gravidade: 'importante', titulo: 'Não há cronograma até a defesa', trecho: '', pagina: 0, esperado: 'Etapas e datas até a defesa.', como_resolver: 'Monte o cronograma com as etapas do método.' },
+      { parte: 'parte-que-nao-existe', gravidade: 'ajuste', titulo: 'Achado fora das partes', esperado: 'x', como_resolver: 'y' },
+    ],
+    resolvidos: segunda ? [{ id: 'P1', como: 'A introdução agora termina com o propósito.' }, { id: 'P99', como: 'id que não existe' }] : [],
+  };
+}
+
 function respostaDissertacao(p, todos, opcoes) {
   if (p.obras) {
     const temB1 = /^B1: Moraes/m.test(todos);

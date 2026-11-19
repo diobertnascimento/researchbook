@@ -1823,3 +1823,32 @@ body.sessao .esc-sec-tit{pointer-events:none}
 .jor-marcos .linha-l li > span:nth-child(2){flex:1}
 .jor-marcos .linha-l .passou{color:var(--texto-2)}
 @media (max-width:1000px){.jor-fatos{grid-template-columns:minmax(0,1fr);gap:var(--e-3)}.jor-frase{font-size:var(--fs-titulo-3)}}
+
+/* ---------- Dissertação, Projeto: parecer da versão (v2.7.0) ---------- */
+.parecer-espera{margin:var(--e-8) 0 var(--e-12)}
+.parecer{margin:var(--e-10) 0 var(--e-12)}
+.parecer > h2,.proj-leituras{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.3;font-weight:500;margin:0 0 var(--e-2)}
+.proj-leituras{margin-bottom:var(--e-5)}
+.par-resumo{margin:0 0 var(--e-4);font-size:var(--fs-corpo);line-height:24px;color:var(--texto-2)}
+.par-resolvidos{margin:0 0 var(--e-5);font-size:var(--fs-ui)}
+.par-resolvidos summary{cursor:pointer;font-weight:600}
+.par-resolvidos ul{margin:var(--e-2) 0 0;padding-left:var(--e-5);color:var(--texto-2)}
+.achados h3{font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--texto-3);margin:var(--e-6) 0 0}
+.achados h3:first-child{margin-top:0}
+.achado{padding:var(--e-5) 0;border-bottom:1px solid var(--borda)}
+.achado header{display:flex;flex-direction:column;align-items:flex-start;gap:var(--e-2);margin-bottom:var(--e-3)}
+.achado h4{font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:26px;font-weight:500;margin:0}
+.achado p{margin:0 0 var(--e-3);font-size:var(--fs-corpo);line-height:24px;max-width:46em}
+.achado p small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.achado blockquote{margin:0 0 var(--e-3);padding:0 0 0 var(--e-4);border-left:2px solid var(--borda-forte);font-family:var(--leitura);font-size:var(--fs-corpo);line-height:26px;color:var(--texto-2);max-width:46em}
+.achado cite{display:block;font-family:var(--ui);font-style:normal;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.achado.ignorado header{margin-bottom:var(--e-1)}
+.achado.ignorado h4{color:var(--texto-3)}
+.ach-estado{display:flex;gap:var(--e-3);align-items:baseline;font-size:var(--fs-meta);color:var(--texto-2)}
+.pendencias ul{list-style:none;margin:0;padding:0}
+.pendencias li{padding:var(--e-2) 0;border-bottom:1px solid var(--borda)}
+.pendencias li:last-child{border-bottom:0}
+.pendencias label{display:flex;gap:var(--e-3);align-items:flex-start;font-size:var(--fs-ui);line-height:20px;cursor:pointer}
+.pendencias input{flex:0 0 18px;width:18px;height:18px;margin:1px 0 0;accent-color:var(--acento)}
+.pendencias small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.pendencias input:checked + span{color:var(--texto-3);text-decoration:line-through}
