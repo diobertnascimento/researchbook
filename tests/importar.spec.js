@@ -34,6 +34,8 @@ async function crossrefFalso(context, estado = { pedidos: [] }) {
       const itens = q.includes('venable') ? CANDIDATOS.venable : q.includes('greenwashing') ? CANDIDATOS.greenwashing : [];
       return r.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ message: { items: itens } }) });
     }
+    // DOI direto (Atualizar os dados pelo DOI).
+    if (decodeURIComponent(u.pathname) === '/works/10.0000/venable.2016') return r.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ message: CANDIDATOS.venable[0] }) });
     return r.fulfill({ status: 404, headers: cors, body: 'Resource not found.' });
   });
   return estado;
@@ -186,6 +188,40 @@ test.describe('no computador', () => {
     await page.goto('/#organizar');
     await expect(page.locator('main')).toContainText('A procura usa só o Crossref');
     await expect(page.locator('#org-gravados')).toContainText('10.0000/venable.2016');
+  });
+
+  test('Acervo: mostra o retrato da biblioteca, as obras sem PDF e completa pelo DOI só o que está vazio, com desfazer', async ({ page, context }) => {
+    await entrar(page, context);
+    await page.evaluate(async () => {
+      const b = window.rb.biblioteca;
+      await b.adicionar({ tipo: 'livro', titulo: 'Design science research: avaliação de artefatos', autores: [{ sobrenome: 'Venable', prenomes: 'John' }], ano: '2015', doi: '10.0000/venable.2016' });
+      await b.adicionar({ tipo: 'livro', titulo: 'Manual interno sem DOI', autores: [{ sobrenome: 'Ninguém', prenomes: 'A.' }], ano: '2001' });
+    });
+    const obra = () => page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design')));
+    // O Acervo fica em Ajustes; não é mais aba da Biblioteca.
+    await page.goto('/#ajustes');
+    await page.locator('.aj-indice').getByRole('link', { name: 'Acervo' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
+    const resumo = page.locator('#acervo-resumo');
+    await expect(resumo.locator('.ap-it', { hasText: 'Obras' }).first()).toContainText('2');
+    await expect(resumo.locator('.ap-it', { hasText: 'Com DOI' })).toContainText('1');
+    await expect(resumo.locator('.ap-it', { hasText: 'Sem PDF' })).toContainText('2');
+    await page.locator('#acervo-sem-pdf details').evaluate((d) => (d.open = true));
+    await expect(page.locator('#acervo-sem-pdf li')).toHaveCount(2);
+    await expect(page.locator('#acervo-sem-pdf').getByRole('link', { name: 'Anexar o PDF' }).first()).toHaveAttribute('href', /#leitor\//);
+
+    await page.getByRole('button', { name: 'Atualizar os dados pelo DOI' }).click();
+    const feito = page.locator('#acervo-atualizadas');
+    await expect(feito).toContainText('1 obra completada pelo DOI');
+    await expect(feito).toContainText('Completou editora');
+    // O ano que o autor escreveu fica; a diferença é só informada.
+    await expect(feito).toContainText('aqui 2015, no Crossref 2016');
+    let v = await obra();
+    expect([v.editora, v.ano]).toEqual(['Editora de Exemplo', '2015']);
+    await feito.getByRole('button', { name: 'Desfazer' }).click();
+    await expect(page.locator('#toast')).toContainText('1 obra voltou a como estava');
+    v = await obra();
+    expect(v.editora || null).toBeNull();
   });
 
   test('repetidas: junta na obra com mais trabalho, leva grifos e trilhas, e tem desfazer', async ({ page, context }) => {
