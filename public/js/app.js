@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.4.0';
+const APP_VERSAO = '2.5.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -207,7 +207,8 @@ const CORES_DISC = ['#8A6D3B','#7A8B3C','#B8645A'];
 const SECOES = {
   bib:{nome:'Ler', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos']]},
   esc:{nome:'Escrever', tabs:[['escrita','Textos'],['dialogos','Diálogos']]},
-  diss:{nome:'Dissertação', tabs:[['projeto','Revisão do projeto'],['orientacao','Orientação'],['argumentos','Argumentos']]},
+  // v2.5.0: a Visão (tese, sessão de hoje, plano da semana e capítulos) abre a Dissertação. Ela só existe com os dados reais.
+  diss:{nome:'Dissertação', tabs:[['dissertacao','Visão'],['projeto','Projeto'],['argumentos','Argumentos'],['orientacao','Orientação']]},
   voce:{nome:'Você', tabs:[['autor','Overview do autor'],['memoria','Memória'],['ajustes','Ajustes']]},
 };
 const SECAO_DE = {}; Object.entries(SECOES).forEach(([k,v])=>v.tabs.forEach(([r])=>SECAO_DE[r]=k));
@@ -222,7 +223,7 @@ function desenhaMenu(rota){
   const sub=`<ul class="sub" aria-label="Projetos">${projetos.map(([h,n])=>`<li><a href="${h}">${n}</a></li>`).join('')}<li><a href="#disciplinas">Ver todos</a></li></ul>`;
   // Barra do topo, com os cinco lugares do app. Você (overview, memória e ajustes) fica no avatar.
   document.getElementById('menu').innerHTML =
-    it('painel','#painel','Hoje') + it('bib','#biblioteca','Ler') + it('esc','#escrita','Escrever') + it('diss','#projeto','Dissertação') + it('proj','#disciplinas','Projetos',sub);
+    it('painel','#painel','Hoje') + it('bib','#biblioteca','Ler') + it('esc','#escrita','Escrever') + it('diss',modoReal()?'#dissertacao':'#projeto','Dissertação') + it('proj','#disciplinas','Projetos',sub);
   const voceAtivo=sec==='voce';
   document.getElementById('voce').innerHTML=`<div id="status-drive">${statusDriveHTML()}</div><button class="busca-k" data-acao="busca" aria-label="Buscar (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="rot">Buscar</span><kbd>Ctrl K</kbd></button><a class="item ${voceAtivo?'ativo':''}" href="#autor" title="Você: overview, memória e ajustes"><span class="av">V</span><span class="rot-voce">Você<small>Memória e ajustes</small></span></a><span class="selo-versao">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
   // Celular: ler e o dia em primeiro lugar; o resto fica em Mais.
@@ -232,7 +233,7 @@ function desenhaMenu(rota){
 }
 function secaoCab(base){
   const k=SECAO_DE[base]; const sec=SECOES[k]; if(!sec) return '';
-  return `<div class="sec-cab"><h1>${sec.nome}</h1><nav class="subnav" aria-label="${sec.nome}">${sec.tabs.map(([r,n])=>`<a href="#${r}" class="${r===base?'on':''}" ${r===base?'aria-current="page"':''}>${n}</a>`).join('')}</nav></div>`;
+  return `<div class="sec-cab"><h1>${sec.nome}</h1><nav class="subnav" aria-label="${sec.nome}">${sec.tabs.filter(([r])=>r!=='dissertacao'||modoReal()).map(([r,n])=>`<a href="#${r}" class="${r===base?'on':''}" ${r===base?'aria-current="page"':''}>${n}</a>`).join('')}</nav></div>`;
 }
 
 /* =========================================================
@@ -756,7 +757,7 @@ const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa']
 V.mais = () => `<div class="topo"><div><h1>Mais</h1></div></div>
   <nav class="mais-lista" aria-label="Mais lugares do app">
     <a href="#escrita">Escrever<small>Seus textos e diálogos</small></a>
-    <a href="#projeto">Dissertação<small>Projeto, orientação e argumentos</small></a>
+    <a href="${modoReal()?'#dissertacao':'#projeto'}">Dissertação<small>Sessões de escrita, capítulos, projeto e orientação</small></a>
     <a href="#disciplinas">Projetos<small>Disciplinas e aulas</small></a>
     <a href="#autor">Você<small>Overview do autor e memória</small></a>
     <a href="#ajustes">Ajustes<small>Gemini, cópias de segurança, sincronização e acervo</small></a>
@@ -875,6 +876,7 @@ const REFS_PROJ = [
   {novo:true, aut:'Gutberlet (2008)', tit:'Recovering resources, recycling citizenship', veic:'Ashgate (livro)', prio:1, n:1, onde:['2.2 Coleta seletiva e cooperativas'], porque:'Citação de contexto. Não sustenta nenhuma decisão do texto.'},
 ];
 const prioBar = n => `<span class="prio" aria-label="Prioridade ${['','baixa','média','alta'][n]}">${[1,2,3].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
+V.dissertacao = () => modoReal() ? (window.rb&&window.rb.visaoUI ? window.rb.visaoUI.tela() : esqueleto('Dissertação')) : V.projeto();
 V.projeto = () => {
   if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.projeto() : esqueleto('Revisão do projeto');
   const ver=VERSOES.find(v=>v.v===S.versao);
@@ -1870,6 +1872,7 @@ function render(){
   const [v,arg,arg2]=rota.split('/');
   document.body.classList.toggle('leitor', v==='leitor');
   document.body.classList.toggle('editor', v==='texto');
+  if(v!=='texto') document.body.classList.remove('sessao');
   document.body.classList.toggle('em-projeto', v==='disciplina' && modoReal());
   document.body.classList.toggle('foco', v==='leitor' && S.foco);
   desenhaMenu(rota);

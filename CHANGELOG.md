@@ -2,6 +2,17 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.5.0 (19/11/2026)
+Dissertação: sessões de escrita.
+- A Dissertação abre na Visão: a sua tese em uma frase (gravada sozinha), a sessão de hoje, o plano da semana, os capítulos e os combinados em aberto com a orientação.
+- Sessão de escrita: "Escrever por 25 minutos" abre o capítulo só com o texto, um relógio discreto e o botão de encerrar. Ao encerrar, o app mostra os minutos, as palavras e a frase onde você parou; a próxima sessão começa naquela seção.
+- Plano da semana: 3 sessões de 25 minutos por padrão, e você muda quando quiser. Não há sequência de dias: uma semana sem sessão não apaga nada.
+- Capítulos: são textos do Escrever guardados no projeto Dissertação. Capítulo novo abre direto no editor. A lista mostra o que já tem texto, sem meta de palavras.
+- Nada disso usa IA: a tela não sugere o que escrever.
+- Sessão com menos de um minuto e sem texto novo não é registrada. Sessão esquecida aberta por mais de 3 horas é largada sem registro; o texto continua gravado.
+- "Revisão do projeto" passou a se chamar "Projeto" no menu da Dissertação. O conteúdo dessa página ainda é o anterior.
+- Ainda não entrou: Mapa em matriz, Jornada do mestrado, o parecer do projeto por partes e o botão "Pedir" durante a sessão.
+
 ## 2.4.0 (19/11/2026)
 Projetos.
 - A lista de projetos destaca um só: o que tem aula ou compromisso hoje ou, sem isso, o prazo mais próximo dentro de 7 dias. Os outros ficam numa lista, cada um com o que vem a seguir. A Dissertação saiu desta lista, porque tem lugar próprio no menu.

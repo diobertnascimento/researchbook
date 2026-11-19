@@ -13,6 +13,8 @@ import { criarFichamentoUI } from './fichamento-ui.js';
 import { criarArgumentosUI } from './argumentos-ui.js';
 import { criarTrilhasUI } from './trilhas-ui.js';
 import { criarHojeUI } from './hoje-ui.js';
+import { criarSessoes } from './sessoes.js';
+import { criarVisaoUI } from './dissertacao-visao.js';
 import { criarConflitosUI } from './conflitos-ui.js';
 import { criarCofre } from './cofre.js';
 import { criarHistorico } from './historico.js';
@@ -290,7 +292,7 @@ async function iniciar() {
   async function recarregarTudo() {
     const r = window.rb;
     await r.biblioteca?.carregar();
-    await Promise.all([r.fichUI?.carregar(), r.argUI?.carregar(), r.trilhasUI?.carregar(), r.conflitosUI?.carregar(), r.historico?.carregar(), r.memoriaUI?.carregar(), r.escrita?.carregar(), r.disciplinas?.carregar(), r.dissertacao?.carregar(), r.dialogos?.carregar(), r.cartoes?.carregar(), r.hojeUI?.carregar()]);
+    await Promise.all([r.fichUI?.carregar(), r.argUI?.carregar(), r.trilhasUI?.carregar(), r.conflitosUI?.carregar(), r.historico?.carregar(), r.memoriaUI?.carregar(), r.escrita?.carregar(), r.disciplinas?.carregar(), r.dissertacao?.carregar(), r.dialogos?.carregar(), r.cartoes?.carregar(), r.hojeUI?.carregar(), r.sessoes?.carregar()]);
     window.render?.();
   }
 
@@ -550,10 +552,12 @@ async function iniciar() {
     window.rb.dissertacao = criarDissertacao({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, historico, disc: window.rb.disciplinas, drive: driveSeConectado, registrar, aoMudar: redesenharSe(/^#orientacao/) });
     window.rb.dialogos = criarDialogos({ dados: window.rb.dados, ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, registrar });
     window.rb.dissertacaoUI = criarDissertacaoUI({ diss: window.rb.dissertacao, dlg: window.rb.dialogos, disc: window.rb.disciplinas, discUI: window.rb.disciplinasUI, bib: biblioteca, registrar });
+    window.rb.sessoes = criarSessoes({ dados: window.rb.dados, escrita: window.rb.escrita, registrar });
+    window.rb.visaoUI = criarVisaoUI({ sess: window.rb.sessoes, escrita: window.rb.escrita, diss: window.rb.dissertacao, disc: window.rb.disciplinas, registrar });
     window.rb.hojeUI = criarHojeUI({ bib: biblioteca, fichUI: window.rb.fichUI, trilhasUI: window.rb.trilhasUI, argUI: window.rb.argUI, conflitosUI: window.rb.conflitosUI, dados: window.rb.dados });
     await window.rb.hojeUI.carregar();
     await biblioteca.carregar();
-    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar(), window.rb.disciplinas.carregar(), window.rb.dissertacao.carregar(), window.rb.dialogos.carregar(), window.rb.cartoes.carregar()]);
+    await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar(), window.rb.disciplinas.carregar(), window.rb.dissertacao.carregar(), window.rb.dialogos.carregar(), window.rb.cartoes.carregar(), window.rb.sessoes.carregar()]);
     window.rb.disciplinas.retomarPendentes();
     window.rb.segurancaUI = criarSegurancaUI({ dados: window.rb.dados, recarregar: recarregarTudo, registrar });
     window.rb.sincronizacaoUI = criarSincronizacaoUI({ estado: () => sinc?.estado() ?? null, aparelhos: listarAparelhos, idAparelho });

@@ -1749,3 +1749,34 @@ body.leitor main{max-width:none}
   .estudio .quando{display:none}
   .apr-grifos li{grid-template-columns:120px minmax(0,1fr) 28px}
 }
+
+/* ---------- Dissertação, Visão e sessão de escrita (v2.5.0) ---------- */
+.tese{margin:0 0 var(--e-10);max-width:860px}
+.tese-campo{display:block;width:100%;min-height:84px;padding:var(--e-2) 0;border:0;border-bottom:1px solid transparent;border-radius:0;background:transparent;resize:none;overflow:hidden;font-family:var(--leitura);font-size:var(--fs-titulo-1);line-height:1.35;color:var(--texto)}
+.tese-campo::placeholder{color:var(--texto-3)}
+.tese-campo:hover{border-bottom-color:var(--borda-forte)}
+.tese-campo:focus{outline:none;border-bottom-color:var(--acento)}
+.diss-sessao{margin-bottom:var(--e-12)}
+.diss-outros{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:var(--e-2)}
+.diss-plano{margin:0 0 var(--e-3)}
+.diss-plano-campos{margin-bottom:var(--e-4);max-width:420px}
+.diss-caps{list-style:none;margin:0;padding:0}
+.diss-caps a{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:var(--e-4);align-items:center;padding:var(--e-3) 0;border-bottom:1px solid var(--borda);text-decoration:none;color:var(--texto)}
+.diss-caps .n{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1;color:var(--texto-3)}
+.diss-caps b{display:block;font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:26px;font-weight:500}
+.diss-caps small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.diss-caps .meta{font-size:var(--fs-meta);color:var(--texto-3);white-space:nowrap}
+.diss-caps a:hover b{text-decoration:underline;text-underline-offset:3px}
+button.lnk-sec{border:0;background:none;padding:0;cursor:pointer}
+.sessao-resumo{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.4;color:var(--texto)}
+
+/* Sessão de escrita: só o texto, o relógio e o botão de encerrar. */
+.sessao-barra{display:flex;align-items:center;gap:var(--e-4);flex-wrap:wrap;max-width:760px;margin:0 auto var(--e-8)}
+.sessao-tit{flex:1 1 200px;min-width:0;font-size:var(--fs-meta);line-height:18px;color:var(--texto-2)}
+.sessao-relogio{font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--texto-2);font-variant-numeric:tabular-nums}
+body.sessao .voltar,body.sessao .esc-cab,body.sessao .lat-esc,body.sessao .esc-painel,body.sessao .folha-barra,body.sessao .esc-legenda,body.sessao .tabbar{display:none}
+body.sessao .esc-grid{grid-template-columns:minmax(0,760px);justify-content:center}
+body.sessao .folha{border-color:transparent}
+@media (max-width:1000px){.tese-campo{font-size:var(--fs-titulo-2)}}
+body.sessao .esc-sec-tit{pointer-events:none}
+.sessao-secao{height:var(--h-p);max-width:200px;border:1px solid var(--borda-forte);border-radius:var(--r-2);background:var(--superficie);font-size:var(--fs-meta);padding:0 var(--e-2)}

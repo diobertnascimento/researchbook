@@ -243,7 +243,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     const { i, s } = secaoAtual(t);
     const a = medirAutoria(t);
     const marcas = typeof S !== 'undefined' && S.marcas;
-    return `<a class="voltar" href="#escrita">${icone('voltar')}Textos</a>
+    return `${window.rb?.visaoUI?.barraSessao(t) || ''}<a class="voltar" href="#escrita">${icone('voltar')}Textos</a>
       <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.entrega ? `. Entrega em ${t.entrega.split('-').reverse().join('/')}` : ''} <span class="d-inline-flex p-0 salvo" id="esc-salvo"><i></i>${est.salvando || 'Salvo'}</span> <button class="btn fant mini" data-esc-painel="versoes">Versões</button></p></div>
         <div class="acoes"><button class="btn" data-esc-painel="copilot" aria-pressed="${painelAberto() && est.aba !== 'versoes'}">Copilot</button><button class="btn" data-esc-passo="0">Briefing</button><button class="btn prim" data-esc-passo="5">Revisar e exportar</button></div></div>
       <div class="esc-grid real ${painelAberto() ? '' : 'sem-painel'}" data-texto="${esc(t.id)}">
@@ -268,7 +268,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
           ${est.aba === 'material' ? painelMaterial(t, s) : est.aba === 'versoes' ? painelVersoes(t) : painelCopilot(t, s)}
         </aside>
       </div>
-      <div class="mt-3">${legenda}</div>`;
+      <div class="mt-3 esc-legenda">${legenda}</div>`;
   }
 
   /* ---------- Revisar e exportar ---------- */
@@ -957,5 +957,5 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     await guardar(tt, { entrevista: [...(tt.entrevista || []), { pergunta: r.json.pergunta, por_que: r.json.por_que, copilot: true, resposta: '' }] });
   }
 
-  return { lista, tela };
+  return { lista, tela, salvarAgora: () => salvarCorpo(), abrirSecao: (id, i) => (est.secao[id] = i), secaoAberta: (t) => secaoAtual(t).i };
 }
