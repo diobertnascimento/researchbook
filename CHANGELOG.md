@@ -2,6 +2,12 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.6.0 (18/11/2026)
+DOIs gravados sozinhos e IA só sob pedido, no Organizar.
+- Quando título, autor e ano batem com o Crossref, o DOI é gravado na hora e os campos vazios da obra são completados. Antes a procura só deixava uma proposta, e nada entrava na obra sem você aceitar uma por uma.
+- "Gravados agora" lista o que a procura gravou, com "Desfazer". Desfazer devolve a obra para a lista de conferir.
+- A procura usa só o Crossref. A IA não entra mais sozinha: em cada obra em dúvida há o botão "Pedir para a IA conferir", e o que ela indica continua esperando a sua decisão.
+
 ## 1.5.0 (18/11/2026)
 Sincronização entre aparelhos.
 - Com o app aberto há horas, a sessão do Google vence. Agora, ao voltar para o app (ou com ele parado, sem ninguém mexendo), ele renova a sessão sozinho e a sincronização continua. Nunca no meio de um campo ou de uma janela aberta. Se o Google não renovar, o estado continua oferecendo "Reconectar" e contando o que espera para subir.

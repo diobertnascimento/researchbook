@@ -212,6 +212,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v1.6.0 (18/11/2026): Organizar grava sozinho o DOI muito provável (`doiBusca.auto`), com desfazer da procura inteira; a IA só entra por pedido (`pedirIA`).
 - v1.5.0 (18/11/2026): sincronização entre aparelhos. Renovação silenciosa da sessão ao voltar para o app ou parado (nunca com campo em foco), registro por aparelho no Drive (`aparelhos/<id>.json`), página Sincronização em Ajustes, versão automática antes de cobrir um texto que veio de outro aparelho.
 - v1.4.0 (18/11/2026): confirmação honesta. Estado da sincronização com `pendente`, `pendentes` e `recebidos`; espera de 2 s antes de enviar; aviso quando uma ação falha depois do clique; BibTeX exportado de verdade (`paraBibTeX` em importar.js).
 - v1.3.0 (18/11/2026): nada se perde. Lixeira com o registro inteiro (coleção `lixeira`, sincronizada; lotes do que foi apagado junto), versões automáticas dos textos (store local `versoes` + arquivo no Drive por versão), cópia diária local (store `backups`, 30 dias) e a página Cópias de segurança em Ajustes. Esquema do banco 6.

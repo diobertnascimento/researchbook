@@ -128,50 +128,64 @@ test.describe('no computador', () => {
     expect(ls).toEqual([{ titulo: 'Obra que ainda não tem PDF', pdf: true }]);
   });
 
-  test('DOI que falta: o muito provável vem do Crossref, a IA escolhe quando há dúvida, o autor aceita ou recusa', async ({ page, context }) => {
+  test('DOI que falta: o que bate com o Crossref é gravado sozinho, com desfazer; a IA só entra quando o autor pede', async ({ page, context }) => {
     const { gem } = await entrar(page, context, { comIA: true });
     await page.evaluate(async () => {
       await window.rb.biblioteca.adicionar({ tipo: 'livro', titulo: 'Design science research: avaliação de artefatos', autores: [{ sobrenome: 'Venable', prenomes: 'John' }], ano: '2016', editora: 'Minha editora' });
       await window.rb.biblioteca.adicionar({ tipo: 'artigo', titulo: 'Greenwashing e comunicação corporativa', autores: [{ sobrenome: 'Souza', prenomes: 'Ana' }], ano: '2022' });
       await window.rb.biblioteca.adicionar({ tipo: 'livro', titulo: 'Manual interno sem DOI', autores: [{ sobrenome: 'Ninguém', prenomes: 'A.' }], ano: '2001' });
     });
+    const obra = (inicio) => page.evaluate((inicio) => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith(inicio)), inicio);
     await page.goto('/#organizar');
     await page.getByRole('button', { name: /Procurar DOIs que faltam \(3\)/ }).click();
-    await expect(page.locator('.org-item')).toHaveCount(2, { timeout: 15000 });
+
+    // Título, autor e ano batem: gravado na hora, completando só o que faltava (a editora do autor fica).
+    const gravados = page.locator('#org-gravados');
+    await expect(gravados).toContainText('Design science research', { timeout: 15000 });
+    await expect(gravados).toContainText('10.0000/venable.2016');
+    let v = await obra('Design');
+    expect([v.doi, v.editora, v.doiBusca.auto]).toEqual(['10.0000/venable.2016', 'Minha editora', true]);
+    // A procura não chamou a IA.
+    expect(gem.pedidos.some((p) => JSON.stringify(p.corpo).includes('candidatos'))).toBe(false);
+
+    // Desfazer tira o DOI e devolve a obra para a lista de conferir, de onde o autor aceita.
+    await gravados.getByRole('button', { name: 'Desfazer este' }).click();
+    await expect(page.locator('#toast')).toContainText('1 DOI retirado');
+    expect((await obra('Design')).doi).toBeFalsy();
     const venable = page.locator('.org-item', { hasText: 'Design science research' });
     await expect(venable).toContainText('Muito provável');
-    await expect(venable).toContainText('10.0000/venable.2016');
-    const souza = page.locator('.org-item', { hasText: 'Greenwashing' });
-    await expect(souza).toContainText('Indicado pela IA');
-    await expect(souza).toContainText('10.0000/souza.2022');
-    expect(gem.pedidos.some((p) => JSON.stringify(p.corpo).includes('candidatos'))).toBe(true);
-    await expect(page.locator('details', { hasText: 'Sem DOI encontrado (1)' })).toBeVisible();
-
-    // Aceitar: grava o DOI e completa só o que faltava (a editora do autor fica).
     await venable.getByRole('button', { name: 'Aceitar este DOI' }).click();
     await expect(page.locator('#toast')).toContainText('DOI aceito');
-    const v = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design')));
-    expect([v.doi, v.editora]).toEqual(['10.0000/venable.2016', 'Minha editora']);
-    // Recusar: sem outro candidato bom, a obra vai para "sem DOI encontrado".
+    expect((await obra('Design')).doi).toBe('10.0000/venable.2016');
+
+    // A obra em dúvida fica sem DOI até o autor pedir a IA, que indica o candidato sem gravar nada.
+    await page.locator('details', { hasText: 'Sem DOI encontrado' }).evaluate((d) => (d.open = true));
+    await page.locator('.org-sem', { hasText: 'Greenwashing' }).getByRole('button', { name: 'Pedir para a IA conferir' }).click();
+    const souza = page.locator('.org-item', { hasText: 'Greenwashing' });
+    await expect(souza).toContainText('Indicado pela IA', { timeout: 15000 });
+    await expect(souza).toContainText('10.0000/souza.2022');
+    expect(gem.pedidos.some((p) => JSON.stringify(p.corpo).includes('candidatos'))).toBe(true);
+    expect((await obra('Greenwashing')).doi).toBeFalsy();
+    // Recusar: sem outro candidato bom, a obra volta para "sem DOI encontrado".
     await souza.getByRole('button', { name: 'Não é esta' }).click();
     await expect(page.locator('details', { hasText: 'Sem DOI encontrado (2)' })).toBeVisible();
     // Não tem DOI: sai da lista e não é procurada de novo.
     await page.locator('details', { hasText: 'Sem DOI encontrado' }).evaluate((d) => (d.open = true));
     await page.locator('.org-sem', { hasText: 'Manual interno' }).getByRole('button', { name: 'Não tem DOI' }).click();
     await expect(page.locator('details', { hasText: 'Sem DOI encontrado (1)' })).toBeVisible();
-    // O Hoje mostra o que pede o olhar do autor só quando há algo para conferir.
     const contagem = await page.evaluate(() => window.rb.organizar.contagem());
     expect(contagem).toMatchObject({ propostas: 0, pendentes: 0 });
   });
 
-  test('sem IA, a procura funciona só pelo Crossref; a escolha da IA que não lembra a obra é recusada', async ({ page, context }) => {
+  test('sem IA, a procura grava o que bate com o Crossref e a tela explica como pedir a IA', async ({ page, context }) => {
     await entrar(page, context);
     await page.evaluate(() => window.rb.biblioteca.adicionar({ tipo: 'livro', titulo: 'Design science research: avaliação de artefatos', autores: [{ sobrenome: 'Venable', prenomes: 'John' }], ano: '2016' }));
     await page.evaluate(() => window.rb.organizar.procurarDOIs());
-    const b = await page.evaluate(() => window.rb.biblioteca.leituras()[0].doiBusca);
-    expect([b.status, b.confianca, b.candidato.doi]).toEqual(['proposta', 'muito-provavel', '10.0000/venable.2016']);
+    const l = await page.evaluate(() => window.rb.biblioteca.leituras()[0]);
+    expect([l.doi, l.doiBusca.status, l.doiBusca.auto]).toEqual(['10.0000/venable.2016', 'aceita', true]);
     await page.goto('/#organizar');
-    await expect(page.locator('main')).toContainText('Com o Gemini ligado, a IA lê o começo do PDF');
+    await expect(page.locator('main')).toContainText('A procura usa só o Crossref');
+    await expect(page.locator('#org-gravados')).toContainText('10.0000/venable.2016');
   });
 
   test('repetidas: junta na obra com mais trabalho, leva grifos e trilhas, e tem desfazer', async ({ page, context }) => {
