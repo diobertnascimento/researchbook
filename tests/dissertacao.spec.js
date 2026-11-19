@@ -112,8 +112,32 @@ test.describe('no computador', () => {
     await expect(achados.nth(2).locator('cite')).toContainText('Não encontrei este trecho no PDF');
     expect(await page.evaluate(() => window.rb.dissertacao.todasRevisoes()[0].parecer.achados.map((a) => a.conferido))).toEqual(['pagina', null, 'nao']);
 
+    // v2.9.1: a página é dividida em seções, e cada ponto é uma linha que abre. Só o primeiro sem decisão vem aberto.
+    await expect(page.locator('.proj-indice button')).toHaveText(['Parecer, 3 pontos', 'Suas pendências, 0', 'Leituras e citações, 3 obras']);
+    await expect(parecer.locator('.ach-grupo')).toHaveCount(3);
+    await expect(parecer.locator('.ach-grupo header h3')).toHaveText(['Compromete a aprovação (1)', 'Importante (1)', 'Ajuste (1)']);
+    await expect(achados.nth(0).locator('.ach-linha')).toHaveAttribute('aria-expanded', 'true');
+    await expect(achados.nth(0).locator('.ach-sit')).toHaveText('Sem decisão');
+    await expect(achados.nth(1).locator('.ach-corpo')).toBeHidden();
+    await expect(achados.nth(2).locator('.ach-corpo')).toBeHidden();
+    await achados.nth(1).locator('.ach-linha').click();
+    await expect(achados.nth(1).locator('.ach-corpo')).toBeVisible();
+    await achados.nth(1).locator('.ach-linha').click();
+    await expect(achados.nth(1).locator('.ach-corpo')).toBeHidden();
+    await parecer.getByRole('button', { name: 'Abrir todos' }).click();
+    await expect(parecer.locator('.ach-corpo:visible')).toHaveCount(3);
+    await parecer.getByRole('button', { name: 'Recolher todos' }).click();
+    await expect(parecer.locator('.ach-corpo:visible')).toHaveCount(0);
+    await achados.nth(0).locator('.ach-linha').click();
+    await achados.nth(2).locator('.ach-linha').click();
+    await page.locator('.proj-indice button').last().click();
+    await expect(page.locator('#sec-leituras h2')).toBeInViewport();
+    await expect(page.locator('#sec-leituras .par-resumo')).toHaveText('3 obras citadas nesta versão, 2 de prioridade alta. 1 problema nas referências.');
+
     // Ele decide achado por achado, com desfazer.
     await achados.nth(0).getByRole('button', { name: 'Adicionar às pendências' }).click();
+    await expect(achados.nth(0).locator('.ach-sit')).toHaveText('Nas suas pendências');
+    await expect(page.locator('.proj-indice button').nth(1)).toHaveText('Suas pendências, 1');
     await expect(page.locator('#toast')).toContainText('Adicionado às suas pendências');
     await expect(parecer.locator('.pendencias li')).toHaveCount(1);
     await expect(parecer.locator('.pendencias li')).toContainText('O propósito não está declarado');
@@ -124,6 +148,7 @@ test.describe('no computador', () => {
     await achados.nth(2).getByRole('button', { name: 'Ignorar' }).click();
     await expect(parecer.locator('.par-resumo')).toContainText('Falta decidir 1.');
     await parecer.locator('.pendencias input').check();
+    await expect(parecer.locator('.pendencias h3')).toHaveText('Suas pendências (1 de 1 feitas)');
     await expect.poll(() => page.evaluate(() => window.rb.dissertacao.todasRevisoes()[0].parecer.achados.map((a) => `${a.decisao}:${a.feito}`))).toEqual(['pendencia:true', 'null:false', 'ignorado:false']);
     expect(await page.evaluate(() => window.rb.historico.todas().filter((c) => c.funcao === 'parecer_projeto').length)).toBe(1);
 

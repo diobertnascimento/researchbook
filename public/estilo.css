@@ -25,7 +25,7 @@
   --fs-legenda:12px; --fs-meta:13px; --fs-ui:14px; --fs-corpo:16px; --fs-titulo-3:18px; --fs-titulo-2:22px; --fs-titulo-1:30px; --fs-tela:44px;
   --fs-leitura:18px; --fs-leitor:20px;
   /* Espaço, forma, sombra, movimento */
-  --e-1:4px; --e-2:8px; --e-3:12px; --e-4:16px; --e-5:20px; --e-6:24px; --e-8:32px; --e-10:40px; --e-12:48px;
+  --e-1:4px; --e-2:8px; --e-3:12px; --e-4:16px; --e-5:20px; --e-6:24px; --e-8:32px; --e-10:40px; --e-12:48px; --e-16:64px;
   --r-1:4px; --r-2:10px; --r-3:14px; --r-4:20px;
   --h-p:30px; --h-m:38px; --h-g:44px;
   --sombra-1:0 1px 2px rgba(0,0,0,.05),0 8px 28px rgba(0,0,0,.10);
@@ -1826,25 +1826,46 @@ body.sessao .esc-sec-tit{pointer-events:none}
 
 /* ---------- Dissertação, Projeto: parecer da versão (v2.7.0) ---------- */
 .parecer-espera{margin:var(--e-8) 0 var(--e-12)}
-.parecer{margin:var(--e-10) 0 var(--e-12)}
-.parecer > h2,.proj-leituras{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.3;font-weight:500;margin:0 0 var(--e-2)}
-.proj-leituras{margin-bottom:var(--e-5)}
 .par-resumo{margin:0 0 var(--e-4);font-size:var(--fs-corpo);line-height:24px;color:var(--texto-2)}
 .par-resolvidos{margin:0 0 var(--e-5);font-size:var(--fs-ui)}
 .par-resolvidos summary{cursor:pointer;font-weight:600}
 .par-resolvidos ul{margin:var(--e-2) 0 0;padding-left:var(--e-5);color:var(--texto-2)}
-.achados h3{font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--texto-3);margin:var(--e-6) 0 0}
-.achados h3:first-child{margin-top:0}
-.achado{padding:var(--e-5) 0;border-bottom:1px solid var(--borda)}
-.achado header{display:flex;flex-direction:column;align-items:flex-start;gap:var(--e-2);margin-bottom:var(--e-3)}
-.achado h4{font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:26px;font-weight:500;margin:0}
-.achado p{margin:0 0 var(--e-3);font-size:var(--fs-corpo);line-height:24px;max-width:46em}
-.achado p small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
-.achado blockquote{margin:0 0 var(--e-3);padding:0 0 0 var(--e-4);border-left:2px solid var(--borda-forte);font-family:var(--leitura);font-size:var(--fs-corpo);line-height:26px;color:var(--texto-2);max-width:46em}
-.achado cite{display:block;font-family:var(--ui);font-style:normal;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
-.achado.ignorado header{margin-bottom:var(--e-1)}
-.achado.ignorado h4{color:var(--texto-3)}
+.achados{display:flex;flex-direction:column;gap:var(--e-8)}
+/* Cada gravidade é um grupo com cabeçalho próprio; cada ponto é uma linha que abre. */
+.ach-grupo > header{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 var(--e-3);align-items:center;padding-bottom:var(--e-3);border-bottom:1px solid var(--borda-forte)}
+.ach-grupo > header h3{font-size:var(--fs-corpo);line-height:24px;font-weight:600;margin:0;color:var(--texto)}
+.ach-grupo > header p{grid-column:2;margin:0;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.achado{border-bottom:1px solid var(--borda)}
+.achado h4{margin:0;font:inherit}
+.ach-linha{display:grid;grid-template-columns:168px minmax(0,1fr) auto;gap:var(--e-4);align-items:center;width:100%;min-height:56px;padding:var(--e-3) 0;border:0;background:none;text-align:left;color:var(--texto);cursor:pointer}
+.ach-linha .chip{justify-self:start}
+.ach-tit{font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:26px;font-weight:500}
+.ach-sit{font-size:var(--fs-meta);line-height:18px;color:var(--texto-3);white-space:nowrap}
+.ach-sit::after{content:"";display:inline-block;width:7px;height:7px;margin:0 2px 2px var(--e-3);border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);transition:transform var(--t-medio) var(--curva)}
+.achado.on .ach-sit::after{transform:rotate(-135deg);margin-bottom:-2px}
+.ach-linha:hover .ach-tit{text-decoration:underline;text-underline-offset:3px}
+.achado.aberto-a-decidir .ach-sit{color:var(--texto);font-weight:600}
+.achado.ignorado .ach-tit{color:var(--texto-3)}
+.ach-corpo{padding:var(--e-2) 0 var(--e-6) calc(168px + var(--e-4));display:flex;flex-direction:column;gap:var(--e-4)}
+.ach-corpo[hidden]{display:none}
+.ach-parte h5{font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--texto-3);margin:0 0 var(--e-1)}
+.ach-parte p{margin:0;font-size:var(--fs-corpo);line-height:24px;max-width:44em}
+.ach-parte p small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3);margin-top:var(--e-1)}
+.ach-parte blockquote{margin:0;padding:0 0 0 var(--e-4);border-left:2px solid var(--borda-forte);font-family:var(--leitura);font-size:var(--fs-corpo);line-height:26px;color:var(--texto-2);max-width:44em}
+.ach-parte cite{display:block;font-family:var(--ui);font-style:normal;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
 .ach-estado{display:flex;gap:var(--e-3);align-items:baseline;font-size:var(--fs-meta);color:var(--texto-2)}
+/* Seções da página do projeto: título de grupo, uma linha de resumo e espaço largo entre uma e outra. */
+.proj-indice{display:flex;flex-wrap:wrap;gap:var(--e-2);align-items:center;margin:0 0 var(--e-10)}
+.proj-indice > span{font-size:var(--fs-meta);color:var(--texto-3);margin-right:var(--e-2)}
+.proj-secao{margin:0 0 var(--e-16);scroll-margin-top:84px}
+.proj-secao-cab{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--e-1) var(--e-4);align-items:baseline;padding-top:var(--e-6);border-top:1px solid var(--borda-forte);margin-bottom:var(--e-6)}
+.proj-secao-cab h2{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.3;font-weight:500;margin:0}
+.proj-secao-cab .par-resumo{grid-column:1;margin:0}
+.proj-secao-cab .lnk{grid-column:2;grid-row:1}
+.parecer-espera{scroll-margin-top:84px}
+#sec-pendencias{scroll-margin-top:84px}
+@media (min-width:1001px){.parecer .lado{position:sticky;top:84px}}
+@media (max-width:1000px){.ach-linha{grid-template-columns:minmax(0,1fr) auto;gap:var(--e-1) var(--e-3)}.ach-linha .chip{grid-column:1 / -1}.ach-corpo{padding-left:0}.proj-secao{margin-bottom:var(--e-12)}}
 .pendencias ul{list-style:none;margin:0;padding:0}
 .pendencias li{padding:var(--e-2) 0;border-bottom:1px solid var(--borda)}
 .pendencias li:last-child{border-bottom:0}
