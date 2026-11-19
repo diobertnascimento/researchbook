@@ -3,6 +3,7 @@
 import * as arm from './armazenamento.js';
 import { criarRegistros } from './registros.js';
 import { iniciarAtualizacao } from './atualizacao.js';
+import { iniciarMudanca } from './mudanca.js';
 import { iniciarDicaInstalar, ehIOS, instalado } from './instalar.js';
 import * as google from './google.js';
 import { criarDrive } from './drive.js';
@@ -162,6 +163,8 @@ async function iniciar() {
 
   const atualizacao = iniciarAtualizacao({ registrar, aviso });
   iniciarDicaInstalar({ registrar, aviso });
+  // Endereço antigo: avisa da mudança quando o novo já estiver no ar.
+  iniciarMudanca({ registrar, aviso, estado: () => window.rb?.sincronia?.estado(), temConta: () => !!google.conta() });
 
   // Identificador aleatório deste aparelho (não identifica a pessoa; só diz qual aparelho mudou cada item).
   let idAparelho = db ? await arm.lerMeta(db, 'aparelho') : null;

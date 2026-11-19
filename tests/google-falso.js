@@ -34,6 +34,7 @@ export const ESCOPO_DRIVE = '${DRIVE_FILE}';
 export const ESCOPO_IA = '${ESCOPO_IA}';
 export const ESCOPO_AGENDA = '${ESCOPO_AGENDA}';
 export const SERVIDOR_IA = '';
+export const ENDERECO = '';
 // Nos testes, o servidor da chave é simulado no endereço que o teste gravar aqui.
 export const servidorIA = () => localStorage.getItem('rb.teste.servidor') || '';`,
     }),

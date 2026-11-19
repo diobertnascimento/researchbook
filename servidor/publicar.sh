@@ -9,8 +9,9 @@
 # Pode rodar de novo quantas vezes quiser: cada passo confere o que já existe.
 # Para trocar a chave:        TROCAR_CHAVE=sim bash publicar.sh ID-DO-PROJETO
 # Para mudar o limite do dia: LIMITE_DIA=500 bash publicar.sh ID-DO-PROJETO
-# Para aceitar outro endereço do app (domínio próprio), separe por vírgula:
-#   ORIGENS=https://diobertnascimento.github.io,https://meu-dominio.com.br bash publicar.sh ID-DO-PROJETO
+# O servidor aceita o endereço do app (researchbook.com.br) e o antigo (diobertnascimento.github.io).
+# Para mudar a lista, separe por vírgula:
+#   ORIGENS=https://researchbook.com.br bash publicar.sh ID-DO-PROJETO
 #
 # A chave é digitada aqui com a tela escondida e vai direto para o Secret Manager do projeto.
 # Ela não fica neste arquivo, no histórico do terminal nem no repositório.
@@ -21,7 +22,7 @@ REGIAO="us-central1"
 SERVICO="researchbook-ia"
 CONTA="researchbook-ia"
 SEGREDO="gemini-chave"
-ORIGENS="${ORIGENS:-https://diobertnascimento.github.io}"
+ORIGENS="${ORIGENS:-https://researchbook.com.br,https://diobertnascimento.github.io}"
 LIMITE_DIA="${LIMITE_DIA:-300}"
 
 if [ -z "$PROJETO" ] || [ "$PROJETO" = "(unset)" ]; then

@@ -85,6 +85,102 @@ test.describe('configuração', () => {
     expect(achados, 'Tire o segredo do arquivo, troque a chave no Google e só então grave de novo.').toEqual([]);
   });
 
+  test('endereço do app: o mesmo no código, na regra de segurança e no servidor da chave', () => {
+    const cfg = readFileSync(join(RAIZ, 'public/js/config.js'), 'utf8');
+    const endereco = new URL(cfg.match(/ENDERECO = '([^']*)'/)[1]);
+    expect(endereco.protocol).toBe('https:');
+    expect(endereco.pathname).toBe('/');
+    // Sem arquivo CNAME: a publicação é feita pelo GitHub Actions, e o domínio é ligado em Settings > Pages.
+    expect(existsSync(join(RAIZ, 'public/CNAME'))).toBe(false);
+    const conexoes = readFileSync(join(RAIZ, 'public/index.html'), 'utf8').match(/connect-src([^;]*)/)[1].trim().split(/\s+/);
+    expect(conexoes).toContain(endereco.origin);
+    // O servidor da chave precisa aceitar o endereço novo e, durante a mudança, o antigo.
+    const publicar = readFileSync(join(RAIZ, 'servidor/publicar.sh'), 'utf8');
+    expect(publicar).toContain(`ORIGENS="\${ORIGENS:-${endereco.origin},https://diobertnascimento.github.io}"`);
+  });
+
+  test('aviso de mudança de endereço: só no endereço antigo, só com o novo no ar, e só manda ir com tudo no Drive', async ({ page }) => {
+    await abrirApp(page);
+    const r = await page.evaluate(async () => {
+      const { criarMudanca } = await import('/js/mudanca.js');
+      const SW = "const CACHE = `researchbook-${VERSAO}`;";
+      const montar = ({ origem = 'https://antigo.exemplo.org', resposta = { ok: true, texto: SW }, estado = { fase: 'ok', pendente: false, pendentes: 0 }, conta = true } = {}) => {
+        const visto = { avisos: [], idas: [], buscas: [], hora: 1_000_000 };
+        const m = criarMudanca({
+          endereco: 'https://novo.exemplo.org/',
+          origem,
+          buscar: async (u, o) => {
+            visto.buscas.push(u);
+            if (resposta === 'fora') throw new TypeError('Failed to fetch');
+            if (resposta === 'sem-leitura') {
+              if (o?.mode !== 'no-cors') throw new TypeError('Failed to fetch');
+              return { ok: false, type: 'opaque', text: async () => '' };
+            }
+            return { ok: resposta.ok, text: async () => resposta.texto };
+          },
+          aviso: (a) => visto.avisos.push(a),
+          estado: () => estado,
+          temConta: () => conta,
+          ir: (u) => visto.idas.push(u),
+          registrar: () => {},
+          agora: () => visto.hora,
+        });
+        return { m, visto };
+      };
+      const saida = {};
+      // No próprio endereço novo: nada a avisar, e nem pergunta à rede.
+      let c = montar({ origem: 'https://novo.exemplo.org' });
+      saida.noNovo = [await c.m.avaliar(), c.visto.buscas.length, c.m.antigo];
+      // Endereço novo ainda fora do ar, com página de erro ou com outra coisa no lugar: sem aviso.
+      saida.foraDoAr = [];
+      for (const resposta of ['fora', { ok: false, texto: 'Not Found' }, { ok: true, texto: '<html>Site em construção</html>' }]) {
+        c = montar({ resposta });
+        saida.foraDoAr.push([await c.m.avaliar(), c.visto.avisos.length]);
+      }
+      // O navegador não deixa ler a resposta do outro endereço, mas ele respondeu: vale como no ar.
+      c = montar({ resposta: 'sem-leitura' });
+      saida.semLeitura = [await c.m.avaliar(), c.visto.buscas.length];
+      // No ar e tudo no Drive: manda ir.
+      c = montar();
+      saida.pronto = await c.m.avaliar();
+      saida.buscou = c.visto.buscas[0];
+      saida.textoPronto = c.visto.avisos[0].texto;
+      saida.botoesPronto = c.visto.avisos[0].acoes.map((a) => a.rotulo);
+      c.visto.avisos[0].acoes[0].ao();
+      saida.foiPara = c.visto.idas;
+      // Com mudanças esperando: não oferece ir.
+      c = montar({ estado: { fase: 'desconectado', pendente: true, pendentes: 2 } });
+      saida.espere = await c.m.avaliar();
+      saida.textoEspere = c.visto.avisos[0].texto;
+      saida.botoesEspere = c.visto.avisos[0].acoes.map((a) => a.rotulo);
+      // "Depois" segura o aviso por meia hora.
+      c.visto.avisos[0].acoes[1].ao();
+      saida.adiado = await c.m.avaliar();
+      c.visto.hora += 31 * 60_000;
+      saida.voltou = await c.m.avaliar();
+      // Aparelho sem conta (só a demonstração): aviso curto.
+      c = montar({ conta: false });
+      saida.semConta = [await c.m.avaliar(), c.visto.avisos[0].texto];
+      return saida;
+    });
+    expect(r.noNovo).toEqual([null, 0, false]);
+    expect(r.foraDoAr).toEqual([[null, 0], [null, 0], [null, 0]]);
+    expect(r.semLeitura).toEqual(['pronto', 2]);
+    expect(r.pronto).toBe('pronto');
+    expect(r.buscou).toBe('https://novo.exemplo.org/sw.js');
+    expect(r.textoPronto).toBe('O researchbook mudou para novo.exemplo.org. Tudo deste aparelho já está no seu Drive. Abra o endereço novo e entre com o Google: os seus dados aparecem lá.');
+    expect(r.botoesPronto).toEqual(['Abrir o endereço novo', 'Depois']);
+    expect(r.foiPara).toEqual(['https://novo.exemplo.org/']);
+    expect(r.espere).toBe('espere');
+    expect(r.textoEspere).toContain('precisa terminar de enviar tudo para o Drive (2 mudanças esperando)');
+    expect(r.botoesEspere).toEqual(['Conferir de novo', 'Depois']);
+    expect(r.adiado).toBeNull();
+    expect(r.voltou).toBe('espere');
+    expect(r.semConta).toEqual(['sem-conta', 'O researchbook mudou de endereço: novo.exemplo.org.']);
+    // Em localhost o aviso nunca liga sozinho.
+    await expect(page.locator('#aviso-endereco')).toHaveCount(0);
+  });
+
   test('o servidor da chave: endereço exato no app e na regra de segurança, sem curinga', () => {
     const cfg = readFileSync(join(RAIZ, 'public/js/config.js'), 'utf8');
     const servidor = cfg.match(/SERVIDOR_IA = '([^']*)'/)[1];
