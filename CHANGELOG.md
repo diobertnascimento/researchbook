@@ -2,6 +2,16 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.4.0 (18/11/2026)
+Confirmação honesta: o app diz onde cada mudança está.
+- O estado da sincronização agora tem dois níveis. Logo depois de uma mudança ele mostra "Gravado neste aparelho. Enviando ao Drive…" e só volta a "Sincronizado às…" quando a mudança subiu de verdade. Antes ele continuava dizendo "Sincronizado" durante a espera.
+- O envio ao Drive começa 2 segundos depois da mudança (eram 4), para dar tempo de subir antes de você bloquear o celular.
+- Sem internet, com a sessão do Google vencida ou com erro, a tela conta quantas mudanças esperam para subir.
+- Quando chegam mudanças de outro aparelho, um aviso diz quantas vieram.
+- Se uma ação falha logo depois do clique, o app avisa que ela pode não ter sido gravada (antes a falha ia só para os registros).
+- "Exportar referências (BibTeX)", em Ajustes, agora exporta de verdade: era um botão que só mostrava uma mensagem.
+- Um fichamento que não existe neste aparelho mostra um aviso, em vez da tela de exemplo.
+
 ## 1.3.0 (18/11/2026)
 Nada se perde: primeira entrega da base funcional, antes do visual novo.
 - Lixeira: o que você apaga vai inteiro para a lixeira (antes ficava só uma marca, sem o conteúdo). Textos, fichamentos e argumentos ficam lá até você tirar; o resto sai depois de 90 dias. O que foi apagado junto volta junto. A lixeira sincroniza entre os aparelhos.

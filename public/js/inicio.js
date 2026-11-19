@@ -24,6 +24,7 @@ import { criarEscrita } from './escrita.js';
 import { criarCopiloto } from './copiloto.js';
 import { criarEscritaUI } from './escrita-ui.js';
 import { criarSegurancaUI } from './seguranca-ui.js';
+import { paraBibTeX } from './importar.js';
 import { criarDisciplinas } from './disciplinas.js';
 import { criarDisciplinasUI } from './disciplinas-ui.js';
 import { criarDissertacao } from './dissertacao.js';
@@ -116,7 +117,13 @@ async function iniciar() {
   removeEventListener('unhandledrejection', cedoRejeicao);
   antes.splice(0).forEach((det) => registrar('erro', 'js.erro', { det, st: 'erro' }));
   addEventListener('error', (e) => registrar('erro', 'js.erro', { det: descreverErro(e), st: 'erro' }));
-  addEventListener('unhandledrejection', (e) => registrar('erro', 'js.erro', { det: descreverRejeicao(e), st: 'erro' }));
+  // Uma ação que falha não pode parecer que deu certo: se a falha vem logo depois de um clique, o app avisa.
+  let ultimoClique = 0;
+  addEventListener('click', () => (ultimoClique = Date.now()), true);
+  addEventListener('unhandledrejection', (e) => {
+    registrar('erro', 'js.erro', { det: descreverRejeicao(e), st: 'erro' });
+    if (Date.now() - ultimoClique < 8000) window.toast?.('Algo falhou e esta ação pode não ter sido gravada. Confira e tente de novo.');
+  });
 
   // Navegação e cliques: só o nome da tela e os atributos de ação, nunca o texto do usuário.
   addEventListener('hashchange', () => registrar('ui', 'ui.navegacao', { det: (location.hash || '#painel').slice(1) }));
@@ -177,6 +184,7 @@ async function iniciar() {
     const digitando = document.activeElement?.matches?.('input, textarea, select');
     if (/^#ajustes/.test(location.hash) && !digitando && typeof window.render === 'function') window.render();
   };
+  let ultimaSinc = null;
   function ligarDrive() {
     if (sinc || !db || !google.sessao()) return;
     const drive = criarDrive({ token: () => google.sessao()?.token, registrar });
@@ -192,7 +200,10 @@ async function iniciar() {
       },
       aoEstado: (e) => {
         if (e.fase === 'desconectado') google.expirar();
-        if (e.fase === 'ok') {
+        // O estado também muda quando algo é gravado aqui (pendente). Recarregar as telas só quando uma sincronização termina.
+        if (e.fase === 'ok' && e.ultima !== ultimaSinc) {
+          if (ultimaSinc && e.recebidos) window.toast?.(e.recebidos === 1 ? '1 mudança veio de outro aparelho' : `${e.recebidos} mudanças vieram de outro aparelho`);
+          ultimaSinc = e.ultima;
           fazerCopiaDoDia();
           window.rb.escrita?.enviarVersoesPendentes();
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
@@ -336,6 +347,7 @@ async function iniciar() {
 
   window.rb = {
     versao,
+    paraBibTeX,
     pronto: true,
     registros: reg,
     atualizacao,

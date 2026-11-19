@@ -23,11 +23,15 @@ export const LIMPAR_APAGADOS_DIAS = 90;
 export const marcaVencida = (i, agora = Date.now()) => !!i?.apagado && !!i.atualizadoEm && Date.parse(i.atualizadoEm) < agora - LIMPAR_APAGADOS_DIAS * 86400000;
 
 const INTERVALO_MS = 60_000;
-const ESPERA_MUDANCA_MS = 4_000;
+// Curto de propósito: no celular é comum mudar algo e bloquear a tela em seguida.
+const ESPERA_MUDANCA_MS = 2_000;
 
 export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSubstituir }) {
   const registrar = registros.registrar;
-  let estado = { fase: 'parado', ultima: null, erro: null, conflitos: 0 };
+  // pendente: há mudança daqui que ainda não subiu. pendentes: quantas (contadas quando o envio não pode acontecer).
+  // recebidos: quantos itens vieram de outro aparelho na última sincronização.
+  let estado = { fase: 'parado', ultima: null, erro: null, conflitos: 0, pendente: false, pendentes: 0, recebidos: 0 };
+  let mudancas = 0;
   let rodando = null;
   let espera = null;
   let enviadosRegistros = 0;
@@ -155,6 +159,7 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
         return estado;
       }
       mudar({ fase: 'sincronizando' });
+      const vistas = mudancas;
       const inicio = performance.now();
       const total = { baixados: 0, enviados: 0, conflitos: 0 };
       try {
@@ -166,7 +171,8 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
         }
         await enviarRegistros();
         const conflitos = (await arm.todos(db, 'conflitos')).length;
-        mudar({ fase: 'ok', ultima: new Date().toISOString(), erro: null, conflitos });
+        // Só deixa de estar pendente se nada mudou aqui enquanto a sincronização rodava.
+        mudar({ fase: 'ok', ultima: new Date().toISOString(), erro: null, conflitos, pendente: mudancas !== vistas, pendentes: 0, recebidos: total.baixados });
         registrar('arq', 'sinc.ok', {
           det: `${total.baixados} recebidos, ${total.enviados} enviados, ${total.conflitos} conflitos`,
           dur: Math.round(performance.now() - inicio),
@@ -174,6 +180,7 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
       } catch (e) {
         const fase = e.codigo === 401 ? 'desconectado' : e.codigo === 'rede' ? 'offline' : 'erro';
         mudar({ fase, erro: e.message });
+        contarPendentes();
         registrar(fase === 'erro' ? 'erro' : 'arq', 'sinc.falhou', { det: e.message, dur: Math.round(performance.now() - inicio), st: fase === 'erro' ? 'erro' : 'aviso' });
       } finally {
         rodando = null;
@@ -185,8 +192,26 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
 
   /** Pede uma sincronização logo depois de uma mudança local (junta várias mudanças seguidas). */
   function agendar(ms = ESPERA_MUDANCA_MS) {
+    mudancas++;
+    if (!estado.pendente) mudar({ pendente: true });
+    if (['offline', 'desconectado', 'erro'].includes(estado.fase)) contarPendentes();
     clearTimeout(espera);
     espera = setTimeout(sincronizar, ms);
+  }
+
+  /** Conta o que mudou neste aparelho e ainda não está no Drive (para dizer isso na tela quando não dá para enviar). */
+  async function contarPendentes() {
+    try {
+      let n = 0;
+      for (const c of arm.COLECOES) {
+        const base = ((await arm.lerMeta(db, `sinc:${c}`)) || { base: {} }).base;
+        for (const i of await arm.todos(db, c)) if (base[i.id] !== i.atualizadoEm) n++;
+      }
+      if (n !== estado.pendentes || (n > 0 && !estado.pendente)) mudar({ pendentes: n, pendente: n > 0 || estado.pendente });
+      return n;
+    } catch {
+      return estado.pendentes;
+    }
   }
 
   setInterval(() => document.visibilityState === 'visible' && estado.fase !== 'desconectado' && sincronizar(), INTERVALO_MS);
@@ -199,5 +224,5 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
     mudar({ conflitos: (await arm.todos(db, 'conflitos')).length });
   }
 
-  return { sincronizar, agendar, recontar, estado: () => estado, idPasta: drive.idRaiz };
+  return { sincronizar, agendar, recontar, contarPendentes, estado: () => estado, idPasta: drive.idRaiz };
 }

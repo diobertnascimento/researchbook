@@ -409,6 +409,39 @@ function fichaLimpa(f) {
   return out;
 }
 
+const TIPO_BIB = { artigo: 'article', livro: 'book', capitulo: 'incollection', anais: 'inproceedings', dissertacao: 'mastersthesis', tese: 'phdthesis', outro: 'misc' };
+
+/** A biblioteca em BibTeX (para o Zotero, o Word ou o LaTeX). Só os campos que a obra tem. */
+export function paraBibTeX(leituras) {
+  const usadas = new Set();
+  const limpa = (v) => String(v).replace(/[{}]/g, '').replace(/\s+/g, ' ').trim();
+  const entradas = leituras.map((l) => {
+    const autores = (l.autores || []).map((a) => [a.sobrenome, a.prenomes].filter(Boolean).join(', ')).filter(Boolean);
+    const base = ((l.autores?.[0]?.sobrenome || 'ref').normalize('NFD').replace(/[^a-zA-Z]/g, '').toLowerCase() || 'ref') + (l.ano || '');
+    let chave = base;
+    for (let n = 98; usadas.has(chave); n++) chave = base + String.fromCharCode(n);
+    usadas.add(chave);
+    const tipo = TIPO_BIB[l.tipo] || 'misc';
+    const veiculo = tipo === 'article' ? 'journal' : tipo === 'incollection' || tipo === 'inproceedings' ? 'booktitle' : tipo.endsWith('thesis') ? 'school' : 'howpublished';
+    const campos = [
+      ['author', autores.join(' and ')],
+      ['title', [l.titulo, l.subtitulo].filter(Boolean).join(': ')],
+      ['year', l.ano],
+      [veiculo, l.veiculo],
+      ['volume', l.volume],
+      ['number', l.numero],
+      ['pages', l.paginas && String(l.paginas).replace(/\s*[-–]\s*/, '--')],
+      ['publisher', l.editora],
+      ['address', l.local],
+      ['doi', l.doi],
+      ['url', l.url],
+      ['language', l.idioma],
+    ].filter(([, v]) => v != null && v !== '');
+    return `@${tipo}{${chave},\n${campos.map(([c, v]) => `  ${c} = {${limpa(v)}}`).join(',\n')}\n}`;
+  });
+  return entradas.join('\n\n') + '\n';
+}
+
 export const NOMES_FORMATO = { bibtex: 'BibTeX', ris: 'RIS', csl: 'CSL JSON', rdf: 'Zotero RDF' };
 
 /** Formato de um arquivo de dados pelo nome e pelo começo do conteúdo. null se não for um formato conhecido. */
