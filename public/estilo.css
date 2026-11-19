@@ -1939,3 +1939,30 @@ body.sessao .esc-sec-tit{pointer-events:none}
 .entrar-passos li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--acento);animation:pulso 1.2s ease-in-out infinite}
 @keyframes pulso{0%,100%{opacity:.25}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.entrar-passos li::before{animation:none}}
+
+/* ---------- Editor: "Pedir" na margem do parágrafo e a caixa do resultado (v2.10.0) ---------- */
+.esc-pedir{display:none;position:absolute;z-index:55}
+.esc-pedir.on{display:block}
+.esc-pedir > button{height:var(--h-p);padding:0 var(--e-3);border:1px solid transparent;border-radius:999px;background:transparent;color:var(--texto-3);font-size:var(--fs-meta);font-weight:600;cursor:pointer}
+.esc-pedir > button:hover,.esc-pedir > button[aria-expanded="true"]{border-color:var(--borda-forte);background:var(--superficie);color:var(--texto)}
+.esc-pedir .ops{position:absolute;left:0;top:calc(100% + 4px);display:flex;flex-direction:column;min-width:250px;padding:6px;border-radius:var(--r-3);background:var(--superficie);box-shadow:var(--sombra-1);border:1px solid var(--borda)}
+.esc-pedir .ops[hidden]{display:none}
+.esc-pedir .ops button{height:var(--h-m);padding:0 var(--e-3);border:0;border-radius:var(--r-2);background:none;text-align:left;font-size:var(--fs-ui);color:var(--texto);cursor:pointer;white-space:nowrap}
+.esc-pedir .ops button:hover,.esc-pedir .ops button:focus-visible{background:var(--superficie-2)}
+body.sessao .esc-pedir [data-ia]{display:none}
+.esc-pedido{position:absolute;z-index:56;max-height:70vh;overflow:auto;padding:var(--e-5);border-radius:var(--r-3);background:var(--superficie);border:1px solid var(--borda);box-shadow:var(--sombra-1)}
+.esc-pedido[hidden]{display:none}
+.esc-pedido h3{font-size:var(--fs-corpo);line-height:24px;font-weight:600;margin:0 0 var(--e-1);outline:none}
+.esc-pedido .sub{font-size:var(--fs-meta);line-height:18px;color:var(--texto-3);margin:0 0 var(--e-3)}
+.esc-pedido ul{list-style:none;margin:0;padding:0}
+.esc-pedido li{padding:var(--e-3) 0;border-top:1px solid var(--borda)}
+.esc-pedido li small{display:block;font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--texto-3)}
+.esc-pedido li p{margin:0 0 var(--e-2);font-family:var(--leitura);font-size:var(--fs-ui);line-height:24px}
+.esc-pedido li p.sub{font-family:var(--ui);margin:0}
+.esc-pedido .cit{font-family:var(--ui);font-size:var(--fs-meta);color:var(--texto-3)}
+.esc-pedido li.fora small,.esc-pedido li.sem-pagina small,.esc-pedido li.sem-grifo small{color:var(--perigo)}
+.esc-pedido .pe{margin-top:var(--e-3)}
+.esc-pedir.fixo{position:fixed;right:var(--e-4);bottom:var(--pedir-b,72px)}
+.esc-pedir.fixo > button{border-color:var(--borda-forte);background:var(--superficie);color:var(--texto);box-shadow:var(--sombra-1);height:var(--h-m);padding:0 var(--e-4)}
+.esc-pedir.fixo .ops{left:auto;right:0;top:auto;bottom:calc(100% + 6px)}
+.esc-pedir.fixo .ops button{height:var(--h-g)}

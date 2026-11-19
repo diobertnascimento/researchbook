@@ -6,6 +6,7 @@ import { referencia, citacao, autorCurto } from './abnt.js';
 import { normalizar } from './contexto.js';
 import { ErroIA } from './gemini.js';
 import { ouvir } from './ui.js';
+import { buscarNoAcervo, conferirCitacoes } from './pedir.js';
 
 /* global I, toast, baixar, S */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -503,7 +504,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   });
   document.addEventListener('mousedown', (e) => {
     // A barra de formatação não tira o cursor do texto.
-    if (e.target.closest('[data-esc-fmt],[data-esc-mais],[data-esc-inserir]')) e.preventDefault();
+    if (e.target.closest('[data-esc-fmt],[data-esc-mais],[data-esc-inserir],[data-esc-pedir],[data-esc-pedido]')) e.preventDefault();
   });
 
   ouvir('click', async (e) => {
@@ -538,12 +539,34 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   const mais = document.createElement('div');
   mais.className = 'esc-mais';
   mais.innerHTML = '<button type="button" data-esc-mais aria-label="Inserir separador ou código" aria-expanded="false">+</button><span class="ops" hidden><button type="button" data-esc-inserir="hr">Separador</button><button type="button" data-esc-inserir="pre">Código</button></span>';
-  // As duas peças só existem na página enquanto o editor está aberto.
-  const garantir = () => flut.isConnected || document.body.append(flut, mais);
+  // "Pedir": botão discreto na margem do parágrafo em que o cursor está. A ajuda só aparece quando ele pede,
+  // e o resultado fica numa caixa fora do texto, que some ao fechar. As duas primeiras opções não usam IA.
+  const pedir = document.createElement('div');
+  pedir.className = 'esc-pedir';
+  pedir.innerHTML = `<button type="button" data-esc-pedir aria-haspopup="true" aria-expanded="false">Pedir</button><div class="ops" role="menu" aria-label="Pedir sobre este parágrafo" hidden>
+    <button type="button" role="menuitem" data-esc-pedido="buscar">Buscar nos meus grifos e notas</button>
+    <button type="button" role="menuitem" data-esc-pedido="citacoes">Conferir as citações</button>
+    <button type="button" role="menuitem" data-esc-pedido="versoes" data-ia>Propor outra versão</button>
+    <button type="button" role="menuitem" data-esc-pedido="conversar" data-ia>Conversar com o Copilot</button></div>`;
+  const pedido = document.createElement('aside');
+  pedido.className = 'esc-pedido';
+  pedido.setAttribute('aria-label', 'Resultado do pedido');
+  pedido.hidden = true;
+  // As peças só existem na página enquanto o editor está aberto.
+  const garantir = () => flut.isConnected || document.body.append(flut, mais, pedir, pedido);
+  const fecharPedido = () => {
+    pedido.hidden = true;
+    pedido.innerHTML = '';
+    pedir.querySelector('.ops').hidden = true;
+    pedir.querySelector('[data-esc-pedir]').setAttribute('aria-expanded', 'false');
+  };
   document.addEventListener('rb:render', () => {
     if (!document.getElementById('esc-corpo')) {
+      fecharPedido();
       flut.remove();
       mais.remove();
+      pedir.remove();
+      pedido.remove();
     }
   });
   let trechoGuardado = null;
@@ -586,6 +609,119 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     mais.style.left = `${Math.max(4, r.left - 40) + scrollX}px`;
     mais.style.top = `${r.top + scrollY + (r.height - 32) / 2}px`;
   }
+  function posicionarPedir() {
+    const sel = noCorpo();
+    const bloco = sel && sel.isCollapsed ? blocoAlvo() : null;
+    const cheio = bloco && bloco.textContent.trim();
+    // Com o menu aberto, o botão fica onde está até o pedido ser feito ou fechado.
+    if (!pedir.querySelector('.ops').hidden && pedir.classList.contains('on')) return;
+    if (cheio) garantir();
+    pedir.classList.toggle('on', !!cheio);
+    if (!cheio) return;
+    const largo = innerWidth > 1000;
+    pedir.classList.toggle('fixo', !largo);
+    if (!largo) {
+      // No celular não há margem: o botão fica fixo no canto de baixo, acima do teclado quando ele está aberto.
+      const vv = window.visualViewport;
+      const teclado = vv ? innerHeight - vv.height - vv.offsetTop : 0;
+      pedir.style.left = '';
+      pedir.style.top = '';
+      return pedir.style.setProperty('--pedir-b', `${teclado > 80 ? Math.round(teclado) + 12 : document.body.classList.contains('sessao') ? 16 : 72}px`);
+    }
+    const r = bloco.getBoundingClientRect();
+    pedir.style.left = `${Math.max(4, r.left - 76) + scrollX}px`;
+    pedir.style.top = `${r.top + scrollY}px`;
+  }
+  window.visualViewport?.addEventListener('resize', () => pedir.classList.contains('fixo') && pedir.classList.contains('on') && posicionarPedir());
+  /** Mostra o resultado de um pedido fora do texto: ao lado, se houver margem; senão, logo abaixo do parágrafo. */
+  function mostrarPedido(html, bloco) {
+    garantir();
+    pedido.innerHTML = `${html}<div class="pe"><span class="cresce"></span><button type="button" class="btn" data-esc-pedido-fechar>Fechar</button></div>`;
+    pedido.hidden = false;
+    const corpo = document.getElementById('esc-corpo').getBoundingClientRect();
+    const r = bloco.getBoundingClientRect();
+    const aoLado = innerWidth - corpo.right >= 360;
+    pedido.style.width = `${aoLado ? 320 : Math.min(corpo.width, innerWidth - 32)}px`;
+    pedido.style.left = `${(aoLado ? corpo.right + 24 : Math.max(16, corpo.left)) + scrollX}px`;
+    pedido.style.top = `${(aoLado ? r.top : r.bottom + 40) + scrollY}px`;
+    pedido.querySelector('h3')?.focus?.();
+  }
+  /** Os grifos de todas as obras e as notas dos fichamentos, cada um com a referência pronta. */
+  function acervoDoAutor() {
+    const itens = [];
+    for (const g of bib.todosGrifos?.() || []) {
+      const l = bib.obter(g.leituraId);
+      if (l && g.texto?.trim()) itens.push({ tipo: 'Grifo', texto: g.texto, cit: citacao(l, g.pagina), href: `#leitor/${encodeURIComponent(l.id)}` });
+    }
+    for (const f of window.rb?.fichUI?.todos() || []) {
+      const l = bib.obter(f.leituraId || f.id);
+      if (!l) continue;
+      for (const n of f.notas || []) if (n.texto?.trim()) itens.push({ tipo: 'Sua nota', texto: n.texto, cit: citacao(l, n.pagina || undefined), href: `#fichamento/${encodeURIComponent(l.id)}` });
+      for (const t of f.trechos || []) if (!t.daNota && t.texto?.trim()) itens.push({ tipo: 'Sua nota', texto: t.texto, cit: '', href: `#fichamento/${encodeURIComponent(l.id)}` });
+    }
+    return itens;
+  }
+  let achadosDoPedido = [];
+  pedir.addEventListener('click', async (e) => {
+    const abrir = e.target.closest('[data-esc-pedir]');
+    const ops = pedir.querySelector('.ops');
+    if (abrir) {
+      ops.hidden = !ops.hidden;
+      return abrir.setAttribute('aria-expanded', String(!ops.hidden));
+    }
+    const op = e.target.closest('[data-esc-pedido]')?.dataset.escPedido;
+    const bloco = blocoAlvo();
+    if (!op || !bloco) return;
+    ops.hidden = true;
+    pedir.querySelector('[data-esc-pedir]').setAttribute('aria-expanded', 'false');
+    const texto = bloco.textContent.trim();
+    registrar('ui', 'pedir', { det: op });
+    if (op === 'buscar') {
+      achadosDoPedido = buscarNoAcervo(texto, acervoDoAutor());
+      return mostrarPedido(
+        `<h3 tabindex="-1">Nos seus grifos e notas</h3><p class="sub">Por palavras em comum com este parágrafo, sem IA. Sinônimo não é encontrado.</p>
+        ${achadosDoPedido.length ? `<ul>${achadosDoPedido.map((x, i) => `<li><small>${x.tipo}</small><p>${esc(x.texto.length > 280 ? `${x.texto.slice(0, 280)}…` : x.texto)}${x.cit ? ` <span class="cit">${esc(x.cit)}</span>` : ''}</p><div class="ia-linha"><button type="button" class="btn fant" data-esc-pedido-copiar="${i}">Copiar com a referência</button><a class="btn fant" href="${x.href}">Abrir</a></div></li>`).join('')}</ul>` : '<p>Nada nos seus grifos e notas tem palavras em comum com este parágrafo.</p>'}`,
+        bloco,
+      );
+    }
+    if (op === 'citacoes') {
+      const achados = conferirCitacoes(texto, bib.leituras(), bib.todosGrifos?.() || [], autorCurto);
+      const rotulo = { ok: 'Na biblioteca', fora: 'Fora da biblioteca', 'sem-pagina': 'Sem página', 'sem-grifo': 'Fora dos seus grifos' };
+      return mostrarPedido(
+        `<h3 tabindex="-1">Citações deste parágrafo</h3><p class="sub">Conferidas contra a sua biblioteca e os seus grifos, sem IA.</p>
+        ${achados.length ? `<ul>${achados.map((a) => `<li class="${a.tipo}"><small>${rotulo[a.tipo]}</small><p>${esc(a.texto)}</p><p class="sub">${esc(a.detalhe)}</p></li>`).join('')}</ul>` : '<p>Não encontrei citação neste parágrafo.</p>'}`,
+        bloco,
+      );
+    }
+    // As duas opções com IA usam o painel do Copilot, que abre só agora.
+    await salvarCorpo();
+    try {
+      localStorage.setItem(PAINEL, '1');
+    } catch {
+      // Sem armazenamento local, o painel abre só nesta tela.
+    }
+    est.aba = 'copilot';
+    fecharPedido();
+    window.render?.();
+    if (op === 'versoes') document.querySelector('[data-esc-versoes]')?.click();
+    else document.getElementById('esc-chat')?.focus();
+  });
+  pedido.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-esc-pedido-fechar]')) {
+      fecharPedido();
+      return document.getElementById('esc-corpo')?.focus();
+    }
+    const i = e.target.closest('[data-esc-pedido-copiar]')?.dataset.escPedidoCopiar;
+    if (i === undefined) return;
+    const x = achadosDoPedido[Number(i)];
+    try {
+      await navigator.clipboard.writeText(`${x.texto.trim()}${x.cit ? ` ${x.cit}` : ''}`);
+      toast('Copiado com a referência');
+    } catch {
+      toast('Não deu para copiar. Selecione o texto e copie.');
+    }
+  });
+
   /** "- " ou "1. " no começo da linha vira lista, como no Medium. */
   function listaAoDigitar() {
     const sel = noCorpo();
@@ -657,10 +793,12 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   document.addEventListener('selectionchange', () => {
     if (!document.getElementById('esc-corpo')) {
       flut.classList.remove('on', 'link');
+      pedir.classList.remove('on');
       return mais.classList.remove('on');
     }
     posicionarFlutuante();
     posicionarMais();
+    posicionarPedir();
   });
   document.addEventListener('keydown', (e) => {
     // Ctrl+K: link no trecho selecionado.
