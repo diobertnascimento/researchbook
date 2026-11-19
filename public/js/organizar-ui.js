@@ -142,7 +142,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       <p class="org-motivo"><span class="chip ${classe}">${rot}</span> ${esc(b.motivo || '')}</p>
       <div class="linha-acoes">
         <button class="btn prim mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(c.doi)}">Aceitar este DOI</button>
-        <button class="btn mini" data-org-recusar="${esc(l.id)}" data-doi="${esc(c.doi)}">Não é esta</button>
+        <button class="btn mini" data-org-recusar="${esc(l.id)}" data-doi="${esc(c.doi)}">Não é esta</button>${org.iaLigada() && l.doiBusca.confianca !== 'ia' ? `<button class="btn fant mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}
         ${
           b.outros?.length
             ? `<details class="org-outros"><summary>Outros candidatos (${b.outros.length})</summary>${b.outros
@@ -173,7 +173,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const d = b.dadosLidos;
     return `<li class="org-sem"><span><b>${esc(l.titulo)}</b><small>${esc([autores(l), l.ano].filter(Boolean).join(', ') || 'Sem autores e ano')}${b.status === 'recusada' ? '. Você recusou os candidatos.' : ''}</small>
       ${d ? `<small class="org-lido">A IA leu no PDF: “${esc(d.titulo)}”${d.autores?.length ? `, ${esc(autores(d))}` : ''}${d.ano ? `, ${esc(d.ano)}` : ''}</small>` : ''}</span>
-      <span class="linha-acoes">${d ? `<button class="btn mini" data-org-usar-lidos="${esc(l.id)}">Usar esses dados</button>` : ''}<button class="btn mini" data-org-de-novo="${esc(l.id)}" data-ocupado="Procurando…">Procurar de novo</button><button class="btn fant mini" data-org-corrigir="${esc(l.id)}">Corrigir dados</button><button class="btn fant mini" data-org-nao-tem="${esc(l.id)}">Não tem DOI</button></span></li>`;
+      <span class="linha-acoes">${d ? `<button class="btn mini" data-org-usar-lidos="${esc(l.id)}">Usar esses dados</button>` : ''}<button class="btn mini" data-org-de-novo="${esc(l.id)}" data-ocupado="Procurando…">Procurar de novo</button>${org.iaLigada() ? `<button class="btn mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}<button class="btn fant mini" data-org-corrigir="${esc(l.id)}">Corrigir dados</button><button class="btn fant mini" data-org-nao-tem="${esc(l.id)}">Não tem DOI</button></span></li>`;
   }
 
   const cacheFica = new Map();
@@ -192,16 +192,20 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const pend = org.pendentes();
     const muitoProvaveis = props.filter((l) => l.doiBusca.confianca === 'muito-provavel');
     if (reps.some((g) => !cacheFica.has(g.ids.join(',')))) calcularQuemFica(reps).then(() => /^#organizar/.test(location.hash) && window.render?.());
-    const topo = `<div class="topo"><div><h1>Organizar</h1><p>O app procura os DOIs que faltam e as obras repetidas. Nada muda na biblioteca sem a sua aprovação.</p></div>
+    const topo = `<div class="topo"><div><h1>Organizar</h1><p>O app procura no Crossref os DOIs que faltam e as obras repetidas. Quando título, autor e ano batem, o DOI é gravado na hora, com desfazer. O que deixa dúvida espera a sua decisão.</p></div>
       <div class="acoes"><button class="btn" data-org-importar>${icone('upload')}Importar</button>${pend.length && !st.rodando ? `<button class="btn prim" data-org-procurar>Procurar DOIs que faltam (${pend.length})</button>` : ''}</div></div>`;
     const andamento = st.rodando
       ? `<div class="bloco org-andamento" role="status" aria-live="polite"><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><b>Procurando DOIs: ${st.feitos} de ${st.total}</b></div>${st.atual ? `<p class="meta mt-2">${esc(st.atual)}</p>` : ''}<div class="barra mb-0"><i style="width:${st.total ? Math.round((st.feitos / st.total) * 100) : 0}%"></i></div></div>`
       : '';
     const avisoIA = st.avisoIA ? `<div class="aviso"><span>ⓘ</span><div>A IA não respondeu (${esc(st.avisoIA)}). A procura continuou só pelo Crossref. <a href="#ajustes">Abrir Ajustes do Gemini</a></div></div>` : '';
-    const notaIA = org.iaLigada() ? '' : '<p class="meta mb-4">Com o Gemini ligado, a IA lê o começo do PDF quando o Crossref fica em dúvida e indica o candidato certo. <a href="#ajustes">Ligar em Ajustes</a></p>';
-    if (!props.length && !reps.length && !sem.length && !pend.length && !st.rodando)
+    const notaIA = org.iaLigada() ? '' : '<p class="meta mb-4">A procura usa só o Crossref. Com o Gemini ligado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o candidato certo. <a href="#ajustes">Ligar em Ajustes</a></p>';
+    const grav = org.gravadosAgora();
+    const gravadosHTML = grav.length && !st.rodando
+      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Gravados agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com o Crossref, então o DOI foi gravado e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>DOI ${esc(g.doi)}</small></span></li>`).join('')}</ul></section>`
+      : '';
+    if (!props.length && !reps.length && !sem.length && !pend.length && !st.rodando && !grav.length)
       return `${topo}<div class="vazio-estado"><h2>Biblioteca organizada</h2><p>Todas as obras têm DOI (ou você marcou que não têm) e não há obras repetidas. Para trazer muitas obras de uma vez, use Importar.</p><button class="btn prim" data-org-importar>${icone('upload')}Importar PDFs ou o Zotero</button></div>`;
-    return `${topo}${andamento}${avisoIA}${notaIA}
+    return `${topo}${andamento}${avisoIA}${notaIA}${gravadosHTML}
       ${props.length ? `<section class="org-sec"><div class="org-cab"><h2>DOIs para conferir <span class="chip">${props.length}</span></h2>${muitoProvaveis.length > 1 ? `<button class="btn mini" data-org-aceitar-todos data-ocupado="Aceitando…">Aceitar os ${muitoProvaveis.length} muito prováveis</button>` : ''}</div>${props.map(cartaoProposta).join('')}</section>` : ''}
       ${reps.length ? `<section class="org-sec"><div class="org-cab"><h2>Obras repetidas <span class="chip">${reps.length}</span></h2>${reps.filter((g) => g.tipo === 'identica').length > 1 ? `<button class="btn mini" data-org-juntar-identicas data-ocupado="Juntando…">Juntar as ${reps.filter((g) => g.tipo === 'identica').length} idênticas</button>` : ''}</div>${reps.map((g) => cartaoRepetidas(g, cacheFica.get(g.ids.join(',')))).join('')}</section>` : ''}
       ${sem.length ? `<section class="org-sec"><details class="como" ${props.length || reps.length ? '' : 'open'}><summary>Sem DOI encontrado (${sem.length})</summary><p class="meta">Livros, capítulos e trabalhos brasileiros antigos muitas vezes não têm DOI. Corrija os dados e procure de novo, ou marque que a obra não tem DOI.</p><ul class="org-lista-sem">${sem.map(cartaoSem).join('')}</ul></details></section>` : ''}
@@ -224,7 +228,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
+    const b = e.target.closest('[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
     if (!b) return;
     const d = b.dataset;
     if (d.orgImportar !== undefined) return abrirImportar();
@@ -232,6 +236,19 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.impGravar !== undefined) return gravar();
     if (d.orgProcurar !== undefined) {
       org.procurarDOIs();
+      return redesenhar();
+    }
+    if (d.orgIa) {
+      await org.pedirIA(d.orgIa);
+      return redesenhar();
+    }
+    if (d.orgDesfazerGravados !== undefined) {
+      const n = await org.desfazerGravados();
+      redesenhar();
+      return toast(`${plural(n, 'DOI retirado', 'DOIs retirados')}. As obras voltaram para a lista de conferir.`);
+    }
+    if (d.orgDispensar !== undefined) {
+      org.dispensarGravados();
       return redesenhar();
     }
     if (d.orgAceitar) {

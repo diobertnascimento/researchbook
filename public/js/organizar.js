@@ -203,7 +203,8 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
 
   const resumoCand = (c, nota) => ({ ...c, pontos: nota?.total ?? null });
 
-  async function procurarUma(l) {
+  /** Procura o DOI de uma obra no Crossref. A IA só entra quando o autor pede (comIA). */
+  async function procurarUma(l, { comIA = false } = {}) {
     let ficha = l;
     let r = await procurarPorDados(ficha, { registrar });
     if (r.erro) return { status: 'erro', erro: r.erro, em: new Date().toISOString() };
@@ -216,7 +217,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     }
     let dadosLidos = null;
     let avisoIA = null;
-    if (iaLigada()) {
+    if (comIA && iaLigada()) {
       try {
         const texto = await textoDoPDF(l);
         let resp = await perguntarIA(l, texto, lista.map((x) => x.c));
@@ -266,8 +267,14 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
 
   let filaExtra = [];
   /** Procura o DOI das obras indicadas (ou de todas as que faltam), uma por vez, sem travar a tela. */
-  function procurarDOIs(ids = null) {
-    const alvo = ids ? ids : pendentes().map((l) => l.id);
+  // DOIs gravados sozinhos na última procura (título, autor e ano batem com o Crossref), com o desfazer de cada um.
+  let gravados = [];
+  /**
+   * Procura o DOI das obras indicadas (ou de todas as que faltam), uma por vez, sem travar a tela.
+   * Resultado muito provável é gravado na hora, com desfazer; o que deixa dúvida espera a decisão do autor.
+   */
+  function procurarDOIs(ids = null, { comIA = false } = {}) {
+    const alvo = (ids ? ids : pendentes().map((l) => l.id)).map((id) => ({ id, comIA }));
     if (busca.rodando) {
       filaExtra.push(...alvo);
       busca.total += alvo.length;
@@ -275,20 +282,25 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
       return busca.promessa;
     }
     busca = { rodando: true, feitos: 0, total: alvo.length, atual: null, avisoIA: null };
+    gravados = [];
     avisar();
     busca.promessa = (async () => {
       const fila = [...alvo];
       while (fila.length || filaExtra.length) {
         if (!fila.length) fila.push(...filaExtra.splice(0));
-        const id = fila.shift();
+        const { id, comIA: pedirIAaqui } = fila.shift();
         const l = bib.obter(id);
         if (l && !l.doi) {
           busca.atual = l.titulo;
           avisar();
           const t0 = performance.now();
-          const res = await procurarUma(l);
+          const res = await procurarUma(l, { comIA: pedirIAaqui });
           if (res.avisoIA && !busca.avisoIA) busca.avisoIA = res.avisoIA;
           await bib.atualizar(id, { doiBusca: res });
+          if (res.status === 'proposta' && res.confianca === 'muito-provavel') {
+            const desfazer = await aceitar(id, res.candidato.doi, { auto: true });
+            if (desfazer) gravados.push({ id, titulo: l.titulo, doi: res.candidato.doi, desfazer });
+          }
           registrar('arq', 'organizar.doi', { det: `${res.status}${res.confianca ? `, ${res.confianca}` : ''}`, dur: Math.round(performance.now() - t0) });
           await pausa(250);
         }
@@ -303,20 +315,20 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
   }
 
   /** Aceita um candidato: grava o DOI e completa só os campos vazios (o que o autor já tinha fica). */
-  async function aceitar(id, doi) {
+  async function aceitar(id, doi, { auto = false } = {}) {
     const l = bib.obter(id);
     if (!l) return null;
     const b = l.doiBusca || {};
     const c = [b.candidato, ...(b.outros || [])].find((x) => x && x.doi.toLowerCase() === doi.toLowerCase());
     if (!c) return null;
     const antes = { ...l };
-    const m = { doi: c.doi, doiBusca: { status: 'aceita', doi: c.doi, em: new Date().toISOString() } };
+    const m = { doi: c.doi, doiBusca: { status: 'aceita', doi: c.doi, em: new Date().toISOString(), ...(auto ? { auto: true } : {}) } };
     for (const k of CAMPOS_BIB) if (!l[k] && c[k]) m[k] = c[k];
     if (!l.autores?.length && c.autores?.length) m.autores = c.autores;
     if (!l.organizadores?.length && c.organizadores?.length) m.organizadores = c.organizadores;
     if (tituloFraco(l)) Object.assign(m, { titulo: c.titulo, subtitulo: c.subtitulo || null, tipo: c.tipo || l.tipo });
     await bib.atualizar(id, m);
-    registrar('ui', 'organizar.aceitar', { det: b.confianca || 'manual' });
+    registrar(auto ? 'arq' : 'ui', 'organizar.aceitar', { det: auto ? 'gravado sozinho' : b.confianca || 'manual' });
     avisar();
     return async () => {
       await bib.atualizar(id, { doi: antes.doi || null, doiBusca: antes.doiBusca || null, ...Object.fromEntries(Object.keys(m).filter((k) => !['doi', 'doiBusca'].includes(k)).map((k) => [k, antes[k] ?? null])) });
@@ -346,10 +358,20 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     avisar();
   }
 
-  async function procurarDeNovo(id) {
+  async function procurarDeNovo(id, opcoes = {}) {
     const l = bib.obter(id);
     await bib.atualizar(id, { doiBusca: { status: 'erro', recusados: l?.doiBusca?.recusados || [] } });
-    return procurarDOIs([id]);
+    return procurarDOIs([id], opcoes);
+  }
+  /** A pedido do autor, para uma obra: a IA lê o começo do PDF e indica o candidato certo (nunca inventa DOI). */
+  const pedirIA = (id) => procurarDeNovo(id, { comIA: true });
+  /** Desfaz todos os DOIs gravados sozinhos na última procura. */
+  async function desfazerGravados() {
+    for (const g of [...gravados].reverse()) await g.desfazer();
+    const n = gravados.length;
+    gravados = [];
+    avisar();
+    return n;
   }
 
   /** Usa título, autores e ano que a IA leu no PDF (conferidos no texto do PDF). */
@@ -480,6 +502,13 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     propostas,
     semResultado,
     procurarDOIs,
+    pedirIA,
+    gravadosAgora: () => gravados,
+    desfazerGravados,
+    dispensarGravados: () => {
+      gravados = [];
+      avisar();
+    },
     procurarUma,
     aceitar,
     recusar,
