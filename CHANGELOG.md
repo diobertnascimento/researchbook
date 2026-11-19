@@ -2,6 +2,11 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.8.0 (19/11/2026)
+Cópias de segurança: item por item e pasta no computador.
+- Em cada cópia guardada, "Ver o que mudou" lista o que nela está diferente de hoje, o que não existe mais e o que está apagado. "Trazer esta versão" traz de volta um item só. O que estava aqui é guardado antes: numa cópia inteira e, se for texto, como versão.
+- Pasta no computador: você escolhe uma pasta e o app grava nela uma cópia em arquivo por dia, fora do navegador. Funciona no Chrome e no Edge do computador; o navegador pode pedir a permissão de novo a cada sessão ("Permitir de novo"). Nos outros navegadores, continua valendo "Baixar".
+
 ## 1.7.0 (19/11/2026)
 Acervo, em Ajustes.
 - O Organizar saiu das abas da Biblioteca e virou a página Acervo, em Ajustes. Ela abre com o retrato da biblioteca: quantas obras, quantas com DOI, quantas sem DOI e quantas sem PDF.

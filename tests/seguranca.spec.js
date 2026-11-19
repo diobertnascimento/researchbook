@@ -123,4 +123,60 @@ test.describe('no computador', () => {
     await copia.getByRole('button', { name: 'Baixar' }).click();
     expect((await baixa).suggestedFilename()).toMatch(/^researchbook-copia-\d{4}-\d{2}-\d{2}\.json$/);
   });
+
+  test('cópias, item por item: "Ver o que mudou" mostra o que está diferente e traz de volta uma versão, guardando a de agora', async ({ page, context }) => {
+    await entrar(page, context);
+    const id = await criarTexto(page);
+    await page.evaluate(() => window.rb.dados.backup('antes de um teste'));
+    await page.evaluate(async (id) => {
+      const e = window.rb.escrita;
+      const t = e.obter(id);
+      await e.salvar({ ...t, secoes: [{ ...t.secoes[0], html: '<p data-pid="p1" data-autoria="autor">Reescrito depois, por engano.</p>' }] });
+    }, id);
+
+    await page.goto('/#ajustes/seguranca');
+    const copia = page.locator('#seg-copias > li', { hasText: 'antes de um teste' });
+    await copia.getByRole('button', { name: 'Ver o que mudou' }).click();
+    const difs = page.locator('#seg-copias .seg-difs li');
+    await expect(difs).toHaveCount(1);
+    await expect(difs).toContainText('Rotas e cooperativas');
+    await expect(difs).toContainText('Texto, está diferente hoje');
+    await difs.getByRole('button', { name: 'Trazer esta versão' }).click();
+    await expect(page.locator('#toast')).toContainText('Versão da cópia trazida de volta');
+
+    const r = await page.evaluate(async (id) => ({
+      html: window.rb.escrita.obter(id).secoes[0].html,
+      versoes: (await window.rb.dados.versoes.doTexto(id)).map((v) => [v.motivo, v.texto.secoes[0].html]),
+      copias: (await window.rb.dados.copias()).map((c) => c.motivo),
+    }), id);
+    expect(r.html).toContain('rotas negociadas');
+    // O que estava na tela não se perdeu: virou versão e há uma cópia inteira de antes.
+    expect(r.versoes.find(([m]) => m === 'antes de trazer de uma cópia')[1]).toContain('Reescrito depois, por engano.');
+    expect(r.copias).toContain('antes de trazer itens de uma cópia');
+    await expect(page.locator('#seg-copias .seg-difs')).toContainText('Nada diferente');
+  });
+
+  test('pasta no computador: escolhida a pasta, a cópia do dia é gravada em arquivo fora dos dados do app', async ({ page, context }) => {
+    await entrar(page, context);
+    await criarTexto(page);
+    // O seletor de pastas do sistema não abre em teste: devolve uma pasta de verdade do navegador.
+    await page.evaluate(() => {
+      window.showDirectoryPicker = async () => (await navigator.storage.getDirectory()).getDirectoryHandle('Copias', { create: true });
+    });
+    await page.goto('/#ajustes/seguranca');
+    await page.getByRole('button', { name: 'Escolher a pasta' }).click();
+    await expect(page.locator('#toast')).toContainText(/Cópia gravada na pasta: researchbook-\d{4}-\d{2}-\d{2}\.json/);
+    await expect(page.locator('#sec-seguranca')).toContainText('Pasta “Copias”');
+    const gravado = await page.evaluate(async () => {
+      const pasta = await (await navigator.storage.getDirectory()).getDirectoryHandle('Copias');
+      const nomes = [];
+      for await (const n of pasta.keys()) nomes.push(n);
+      const texto = await (await (await pasta.getFileHandle(nomes[0])).getFile()).text();
+      return { nomes, textos: JSON.parse(texto).colecoes.textos.map((t) => t.titulo) };
+    });
+    expect(gravado.nomes).toHaveLength(1);
+    expect(gravado.textos).toEqual(['Rotas e cooperativas']);
+    // A pasta fica guardada no banco deste aparelho para as próximas cópias.
+    expect(await page.evaluate(() => window.rb.dados.pastaLocal.estado().then((e) => [e.nome, !!e.ultima, e.permissao]))).toEqual(['Copias', true, 'granted']);
+  });
 });
