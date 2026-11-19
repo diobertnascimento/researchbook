@@ -20,8 +20,8 @@ test.describe('no computador', () => {
   test('com o app aberto e a sessão vencida, voltar para a aba renova sozinho e a sincronização continua', async ({ page, context }) => {
     const g = await entrar(page, context);
     await page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('rb.sessao'));
-      localStorage.setItem('rb.sessao', JSON.stringify({ ...s, expira: Date.now() - 1000 }));
+      const s = JSON.parse(sessionStorage.getItem('rb.sessao'));
+      sessionStorage.setItem('rb.sessao', JSON.stringify({ ...s, expira: Date.now() - 1000 }));
       localStorage.removeItem('rb.renovacao.em');
     });
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))).catch(() => {});
@@ -38,8 +38,8 @@ test.describe('no computador', () => {
       c.id = 'campo-em-uso';
       document.body.appendChild(c);
       c.focus();
-      const s = JSON.parse(localStorage.getItem('rb.sessao'));
-      localStorage.setItem('rb.sessao', JSON.stringify({ ...s, expira: Date.now() - 1000 }));
+      const s = JSON.parse(sessionStorage.getItem('rb.sessao'));
+      sessionStorage.setItem('rb.sessao', JSON.stringify({ ...s, expira: Date.now() - 1000 }));
       localStorage.removeItem('rb.renovacao.em');
       document.dispatchEvent(new Event('visibilitychange'));
     });

@@ -303,8 +303,8 @@ test.describe('sincronização entre aparelhos', () => {
     const { g } = await entrar(page, context, { rota: '#painel' });
     // Simula o app aberto de novo horas depois.
     await page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('rb.sessao'));
-      localStorage.setItem('rb.sessao', JSON.stringify({ ...s, expira: Date.now() - 1000 }));
+      const s = JSON.parse(sessionStorage.getItem('rb.sessao'));
+      sessionStorage.setItem('rb.sessao', JSON.stringify({ ...s, expira: Date.now() - 1000 }));
       localStorage.removeItem('rb.renovacao.em');
     });
     await page.reload();
@@ -315,8 +315,8 @@ test.describe('sincronização entre aparelhos', () => {
     // Sem a conta aberta no navegador: volta sem token, sem mensagem de erro, e não tenta de novo em seguida.
     g.op.semSessaoGoogle = true;
     await page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem('rb.sessao'));
-      localStorage.setItem('rb.sessao', JSON.stringify({ ...s, expira: Date.now() - 1000 }));
+      const s = JSON.parse(sessionStorage.getItem('rb.sessao'));
+      sessionStorage.setItem('rb.sessao', JSON.stringify({ ...s, expira: Date.now() - 1000 }));
       localStorage.removeItem('rb.renovacao.em');
     });
     await page.reload();
