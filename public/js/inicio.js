@@ -187,6 +187,7 @@ async function iniciar() {
     if (/^#ajustes/.test(location.hash) && !digitando && typeof window.render === 'function') window.render();
   };
   let ultimaSinc = null;
+  let abrindoVisto = null;
 
   // Registro deste aparelho no Drive (aparelhos/<id>.json): é o que permite dizer, em outro aparelho, que este está parado.
   let aparelhoGravadoEm = 0;
@@ -271,6 +272,12 @@ async function iniciar() {
             window.rb.disciplinas?.retomarPendentes();
             window.rb.agenda?.sincronizar();
           });
+        }
+        // Primeira abertura neste aparelho: a tela acompanha o andamento e volta ao normal quando termina.
+        const ab = e.abrindo ? `${e.abrindo.feitas}` : null;
+        if (ab !== abrindoVisto) {
+          abrindoVisto = ab;
+          if (!/^#ajustes/.test(location.hash)) window.render?.();
         }
         atualizarStatus();
       },

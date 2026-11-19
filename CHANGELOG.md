@@ -2,6 +2,10 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.9.0 (19/11/2026)
+Primeira abertura num aparelho.
+- Ao entrar pela primeira vez num aparelho, a tela mostra "Abrindo os seus dados", com o andamento do que desce do Drive. Antes, enquanto a primeira sincronização rodava, as telas apareciam como se a biblioteca estivesse vazia.
+
 ## 1.8.0 (19/11/2026)
 Cópias de segurança: item por item e pasta no computador.
 - Em cada cópia guardada, "Ver o que mudou" lista o que nela está diferente de hoje, o que não existe mais e o que está apagado. "Trazer esta versão" traz de volta um item só. O que estava aqui é guardado antes: numa cópia inteira e, se for texto, como versão.

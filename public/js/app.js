@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '1.8.0';
+const APP_VERSAO = '1.9.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -1842,6 +1842,13 @@ document.addEventListener('click',async e=>{
 /* =========================================================
    Roteador
    ========================================================= */
+function telaAbrindo(ab){
+  const pct=Math.round(ab.feitas/ab.total*100);
+  return `<div class="abrindo" id="abrindo" role="status" aria-live="polite"><h2>Abrindo os seus dados</h2>
+  <div class="barra" role="img" aria-label="${pct}% baixado"><i style="width:${pct}%"></i></div>
+  <ol class="abrindo-passos"><li class="ok">Conta confirmada</li><li class="ok">Pasta researchbook encontrada no seu Drive</li><li class="agora">Baixando os seus dados: ${ab.feitas} de ${ab.total} partes</li><li>Os PDFs descem depois, quando você abrir cada obra</li></ol>
+  <p class="meta">Se a internet cair agora, o app abre com o que já está neste aparelho e termina depois.</p></div>`;
+}
 function render(){
   const bloqueado=acesso()!=='livre';
   document.body.classList.toggle('bloqueado',bloqueado);
@@ -1854,6 +1861,9 @@ function render(){
   if(v==='revisao') V.revisao=V.cartoes;
   const fn=V[v]||V.painel;
   let html=fn(arg,arg2);
+  // Primeira abertura neste aparelho: enquanto os dados descem do Drive, nenhuma tela aparece como vazia.
+  const ab=modoReal()&&window.rb&&window.rb.sincronia&&window.rb.sincronia.estado().abrindo;
+  if(ab&&v!=='ajustes') html=telaAbrindo(ab);
   if(SECOES[SECAO_DE[v]] && SECOES[SECAO_DE[v]].tabs.some(([r])=>r===v)) html=secaoCab(v)+html.replace(/<h1[^>]*>[\s\S]*?<\/h1>/,'');
   document.getElementById('vista').innerHTML=html;
   pop.classList.remove('on');

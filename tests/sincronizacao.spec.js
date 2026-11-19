@@ -87,4 +87,31 @@ test.describe('no computador', () => {
     expect(r.fora).toBe(true);
     expect(r.versoes).toContainEqual(['antes de escrever por cima do que veio de outro aparelho', '<p>Escrito no celular, bem mais longo.</p>']);
   });
+
+  test('primeira abertura num aparelho novo: mostra o andamento do que desce do Drive, e não telas vazias', async ({ page, context }) => {
+    await entrar(page, context, '#biblioteca');
+    await page.evaluate(async () => {
+      await window.rb.biblioteca.adicionar({ titulo: 'Roteirização colaborativa', autores: [{ sobrenome: 'Moraes', prenomes: 'Tânia' }], ano: 2024 });
+      await window.rb.sincronia.sincronizar();
+    });
+    // "Aparelho novo": o mesmo Drive, sem nada guardado no navegador.
+    await page.goto('/manifest.webmanifest');
+    await page.evaluate(async () => {
+      for (const b of await indexedDB.databases()) await new Promise((ok) => { const r = indexedDB.deleteDatabase(b.name); r.onsuccess = r.onerror = r.onblocked = ok; });
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    // Drive lento, para dar tempo de ver a tela.
+    await context.route('https://www.googleapis.com/drive/**', async (r) => { await new Promise((ok) => setTimeout(ok, 120)); await r.fallback(); });
+    await page.goto('/#biblioteca', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.rb && window.rb.pronto);
+    await page.getByRole('button', { name: 'Entrar com Google' }).click();
+    const abrindo = page.locator('#abrindo');
+    await expect(abrindo).toBeVisible({ timeout: 15_000 });
+    await expect(abrindo).toContainText('Abrindo os seus dados');
+    await expect(abrindo).toContainText(/Baixando os seus dados: \d+ de \d+ partes/);
+    // Quando termina, a tela normal aparece já com a obra.
+    await expect(abrindo).toBeHidden({ timeout: 30_000 });
+    await expect(page.locator('#vista')).toContainText('Roteirização colaborativa');
+  });
 });
