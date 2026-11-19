@@ -305,7 +305,7 @@ async function iniciar() {
 
   // Lixeira: o que é apagado vai inteiro para lá antes de virar só a marca de apagado.
   // O que foi apagado junto (uma obra e os seus grifos) sai e volta junto: é um lote.
-  const SEM_PRAZO = new Set(['textos', 'fichamentos', 'argumentos']);
+  const SEM_PRAZO = new Set(['textos', 'fichamentos', 'argumentos', 'materiais']);
   const LIXEIRA_DIAS = 90;
   let lote = { id: null, t: 0 };
   async function apagar(colecao, id) {

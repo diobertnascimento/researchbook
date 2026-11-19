@@ -2,6 +2,18 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.4.0 (19/11/2026)
+Projetos.
+- A lista de projetos destaca um só: o que tem aula ou compromisso hoje ou, sem isso, o prazo mais próximo dentro de 7 dias. Os outros ficam numa lista, cada um com o que vem a seguir. A Dissertação saiu desta lista, porque tem lugar próprio no menu.
+- Dentro do projeto, um menu flutuante à esquerda com cinco seções: Início, Artigos, Linha do tempo, Estúdio e Aprendizado. Os nomes aparecem ao passar o mouse. No celular, a barra de baixo vira esse menu enquanto você está no projeto.
+- Início: o próximo compromisso num painel, os prazos com o dia em destaque, as últimas aulas e as anotações rápidas.
+- Linha do tempo: o que vem a seguir e, embaixo, o que já aconteceu (aulas, entregas, obras adicionadas, fichamentos concluídos, textos começados), mês a mês.
+- Estúdio: tudo o que faz parte do projeto. O que você escreveu (textos e notas) aparece com ícone preto e título com serifa; o que veio de fora (gravações, plano de ensino, links), com ícone de contorno. Dá para filtrar entre os dois.
+- Novo no Estúdio: notas e links. A nota é gravada sozinha enquanto você escreve, sincroniza entre os aparelhos e, apagada, fica na lixeira até você esvaziar. Do link fica só o endereço (http ou https).
+- Aprendizado: obras por etapa, grifos por função e cartões firmes, em revisão e difíceis do projeto. É contado pelo app, sem IA.
+- "Arquivadas" passou a se chamar "Projetos encerrados".
+- Ainda não entrou no Estúdio: foto com leitura do texto e envio de outros arquivos.
+
 ## 2.3.0 (19/11/2026)
 Escrever.
 - A barra fixa de formatação saiu. Ao selecionar um trecho aparece uma barra pequena sobre ele: negrito, itálico, link, título, subtítulo e citação. O link abre um campo na própria barra (Ctrl+K também abre); endereço sem "https://" é completado.

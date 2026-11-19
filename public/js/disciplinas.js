@@ -146,6 +146,7 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
   let disciplinas = [];
   let aulas = [];
   let eventos = [];
+  let materiais = []; // Estúdio: notas escritas no projeto e links guardados
   let encontros = []; // orientação: usa o mesmo motor de gravação e transcrição das aulas
   let aoTranscreverEncontro = null;
   let aoMudarEventos = () => {};
@@ -154,7 +155,8 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
   const emAndamento = new Set();
 
   async function carregar() {
-    [disciplinas, aulas, eventos, encontros] = await Promise.all([dados.listar('disciplinas'), dados.listar('aulas'), dados.listar('eventos'), dados.listar('encontros')]);
+    [disciplinas, aulas, eventos, encontros, materiais] = await Promise.all([dados.listar('disciplinas'), dados.listar('aulas'), dados.listar('eventos'), dados.listar('encontros'), dados.listar('materiais')]);
+    materiais.sort((a, b) => (b.atualizadoEm || b.criadoEm || '').localeCompare(a.atualizadoEm || a.criadoEm || ''));
     encontros.sort((a, b) => (b.data || '').localeCompare(a.data || '') || (b.criadoEm || '').localeCompare(a.criadoEm || ''));
     disciplinas.sort((a, b) => (a.criadoEm || '').localeCompare(b.criadoEm || ''));
     aulas.sort((a, b) => (b.data || '').localeCompare(a.data || '') || (b.numero || 0) - (a.numero || 0));
@@ -187,9 +189,11 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     const d = obter(id);
     const as = aulas.filter((a) => a.disciplinaId === id);
     const evs = eventos.filter((e) => e.disciplinaId === id);
+    const mats = materiais.filter((m) => m.disciplinaId === id);
     await dados.apagar('disciplinas', id);
     for (const a of as) await dados.apagar('aulas', a.id);
     for (const e of evs) await dados.apagar('eventos', e.id);
+    for (const m of mats) await dados.apagar('materiais', m.id);
     registrar('ui', 'disciplina.apagar', { det: `${as.length} aulas, ${evs.length} eventos` });
     await carregar();
     aoMudarEventos();
@@ -197,6 +201,7 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
       await dados.salvar('disciplinas', { ...d, apagado: false });
       for (const a of as) await dados.salvar('aulas', { ...a, apagado: false });
       for (const e of evs) await dados.salvar('eventos', { ...e, apagado: false, google: null });
+      for (const m of mats) await dados.salvar('materiais', { ...m, apagado: false });
       registrar('ui', 'disciplina.desfazer_apagar');
       await carregar();
     };
@@ -235,6 +240,30 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     const d = obter(id);
     await dados.salvar('disciplinas', { ...d, paraBuscar: (d.paraBuscar || []).filter((p) => p.id !== buscaId) });
     await carregar();
+  }
+
+  /* ---------- Estúdio: notas e links do projeto ---------- */
+  const materiaisDe = (discId) => materiais.filter((m) => m.disciplinaId === discId);
+  const material = (id) => materiais.find((m) => m.id === id) || null;
+  /** Grava uma nota ou um link. Link só com endereço http ou https: é o que o app aceita abrir. */
+  async function salvarMaterial(m) {
+    if (m.tipo === 'link' && !/^https?:\/\/\S+$/i.test(m.url || '')) throw new Error('O endereço precisa começar com http:// ou https://.');
+    const salvo = await dados.salvar('materiais', { ...m, id: m.id || novoId('mat'), criadoEm: m.criadoEm || new Date().toISOString() });
+    if (!m.id) registrar('ui', 'material.criar', { det: m.tipo });
+    await carregar();
+    return salvo;
+  }
+  /** Apaga (vai para a lixeira). Devolve a função de desfazer. */
+  async function apagarMaterial(id) {
+    const m = material(id);
+    if (!m) return null;
+    await dados.apagar('materiais', id);
+    registrar('ui', 'material.apagar', { det: m.tipo });
+    await carregar();
+    return async () => {
+      await dados.salvar('materiais', { ...m, apagado: false });
+      await carregar();
+    };
   }
 
   /* ---------- Eventos ---------- */
@@ -616,6 +645,10 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     apagarAnotacao,
     guardarParaBuscar,
     tirarParaBuscar,
+    materiaisDe,
+    material,
+    salvarMaterial,
+    apagarMaterial,
     eventosDe,
     proximos,
     salvarEvento,

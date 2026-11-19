@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.3.0';
+const APP_VERSAO = '2.4.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -1870,6 +1870,7 @@ function render(){
   const [v,arg,arg2]=rota.split('/');
   document.body.classList.toggle('leitor', v==='leitor');
   document.body.classList.toggle('editor', v==='texto');
+  document.body.classList.toggle('em-projeto', v==='disciplina' && modoReal());
   document.body.classList.toggle('foco', v==='leitor' && S.foco);
   desenhaMenu(rota);
   if(v==='revisao') V.revisao=V.cartoes;

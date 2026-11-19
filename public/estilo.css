@@ -1658,3 +1658,94 @@ body.leitor main{max-width:none}
 .esc-grid.sem-painel .esc-corpo{max-width:680px}
 @media (min-width:1001px){body.editor aside.nav{display:none}}
 @media (max-width:1200px){.esc-grid.sem-painel{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- Projetos (v2.4.0): lista com um protagonista, menu flutuante do projeto, Linha do tempo, Estúdio e Aprendizado ---------- */
+.proj-atencao,.proj-agora,.proj-ate,.estudio-add{margin-bottom:var(--e-12)}
+.proximo h2{font-family:var(--leitura);font-size:var(--fs-titulo-1);line-height:1.2;font-weight:500;margin:0}
+.proximo > p{margin:0;font-size:var(--fs-corpo);line-height:24px;color:var(--texto-2);max-width:44em}
+.proj-ate > p{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.4;color:var(--texto)}
+.proj-lista h2,.proj-sec h2{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.3;font-weight:500;margin:0 0 var(--e-2);display:flex;align-items:baseline;justify-content:space-between;gap:var(--e-4)}
+.proj-sec h3{font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--texto-3);margin:var(--e-6) 0 var(--e-1)}
+.proj-sec h2 + h3{margin-top:var(--e-3)}
+.proj-lista ul,.linha-l,.estudio,.apr-obras,.apr-grifos,.apr-cartoes{list-style:none;margin:0;padding:0}
+.proj-l{display:flex;align-items:center;justify-content:space-between;gap:var(--e-6);padding:var(--e-4) 0;border-bottom:1px solid var(--borda);text-decoration:none;color:var(--texto)}
+.proj-l .nome{min-width:0}
+.proj-l b{display:block;font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:26px;font-weight:500}
+.proj-l small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.proj-l .meta{flex:0 0 auto;font-size:var(--fs-meta);color:var(--texto-3);white-space:nowrap}
+.proj-l:hover b{text-decoration:underline;text-underline-offset:3px}
+.proj-topo .proj-nome{display:inline-flex;align-items:center;gap:var(--e-2);min-height:24px;font-size:var(--fs-meta);color:var(--texto-2);text-decoration:none;margin-bottom:var(--e-1)}
+.proj-topo .proj-nome:hover{color:var(--texto)}
+.proj-voltar{display:none}
+.proj-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--e-12);align-items:start}
+.proj-col,.proj-linha{display:flex;flex-direction:column;gap:var(--e-12);min-width:0}
+.proj-linha{max-width:760px}
+.lnk-sec{font-family:var(--ui);font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--acento);text-decoration:none;white-space:nowrap}
+.lnk-sec:hover{text-decoration:underline;text-underline-offset:3px}
+.proj-sec > .lnk-sec{display:inline-block;margin-top:var(--e-3)}
+.linha-nota{margin:var(--e-4) 0 0}
+.linha-l li{display:flex;gap:var(--e-4);align-items:baseline;padding:var(--e-3) 0;border-bottom:1px solid var(--borda)}
+.linha-l .quando,.estudio .quando{flex:0 0 60px;font-size:var(--fs-meta);color:var(--texto-3);white-space:nowrap}
+.linha-l li > span:last-child{min-width:0;font-size:var(--fs-corpo);line-height:22px}
+.linha-l small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.linha-l a{text-decoration:none}
+.linha-l a:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* Menu do projeto: ícones numa pílula à esquerda; os nomes aparecem ao passar o mouse ou ao chegar pelo teclado. */
+.proj-menu{position:fixed;left:var(--e-6);top:50%;transform:translateY(-50%);z-index:30;display:flex;flex-direction:column;gap:2px;padding:6px;background:var(--superficie);border:1px solid var(--borda);border-radius:25px;box-shadow:var(--sombra-1)}
+.proj-menu a{display:flex;align-items:center;height:var(--h-m);min-width:var(--h-m);padding:0 9px;border-radius:999px;color:var(--texto-2);text-decoration:none;font-size:var(--fs-meta);line-height:18px;font-weight:500;white-space:nowrap}
+.proj-menu svg{flex:0 0 20px;width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.proj-menu .rot{max-width:0;overflow:hidden;opacity:0;transition:max-width var(--t-medio) var(--curva),opacity var(--t-medio) var(--curva),padding var(--t-medio) var(--curva)}
+.proj-menu:hover .rot,.proj-menu:focus-within .rot{max-width:140px;opacity:1;padding:0 var(--e-2) 0 var(--e-3)}
+.proj-menu a:hover{background:var(--superficie-2);color:var(--texto)}
+.proj-menu a.on{background:var(--acento-suave);color:var(--acento)}
+.proj-menu .todos{color:var(--texto-3)}
+.proj-menu .curto{display:none}
+@media (min-width:1001px) and (max-width:1420px){body.em-projeto main{padding-left:96px}}
+
+/* Estúdio: o que ele escreveu tem ícone preto com a pena e título com serifa; o que veio de fora, ícone com contorno e título sem serifa. */
+.estudio-filtro{margin:var(--e-2) 0 var(--e-3)}
+.estudio li{display:grid;grid-template-columns:36px minmax(0,1fr) 56px 72px;gap:var(--e-4);align-items:center;padding:var(--e-3) 0;border-bottom:1px solid var(--borda)}
+.est-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--borda-forte);color:var(--texto-2);background:var(--superficie)}
+.est-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.estudio .escrito .est-ic{background:var(--texto);border-color:var(--texto);color:var(--superficie)}
+.est-c{min-width:0}
+.est-t{display:block;max-width:100%;padding:0;border:0;background:none;text-align:left;text-decoration:none;color:var(--texto);font-size:var(--fs-corpo);line-height:22px;font-weight:500;overflow-wrap:anywhere}
+.estudio .escrito .est-t{font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:26px}
+.est-t:hover{text-decoration:underline;text-underline-offset:3px}
+.est-c small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.estudio .quando{flex:none;text-align:right}
+
+/* Aprendizado */
+.apr-obras li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px var(--e-4);align-items:center;padding:var(--e-3) 0;border-bottom:1px solid var(--borda)}
+.apr-obras a{font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:26px;text-decoration:none}
+.apr-obras a:hover{text-decoration:underline;text-underline-offset:3px}
+.apr-obras small{grid-column:1;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.apr-obras .pips{grid-column:2;grid-row:1 / span 2}
+.apr-grifos li{display:grid;grid-template-columns:150px minmax(0,1fr) 32px;gap:var(--e-3);align-items:center;padding:var(--e-2) 0;font-size:var(--fs-ui)}
+.apr-grifos b{text-align:right;font-weight:600}
+.apr-barra{height:10px;border-radius:5px;background:var(--superficie-2);overflow:hidden}
+.apr-barra i{display:block;height:100%;border-radius:5px}
+.apr-cartoes{margin-bottom:var(--e-4)}
+.apr-cartoes li{padding:var(--e-3) 0;border-bottom:1px solid var(--borda)}
+.apr-cartoes b{display:block;font-size:var(--fs-corpo);line-height:22px}
+.apr-cartoes small,.apr-q{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.apr-q{color:var(--texto-2);margin-top:var(--e-1)}
+
+@media (max-width:1000px){
+  .proj-cols{grid-template-columns:minmax(0,1fr)}
+  .proj-voltar{display:inline-flex}
+  .proj-l{flex-direction:column;align-items:flex-start;gap:var(--e-1)}
+  /* No celular, dentro de um projeto, a barra de baixo é o menu do projeto. */
+  body.em-projeto .tabbar{display:none}
+  .proj-menu{left:0;right:0;bottom:0;top:auto;transform:none;flex-direction:row;gap:0;padding:0 0 env(safe-area-inset-bottom);border:0;border-top:1px solid var(--borda);border-radius:0;box-shadow:none;background:rgba(255,255,255,.96);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);z-index:41}
+  .proj-menu a{flex:1;justify-content:center;height:auto;min-height:48px;min-width:0;padding:0;border-radius:0;font-weight:600}
+  .proj-menu a.on{background:transparent}
+  .proj-menu svg,.proj-menu .todos,.proj-menu .longo{display:none}
+  .proj-menu .curto{display:inline}
+  .proj-menu .rot,.proj-menu:hover .rot,.proj-menu:focus-within .rot{max-width:none;opacity:1;padding:0;transition:none}
+  .estudio li{grid-template-columns:36px minmax(0,1fr) auto}
+  .estudio li > span:last-child:empty{display:none}
+  .estudio .quando{display:none}
+  .apr-grifos li{grid-template-columns:120px minmax(0,1fr) 28px}
+}
