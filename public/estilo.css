@@ -1780,3 +1780,46 @@ body.sessao .folha{border-color:transparent}
 @media (max-width:1000px){.tese-campo{font-size:var(--fs-titulo-2)}}
 body.sessao .esc-sec-tit{pointer-events:none}
 .sessao-secao{height:var(--h-p);max-width:200px;border:1px solid var(--borda-forte);border-radius:var(--r-2);background:var(--superficie);font-size:var(--fs-meta);padding:0 var(--e-2)}
+
+/* ---------- Dissertação: Mapa de argumentos e Jornada (v2.6.0) ---------- */
+.so-estreito{display:none}
+.mapa-rolagem{overflow-x:auto}
+.mapa{width:100%;border-collapse:collapse;font-size:var(--fs-ui)}
+.mapa th,.mapa td{padding:var(--e-4) var(--e-3);border-bottom:1px solid var(--borda);text-align:center;vertical-align:middle}
+.mapa thead th{font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--texto-3);white-space:nowrap}
+.mapa thead th a{color:inherit;text-decoration:none}
+.mapa thead th a:hover{color:var(--texto);text-decoration:underline;text-underline-offset:3px}
+.mapa th:first-child{text-align:left;padding-left:0;min-width:300px;max-width:440px}
+.mapa tbody th{font-weight:400}
+.mapa tbody th a{display:block;font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:26px;color:var(--texto);text-decoration:none}
+.mapa tbody th a:hover{text-decoration:underline;text-underline-offset:3px}
+.mapa small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.mapa td .n{display:inline-grid;place-items:center;width:var(--h-p);height:var(--h-p);border-radius:50%;background:var(--superficie-2);color:var(--texto);font-weight:600;text-decoration:none}
+.mapa td .n:hover{background:var(--borda)}
+.mapa .sust{text-align:left;white-space:nowrap;padding-right:0}
+.mapa .sust b{display:block;font-weight:600}
+@media (max-width:1000px){.mapa-rolagem{display:none}.so-estreito{display:flex}}
+.jor-comeco{margin-bottom:var(--e-12)}
+.jor-campos{max-width:560px;margin-top:var(--e-3)}
+.jor-regua{margin:0 0 var(--e-12);max-width:860px}
+.jor-frase{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.4;margin:0 0 var(--e-5)}
+.jor-frase .lnk{font-family:var(--ui);font-size:var(--fs-meta)}
+.regua{position:relative;height:10px;border-radius:5px;background:var(--superficie-2)}
+.regua i{display:block;height:100%;border-radius:5px;background:var(--acento)}
+.regua .marca{position:absolute;top:-4px;width:2px;height:18px;margin-left:-1px;background:var(--texto);border-radius:1px}
+.regua .marca.passou{background:var(--texto-3)}
+.regua-pontas{display:flex;justify-content:space-between;margin-top:var(--e-2);font-size:var(--fs-meta);color:var(--texto-3)}
+.jor-proximo{margin-bottom:var(--e-12)}
+.jor-fatos{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--e-6);font-size:var(--fs-corpo);line-height:22px}
+.jor-fatos small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.jor-marcos{max-width:760px}
+.jor-novo{display:flex;gap:var(--e-2);flex-wrap:wrap;margin:var(--e-3) 0 var(--e-4)}
+.jor-novo input{height:var(--h-m);padding:0 var(--e-3);border:1px solid var(--borda-forte);border-radius:var(--r-2);background:var(--superficie);font-size:var(--fs-ui)}
+.jor-novo input{width:auto}
+.jor-novo #marco-titulo{flex:1 1 260px;min-width:0}
+.jor-novo #marco-data{flex:0 0 170px}
+.jor-marcos .linha-l li{align-items:center}
+.jor-marcos .linha-l .quando{flex-basis:104px}
+.jor-marcos .linha-l li > span:nth-child(2){flex:1}
+.jor-marcos .linha-l .passou{color:var(--texto-2)}
+@media (max-width:1000px){.jor-fatos{grid-template-columns:minmax(0,1fr);gap:var(--e-3)}.jor-frase{font-size:var(--fs-titulo-3)}}

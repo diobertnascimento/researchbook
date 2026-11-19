@@ -73,15 +73,47 @@ export function criarArgumentosUI({ bib, dados, fichUI, registrar }) {
     return '';
   }
 
+  /* ---------- Mapa: matriz de síntese (argumentos nas linhas, obras nas colunas) ---------- */
+  const sustentacao = (a, n) => (n >= 3 ? 'Firme' : n === 2 ? 'Razoável' : n === 1 ? 'Frágil' : a.tipo === 'objecao' ? 'Sem resposta' : 'Sem fonte');
+  function mapa(todos) {
+    const ordem = { tese: 0, premissa: 1, objecao: 2 };
+    const linhas = [...todos].sort((a, b) => (ordem[a.tipo] ?? 1) - (ordem[b.tipo] ?? 1));
+    const trechos = new Map(linhas.map((a) => [a.id, trechosDe(a)]));
+    const conta = new Map();
+    for (const ts of trechos.values()) for (const t of ts) conta.set(t.leituraId, (conta.get(t.leituraId) || 0) + 1);
+    // Colunas: só as obras com algum trecho ligado, da que mais sustenta para a que menos.
+    const obras = [...conta.keys()].map((id) => bib.obter(id)).filter(Boolean).sort((a, b) => conta.get(b.id) - conta.get(a.id));
+    return `<div class="mapa-rolagem"><table class="mapa"><caption class="sr">Argumentos da dissertação e os trechos de cada obra que os sustentam</caption>
+      <thead><tr><th scope="col">Argumento</th>${obras.map((l) => `<th scope="col"><a href="#leitor/${encodeURIComponent(l.id)}">${esc(autorCurto(l))}</a></th>`).join('')}<th scope="col">Sustentação</th></tr></thead>
+      <tbody>${linhas
+        .map((a) => {
+          const ts = trechos.get(a.id);
+          const n = new Set(ts.map((t) => t.leituraId)).size;
+          const rota = `#argumentos/${encodeURIComponent(a.id)}`;
+          return `<tr><th scope="row"><a href="${rota}">${esc(a.tese)}</a><small>${nomeTipo(a.tipo)}${a.secao ? `. ${esc(a.secao)}` : ''}</small></th>${obras
+            .map((l) => {
+              const k = ts.filter((t) => t.leituraId === l.id).length;
+              return k ? `<td><a class="n" href="${rota}" aria-label="${k} ${k === 1 ? 'trecho' : 'trechos'} de ${esc(autorCurto(l))}">${k}</a></td>` : '<td><span class="sr">Nada fichado nesta obra sobre isso</span></td>';
+            })
+            .join('')}<td class="sust"><b>${sustentacao(a, n)}</b><small>${n === 0 ? 'nenhuma obra' : n === 1 ? '1 obra' : `${n} obras`}</small></td></tr>`;
+        })
+        .join('')}</tbody></table></div>`;
+  }
+
   function tela(idSel) {
     const todos = lista();
-    const topo = `<div class="topo"><div><h1>Argumentos</h1><p>As teses que você sustenta, com os trechos que escreveu nos fichamentos e as obras de cada uma.</p></div>
+    const topo = `<div class="topo"><div><h1>Argumentos</h1><p>Cada linha é uma afirmação sua. Cada coluna, uma obra fichada. Os números são trechos que você separou para a dissertação. O que está vazio é o que falta ler ou fichar.</p></div>
       <div class="acoes"><button class="btn prim" data-arg-novo>${icone('mais')}Novo argumento</button></div></div>`;
     if (!todos.length) {
       return `${topo}<div class="bib-vazia"><h2>Nenhum argumento ainda</h2><p>Argumentos nascem de dois jeitos: no passo “Para a dissertação” de um fichamento, quando você liga um trecho a uma tese, ou aqui, escrevendo a tese primeiro.</p><button class="btn prim" data-arg-novo>${icone('mais')}Escrever um argumento</button></div>`;
     }
     const escolhido = idSel ? todos.find((x) => x.id === idSel) : null;
-    const a = escolhido || todos[0];
+    // Sem argumento escolhido, a tela é o mapa. No celular a matriz não cabe: fica a lista, com a sustentação de cada um.
+    if (!escolhido) {
+      return `${topo}${mapa(todos)}
+      <div class="arg-lista so-estreito" role="list">${todos.map((x) => `<a role="listitem" class="arg-item" href="#argumentos/${encodeURIComponent(x.id)}"><span class="t">${esc(x.tese)}</span><span class="m"><span>${nomeTipo(x.tipo)}</span>${forcaHTML(fontesDe(x).length)}</span></a>`).join('')}</div>`;
+    }
+    const a = escolhido;
     const trechos = trechosDe(a);
     const fontes = fontesDe(a);
     const aviso = lembrete(fontes.length);

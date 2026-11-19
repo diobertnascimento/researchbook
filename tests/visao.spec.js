@@ -29,7 +29,7 @@ test.describe('no computador', () => {
   test('a Visão abre a Dissertação; a tese é gravada sozinha e o plano da semana muda sem botão Salvar', async ({ page, context }) => {
     const { g } = await entrar(page, context);
     await expect(page.locator('.sec-cab h1')).toHaveText('Dissertação');
-    await expect(page.locator('.sec-cab .subnav a')).toHaveText(['Visão', 'Projeto', 'Argumentos', 'Orientação']);
+    await expect(page.locator('.sec-cab .subnav a')).toHaveText(['Visão', 'Projeto', 'Mapa', 'Orientação', 'Jornada']);
     await expect(page.locator('.sec-cab .subnav a[aria-current="page"]')).toHaveText('Visão');
     await expect(page.locator('#menu a', { hasText: 'Dissertação' })).toHaveAttribute('href', '#dissertacao');
 
@@ -134,6 +134,63 @@ test.describe('no computador', () => {
     expect(gem.pedidos.length).toBe(pedidosAntes);
   });
 
+  test('Jornada: mês de início e prazo gravados ao escolher; marcos com apagar e desfazer; régua e próximo marco', async ({ page, context }) => {
+    const { g, gem } = await entrar(page, context);
+    const pedidos = gem.pedidos.length;
+    await page.locator('.sec-cab .subnav a', { hasText: 'Jornada' }).click();
+    await expect(page).toHaveURL(/#jornada$/);
+    await expect(page.locator('.jor-comeco')).toContainText('Quando o mestrado começou?');
+
+    // Dez meses atrás, prazo de 24 meses: mês 11 de 24.
+    const ini = new Date();
+    ini.setDate(1);
+    ini.setMonth(ini.getMonth() - 10);
+    await page.getByLabel('Ano').selectOption(String(ini.getFullYear()));
+    await page.getByLabel('Mês em que começou').selectOption(String(ini.getMonth() + 1));
+    await expect(page.locator('.jor-frase')).toContainText('Você está no mês 11 de 24.');
+    await expect(page.locator('.regua')).toHaveAttribute('aria-label', 'Mês 11 de 24');
+    const esperado = `${ini.getFullYear()}-${String(ini.getMonth() + 1).padStart(2, '0')}`;
+    await expect.poll(() => noDrive(g, 'dissertacao')[0]?.inicio, { timeout: 10_000 }).toBe(esperado);
+    await page.getByLabel('Prazo, em meses').selectOption('30');
+    await expect(page.locator('.jor-frase')).toContainText('mês 11 de 30');
+    await page.getByLabel('Prazo, em meses').selectOption('24');
+
+    // Sem marco escrito por ele, não há painel de próximo marco; início e fim do prazo aparecem na lista.
+    await expect(page.locator('.jor-proximo')).toHaveCount(0);
+    const marcos = page.locator('.jor-marcos .linha-l li');
+    await expect(marcos).toHaveCount(2);
+    await expect(marcos.first()).toContainText('Fim do prazo');
+    await expect(marcos.last()).toContainText('Início do mestrado');
+
+    // Marco novo, daqui a 24 dias.
+    const d = new Date();
+    d.setDate(d.getDate() + 24);
+    const dia = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    await page.getByLabel('Novo marco').fill('Qualificação');
+    await page.getByLabel('Data do marco').fill(dia);
+    await page.getByRole('button', { name: 'Adicionar marco' }).click();
+    await expect(page.locator('#toast')).toContainText('Marco gravado');
+    await expect(marcos).toHaveCount(3);
+    await expect(marcos.nth(1)).toContainText('Qualificação');
+    await expect(marcos.nth(1)).toContainText('Em 24 dias');
+    const painel = page.locator('.jor-proximo');
+    await expect(painel).toContainText('Próximo marco, em 24 dias');
+    await expect(painel.locator('h2')).toContainText('Qualificação, ');
+    await expect(painel).toContainText('Projeto ainda não enviado para revisão');
+    await expect(painel).toContainText('Nenhum capítulo começado');
+    await expect(painel).toContainText('Nenhum combinado em aberto com a orientação');
+    await expect(page.locator('.regua .marca')).toHaveCount(1);
+    await expect.poll(() => noDrive(g, 'dissertacao')[0]?.marcos?.length, { timeout: 10_000 }).toBe(1);
+
+    // Apagar tem desfazer.
+    await marcos.nth(1).getByRole('button', { name: 'Apagar o marco Qualificação' }).click();
+    await expect(marcos).toHaveCount(2);
+    await page.locator('#toast').getByRole('button', { name: 'Desfazer' }).click();
+    await expect(marcos).toHaveCount(3);
+    await expect(page.locator('.jor-proximo')).toBeVisible();
+    expect(gem.pedidos.length).toBe(pedidos);
+  });
+
   test('regras: semana começa na segunda; sessão sem tempo e sem texto não vira registro; sessão esquecida é largada', async ({ page, context }) => {
     await entrar(page, context);
     const r = await page.evaluate(async () => {
@@ -145,6 +202,7 @@ test.describe('no computador', () => {
       localStorage.setItem('rb.escrita.sessao', JSON.stringify({ textoId: t.id, inicio: Date.now() - 4 * 3600 * 1000, minutos: 25, palavras0: 0 }));
       const esquecida = s.ativa();
       return {
+        anda: [m.andamento('2026-03', 24, new Date(2026, 10, 19)), m.andamento('2026-03', 24, new Date(2028, 5, 1)), m.andamento('', 24)],
         segunda: [m.inicioDaSemana(new Date(2026, 10, 19)), m.inicioDaSemana(new Date(2026, 10, 22)), m.inicioDaSemana(new Date(2026, 10, 23))],
         ultimas: m.ultimasPalavras('  uma   frase com mais de oito palavras para cortar no fim  ', 4),
         vazia,
@@ -153,6 +211,9 @@ test.describe('no computador', () => {
         guardada: localStorage.getItem('rb.escrita.sessao'),
       };
     });
+    expect(r.anda[0]).toMatchObject({ de: '2026-03-01', ate: '2028-02-29', mes: 9, comecou: true, acabou: false });
+    expect(r.anda[1]).toMatchObject({ mes: 24, acabou: true, fracao: 1 });
+    expect(r.anda[2]).toBeNull();
     expect(r.segunda).toEqual(['2026-11-16', '2026-11-16', '2026-11-23']);
     expect(r.ultimas).toBe('para cortar no fim');
     expect(r.vazia.descartada).toBe(true);
@@ -179,6 +240,21 @@ test.describe('no celular', () => {
     expect(await sobra()).toBeLessThanOrEqual(0);
     await page.goto('/#dissertacao');
     await expect(page.locator('.diss-sessao')).toContainText('Sessão em curso');
+    expect(await sobra()).toBeLessThanOrEqual(0);
+    // Jornada e Mapa no celular: sem rolagem lateral; no Mapa fica a lista no lugar da matriz.
+    await page.evaluate(async () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      await window.rb.sessoes.salvarConfig({ inicio: `${new Date().getFullYear()}-01`, marcos: [{ id: 'm1', titulo: 'Qualificação do projeto de dissertação', data: d.toISOString().slice(0, 10) }] });
+      await window.rb.dados.salvar('argumentos', { id: 'a1', tese: 'Rotas negociadas duram mais do que rotas calculadas.', tipo: 'tese' });
+      await window.rb.argUI.carregar();
+    });
+    await page.goto('/#jornada');
+    await expect(page.locator('.jor-proximo')).toBeVisible();
+    expect(await sobra()).toBeLessThanOrEqual(0);
+    await page.goto('/#argumentos');
+    await expect(page.locator('.mapa-rolagem')).toBeHidden();
+    await expect(page.locator('.arg-lista .arg-item')).toBeVisible();
     expect(await sobra()).toBeLessThanOrEqual(0);
     await page.goto('/#mais');
     await expect(page.locator('.mais-lista a', { hasText: 'Dissertação' })).toHaveAttribute('href', '#dissertacao');

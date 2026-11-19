@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.5.0';
+const APP_VERSAO = '2.6.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -208,7 +208,7 @@ const SECOES = {
   bib:{nome:'Ler', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos']]},
   esc:{nome:'Escrever', tabs:[['escrita','Textos'],['dialogos','Diálogos']]},
   // v2.5.0: a Visão (tese, sessão de hoje, plano da semana e capítulos) abre a Dissertação. Ela só existe com os dados reais.
-  diss:{nome:'Dissertação', tabs:[['dissertacao','Visão'],['projeto','Projeto'],['argumentos','Argumentos'],['orientacao','Orientação']]},
+  diss:{nome:'Dissertação', tabs:[['dissertacao','Visão'],['projeto','Projeto'],['argumentos','Mapa'],['orientacao','Orientação'],['jornada','Jornada']]},
   voce:{nome:'Você', tabs:[['autor','Overview do autor'],['memoria','Memória'],['ajustes','Ajustes']]},
 };
 const SECAO_DE = {}; Object.entries(SECOES).forEach(([k,v])=>v.tabs.forEach(([r])=>SECAO_DE[r]=k));
@@ -233,7 +233,7 @@ function desenhaMenu(rota){
 }
 function secaoCab(base){
   const k=SECAO_DE[base]; const sec=SECOES[k]; if(!sec) return '';
-  return `<div class="sec-cab"><h1>${sec.nome}</h1><nav class="subnav" aria-label="${sec.nome}">${sec.tabs.filter(([r])=>r!=='dissertacao'||modoReal()).map(([r,n])=>`<a href="#${r}" class="${r===base?'on':''}" ${r===base?'aria-current="page"':''}>${n}</a>`).join('')}</nav></div>`;
+  return `<div class="sec-cab"><h1>${sec.nome}</h1><nav class="subnav" aria-label="${sec.nome}">${sec.tabs.filter(([r])=>(r!=='dissertacao'&&r!=='jornada')||modoReal()).map(([r,n])=>`<a href="#${r}" class="${r===base?'on':''}" ${r===base?'aria-current="page"':''}>${n}</a>`).join('')}</nav></div>`;
 }
 
 /* =========================================================
@@ -877,6 +877,7 @@ const REFS_PROJ = [
 ];
 const prioBar = n => `<span class="prio" aria-label="Prioridade ${['','baixa','média','alta'][n]}">${[1,2,3].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
 V.dissertacao = () => modoReal() ? (window.rb&&window.rb.visaoUI ? window.rb.visaoUI.tela() : esqueleto('Dissertação')) : V.projeto();
+V.jornada = () => modoReal() ? (window.rb&&window.rb.visaoUI ? window.rb.visaoUI.jornada() : esqueleto('Jornada')) : V.projeto();
 V.projeto = () => {
   if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.projeto() : esqueleto('Revisão do projeto');
   const ver=VERSOES.find(v=>v.v===S.versao);

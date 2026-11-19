@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.6.0 (19/11/2026)
+Dissertação: Mapa e Jornada.
+- Mapa: os argumentos viraram uma matriz. Cada linha é uma afirmação sua, cada coluna é uma obra com trechos ligados, e o número é quantos trechos aquela obra dá àquele argumento. A última coluna diz a sustentação: firme (3 obras ou mais), razoável (2), frágil (1) ou sem fonte. Tocar na linha abre o argumento, como antes. No celular fica a lista, porque a matriz não cabe.
+- O mapa não destaca nem sugere leitura: você abre quando quer ver.
+- Jornada: você informa o mês em que o mestrado começou e o prazo; a página mostra em que mês está, uma régua do prazo e os marcos. Os marcos são seus (qualificação, defesa, o que quiser), com apagar e desfazer. Início, fim do prazo e as versões do projeto enviadas entram sozinhos.
+- O próximo marco aparece num painel com o que existe hoje: a versão do projeto, as palavras nos capítulos e os combinados em aberto. Sem IA.
+- "Argumentos" passou a se chamar "Mapa" no menu da Dissertação.
+
 ## 2.5.0 (19/11/2026)
 Dissertação: sessões de escrita.
 - A Dissertação abre na Visão: a sua tese em uma frase (gravada sozinha), a sessão de hoje, o plano da semana, os capítulos e os combinados em aberto com a orientação.
