@@ -186,6 +186,70 @@ test.describe('no computador', () => {
     await expect(itens.filter({ hasText: 'Combinados do grupo' })).toContainText('Nota, 3 linhas');
   });
 
+  test('Estúdio: arquivo e foto ficam no aparelho e no Drive, fora do JSON; abrem de volta; grande demais é recusado', async ({ page, context }) => {
+    const g = await entrar(page, context);
+    const id = await projetoPronto(page);
+    await page.goto(`/#disciplina/${id}`);
+    await secao(page, 'estudio');
+    const itens = page.locator('.estudio li');
+    await expect(itens).toHaveCount(1);
+    // PNG de 1 pixel e um PDF pequeno, escolhidos juntos.
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    await page.getByRole('button', { name: 'Enviar arquivo ou foto' }).click();
+    await page.locator('[data-dsc-arquivo]').setInputFiles([
+      { name: 'quadro-da-aula.png', mimeType: 'image/png', buffer: png },
+      { name: 'instancias.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 arquivo de teste') },
+    ]);
+    await expect(page.locator('#toast')).toContainText('2 arquivos guardados no projeto');
+    await expect(itens).toHaveCount(3);
+    const foto = itens.filter({ hasText: 'quadro-da-aula.png' });
+    await expect(foto).toContainText('Enviado. Foto, 1 KB');
+    await expect(itens.filter({ hasText: 'instancias.pdf' })).toContainText('Enviado. PDF, 1 KB');
+    // Sobe para o Drive, na pasta do projeto, e o registro deixa de estar pendente.
+    await expect.poll(() => g.caminhos().filter((c) => c.startsWith(`projetos/${id}/`)).length, { timeout: 10_000 }).toBe(2);
+    await expect.poll(() => page.evaluate(() => window.rb.disciplinas.materiaisDe(window.rb.disciplinas.todas()[0].id).filter((m) => m.arquivo).map((m) => m.arquivo.pendente))).toEqual([false, false]);
+    await expect(foto).not.toContainText('vai para o Drive');
+    // O conteúdo do arquivo não entra no JSON de sincronização.
+    await expect.poll(() => { try { return JSON.parse(g.ler('dados/materiais.json')).itens.length; } catch { return 0; } }, { timeout: 10_000 }).toBe(2);
+    expect(g.ler('dados/materiais.json')).not.toContain('iVBOR');
+    expect(JSON.parse(g.ler('dados/materiais.json')).itens.every((m) => m.arquivo.driveId && !m.blob)).toBe(true);
+
+    // A foto abre na tela; em outro aparelho (sem a cópia local), vem do Drive.
+    await foto.getByRole('button', { name: 'quadro-da-aula.png', exact: true }).click();
+    await expect(page.locator('.modal img.est-foto')).toHaveJSProperty('complete', true);
+    await page.locator('.modal').getByRole('button', { name: 'Fechar' }).click();
+    const tamanho = await page.evaluate(async () => {
+      const r = window.rb;
+      const m = r.disciplinas.materiaisDe(r.disciplinas.todas()[0].id).find((x) => x.titulo === 'instancias.pdf');
+      const req = indexedDB.open('researchbook');
+      const db = await new Promise((ok) => (req.onsuccess = () => ok(req.result)));
+      await new Promise((ok) => { const tx = db.transaction('arquivos', 'readwrite'); tx.objectStore('arquivos').delete(`mat-${m.id}`); tx.oncomplete = ok; });
+      db.close();
+      const x = await r.disciplinas.obterArquivoDoMaterial(m.id);
+      return x.blob ? x.blob.size : x.erro;
+    });
+    expect(tamanho).toBe(25);
+
+    // Arquivo acima de 25 MB é recusado com o motivo, e nada é criado.
+    const erro = await page.evaluate(async (id) => {
+      try {
+        await window.rb.disciplinas.guardarArquivoDoProjeto(id, new File([new Uint8Array(26 * 1024 * 1024)], 'grande.zip'));
+        return 'guardou';
+      } catch (e) {
+        return e.message;
+      }
+    }, id);
+    expect(erro).toContain('passa de 25 MB');
+    expect(await page.evaluate(() => window.rb.dados.listar('materiais').then((l) => l.length))).toBe(2);
+
+    // Tirar do projeto manda para a lixeira, com desfazer.
+    await foto.getByRole('button', { name: 'Apagar quadro-da-aula.png' }).click();
+    await expect(page.locator('#toast')).toContainText('Arquivo tirado do projeto. Fica na lixeira');
+    await expect(itens).toHaveCount(2);
+    await page.locator('#toast button', { hasText: 'Desfazer' }).click();
+    await expect(itens).toHaveCount(3);
+  });
+
   test('Aprendizado: retrato contado pelo app, sem chamar a IA', async ({ page, context }) => {
     await entrar(page, context);
     const id = await projetoPronto(page);

@@ -1966,3 +1966,6 @@ body.sessao .esc-pedir [data-ia]{display:none}
 .esc-pedir.fixo > button{border-color:var(--borda-forte);background:var(--superficie);color:var(--texto);box-shadow:var(--sombra-1);height:var(--h-m);padding:0 var(--e-4)}
 .esc-pedir.fixo .ops{left:auto;right:0;top:auto;bottom:calc(100% + 6px)}
 .esc-pedir.fixo .ops button{height:var(--h-g)}
+
+/* Estúdio: foto aberta (v2.11.0) */
+.est-foto{display:block;max-width:100%;max-height:70vh;margin:0 auto var(--e-4);border-radius:var(--r-2)}

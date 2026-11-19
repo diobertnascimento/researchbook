@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.11.0 (19/11/2026)
+Projetos: arquivos e fotos no Estúdio.
+- "Enviar arquivo ou foto" no Estúdio: guarda qualquer arquivo de até 25 MB no projeto (no celular, o botão também oferece tirar uma foto). Dá para escolher vários de uma vez.
+- O arquivo fica neste aparelho e vai para a pasta do projeto no seu Drive. Enquanto não subiu, a linha avisa.
+- Foto abre na tela; os outros tipos são baixados. Em outro aparelho, o arquivo vem do Drive na primeira vez.
+- Tirar do projeto manda para a lixeira, com desfazer.
+- Não entrou: ler o texto de uma foto.
+
 ## 2.10.0 (19/11/2026)
 Escrever: o botão "Pedir".
 - No editor, um botão discreto "Pedir" aparece na margem do parágrafo em que o cursor está. A ajuda só vem quando você pede, e o resultado aparece numa caixa fora do texto, que some ao fechar.

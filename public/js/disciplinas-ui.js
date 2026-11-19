@@ -231,7 +231,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       if (f?.concluidoEm) itens.push({ dia: diaDe(f.concluidoEm), rot: 'Fichamento concluído', tit: l.titulo, href: `#fichamento/${encodeURIComponent(l.id)}` });
     }
     for (const t of textosDe(d)) if (t.criadoEm) itens.push({ dia: diaDe(t.criadoEm), rot: 'Texto começado', tit: t.titulo, href: `#texto/${encodeURIComponent(t.id)}` });
-    for (const m of disc.materiaisDe(d.id)) itens.push({ dia: diaDe(m.criadoEm), rot: m.tipo === 'nota' ? 'Nota escrita' : 'Link guardado', tit: m.titulo || (m.tipo === 'nota' ? 'Nota sem título' : m.url), aba: 'estudio' });
+    for (const m of disc.materiaisDe(d.id)) itens.push({ dia: diaDe(m.criadoEm), rot: m.tipo === 'nota' ? 'Nota escrita' : m.tipo === 'arquivo' ? 'Arquivo enviado' : 'Link guardado', tit: m.titulo || (m.tipo === 'nota' ? 'Nota sem título' : m.url), aba: 'estudio' });
     const ontem = new Date();
     ontem.setDate(ontem.getDate() - 1);
     const de = diaDe(d.criadoEm) || '2000-01-01';
@@ -283,6 +283,11 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       if (m.tipo === 'nota') {
         const linhas = (m.texto || '').split('\n').filter((l) => l.trim()).length;
         itens.push({ origem: 'escrito', tit: m.titulo || 'Nota sem título', det: `Nota, ${plural(linhas, 'linha', 'linhas')}`, em: m.atualizadoEm || m.criadoEm, nota: m.id, mat: m.id });
+      } else if (m.tipo === 'arquivo') {
+        const a = m.arquivo || {};
+        const tipo = /^image\//.test(a.tipo) ? 'Foto' : a.tipo === 'application/pdf' ? 'PDF' : `Arquivo${/\.\w{2,5}$/.test(a.nome || '') ? ` ${a.nome.split('.').pop().toLowerCase()}` : ''}`;
+        const mb = a.tamanho >= 1048576 ? `${(a.tamanho / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round((a.tamanho || 0) / 1024))} KB`;
+        itens.push({ origem: 'enviado', tit: m.titulo, det: `${tipo}, ${mb}${a.pendente ? '. Guardado neste aparelho; vai para o Drive quando houver conexão' : ''}`, em: m.criadoEm, arquivo: m.id, mat: m.id });
       } else itens.push({ origem: 'enviado', tit: m.titulo || m.url, det: 'Link. Só o endereço fica guardado', em: m.criadoEm, url: m.url, mat: m.id });
     }
     for (const a of disc.aulasDe(d.id).filter((x) => x.audio)) {
@@ -299,10 +304,10 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     const mostra = itens.filter((x) => filtro === 'tudo' || x.origem === filtro);
     const hoje = diaLocal();
     const quando = (iso) => (diaDe(iso) === hoje ? 'hoje' : diaDe(iso) ? diaMes(diaDe(iso)) : '');
-    const titulo = (x) => (x.href ? `<a class="est-t" href="${x.href}">${esc(x.tit)}</a>` : x.nota ? `<button class="est-t" data-dsc-nota="${esc(x.nota)}">${esc(x.tit)}</button>` : x.url ? `<a class="est-t" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.tit)}</a>` : `<a class="est-t" href="${rotaDisc(d)}" data-disc-aba="${x.aba}">${esc(x.tit)}</a>`);
+    const titulo = (x) => (x.href ? `<a class="est-t" href="${x.href}">${esc(x.tit)}</a>` : x.arquivo ? `<button class="est-t" data-dsc-abrir-arquivo="${esc(x.arquivo)}" data-ocupado="Abrindo…">${esc(x.tit)}</button>` : x.nota ? `<button class="est-t" data-dsc-nota="${esc(x.nota)}">${esc(x.tit)}</button>` : x.url ? `<a class="est-t" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.tit)}</a>` : `<a class="est-t" href="${rotaDisc(d)}" data-disc-aba="${x.aba}">${esc(x.tit)}</a>`);
     return `${cab(d, 'Estúdio', 'Tudo o que faz parte deste projeto: o que você escreve aqui e o que traz de fora.')}
       <section class="proximo estudio-add" aria-labelledby="ea-t"><div class="rot" id="ea-t">Adicionar ao projeto</div>
-        <div class="acao-l"><button class="btn prim" data-dsc-novo-texto="${esc(d.id)}">Escrever texto</button><button class="btn" data-dsc-nota-nova="${esc(d.id)}">Escrever nota</button><button class="btn" data-dsc-gravacao="${esc(d.id)}">Enviar gravação de aula</button><button class="btn" data-dsc-link-novo="${esc(d.id)}">Guardar link</button></div></section>
+        <div class="acao-l"><button class="btn prim" data-dsc-novo-texto="${esc(d.id)}">Escrever texto</button><button class="btn" data-dsc-nota-nova="${esc(d.id)}">Escrever nota</button><button class="btn" data-dsc-gravacao="${esc(d.id)}">Enviar gravação de aula</button><button class="btn" data-dsc-arquivo-novo="${esc(d.id)}">Enviar arquivo ou foto</button><button class="btn" data-dsc-link-novo="${esc(d.id)}">Guardar link</button></div></section>
       <section class="proj-sec" aria-labelledby="en-t"><h2 id="en-t">Neste projeto</h2>
         <div class="alterna estudio-filtro" role="group" aria-label="Mostrar">${[['tudo', `Tudo, ${itens.length}`], ['escrito', `Escritos por você, ${escritos}`], ['enviado', `Enviados, ${itens.length - escritos}`]].map(([k, n]) => `<button class="txt" data-dsc-estudio="${k}" aria-pressed="${filtro === k}">${n}</button>`).join('')}</div>
         ${mostra.length ? `<ul class="estudio">${mostra.map((x) => `<li class="${x.origem}"><span class="est-ic" aria-hidden="true">${x.origem === 'escrito' ? IC.pena : IC.seta}</span><span class="est-c">${titulo(x)}<small>${x.origem === 'escrito' ? 'Escrito por você' : 'Enviado'}. ${esc(x.det)}</small></span><span class="quando">${quando(x.em)}</span>${x.mat ? `<button class="btn fant" data-dsc-mat-apagar="${esc(x.mat)}" aria-label="Apagar ${esc(x.tit)}">Apagar</button>` : '<span></span>'}</li>`).join('')}</ul>` : `<p class="mute">${itens.length ? 'Nada deste tipo no projeto.' : 'Nada neste projeto ainda. Comece por um texto, uma nota ou a gravação de uma aula.'}</p>`}
@@ -706,6 +711,45 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     }
   });
 
+  /* ---------- Estúdio: arquivo ou foto ---------- */
+  // O campo de arquivo fica fora da tela desenhada, para a escolha não se perder se a página se redesenhar.
+  const entradaArquivo = Object.assign(document.createElement('input'), { type: 'file', multiple: true, hidden: true });
+  entradaArquivo.dataset.dscArquivo = '';
+  document.body.append(entradaArquivo);
+  entradaArquivo.addEventListener('change', async () => {
+    const arquivos = [...entradaArquivo.files];
+    const discId = entradaArquivo.dataset.disc;
+    entradaArquivo.value = '';
+    let guardados = 0;
+    for (const a of arquivos) {
+      try {
+        await disc.guardarArquivoDoProjeto(discId, a);
+        guardados++;
+      } catch (err) {
+        toast(`${a.name}: ${err.message}`);
+      }
+    }
+    redesenhar();
+    if (guardados) toast(guardados === 1 ? 'Arquivo guardado no projeto' : `${guardados} arquivos guardados no projeto`);
+  });
+  let urlAberta = null;
+  async function abrirArquivo(id) {
+    const m = disc.material(id);
+    const r = await disc.obterArquivoDoMaterial(id);
+    if (r.erro) return toast(r.erro);
+    if (urlAberta) URL.revokeObjectURL(urlAberta);
+    urlAberta = URL.createObjectURL(r.blob);
+    if (/^image\//.test(m.arquivo.tipo)) {
+      return abrirModal(`<h2 id="modal-tit">${esc(m.titulo)}</h2><img class="est-foto" src="${urlAberta}" alt="${esc(m.titulo)}"><div class="pe"><span class="cresce"></span><a class="btn fant" href="${urlAberta}" download="${esc(m.arquivo.nome)}">Baixar</a><button class="btn" data-dsc-fechar>Fechar</button></div>`);
+    }
+    // Os outros tipos são baixados: o app não abre arquivo de fora dentro dele.
+    const a = Object.assign(document.createElement('a'), { href: urlAberta, download: m.arquivo.nome });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    toast('Arquivo baixado para este aparelho');
+  }
+
   /* ---------- Estúdio: nota (gravada sozinha enquanto é escrita) e link ---------- */
   let notaTimer = null;
   let notaPendente = null;
@@ -779,13 +823,18 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-dsc-estudio],[data-dsc-nota-nova],[data-dsc-nota],[data-dsc-link-novo],[data-dsc-mat-apagar],[data-dsc-mat-fechar],[data-dsc-nova],[data-dsc-editar],[data-dsc-agendar],[data-dsc-gravacao],[data-dsc-nova-aula],[data-dsc-evento],[data-dsc-fechar],[data-dsc-arquivar],[data-dsc-apagar],[data-dsc-apagar-ev],[data-dsc-apagar-aula],[data-dsc-editar-aula],[data-dsc-tirar-nota],[data-dsc-novo-texto],[data-dsc-transcrever],[data-dsc-resumir],[data-dsc-ir],[data-dsc-buscar],[data-dsc-achei],[data-dsc-combinado],[data-dsc-aplicar-plano],[data-grifo-aula-cor],[data-grifo-aula]');
+    const b = e.target.closest('[data-dsc-arquivo-novo],[data-dsc-abrir-arquivo],[data-dsc-estudio],[data-dsc-nota-nova],[data-dsc-nota],[data-dsc-link-novo],[data-dsc-mat-apagar],[data-dsc-mat-fechar],[data-dsc-nova],[data-dsc-editar],[data-dsc-agendar],[data-dsc-gravacao],[data-dsc-nova-aula],[data-dsc-evento],[data-dsc-fechar],[data-dsc-arquivar],[data-dsc-apagar],[data-dsc-apagar-ev],[data-dsc-apagar-aula],[data-dsc-editar-aula],[data-dsc-tirar-nota],[data-dsc-novo-texto],[data-dsc-transcrever],[data-dsc-resumir],[data-dsc-ir],[data-dsc-buscar],[data-dsc-achei],[data-dsc-combinado],[data-dsc-aplicar-plano],[data-grifo-aula-cor],[data-grifo-aula]');
     if (!b) return;
     const d = b.dataset;
     if (d.dscEstudio) {
       est.estudio = d.dscEstudio;
       return redesenhar();
     }
+    if (d.dscArquivoNovo) {
+      entradaArquivo.dataset.disc = d.dscArquivoNovo;
+      return entradaArquivo.click();
+    }
+    if (d.dscAbrirArquivo) return abrirArquivo(d.dscAbrirArquivo);
     if (d.dscNotaNova) return modalNota(d.dscNotaNova);
     if (d.dscNota) {
       const m = disc.material(d.dscNota);
@@ -804,7 +853,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       const desfazer = await disc.apagarMaterial(d.dscMatApagar);
       fechar();
       redesenhar();
-      return desfazer && toast(`${m.tipo === 'nota' ? 'Nota apagada' : 'Link apagado'}. Fica na lixeira, em Ajustes.`, async () => {
+      return desfazer && toast(`${m.tipo === 'nota' ? 'Nota apagada' : m.tipo === 'arquivo' ? 'Arquivo tirado do projeto' : 'Link apagado'}. Fica na lixeira, em Ajustes.`, async () => {
         await desfazer();
         redesenhar();
       });

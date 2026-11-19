@@ -266,6 +266,53 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     };
   }
 
+  /* ---------- Estúdio: arquivos e fotos do projeto ---------- */
+  // O arquivo fica neste aparelho (store "arquivos") e no Drive (projetos/<projeto>/), nunca no JSON de sincronização.
+  const LIMITE_ARQUIVO = 25 * 1024 * 1024;
+  async function guardarArquivoDoProjeto(discId, arquivo) {
+    if (!arquivo?.size) throw new Error('Este arquivo está vazio.');
+    if (arquivo.size > LIMITE_ARQUIVO) throw new Error('O arquivo passa de 25 MB. Guarde um arquivo menor ou um link para ele.');
+    const tipo = arquivo.type || 'application/octet-stream';
+    const m = await salvarMaterial({ disciplinaId: discId, tipo: 'arquivo', titulo: arquivo.name || 'Arquivo', arquivo: { nome: arquivo.name || 'arquivo', tipo, tamanho: arquivo.size, pendente: true } });
+    await arm.gravar(db, 'arquivos', { id: `mat-${m.id}`, blob: arquivo, tipo, tamanho: arquivo.size, guardadoEm: new Date().toISOString() });
+    enviarArquivoDoMaterial(m.id);
+    return m;
+  }
+  async function enviarArquivoDoMaterial(id) {
+    const d = drive();
+    const m = material(id);
+    if (!d || !m?.arquivo?.pendente) return;
+    const local = await arm.um(db, 'arquivos', `mat-${id}`);
+    if (!local) return;
+    try {
+      const nome = m.arquivo.nome.replace(/[^\w.\-À-ÿ ]+/g, '_').slice(-80);
+      const r = await d.enviarArquivo(`projetos/${m.disciplinaId}/${id}-${nome}`, local.blob, m.arquivo.tipo);
+      const atual = material(id);
+      if (atual) await dados.salvar('materiais', { ...atual, arquivo: { ...atual.arquivo, pendente: false, driveId: r.id } });
+      await carregar();
+      aoMudar();
+    } catch (e) {
+      registrar('erro', 'material.arquivo_envio', { det: e.message, st: 'erro' });
+    }
+  }
+  /** Blob do arquivo: do aparelho ou baixado do Drive (e guardado aqui para a próxima vez). */
+  async function obterArquivoDoMaterial(id) {
+    const local = await arm.um(db, 'arquivos', `mat-${id}`);
+    if (local) return { blob: local.blob };
+    const m = material(id);
+    if (!m?.arquivo) return { erro: 'Arquivo não encontrado.' };
+    if (!m.arquivo.driveId) return { erro: 'O arquivo foi guardado em outro aparelho e ainda não chegou ao Drive. Abra o app naquele aparelho com internet.' };
+    const d = drive();
+    if (!d) return { erro: 'Para abrir o arquivo neste aparelho, entre com o Google.' };
+    try {
+      const blob = await d.baixarArquivo(m.arquivo.driveId, 'arquivo do projeto');
+      await arm.gravar(db, 'arquivos', { id: `mat-${id}`, blob, tipo: m.arquivo.tipo, tamanho: blob.size, guardadoEm: new Date().toISOString() });
+      return { blob };
+    } catch {
+      return { erro: 'Não deu para baixar o arquivo do Drive agora. Tente de novo.' };
+    }
+  }
+
   /* ---------- Eventos ---------- */
   const eventosDe = (discId) => eventos.filter((e) => !discId || e.disciplinaId === discId);
   function proximos(discId, dias = 120, hoje = new Date()) {
@@ -539,6 +586,7 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
       if (await arm.um(db, 'arquivos', `aula-${a.id}`)) iniciarTranscricao(a.id);
     }
     for (const a of [...aulas, ...encontros].filter((x) => x.audio?.pendente)) enviarAudioAoDrive(a.id);
+    for (const m of materiais.filter((x) => x.arquivo?.pendente)) enviarArquivoDoMaterial(m.id);
   }
 
   async function grifar(aulaId, grifo) {
@@ -649,6 +697,8 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     material,
     salvarMaterial,
     apagarMaterial,
+    guardarArquivoDoProjeto,
+    obterArquivoDoMaterial,
     eventosDe,
     proximos,
     salvarEvento,
