@@ -2,6 +2,49 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.9.0 (19/11/2026)
+Entrar e Conectar a IA.
+- Entrar: a tela diz em uma frase por que a entrada é com a conta Google, tem um botão só e lista o que o app pede ao Google agora (e-mail e a pasta researchbook no Drive) e o que só pede se você ligar depois (agenda e Gemini).
+- Se o aparelho já guarda dados do researchbook, a tela avisa quantos e diz que eles voltam a abrir quando você entrar.
+- Enquanto conecta, a tela mostra o que está sendo conferido.
+- Conectar a IA (Ajustes): no acesso pela conta Google, a configuração virou quatro passos que o próprio app confere: API ativa, permissão, projeto com cobrança e um teste com uma pergunta de verdade. Cada passo mostra se passou e a que horas foi conferido.
+- Quando o Google recusa, o erro aparece traduzido no passo certo, com o que fazer.
+- O gasto do mês e o limite aparecem na mesma tela.
+- Corrigido: o ID do projeto digitado podia ser apagado se a tela se redesenhasse antes de você salvar.
+- Não entrou: "Abrir sem conectar" na tela de entrada. Sem internet o app já abre sozinho com os dados do aparelho, sem passar por essa tela. Ela só aparece depois de "Sair da conta", e ali o botão seria um jeito de abrir os dados sem login.
+
+## 2.8.0 (19/11/2026)
+Fichamento refeito.
+- As cinco etapas saíram. O fichamento agora tem dois caminhos que alimentam as mesmas notas, e você pode usar os dois na mesma obra.
+- Pelos grifos: você passa pelos trechos que marcou, com filtro por função, e escreve com as suas palavras o que cada um afirma.
+- Pelo texto completo: cerca de 8 perguntas em 5 blocos (o essencial, como chegaram lá, conceitos, sua crítica, para a sua dissertação), respondidas de memória, uma por vez.
+- As perguntas podem ser escritas pela IA para aquele texto, uma única vez e só quando você pede, a partir do artigo, dos seus grifos, da sua tese e dos seus argumentos. A IA só pergunta: ela não responde. Sem IA, há um conjunto de perguntas gerais.
+- Ajuda só a pedido, em cada pergunta: "Por que esta pergunta?", "Conferir com o texto" (mostra os seus grifos daquele assunto) e "Trocar a pergunta".
+- Cada resposta vira uma nota com a referência, que pode ser marcada para a dissertação e ligada a um argumento. As ligadas a um argumento aparecem no Mapa.
+- "Suas notas" reúne tudo, com copiar. Os comentários do tutor continuam ali, a pedido.
+- O que você escreveu nas cinco etapas antigas não se perde: continua guardado, aparece em "Suas notas" e segue no arquivo do Drive.
+- O fichamento abre sem a barra do app, como o leitor e o editor.
+- Ainda não entrou: levar uma nota direto para dentro de um capítulo. Por enquanto a nota é marcada e copiada.
+
+## 2.7.0 (19/11/2026)
+Dissertação: parecer do projeto.
+- Ao enviar uma versão do projeto, a IA passa a fazer também um parecer do que ajustar para a qualificação, parte por parte: introdução e problema, propósito, perguntas, literatura e teoria, método, ética, coerência entre as partes, cronograma e forma.
+- Cada ponto traz a gravidade (compromete a aprovação, importante ou ajuste), o trecho do seu projeto com a página, o que se espera ali e como resolver. A IA aponta o que falta; ela não reescreve o seu texto.
+- O app confere, sem IA, se cada trecho citado está mesmo no PDF. Trecho não encontrado aparece com aviso.
+- Você decide ponto por ponto: adicionar às suas pendências ou ignorar, com desfazer. As pendências ficam ao lado, com caixa de marcar.
+- O parecer só muda quando você envia outra versão. Na versão seguinte, ele diz o que foi resolvido desde a anterior.
+- Se o parecer falhar, a versão e a lista de obras continuam gravadas e dá para tentar de novo.
+- A lista de obras por prioridade e os problemas de citação continuam na mesma página, em "Leituras e citações".
+- Cada envio agora faz duas chamadas ao modelo de raciocínio em vez de uma; o custo por versão sobe na mesma proporção.
+
+## 2.6.0 (19/11/2026)
+Dissertação: Mapa e Jornada.
+- Mapa: os argumentos viraram uma matriz. Cada linha é uma afirmação sua, cada coluna é uma obra com trechos ligados, e o número é quantos trechos aquela obra dá àquele argumento. A última coluna diz a sustentação: firme (3 obras ou mais), razoável (2), frágil (1) ou sem fonte. Tocar na linha abre o argumento, como antes. No celular fica a lista, porque a matriz não cabe.
+- O mapa não destaca nem sugere leitura: você abre quando quer ver.
+- Jornada: você informa o mês em que o mestrado começou e o prazo; a página mostra em que mês está, uma régua do prazo e os marcos. Os marcos são seus (qualificação, defesa, o que quiser), com apagar e desfazer. Início, fim do prazo e as versões do projeto enviadas entram sozinhos.
+- O próximo marco aparece num painel com o que existe hoje: a versão do projeto, as palavras nos capítulos e os combinados em aberto. Sem IA.
+- "Argumentos" passou a se chamar "Mapa" no menu da Dissertação.
+
 ## 2.5.0 (19/11/2026)
 Dissertação: sessões de escrita.
 - A Dissertação abre na Visão: a sua tese em uma frase (gravada sozinha), a sessão de hoje, o plano da semana, os capítulos e os combinados em aberto com a orientação.

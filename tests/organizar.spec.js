@@ -177,6 +177,15 @@ test.describe('no computador', () => {
     await expect(itens).toHaveCount(2);
     await expect(itens.first()).toContainText('A adesão das equipes é o critério');
     await expect(itens.first()).toContainText('2 fontes');
+    // v2.6.0: sem argumento escolhido, a tela é o mapa (argumentos nas linhas, obras nas colunas).
+    const linhas = page.locator('.mapa tbody tr');
+    await expect(linhas).toHaveCount(2);
+    await expect(page.locator('.mapa thead th')).toHaveCount(4);
+    await expect(linhas.first().locator('td.sust')).toHaveText('Razoável2 obras');
+    await expect(linhas.first().locator('td a.n')).toHaveText(['1', '1']);
+    await expect(linhas.nth(1).locator('td.sust')).toHaveText('Sem fontenenhuma obra');
+    await expect(linhas.nth(1).locator('td a.n')).toHaveCount(0);
+    await linhas.first().getByRole('link', { name: 'A adesão das equipes é o critério' }).click();
     await expect(page.locator('.arg-det .tese')).toHaveText('A adesão das equipes é o critério');
     await expect(page.locator('.arg-det .trecho-d')).toHaveCount(2); // um pelo id, outro pelo texto da tese
     await expect(page.locator('.arg-det .fontes a')).toHaveCount(2);
@@ -233,10 +242,13 @@ test.describe('no computador', () => {
     await entrar(page, context);
     await semear(page, { fichamentos: [{ id: 'prado-2019', leituraId: 'prado-2019', feitos: 4, citacoes: [], resumo: '', analise: {}, trechos: [{ id: 't1', texto: 'Rotas impostas são abandonadas (Prado, 2019, p. 3)', argumento: 'Rotas impostas não duram' }] }] });
     await page.goto('/#fichamento/prado-2019');
+    await page.locator('[data-fich-vista="notas"]').first().click();
     await page.getByRole('button', { name: 'Concluir fichamento' }).click();
     await expect(page.locator('#toast')).toContainText('Fichamento concluído');
     await page.goto('/#argumentos');
     await expect(page.locator('.arg-item')).toHaveCount(1);
+    await expect(page.locator('.mapa tbody tr td.sust')).toHaveText('Frágil1 obra');
+    await page.locator('.mapa tbody th a').click();
     await expect(page.locator('.arg-det .tese')).toHaveText('Rotas impostas não duram');
     await expect(page.locator('.lembrete')).toContainText('Depende de uma única obra');
     await expect(page.locator('.arg-det .fontes a')).toContainText('Prado (2019)');

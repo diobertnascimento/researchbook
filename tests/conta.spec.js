@@ -19,7 +19,7 @@ async function entrar(page, rota = '') {
 
 test('sem login, visitantes só veem a tela de entrada', async ({ page }) => {
   await page.goto('/#biblioteca', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('h1')).toHaveText('Entre para continuar');
+  await expect(page.locator('h1')).toHaveText('Entrar');
   await expect(page.locator('aside.nav')).toBeHidden();
   await expect(page.locator('#vista')).not.toContainText('Goldkuhl');
 });
@@ -144,7 +144,7 @@ test('sair revoga o acesso e volta para a tela de entrada', async ({ page, conte
   await entrar(page, '#ajustes/pasta');
   await expect.poll(() => fase(page)).toBe('ok');
   await page.locator('#sec-pasta').getByRole('button', { name: 'Sair da conta' }).click();
-  await expect(page.locator('h1')).toHaveText('Entre para continuar');
+  await expect(page.locator('h1')).toHaveText('Entrar');
   expect(g.estado.revogado).toBe(true);
 });
 
@@ -181,4 +181,30 @@ test('o banco antigo (esquema 1) é atualizado sem perder dados', async ({ page 
   expect(r.esquema).toBeGreaterThanOrEqual(2);
   expect(r.lista.map((l) => l.titulo)).toContain('Guardada no esquema 1');
   expect(r.conflitos).toEqual([]);
+});
+
+// v2.9.0: a tela de entrada diz por que a entrada é com Google e o que o app pede, agora e depois.
+test('tela de entrada: uma frase, um botão, o que o app pede; depois de sair, avisa que os dados continuam no aparelho', async ({ page, context }) => {
+  await googleFalso(context);
+  await page.goto('/#painel', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.rb && window.rb.pronto);
+  const caixa = page.locator('.entrar-caixa');
+  await expect(caixa).toContainText('ficam numa pasta do seu Google Drive');
+  await expect(caixa.locator('.btn')).toHaveCount(1);
+  await expect(caixa.locator('.entrar-pede li')).toHaveCount(2);
+  await expect(caixa.locator('.entrar-pede')).toContainText('O app não enxerga nenhum outro arquivo seu');
+  await expect(caixa.locator('.entrar-pede')).toContainText('Só se você ligar depois, em Ajustes');
+  await expect(caixa.locator('.entrar-nota')).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+
+  await caixa.getByRole('button', { name: 'Entrar com Google' }).click();
+  await page.waitForFunction(() => window.rb?.sincronia?.estado().fase === 'ok' && window.rb.biblioteca);
+  await page.evaluate(() => window.rb.biblioteca.adicionar({ titulo: 'Obra guardada', autores: [{ sobrenome: 'Lins', prenomes: 'R.' }], ano: 2022 }));
+  await page.goto('/#ajustes/pasta');
+  await page.locator('#sec-pasta').getByRole('button', { name: 'Sair da conta' }).click();
+  await expect(page.locator('h1')).toHaveText('Entrar');
+  // Sair não apaga os dados, mas eles só abrem de novo com o login: não há atalho para entrar sem a conta.
+  await expect(page.locator('.entrar-nota')).toContainText('Este aparelho já guarda dados do researchbook (1 obra e 0 textos)');
+  await expect(page.locator('.entrar-caixa .btn')).toHaveCount(1);
+  await expect(page.locator('#vista')).not.toContainText('Obra guardada');
 });

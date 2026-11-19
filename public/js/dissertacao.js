@@ -41,6 +41,60 @@ const ESQ_ORIENTACAO = {
 export const TIPOS_PROBLEMA = { citacao_sem_pagina: 'Citação direta sem página', ausente_na_lista: 'Citada no texto e fora da lista de referências', nao_citada: 'Na lista e nunca citada', ano_divergente: 'Ano diferente entre texto e lista', fora_da_norma: 'Fora da NBR 10520:2023' };
 
 const novoId = (p) => `${p}-${crypto.randomUUID().slice(0, 8)}`;
+
+// Parecer do projeto (v2.7.0). As partes e a referência de cada uma são do app, não da IA: a IA só escolhe a parte.
+// Capítulos conforme a 6ª edição de Research Design (Creswell e Creswell, 2023).
+const RD = 'Creswell e Creswell, Research Design, 6. ed.';
+export const PARTES_PARECER = [
+  ['introducao', 'Introdução e problema', `${RD}, cap. 5`],
+  ['proposito', 'Propósito', `${RD}, cap. 6`],
+  ['perguntas', 'Perguntas e hipóteses', `${RD}, cap. 7`],
+  ['literatura', 'Literatura e teoria', `${RD}, caps. 2 e 3`],
+  ['metodo', 'Método', `${RD}, caps. 8 a 10`],
+  ['etica', 'Ética e escrita', `${RD}, cap. 4`],
+  ['coerencia', 'Coerência entre as partes', 'usual em banca de qualificação'],
+  ['viabilidade', 'Cronograma e viabilidade', 'usual em banca de qualificação'],
+  ['forma', 'Forma e normas', 'usual em banca de qualificação; ABNT NBR 10520:2023 e 6023:2018'],
+];
+export const GRAVIDADES = [
+  ['compromete', 'Compromete a aprovação'],
+  ['importante', 'Importante'],
+  ['ajuste', 'Ajuste'],
+];
+const ESQ_PARECER = {
+  type: 'object',
+  properties: {
+    achados: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { parte: { type: 'string', enum: PARTES_PARECER.map(([k]) => k) }, gravidade: { type: 'string', enum: GRAVIDADES.map(([k]) => k) }, titulo: { type: 'string' }, trecho: { type: 'string' }, pagina: { type: 'integer' }, esperado: { type: 'string' }, como_resolver: { type: 'string' } },
+        required: ['parte', 'gravidade', 'titulo', 'esperado', 'como_resolver'],
+      },
+    },
+    resolvidos: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, como: { type: 'string' } }, required: ['id'] } },
+  },
+  required: ['achados'],
+};
+/** Texto para comparação: sem acento, sem pontuação, espaços simples. Hífen de quebra de linha some. */
+export const achatar = (s) =>
+  String(s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/-\s+/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+/** Onde o trecho citado pela IA está no PDF: 'pagina' (na página indicada ou vizinha), 'outra', 'nao', ou null sem texto para conferir. */
+export function conferirTrecho(paginas, trecho, pagina) {
+  const alvo = achatar(trecho);
+  if (!paginas || !alvo) return null;
+  // Compara pelos primeiros 80 caracteres: a IA pode cortar o fim do trecho com reticências.
+  const chave = alvo.slice(0, 80);
+  const tem = (n) => paginas[n - 1] != null && achatar(paginas[n - 1]).includes(chave);
+  if ([pagina, pagina - 1, pagina + 1].some((n) => n >= 1 && tem(n))) return 'pagina';
+  return paginas.some((_, i) => tem(i + 1)) ? 'outra' : 'nao';
+}
 const base64 = (blob) =>
   new Promise((ok, erro) => {
     const r = new FileReader();
@@ -117,6 +171,76 @@ export function criarDissertacao({ dados, ia, bib, fichUI, historico, disc, driv
     registrar('ia', 'revisao.feita', { det: `versão ${versao}, ${obrasR.length} obras, ${(j.problemas || []).length} problemas`, dur: Math.round(performance.now() - inicio) });
     await carregar();
     return item;
+  }
+
+  /* ---------- Parecer da versão: o que ajustar para a qualificação ---------- */
+  /** O texto de cada página do PDF, para conferir os trechos que a IA citar. Sem texto legível, devolve null. */
+  async function textoDasPaginas(arquivo) {
+    try {
+      const { pdfjs } = await import('./leitor-pdf.js');
+      const lib = await pdfjs();
+      const doc = await lib.getDocument({ data: new Uint8Array(await arquivo.arrayBuffer()) }).promise;
+      const paginas = [];
+      for (let n = 1; n <= doc.numPages; n++) paginas.push((await (await doc.getPage(n)).getTextContent()).items.map((i) => i.str || '').join(' '));
+      return paginas.some((p) => p.trim()) ? paginas : null;
+    } catch (e) {
+      registrar('erro', 'parecer.texto_pdf', { det: e.message, st: 'aviso' });
+      return null;
+    }
+  }
+  async function pedirParecer(revId, arquivo) {
+    const inicio = performance.now();
+    const r = revisao(revId);
+    if (!r) throw new Error('Versão não encontrada.');
+    const anterior = revisoes.find((x) => x.versao < r.versao && x.parecer?.achados?.length);
+    const antes = (anterior?.parecer.achados || []).map((a, i) => ({ id: `P${i + 1}`, a }));
+    const nomeParte = Object.fromEntries(PARTES_PARECER.map(([k, n]) => [k, n]));
+    const resp = await ia.gerarTarefa({
+      tarefa: 'parecer_projeto',
+      partes: [await partePDF(arquivo)],
+      blocos: [antes.length ? `<parecer_anterior>\nVersão ${anterior.versao}.\n${antes.map(({ id, a }) => `${id}: [${nomeParte[a.parte]}] ${a.titulo}`).join('\n')}\n</parecer_anterior>` : '<parecer_anterior>\n(primeiro parecer)\n</parecer_anterior>'],
+      pedido: 'Leia esta versão do projeto de dissertação e escreva o parecer para a qualificação, parte por parte.',
+      lembrete: 'Só aponte o que está no PDF; trechos copiados do PDF, com a página; não reescreva o texto do autor. Responda só com o objeto JSON.',
+      esquema: ESQ_PARECER,
+    });
+    const j = resp.json || {};
+    const paginas = await textoDasPaginas(arquivo);
+    const ordemG = Object.fromEntries(GRAVIDADES.map(([k], i) => [k, i]));
+    const ordemP = Object.fromEntries(PARTES_PARECER.map(([k], i) => [k, i]));
+    const achados = (j.achados || [])
+      .filter((a) => a.parte in ordemP && a.gravidade in ordemG && a.titulo)
+      .slice(0, 20)
+      .map((a) => ({ id: novoId('ach'), parte: a.parte, gravidade: a.gravidade, titulo: a.titulo, trecho: (a.trecho || '').trim(), pagina: Number(a.pagina) || 0, esperado: a.esperado || '', como_resolver: a.como_resolver || '', conferido: conferirTrecho(paginas, a.trecho, Number(a.pagina) || 0), decisao: null, feito: false }))
+      .sort((a, b) => ordemG[a.gravidade] - ordemG[b.gravidade] || ordemP[a.parte] - ordemP[b.parte]);
+    const resolvidos = (j.resolvidos || []).map((x) => ({ x, p: antes.find((p) => p.id === x.id) })).filter(({ p }) => p).map(({ x, p }) => ({ titulo: p.a.titulo, parte: p.a.parte, como: x.como || '' }));
+    const parecer = { feitoEm: new Date().toISOString(), modelo: resp.modelo, achados, resolvidos, sobreVersao: anterior?.versao || null, conferencia: paginas ? 'feita' : 'sem-texto' };
+    await dados.salvar('revisoes', { ...revisao(revId), parecer });
+    try {
+      const c = await historico.nova({ funcao: 'parecer_projeto', alvo: { tipo: 'revisao', id: revId }, titulo: `Parecer do projeto, versão ${r.versao}` });
+      await historico.acrescentar(c.id, { de: 'ia', tarefa: 'parecer_projeto', resposta: j, modelo: resp.modelo, uso: resp.uso, custo: resp.custo, instrucao: resp.instrucao });
+    } catch (e) {
+      registrar('erro', 'parecer.historico', { det: e.message, st: 'aviso' });
+    }
+    registrar('ia', 'parecer.feito', { det: `versão ${r.versao}, ${achados.length} achados, ${resolvidos.length} resolvidos`, dur: Math.round(performance.now() - inicio) });
+    await carregar();
+    return revisao(revId);
+  }
+  /** Decisão do autor sobre um achado: 'pendencia', 'ignorado' ou null (ainda sem decisão). Devolve a decisão anterior, para o desfazer. */
+  async function decidirAchado(revId, achadoId, decisao) {
+    const r = revisao(revId);
+    const a = r?.parecer?.achados.find((x) => x.id === achadoId);
+    if (!a) return undefined;
+    const antes = a.decisao;
+    await dados.salvar('revisoes', { ...r, parecer: { ...r.parecer, achados: r.parecer.achados.map((x) => (x.id === achadoId ? { ...x, decisao, feito: decisao === 'pendencia' ? x.feito : false } : x)) } });
+    registrar('ui', 'parecer.decisao', { det: decisao || 'desfeita' });
+    await carregar();
+    return antes;
+  }
+  async function marcarPendencia(revId, achadoId, feito) {
+    const r = revisao(revId);
+    if (!r?.parecer) return;
+    await dados.salvar('revisoes', { ...r, parecer: { ...r.parecer, achados: r.parecer.achados.map((x) => (x.id === achadoId ? { ...x, feito } : x)) } });
+    await carregar();
   }
 
   async function marcarParaBuscar(revId, indice) {
@@ -242,5 +366,5 @@ export function criarDissertacao({ dados, ia, bib, fichUI, historico, disc, driv
   // Quando a gravação de um encontro termina de transcrever, o registro é pedido aqui.
   disc.aoTranscreverEncontro((id, segmentos) => processar(id, { segmentos }));
 
-  return { carregar, todasRevisoes, revisao, revisar, marcarParaBuscar, criarTrilha, encontros, encontro, combinadosAbertos, temas, novoEncontro, processar, marcarCombinado, novoCombinado, apagarEncontro, pauta };
+  return { carregar, todasRevisoes, revisao, revisar, pedirParecer, decidirAchado, marcarPendencia, marcarParaBuscar, criarTrilha, encontros, encontro, combinadosAbertos, temas, novoEncontro, processar, marcarCombinado, novoCombinado, apagarEncontro, pauta };
 }

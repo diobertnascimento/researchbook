@@ -192,7 +192,7 @@ test.describe('no computador', () => {
     await expect(page.locator('.tutor-vazio')).toContainText('conecte o Gemini');
     await page.getByRole('link', { name: 'Configurar o Gemini' }).click();
     await expect(page).toHaveURL(/#ajustes$/);
-    await expect(page.locator('#sec-ia h2')).toHaveText('Conexão com o Gemini');
+    await expect(page.locator('#sec-ia h2')).toHaveText('Conectar a IA');
   });
 
   test('cofre: a chave vai cifrada para o Drive, nunca fica legível no aparelho, e abre com a frase-senha', async ({ page, context }) => {
@@ -311,4 +311,59 @@ test('no celular, o tutor abre como folha e cabe na tela', async ({ page, contex
   expect(larg).toBeLessThanOrEqual(page.viewportSize().width);
   const fonte = await page.locator('#tutor-texto').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
   expect(fonte).toBeGreaterThanOrEqual(16);
+});
+
+// v2.9.0, Conectar a IA: os quatro passos são conferidos pelo próprio app, com o erro do Google traduzido.
+test.describe('Conectar a IA', () => {
+  test.beforeEach(({}, info) => test.skip(info.project.name !== 'computador', 'Basta rodar no computador'));
+
+  test('teste que funciona marca os quatro passos, com a hora; a conferência fica guardada neste aparelho', async ({ page, context }) => {
+    const { gem } = await entrar(page, context);
+    await page.goto('/#ajustes');
+    const passos = page.locator('#sec-ia .ia-passo');
+    await expect(passos).toHaveCount(4);
+    await expect(page.locator('#sec-ia')).toContainText('A IA só é chamada quando você pede');
+    // Antes do teste: só a permissão (que o app conhece) está conferida.
+    await expect(passos.nth(0)).toHaveClass(/pendente/);
+    await expect(passos.nth(0)).toContainText('O app só consegue conferir este passo com o teste do passo 4.');
+    await expect(passos.nth(1)).toHaveClass(/ok/);
+    await expect(passos.nth(2)).toContainText('Informado. Falta conferir com o teste.');
+    expect(gem.pedidos.length).toBe(0); // abrir a tela não chama a IA
+
+    await passos.nth(3).getByRole('button', { name: 'Testar conexão' }).click();
+    await expect(passos.nth(3)).toContainText('Funcionou: o Gemini respondeu em');
+    for (const i of [0, 1, 2, 3]) await expect(passos.nth(i)).toHaveClass(/ok/);
+    await expect(passos.nth(0)).toContainText('O app conferiu: está ativa.');
+    await expect(passos.nth(0).locator('small')).toHaveText(/^Conferido às \d\d:\d\d$/);
+    expect(gem.pedidos.length).toBe(1);
+    // Fica guardado sem o texto do pedido nem a resposta.
+    const guardado = await page.evaluate(() => localStorage.getItem('rb.ia.conferencia'));
+    expect(Object.keys(JSON.parse(guardado)).sort()).toEqual(['dur', 'em', 'modelo', 'modo', 'ok', 'projeto']);
+    await page.reload();
+    await page.waitForFunction(() => window.rb && window.rb.pronto && window.rb.iaAjustes);
+    await expect(page.locator('#sec-ia .ia-passo.ok')).toHaveCount(4);
+    await expect(page.locator('#sec-ia .ia-passo').nth(3).getByRole('button', { name: 'Testar de novo' })).toBeVisible();
+    // Trocar o projeto invalida a conferência antiga.
+    await page.getByLabel(/ID do projeto/).fill('outro-projeto');
+    await page.locator('[data-ia-projeto]').click();
+    await expect(page.locator('#toast')).toContainText('Projeto salvo neste aparelho');
+    await expect(page.locator('#sec-ia .ia-passo.ok')).toHaveCount(1);
+    // Gasto e limite na mesma tela.
+    await expect(page.locator('#sec-ia .ia-gasto')).toContainText('Neste mês, neste aparelho: US$');
+    await expect(page.locator('#sec-ia .ia-gasto a')).toHaveAttribute('href', '#ajustes/custo');
+  });
+
+  test('API desligada no Google: o passo 1 mostra o erro traduzido e o que fazer', async ({ page, context }) => {
+    await entrar(page, context, { cenario: 'api-desligada' });
+    await page.goto('/#ajustes');
+    const passos = page.locator('#sec-ia .ia-passo');
+    await passos.nth(3).getByRole('button', { name: 'Testar conexão' }).click();
+    await expect(passos.nth(0)).toHaveClass(/erro/);
+    await expect(passos.nth(0).locator('[role="alert"]')).toContainText('A API do Gemini não está ativada no projeto do Google Cloud');
+    await expect(passos.nth(0)).toContainText('ative a Generative Language API e volte aqui para testar');
+    await expect(passos.nth(0).locator('small')).toHaveText(/^Conferido às/);
+    // Os passos seguintes não são dados como conferidos.
+    await expect(passos.nth(2)).not.toHaveClass(/ok|erro/);
+    await expect(passos.nth(3)).toHaveClass(/pendente/);
+  });
 });

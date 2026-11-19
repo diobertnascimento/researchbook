@@ -87,6 +87,8 @@ const ROTULOS = {
   pagina: 'Página',
   funcao: 'Cor do grifo',
   feitos: 'Etapas feitas',
+  notas: 'Notas do fichamento',
+  perguntas: 'Perguntas do fichamento',
   resumo: 'Resumo',
   citacoes: 'Citação',
   porque: 'Por que importa',

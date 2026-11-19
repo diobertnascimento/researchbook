@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.5.0';
+const APP_VERSAO = '2.9.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -208,7 +208,7 @@ const SECOES = {
   bib:{nome:'Ler', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos']]},
   esc:{nome:'Escrever', tabs:[['escrita','Textos'],['dialogos','Diálogos']]},
   // v2.5.0: a Visão (tese, sessão de hoje, plano da semana e capítulos) abre a Dissertação. Ela só existe com os dados reais.
-  diss:{nome:'Dissertação', tabs:[['dissertacao','Visão'],['projeto','Projeto'],['argumentos','Argumentos'],['orientacao','Orientação']]},
+  diss:{nome:'Dissertação', tabs:[['dissertacao','Visão'],['projeto','Projeto'],['argumentos','Mapa'],['orientacao','Orientação'],['jornada','Jornada']]},
   voce:{nome:'Você', tabs:[['autor','Overview do autor'],['memoria','Memória'],['ajustes','Ajustes']]},
 };
 const SECAO_DE = {}; Object.entries(SECOES).forEach(([k,v])=>v.tabs.forEach(([r])=>SECAO_DE[r]=k));
@@ -233,7 +233,7 @@ function desenhaMenu(rota){
 }
 function secaoCab(base){
   const k=SECAO_DE[base]; const sec=SECOES[k]; if(!sec) return '';
-  return `<div class="sec-cab"><h1>${sec.nome}</h1><nav class="subnav" aria-label="${sec.nome}">${sec.tabs.filter(([r])=>r!=='dissertacao'||modoReal()).map(([r,n])=>`<a href="#${r}" class="${r===base?'on':''}" ${r===base?'aria-current="page"':''}>${n}</a>`).join('')}</nav></div>`;
+  return `<div class="sec-cab"><h1>${sec.nome}</h1><nav class="subnav" aria-label="${sec.nome}">${sec.tabs.filter(([r])=>(r!=='dissertacao'&&r!=='jornada')||modoReal()).map(([r,n])=>`<a href="#${r}" class="${r===base?'on':''}" ${r===base?'aria-current="page"':''}>${n}</a>`).join('')}</nav></div>`;
 }
 
 /* =========================================================
@@ -877,6 +877,7 @@ const REFS_PROJ = [
 ];
 const prioBar = n => `<span class="prio" aria-label="Prioridade ${['','baixa','média','alta'][n]}">${[1,2,3].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
 V.dissertacao = () => modoReal() ? (window.rb&&window.rb.visaoUI ? window.rb.visaoUI.tela() : esqueleto('Dissertação')) : V.projeto();
+V.jornada = () => modoReal() ? (window.rb&&window.rb.visaoUI ? window.rb.visaoUI.jornada() : esqueleto('Jornada')) : V.projeto();
 V.projeto = () => {
   if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.projeto() : esqueleto('Revisão do projeto');
   const ver=VERSOES.find(v=>v.v===S.versao);
@@ -1814,14 +1815,21 @@ window.statusMovelHTML=statusMovelHTML;
 
 V.entrar = () => {
   const rb=window.rb; const erro=rb&&rb.google.erro;
-  if(acesso()==='conectando') return `<div class="entrar"><div class="entrar-caixa"><a class="wordmark"><span>researchbook</span></a><h1>Conectando ao Google…</h1><p>Conferindo o login e a permissão do Drive.</p></div></div>`;
+  if(acesso()==='conectando') return `<div class="entrar"><div class="entrar-caixa"><a class="wordmark"><span>researchbook</span></a><h1>Conectando ao Google</h1>
+    <ul class="entrar-passos" role="status"><li>Conferindo se é a conta autorizada</li><li>Conferindo a permissão da pasta no Drive</li></ul></div></div>`;
+  // v2.9.0: uma frase que diz por que a entrada é com Google, um botão e o que o app pede, agora e depois.
+  const locais=rb&&rb.noAparelho;
   return `<div class="entrar"><div class="entrar-caixa">
     <a class="wordmark"><span>researchbook</span></a>
-    <h1>Entre para continuar</h1>
-    <p>Estudo e escrita do mestrado. Só a conta autorizada entra, e os dados ficam numa pasta <b>researchbook</b> no Google Drive dela.</p>
+    <h1>Entrar</h1>
+    <p>Seus textos, grifos e fichamentos ficam numa pasta do seu Google Drive, e é por ela que os seus aparelhos se encontram. Por isso a entrada é com a conta Google, e só a conta autorizada entra.</p>
     ${erro?`<div class="entrar-erro" role="alert">${erro}</div>`:''}
-    <button class="btn prim" data-google="entrar">Entrar com Google</button>
-    <p class="entrar-nota">O app pede só duas permissões: saber o seu e-mail e usar os arquivos que ele mesmo criar no seu Drive. Ele não enxerga o resto do Drive.</p>
+    <button class="btn prim" data-google="entrar" data-ocupado="Abrindo o Google…">Entrar com Google</button>
+    ${locais?`<p class="entrar-nota">Este aparelho já guarda dados do researchbook (${locais}). Eles voltam a abrir assim que você entrar, e nada é apagado.</p>`:''}
+    <section class="entrar-pede" aria-labelledby="ep-t"><h2 id="ep-t">O que o app pede ao Google</h2><ul>
+      <li><b>Agora</b>Saber o seu e-mail, para confirmar que é você, e criar e usar a pasta researchbook no seu Drive. O app não enxerga nenhum outro arquivo seu.</li>
+      <li><b>Só se você ligar depois, em Ajustes</b>A agenda researchbook no Google Agenda (só a agenda que o app criar) e o Gemini pela sua conta.</li>
+    </ul></section>
   </div></div>`;
 };
 
@@ -1872,6 +1880,7 @@ function render(){
   const [v,arg,arg2]=rota.split('/');
   document.body.classList.toggle('leitor', v==='leitor');
   document.body.classList.toggle('editor', v==='texto');
+  document.body.classList.toggle('fichando', v==='fichamento' && modoReal());
   if(v!=='texto') document.body.classList.remove('sessao');
   document.body.classList.toggle('em-projeto', v==='disciplina' && modoReal());
   document.body.classList.toggle('foco', v==='leitor' && S.foco);

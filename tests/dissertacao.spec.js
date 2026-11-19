@@ -1,5 +1,7 @@
 // Etapa 11: dissertação (revisão do projeto e orientação) e diálogos, com o Gemini simulado.
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { googleFalso } from './google-falso.js';
 import { geminiFalso } from './gemini-falso.js';
 
@@ -52,7 +54,8 @@ test.describe('no computador', () => {
     await expect(page.locator('.bib-vazia')).toContainText('Nenhuma versão enviada');
     await page.locator('[data-rev-pdf]').setInputFiles({ name: 'projeto-v1.pdf', mimeType: 'application/pdf', buffer: PDF });
     await expect(page.locator('#toast')).toContainText('Versão 1 revisada: 3 obras, 1 problema nas referências');
-    const p = gem.pedidos.at(-1);
+    // O parecer é pedido logo depois, então a revisão é procurada pelo formato da resposta.
+    const p = gem.pedidos.findLast((x) => x.corpo.generationConfig?.responseJsonSchema?.properties?.obras);
     expect(p.modelo).toBe('gemini-4-argon');
     expect(p.corpo.contents.at(-1).parts[0].inlineData.mimeType).toBe('application/pdf');
     expect(p.corpo.contents.at(-1).parts[1].text).toContain('B1: Moraes; Lins (2024). Roteirização colaborativa');
@@ -72,13 +75,92 @@ test.describe('no computador', () => {
     await page.getByRole('button', { name: 'Criar trilha com 1 leitura' }).click();
     await expect(page.locator('#toast')).toContainText('Trilha "Revisão da versão 1" criada com 1 leitura');
 
+    // O parecer da versão 1 corre em segundo plano; a versão seguinte é enviada depois dele, como no uso real.
+    await expect(page.locator('.parecer h2')).toHaveText('Parecer da versão 1', { timeout: 20_000 });
     await page.locator('[data-rev-pdf]').setInputFiles({ name: 'projeto-v2.pdf', mimeType: 'application/pdf', buffer: PDF });
-    await expect(page.locator('#toast')).toContainText('Versão 2 revisada');
+    await expect(page.locator('#toast')).toContainText('Versão 2 revisada', { timeout: 15_000 });
     await expect(page.locator('.versao')).toContainText('Desde a anterior: 1 obra nova, 0 removidas, 1 problema resolvido');
     await expect(page.locator('.versoes button')).toHaveText(['v2', 'v1']);
     await page.locator('.versoes button', { hasText: 'v1' }).click();
     await expect(page.locator('.inc li')).toHaveCount(1);
     expect(await page.evaluate(() => window.rb.historico.todas().filter((c) => c.funcao === 'revisao_projeto').length)).toBe(2);
+  });
+
+  test('parecer do projeto: achados por gravidade, trecho conferido no PDF sem IA, decisão por achado com desfazer, pendências e o que a versão seguinte resolveu', async ({ page, context }) => {
+    const { gem } = await entrar(page, context, '/#projeto', { trechoDoParecer: 'A coleta seletiva depende de rotas que as equipes aceitem percorrer.' });
+    const pdf = readFileSync(join(import.meta.dirname, 'fixtures', 'artigo-teste.pdf'));
+    await page.locator('[data-rev-pdf]').setInputFiles({ name: 'projeto-v1.pdf', mimeType: 'application/pdf', buffer: pdf });
+    const parecer = page.locator('.parecer');
+    await expect(parecer.locator('h2')).toHaveText('Parecer da versão 1', { timeout: 20_000 });
+    const pedido = () => gem.pedidos.findLast((x) => x.corpo.generationConfig?.responseJsonSchema?.properties?.achados);
+    expect(pedido().modelo).toBe('gemini-4-argon');
+    expect(pedido().corpo.contents.at(-1).parts[0].inlineData.mimeType).toBe('application/pdf');
+    expect(JSON.stringify(pedido().corpo.contents)).toContain('(primeiro parecer)');
+    expect(JSON.stringify(pedido().corpo.systemInstruction)).toContain('Você não reescreve o texto');
+
+    // Três achados (o de parte desconhecida é descartado), do mais grave para o mais leve.
+    await expect(parecer.locator('.par-resumo')).toHaveText('3 pontos: 1 compromete a aprovação, 1 importante, 1 ajuste. Faltam decidir 3.');
+    const achados = parecer.locator('.achado');
+    await expect(achados).toHaveCount(3);
+    await expect(achados.nth(0)).toContainText('O propósito não está declarado');
+    await expect(achados.nth(0).locator('.chip')).toHaveText('Propósito');
+    await expect(achados.nth(0)).toContainText('Critério: Creswell e Creswell, Research Design, 6. ed., cap. 6.');
+    // O trecho que está no PDF passa na conferência; o inventado é avisado; o achado de ausência não tem trecho.
+    await expect(achados.nth(0).locator('cite')).toHaveText('p. 1');
+    await expect(achados.nth(1)).toContainText('Não há cronograma até a defesa');
+    await expect(achados.nth(1).locator('blockquote')).toHaveCount(0);
+    await expect(achados.nth(2).locator('cite')).toContainText('Não encontrei este trecho no PDF');
+    expect(await page.evaluate(() => window.rb.dissertacao.todasRevisoes()[0].parecer.achados.map((a) => a.conferido))).toEqual(['pagina', null, 'nao']);
+
+    // Ele decide achado por achado, com desfazer.
+    await achados.nth(0).getByRole('button', { name: 'Adicionar às pendências' }).click();
+    await expect(page.locator('#toast')).toContainText('Adicionado às suas pendências');
+    await expect(parecer.locator('.pendencias li')).toHaveCount(1);
+    await expect(parecer.locator('.pendencias li')).toContainText('O propósito não está declarado');
+    await achados.nth(2).getByRole('button', { name: 'Ignorar' }).click();
+    await expect(achados.nth(2)).toContainText('Ignorado.');
+    await page.locator('#toast').getByRole('button', { name: 'Desfazer' }).click();
+    await expect(achados.nth(2).getByRole('button', { name: 'Ignorar' })).toBeVisible();
+    await achados.nth(2).getByRole('button', { name: 'Ignorar' }).click();
+    await expect(parecer.locator('.par-resumo')).toContainText('Falta decidir 1.');
+    await parecer.locator('.pendencias input').check();
+    await expect.poll(() => page.evaluate(() => window.rb.dissertacao.todasRevisoes()[0].parecer.achados.map((a) => `${a.decisao}:${a.feito}`))).toEqual(['pendencia:true', 'null:false', 'ignorado:false']);
+    expect(await page.evaluate(() => window.rb.historico.todas().filter((c) => c.funcao === 'parecer_projeto').length)).toBe(1);
+
+    // Versão seguinte: o parecer anterior vai no pedido e a IA diz o que foi resolvido.
+    await page.locator('[data-rev-pdf]').setInputFiles({ name: 'projeto-v2.pdf', mimeType: 'application/pdf', buffer: pdf });
+    await expect(parecer.locator('h2')).toHaveText('Parecer da versão 2', { timeout: 20_000 });
+    expect(JSON.stringify(pedido().corpo.contents)).toContain('P1: [Propósito] O propósito não está declarado');
+    await expect(parecer.locator('.par-resolvidos summary')).toHaveText('Resolvido desde a versão 1 (1)');
+    await expect(parecer.locator('.par-resolvidos li')).toContainText('O propósito não está declarado');
+    await expect(achados).toHaveCount(2);
+    await expect(parecer.locator('.pendencias li')).toHaveCount(0);
+    // O parecer da versão 1 continua como ele deixou.
+    await page.locator('.versoes button', { hasText: 'v1' }).click();
+    await expect(parecer.locator('h2')).toHaveText('Parecer da versão 1');
+    await expect(parecer.locator('.pendencias input')).toBeChecked();
+  });
+
+  test('parecer: se a IA falha, a versão continua gravada e dá para tentar de novo; versão antiga pede o PDF', async ({ page, context }) => {
+    await entrar(page, context, '/#projeto', { falharParecer: true });
+    await page.locator('[data-rev-pdf]').setInputFiles({ name: 'projeto-v1.pdf', mimeType: 'application/pdf', buffer: PDF });
+    await expect(page.locator('#toast')).toContainText('Versão 1 revisada');
+    const espera = page.locator('.parecer-espera');
+    await expect(espera).toContainText('O parecer desta versão não saiu');
+    await expect(page.locator('.versao')).toContainText('Versão 1');
+    await expect(page.locator('.prio-grupo').first()).toBeVisible();
+    await espera.getByRole('button', { name: 'Tentar de novo' }).click();
+    await expect(page.locator('.parecer h2')).toHaveText('Parecer da versão 1', { timeout: 20_000 });
+    // PDF que o aparelho não consegue ler: os trechos não são conferidos, e a tela diz.
+    await expect(page.locator('.parecer')).toContainText('os trechos abaixo não foram conferidos');
+
+    // Depois de recarregar, uma versão sem parecer pede o PDF de novo.
+    await page.evaluate(async () => { const r = window.rb.dissertacao.todasRevisoes()[0]; const { parecer, ...resto } = r; await window.rb.dados.salvar('revisoes', resto); });
+    await page.reload();
+    await page.waitForFunction(() => window.rb && window.rb.dissertacaoUI && window.rb.sincronia);
+    await expect(page.locator('.parecer-espera')).toContainText('Esta versão ainda não tem parecer');
+    await page.locator('[data-par-pdf]').setInputFiles({ name: 'projeto-v1.pdf', mimeType: 'application/pdf', buffer: PDF });
+    await expect(page.locator('.parecer h2')).toHaveText('Parecer da versão 1', { timeout: 20_000 });
   });
 
   test('orientação: anotação vira resumo, trecho conferido e combinados; o encontro seguinte trata o combinado anterior; agenda e apagar', async ({ page, context }) => {

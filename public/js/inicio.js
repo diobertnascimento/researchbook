@@ -497,6 +497,17 @@ async function iniciar() {
     sincronia: null,
     aparelho: ap,
   };
+
+  // Tela de entrada: diz se este aparelho já guarda dados (quantas obras e textos), sem abrir nenhum deles.
+  if (db && document.body.classList.contains('bloqueado')) {
+    Promise.all([window.rb.dados.listar('leituras'), window.rb.dados.listar('textos')])
+      .then(([ls, ts]) => {
+        if (!ls.length && !ts.length) return;
+        window.rb.noAparelho = `${ls.length} ${ls.length === 1 ? 'obra' : 'obras'} e ${ts.length} ${ts.length === 1 ? 'texto' : 'textos'}`;
+        if (document.body.classList.contains('bloqueado') && typeof window.render === 'function') window.render();
+      })
+      .catch(() => {});
+  }
   if (db) {
     const biblioteca = criarBiblioteca({ db, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
     window.rb.biblioteca = biblioteca;

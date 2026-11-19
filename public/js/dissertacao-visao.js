@@ -2,7 +2,8 @@
 // combinados da orientação. Também desenha a sessão de escrita dentro do editor: só o texto, um relógio discreto
 // e, ao encerrar, o que foi feito e a frase onde o autor parou. A tela não sugere o que escrever e não chama a IA.
 import { medirAutoria, blocos, contarPalavras } from './escrita.js';
-import { ultimasPalavras } from './sessoes.js';
+import { ultimasPalavras, andamento } from './sessoes.js';
+import { diaLocal, diasAte } from './progresso.js';
 import { ouvir } from './ui.js';
 
 /* global toast */
@@ -14,8 +15,8 @@ const dataLonga = (dia) => new Date(`${dia}T12:00:00`).toLocaleDateString('pt-BR
 const nomeCap = (t) => (t.capitulo ? `Capítulo ${t.capitulo}, ${t.titulo}` : t.titulo);
 
 export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
-  const est = { escolher: false, mudarPlano: false };
-  const naVisao = () => /^#dissertacao/.test(location.hash);
+  const est = { escolher: false, mudarPlano: false, mudarInicio: false };
+  const naVisao = () => /^#(dissertacao|jornada)/.test(location.hash);
   const redesenhar = () => naVisao() && window.render?.();
   const veu = () => document.getElementById('veu');
   const abrirModal = (html) => {
@@ -101,6 +102,73 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
           </section>
         </div>
       </div>`;
+  }
+
+  /* ---------- Jornada do mestrado: o prazo, o próximo marco e os marcos ---------- */
+  const MESES_N = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const mesAno = (dia) => `${MESES_N[Number(dia.split('-')[1]) - 1]} de ${dia.split('-')[0]}`;
+  const dataCurta = (dia) => new Date(`${dia}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\./g, '').replace(/ de /g, ' ');
+  function camposInicio(c) {
+    const [a, m] = c.inicio ? c.inicio.split('-').map(Number) : [new Date().getFullYear(), 0];
+    const anoAtual = new Date().getFullYear();
+    return `<div class="linha2 jor-campos">
+      <div class="campo"><label for="jor-mes">Mês em que começou</label><select id="jor-mes" data-diss-inicio><option value="">Escolha</option>${MESES_N.map((n, i) => `<option value="${i + 1}" ${m === i + 1 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="campo"><label for="jor-ano">Ano</label><select id="jor-ano" data-diss-inicio>${[0, 1, 2, 3, 4, 5].map((k) => `<option ${anoAtual - k === a ? 'selected' : ''}>${anoAtual - k}</option>`).join('')}</select></div>
+      <div class="campo"><label for="jor-meses">Prazo, em meses</label><select id="jor-meses" data-diss-inicio>${[12, 18, 24, 30, 36, 48].map((n) => `<option ${n === c.meses ? 'selected' : ''}>${n}</option>`).join('')}</select></div></div>`;
+  }
+  /** Marcos escritos por ele mais os que o app conhece pelos dados: início, versões do projeto enviadas e fim do prazo. */
+  function marcosDe(c, anda) {
+    const lista = c.marcos.map((m) => ({ ...m, seu: true }));
+    if (anda) {
+      lista.push({ id: 'inicio', titulo: 'Início do mestrado', data: anda.de, soMes: true });
+      lista.push({ id: 'fim', titulo: 'Fim do prazo', data: anda.ate, soMes: true });
+    }
+    for (const r of diss.todasRevisoes()) if (r.enviadoEm) lista.push({ id: r.id, titulo: `Projeto, versão ${r.versao}`, data: diaLocal(new Date(r.enviadoEm)), nota: 'Enviado para revisão no app', href: '#projeto' });
+    return lista.sort((a, b) => b.data.localeCompare(a.data));
+  }
+  function jornada() {
+    const c = sess.config();
+    const anda = andamento(c.inicio, c.meses);
+    const hoje = diaLocal();
+    const cab = '<div class="topo"><div><h1>Jornada</h1></div></div>';
+    if (!anda) {
+      return `${cab}<section class="proximo jor-comeco" aria-labelledby="jc-t"><div class="rot" id="jc-t">Quando o mestrado começou?</div>
+        <p>Com o mês de início e o prazo, esta página mostra em que ponto você está e quanto falta para cada marco. Fica gravado assim que você escolhe.</p>${camposInicio(c)}</section>`;
+    }
+    const marcos = marcosDe(c, anda);
+    const proximo = [...marcos].reverse().find((m) => m.seu && m.data >= hoje);
+    const caps = sess.capitulos();
+    const somas = caps.map(palavrasDe);
+    const palavras = somas.reduce((n, p) => n + p.total, 0);
+    const comTexto = somas.filter((p) => p.total).length;
+    const versao = diss.todasRevisoes()[0];
+    const combinados = diss.combinadosAbertos().length;
+    const fatos = [
+      versao ? `Projeto, versão ${versao.versao}<small>Enviado em ${dataLonga(diaLocal(new Date(versao.enviadoEm)))}</small>` : 'Projeto ainda não enviado para revisão<small>O envio fica na página Projeto</small>',
+      caps.length ? `${milhar(palavras)} ${palavras === 1 ? 'palavra' : 'palavras'} nos capítulos<small>${comTexto} de ${plural(caps.length, 'capítulo', 'capítulos')} com texto</small>` : 'Nenhum capítulo começado<small>Os capítulos ficam na Visão</small>',
+      `${combinados ? plural(combinados, 'combinado', 'combinados') : 'Nenhum combinado'} em aberto com a orientação`,
+    ];
+    const posicao = (dia) => Math.round(Math.min(1, Math.max(0, (new Date(`${dia}T12:00:00`) - new Date(`${anda.de}T00:00:00`)) / (new Date(`${anda.ate}T23:59:59`) - new Date(`${anda.de}T00:00:00`)))) * 1000) / 10;
+    const onde = !anda.comecou ? `Começa em ${mesAno(anda.de)}.` : anda.acabou ? 'O prazo já passou.' : `Você está no mês ${anda.mes} de ${c.meses}.`;
+    return `${cab}
+      <section class="jor-regua" aria-label="Prazo do mestrado">
+        <p class="jor-frase">De ${mesAno(anda.de)} a ${mesAno(anda.ate)}. ${onde} <button class="lnk" data-diss-mudar-inicio aria-expanded="${est.mudarInicio}">Mudar</button></p>
+        ${est.mudarInicio ? camposInicio(c) : ''}
+        <div class="regua" role="img" aria-label="${anda.comecou ? `Mês ${anda.mes} de ${c.meses}` : 'Ainda não começou'}"><i style="width:${Math.round(anda.fracao * 1000) / 10}%"></i>${c.marcos.map((m) => `<span class="marca ${m.data < hoje ? 'passou' : ''}" style="left:${posicao(m.data)}%" title="${esc(m.titulo)}, ${dataCurta(m.data)}"></span>`).join('')}</div>
+        <div class="regua-pontas"><span>${mesAno(anda.de)}</span><span>${mesAno(anda.ate)}</span></div>
+      </section>
+      ${proximo ? `<section class="proximo jor-proximo" aria-labelledby="jp-t"><div class="rot" id="jp-t">Próximo marco, ${diasAte(proximo.data) === 0 ? 'hoje' : diasAte(proximo.data) === 1 ? 'amanhã' : `em ${diasAte(proximo.data)} dias`}</div>
+        <h2>${esc(proximo.titulo)}, ${dataLonga(proximo.data)}</h2>
+        <ul class="jor-fatos">${fatos.map((f) => `<li>${f}</li>`).join('')}</ul>
+        <div class="acao-l"><a class="btn prim" href="#projeto">Abrir o projeto</a></div></section>` : ''}
+      <section class="proj-sec jor-marcos" aria-labelledby="jm-t"><h2 id="jm-t">Marcos</h2>
+        <form class="jor-novo" id="marco-form"><input id="marco-titulo" aria-label="Novo marco" placeholder="Qualificação, defesa, entrega de capítulo…" required autocomplete="off"><input id="marco-data" type="date" aria-label="Data do marco" required><button class="btn" type="submit">Adicionar marco</button></form>
+        <ul class="linha-l">${marcos.map((m) => {
+          const n = diasAte(m.data);
+          const nota = m.nota || (m.seu && n >= 0 ? (n === 0 ? 'Hoje' : n === 1 ? 'Amanhã' : `Em ${n} dias`) : '');
+          return `<li class="${m.data < hoje ? 'passou' : ''}"><span class="quando">${m.soMes ? mesAno(m.data).replace(' de ', ' ') : dataCurta(m.data)}</span><span>${m.href ? `<a href="${m.href}">${esc(m.titulo)}</a>` : esc(m.titulo)}${nota ? `<small>${nota}</small>` : ''}</span>${m.seu ? `<button class="btn fant" data-diss-marco-apagar="${esc(m.id)}" aria-label="Apagar o marco ${esc(m.titulo)}">Apagar</button>` : ''}</li>`;
+        }).join('')}</ul>
+      </section>`;
   }
 
   /* ---------- Sessão de escrita, dentro do editor ---------- */
@@ -200,6 +268,16 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
   document.addEventListener('focusout', (e) => e.target.dataset?.dissTese !== undefined && gravarTese());
   document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && gravarTese());
   document.addEventListener('change', async (e) => {
+    if (e.target.dataset?.dissInicio !== undefined) {
+      const mes = Number(document.getElementById('jor-mes').value);
+      if (!mes) return;
+      const foco = e.target.id;
+      await sess.salvarConfig({ inicio: `${document.getElementById('jor-ano').value}-${String(mes).padStart(2, '0')}`, meses: Number(document.getElementById('jor-meses').value) });
+      registrar('ui', 'dissertacao.inicio');
+      est.mudarInicio = true;
+      redesenhar();
+      return document.getElementById(foco)?.focus();
+    }
     if (e.target.dataset?.dissSecao) {
       await window.rb.escritaUI?.salvarAgora?.();
       window.rb.escritaUI?.abrirSecao?.(e.target.dataset.dissSecao, Number(e.target.value));
@@ -214,10 +292,35 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     document.getElementById(`pl-${campo}`)?.focus();
   });
 
+  ouvir('submit', async (e) => {
+    if (e.target.id !== 'marco-form') return;
+    e.preventDefault();
+    const titulo = document.getElementById('marco-titulo').value.trim();
+    const data = document.getElementById('marco-data').value;
+    if (!titulo || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return toast('Escreva o marco e escolha a data.');
+    await sess.salvarConfig({ marcos: [...sess.config().marcos, { id: `marco-${crypto.randomUUID().slice(0, 8)}`, titulo, data }] });
+    registrar('ui', 'dissertacao.marco');
+    redesenhar();
+    toast('Marco gravado');
+  });
+
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-diss-sessao],[data-diss-escolher],[data-diss-plano],[data-diss-novo-cap],[data-diss-encerrar],[data-diss-continuar]');
+    const b = e.target.closest('[data-diss-mudar-inicio],[data-diss-marco-apagar],[data-diss-sessao],[data-diss-escolher],[data-diss-plano],[data-diss-novo-cap],[data-diss-encerrar],[data-diss-continuar]');
     if (!b) return;
     const d = b.dataset;
+    if (d.dissMudarInicio !== undefined) {
+      est.mudarInicio = !est.mudarInicio;
+      return redesenhar();
+    }
+    if (d.dissMarcoApagar) {
+      const antes = sess.config().marcos;
+      await sess.salvarConfig({ marcos: antes.filter((m) => m.id !== d.dissMarcoApagar) });
+      redesenhar();
+      return toast('Marco apagado', async () => {
+        await sess.salvarConfig({ marcos: antes });
+        redesenhar();
+      });
+    }
     if (d.dissEscolher !== undefined) {
       est.escolher = !est.escolher;
       return redesenhar();
@@ -251,5 +354,5 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     if (d.dissContinuar !== undefined) return fechar();
   });
 
-  return { tela, barraSessao };
+  return { tela, jornada, barraSessao };
 }

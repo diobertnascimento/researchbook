@@ -15,6 +15,16 @@ export function inicioDaSemana(d = new Date()) {
   x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
   return diaLocal(x);
 }
+/** Onde o mestrado está: mês atual (1 a meses), primeiro e último dia, e a fração do prazo já percorrida. */
+export function andamento(inicio, meses, hoje = new Date()) {
+  const [a, m] = String(inicio).split('-').map(Number);
+  if (!a || !m) return null;
+  const de = new Date(a, m - 1, 1);
+  const ate = new Date(a, m - 1 + meses, 0);
+  const passados = (hoje.getFullYear() - a) * 12 + (hoje.getMonth() - (m - 1));
+  const fracao = Math.min(1, Math.max(0, (hoje - de) / (ate - de)));
+  return { de: diaLocal(de), ate: diaLocal(ate), mes: Math.min(meses, Math.max(1, passados + 1)), comecou: hoje >= de, acabou: hoje > ate, fracao };
+}
 /** As últimas palavras de um trecho: é por elas que o autor reconhece onde parou. */
 export function ultimasPalavras(texto, n = 8) {
   const ps = String(texto || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
@@ -31,7 +41,8 @@ export function criarSessoes({ dados, escrita, registrar }) {
     cfg = cs.find((c) => c.id === 'principal') || { id: 'principal' };
   }
 
-  const config = () => ({ tese: cfg.tese || '', plano: { ...PLANO_PADRAO, ...(cfg.plano || {}) } });
+  // inicio é o mês em que o mestrado começou (AAAA-MM); marcos são os que o autor escreveu ({ id, titulo, data }).
+  const config = () => ({ tese: cfg.tese || '', plano: { ...PLANO_PADRAO, ...(cfg.plano || {}) }, inicio: cfg.inicio || '', meses: cfg.meses || 24, marcos: cfg.marcos || [] });
   async function salvarConfig(mudancas) {
     cfg = await dados.salvar('dissertacao', { ...cfg, ...mudancas, id: 'principal' });
     return config();

@@ -1,5 +1,5 @@
 // Telas da Dissertação (Revisão do projeto, Orientação) e dos Diálogos, com dados reais.
-import { FORMATOS, FUNCOES_OBRA, TIPOS_PROBLEMA, DISSERTACAO } from './dissertacao.js';
+import { FORMATOS, FUNCOES_OBRA, TIPOS_PROBLEMA, DISSERTACAO, PARTES_PARECER, GRAVIDADES } from './dissertacao.js';
 import { MODOS } from './dialogos.js';
 import { pipsHTML, ETAPAS, diaLocal, dataCurta } from './progresso.js';
 import { citacao } from './abnt.js';
@@ -20,7 +20,7 @@ const prio = (n) => `<span class="prio" aria-label="Prioridade ${['', 'baixa', '
 const tirarIds = (s) => String(s || '').replace(/\s*\[A\d+\]/g, '');
 
 export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) {
-  const est = { rev: null, msgs: {}, carregando: new Set(), ocupado: null, erro: null, tipoReg: 'anotacao', abertos: new Set() };
+  const est = { parecerCorrendo: null, parecerErro: {}, rev: null, msgs: {}, carregando: new Set(), ocupado: null, erro: null, tipoReg: 'anotacao', abertos: new Set() };
   const redesenhar = () => /^#(projeto|orientacao|dialogos)/.test(location.hash) && window.render?.();
   const veu = () => document.getElementById('veu');
   const abrirModal = (html) => {
@@ -35,11 +35,80 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   };
 
   /* =================== Revisão do projeto =================== */
+  // O campo de arquivo da versão fica fora da tela desenhada: se a página se redesenhar com a janela de escolha
+  // aberta (o parecer da versão anterior terminando, por exemplo), o arquivo escolhido não se perde.
+  const entradaPDF = Object.assign(document.createElement('input'), { type: 'file', accept: 'application/pdf', hidden: true });
+  entradaPDF.dataset.revPdf = '';
+  document.body.append(entradaPDF);
+
+  /* ---------- Parecer da versão: o que ajustar para a qualificação ---------- */
+  const arquivosDaSessao = new Map(); // PDF de cada versão enviada nesta sessão, para pedir o parecer sem escolher de novo
+  const nomeParte = Object.fromEntries(PARTES_PARECER.map(([k, n]) => [k, n]));
+  const refParte = Object.fromEntries(PARTES_PARECER.map(([k, , ref]) => [k, ref]));
+  const CONTAGEM = { compromete: ['compromete a aprovação', 'comprometem a aprovação'], importante: ['importante', 'importantes'], ajuste: ['ajuste', 'ajustes'] };
+  function achadoHTML(a) {
+    const onde = a.pagina ? `p. ${a.pagina}` : '';
+    const aviso = a.conferido === 'nao' ? 'Não encontrei este trecho no PDF. Confira antes de levar em conta.' : a.conferido === 'outra' ? 'O trecho está no PDF, em outra página.' : '';
+    const cab = `<header><span class="chip">${nomeParte[a.parte]}</span><h4>${esc(a.titulo)}</h4></header>`;
+    if (a.decisao === 'ignorado') return `<article class="achado ignorado">${cab}<div class="ach-estado"><span>Ignorado.</span><button class="lnk" data-par-decidir="${esc(a.id)}|">Desfazer</button></div></article>`;
+    return `<article class="achado ${a.decisao ? 'decidido' : ''}">${cab}
+      ${a.trecho ? `<blockquote>“${esc(a.trecho)}”<cite>${[onde, aviso].filter(Boolean).join('. ')}</cite></blockquote>` : onde ? `<p class="t-meta mute">${onde}</p>` : ''}
+      <p><b>O que se espera.</b> ${esc(a.esperado)} <small>Critério: ${esc(refParte[a.parte])}.</small></p>
+      <p><b>Como resolver.</b> ${esc(a.como_resolver)}</p>
+      ${a.decisao === 'pendencia'
+        ? `<div class="ach-estado"><span>Nas suas pendências.</span><button class="lnk" data-par-decidir="${esc(a.id)}|">Desfazer</button></div>`
+        : `<div class="acao-l"><button class="btn" data-par-decidir="${esc(a.id)}|pendencia">Adicionar às pendências</button><button class="btn fant" data-par-decidir="${esc(a.id)}|ignorado">Ignorar</button></div>`}
+    </article>`;
+  }
+  function parecerHTML(r) {
+    const p = r.parecer;
+    if (!p) {
+      if (est.parecerCorrendo === r.id) return `<section class="proximo parecer-espera" role="status"><div class="rot">Lendo o projeto para o parecer</div><p>O Gemini está lendo a versão ${r.versao} inteira, parte por parte. Leva alguns minutos; a lista de obras abaixo já pode ser usada.</p></section>`;
+      const erro = est.parecerErro[r.id];
+      const acao = arquivosDaSessao.has(r.id) ? `<button class="btn" data-par-pedir="${esc(r.id)}">${erro ? 'Tentar de novo' : 'Pedir o parecer'}</button>` : `<label class="btn">Escolher o PDF da versão ${r.versao}<input type="file" accept="application/pdf" data-par-pdf="${esc(r.id)}" hidden></label>`;
+      return `<section class="proximo parecer-espera"><div class="rot">${erro ? 'O parecer desta versão não saiu' : 'Esta versão ainda não tem parecer'}</div>
+        ${erro ? erroHTML(erro) : `<p>O parecer aponta o que ajustar para a qualificação, parte por parte.${arquivosDaSessao.has(r.id) ? '' : ' Para pedir, escolha de novo o PDF desta versão.'}</p>`}<div class="acao-l">${acao}</div></section>`;
+    }
+    const n = (g) => p.achados.filter((a) => a.gravidade === g).length;
+    const partes = GRAVIDADES.map(([g]) => [g, n(g)]).filter(([, k]) => k).map(([g, k]) => `${k} ${CONTAGEM[g][k === 1 ? 0 : 1]}`);
+    const pend = p.achados.filter((a) => a.decisao === 'pendencia');
+    const semDecisao = p.achados.filter((a) => !a.decisao).length;
+    const resumo = p.achados.length ? `${p.achados.length} ${p.achados.length === 1 ? 'ponto' : 'pontos'}: ${partes.join(', ')}.${semDecisao ? ` ${semDecisao === 1 ? 'Falta decidir 1' : `Faltam decidir ${semDecisao}`}.` : ' Todos decididos.'}` : 'Esta leitura não encontrou ponto a ajustar. Isso não substitui a leitura de quem orienta.';
+    return `<section class="parecer" aria-labelledby="par-t"><h2 id="par-t">Parecer da versão ${r.versao}</h2>
+      <p class="par-resumo">${resumo}</p>
+      ${p.conferencia === 'sem-texto' && p.achados.some((a) => a.trecho) ? '<p class="t-meta mute">Não deu para ler o texto deste PDF no aparelho, então os trechos abaixo não foram conferidos.</p>' : ''}
+      ${p.resolvidos?.length ? `<details class="par-resolvidos"><summary>Resolvido desde a versão ${p.sobreVersao} (${p.resolvidos.length})</summary><ul>${p.resolvidos.map((x) => `<li><b>${esc(x.titulo)}</b>${x.como ? ` ${esc(x.como)}` : ''}</li>`).join('')}</ul></details>` : ''}
+      <div class="proj-grid"><div class="achados">
+        ${GRAVIDADES.map(([g, nome]) => {
+          const as = p.achados.filter((a) => a.gravidade === g);
+          return as.length ? `<h3>${nome} (${as.length})</h3>${as.map(achadoHTML).join('')}` : '';
+        }).join('')}
+      </div>
+      <aside class="lado"><section class="bloco pendencias"><h3>Suas pendências</h3>
+        ${pend.length ? `<ul>${pend.map((a) => `<li><label><input type="checkbox" data-par-feito="${esc(a.id)}" ${a.feito ? 'checked' : ''}><span>${esc(a.titulo)}<small>${nomeParte[a.parte]}</small></span></label></li>`).join('')}</ul>` : '<p class="mute m-0">Nenhuma ainda. Em cada ponto do parecer, você decide se ele entra aqui.</p>'}</section>
+        <section class="bloco"><details class="ajuda-det"><summary>Como o parecer é feito?</summary><p class="m-0 mt-3 t-meta mute">A IA lê o PDF inteiro com nove critérios fixos: introdução e problema, propósito, perguntas, literatura e teoria, método, ética, coerência entre as partes, cronograma e forma. Ela aponta o que falta e não reescreve o seu texto. Os trechos citados são conferidos no próprio PDF, sem IA. O parecer só muda quando você envia outra versão.</p></details></section>
+      </aside></div></section>`;
+  }
+  async function rodarParecer(revId, arquivo) {
+    arquivosDaSessao.set(revId, arquivo);
+    est.parecerCorrendo = revId;
+    delete est.parecerErro[revId];
+    redesenhar();
+    try {
+      await diss.pedirParecer(revId, arquivo);
+    } catch (err) {
+      est.parecerErro[revId] = err;
+    } finally {
+      est.parecerCorrendo = null;
+      redesenhar();
+    }
+  }
+
   function projeto() {
     const revs = diss.todasRevisoes();
-    const topo = `<div class="topo"><div><h1>Revisão do projeto</h1><p>Envie a versão atual da dissertação em PDF. A IA lê as obras que você cita e monta uma lista por prioridade de leitura, com os problemas de citação.</p></div>
-      <div class="acoes"><label class="btn prim">${icone('upload')}${revs.length ? 'Enviar nova versão' : 'Enviar a versão atual'}<input type="file" accept="application/pdf" data-rev-pdf hidden></label></div></div>`;
-    if (!revs.length) return `${topo}<div class="bib-vazia"><h2>Nenhuma versão enviada</h2><p>A cada versão, a revisão compara com a anterior: obras novas, removidas e problemas resolvidos. O PDF fica no seu Drive (dissertacao/versoes).</p></div>`;
+    const topo = `<div class="topo"><div><h1>Projeto</h1><p>Envie cada versão do projeto em PDF. A IA faz duas leituras: o parecer do que ajustar para a qualificação e a lista das obras que você cita, por prioridade de leitura.</p></div>
+      <div class="acoes"><button class="btn prim" data-rev-escolher>${icone('upload')}${revs.length ? 'Enviar nova versão' : 'Enviar a versão atual'}</button></div></div>`;
+    if (!revs.length) return `${topo}<div class="bib-vazia"><h2>Nenhuma versão enviada</h2><p>A cada versão, o parecer diz o que foi resolvido desde a anterior, e a lista de obras mostra as novas, as removidas e os problemas de citação resolvidos. O PDF fica no seu Drive (dissertacao/versoes).</p></div>`;
     const r = (est.rev && diss.revisao(est.rev)) || revs[0];
     const res = r.resultado;
     const linha = (o, i) => {
@@ -62,6 +131,8 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     return `${topo}
       <div class="versao"><div class="pdf-ic">PDF</div><div class="info"><b>${esc(r.arquivo.nome)}</b><span>Versão ${r.versao}${res.paginas ? `, ${res.paginas} páginas` : ''}, ${res.obras.length} obras citadas, enviada em ${new Date(r.enviadoEm).toLocaleDateString('pt-BR')}.${cmp && r.versao > 1 ? ` Desde a anterior: ${cmp.novas?.length || 0} ${cmp.novas?.length === 1 ? 'obra nova' : 'obras novas'}, ${cmp.removidas?.length || 0} ${cmp.removidas?.length === 1 ? 'removida' : 'removidas'}, ${cmp.problemas_resolvidos || 0} ${cmp.problemas_resolvidos === 1 ? 'problema resolvido' : 'problemas resolvidos'}.` : ''}</span></div>
         ${revs.length > 1 ? `<div class="versoes"><span>Versões</span>${revs.map((x) => `<button data-rev-versao="${esc(x.id)}" class="${x.id === r.id ? 'on' : ''}">v${x.versao}</button>`).join('')}</div>` : ''}</div>
+      ${parecerHTML(r)}
+      <h2 class="proj-leituras">Leituras e citações</h2>
       <div class="proj-grid"><div>
         ${grupos
           .map(([n, nome, desc]) => {
@@ -91,6 +162,8 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       redesenhar();
       const np = r.resultado.problemas.length;
       toast(`Versão ${r.versao} revisada: ${r.resultado.obras.length} obras, ${np} ${np === 1 ? 'problema' : 'problemas'} nas referências`);
+      // O envio da versão é o pedido do parecer. Ele corre depois, sem segurar a tela.
+      rodarParecer(r.id, arquivo);
     } catch (err) {
       abrirModal(`<h2 id="modal-tit">Não deu para revisar esta versão</h2>${erroHTML(err)}<div class="pe"><button class="btn prim" data-dlg-fechar>Fechar</button></div>`);
     }
@@ -226,7 +299,16 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
 
   /* =================== Eventos =================== */
   document.addEventListener('change', (e) => {
-    if (e.target.matches?.('[data-rev-pdf]') && e.target.files?.[0]) enviarVersao(e.target.files[0]);
+    if (e.target.matches?.('[data-rev-pdf]') && e.target.files?.[0]) {
+      const arquivo = e.target.files[0];
+      e.target.value = ''; // o mesmo arquivo pode ser escolhido de novo
+      enviarVersao(arquivo);
+    }
+    if (e.target.matches?.('[data-par-pdf]') && e.target.files?.[0]) rodarParecer(e.target.dataset.parPdf, e.target.files[0]);
+    if (e.target.matches?.('[data-par-feito]')) {
+      const r = (est.rev && diss.revisao(est.rev)) || diss.todasRevisoes()[0];
+      diss.marcarPendencia(r.id, e.target.dataset.parFeito, e.target.checked).then(redesenhar);
+    }
     if (e.target.dataset?.oriComb) {
       diss.marcarCombinado(e.target.dataset.enc, e.target.dataset.oriComb, e.target.checked).then(() => {
         redesenhar();
@@ -319,13 +401,26 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-rev-versao],[data-rev-buscar],[data-rev-trilha],[data-ori-registrar],[data-ori-tipo],[data-ori-agendar],[data-ori-pauta],[data-ori-processar],[data-ori-transcrever],[data-ori-apagar],[data-ori-feito],[data-dlg-novo],[data-dlg-fechar],[data-dlg-sel],[data-dlg-modo],[data-dlg-encerrar],[data-dlg-memoria],[data-dlg-argumento],[data-dlg-descartar],[data-dlg-apagar]');
+    const b = e.target.closest('[data-rev-escolher],[data-par-decidir],[data-par-pedir],[data-rev-versao],[data-rev-buscar],[data-rev-trilha],[data-ori-registrar],[data-ori-tipo],[data-ori-agendar],[data-ori-pauta],[data-ori-processar],[data-ori-transcrever],[data-ori-apagar],[data-ori-feito],[data-dlg-novo],[data-dlg-fechar],[data-dlg-sel],[data-dlg-modo],[data-dlg-encerrar],[data-dlg-memoria],[data-dlg-argumento],[data-dlg-descartar],[data-dlg-apagar]');
     if (!b) return;
     const d = b.dataset;
     if (d.dlgFechar !== undefined) return fechar();
     if (d.revVersao) {
       est.rev = d.revVersao;
       return redesenhar();
+    }
+    if (d.revEscolher !== undefined) return entradaPDF.click();
+    if (d.parPedir) return rodarParecer(d.parPedir, arquivosDaSessao.get(d.parPedir));
+    if (d.parDecidir) {
+      const [achadoId, decisao] = d.parDecidir.split('|');
+      const r = (est.rev && diss.revisao(est.rev)) || diss.todasRevisoes()[0];
+      const antes = await diss.decidirAchado(r.id, achadoId, decisao || null);
+      redesenhar();
+      if (!decisao) return;
+      return toast(decisao === 'pendencia' ? 'Adicionado às suas pendências' : 'Ponto ignorado', async () => {
+        await diss.decidirAchado(r.id, achadoId, antes || null);
+        redesenhar();
+      });
     }
     if (d.revBuscar !== undefined) {
       const r = (est.rev && diss.revisao(est.rev)) || diss.todasRevisoes()[0];
