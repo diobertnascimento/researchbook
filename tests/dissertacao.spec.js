@@ -164,6 +164,17 @@ test.describe('no computador', () => {
     await page.locator('.versoes button', { hasText: 'v1' }).click();
     await expect(parecer.locator('h2')).toHaveText('Parecer da versão 1');
     await expect(parecer.locator('.pendencias input')).toBeChecked();
+
+    // v2.12.0: mudanças quase juntas na mesma versão não apagam uma a outra (o parecer chega enquanto ele clica).
+    const junto = await page.evaluate(async () => {
+      const d = window.rb.dissertacao;
+      const r = d.todasRevisoes()[0];
+      const achado = r.parecer.achados[0].id;
+      await Promise.all([d.marcarParaBuscar(r.id, 1), d.decidirAchado(r.id, achado, 'pendencia'), d.marcarPendencia(r.id, achado, true), d.marcarParaBuscar(r.id, 2)]);
+      const x = d.todasRevisoes()[0];
+      return { buscar: x.buscar, decisao: x.parecer.achados[0].decisao, feito: x.parecer.achados[0].feito, achados: x.parecer.achados.length };
+    });
+    expect(junto).toEqual({ buscar: [1, 2], decisao: 'pendencia', feito: true, achados: 2 });
   });
 
   test('parecer: se a IA falha, a versão continua gravada e dá para tentar de novo; versão antiga pede o PDF', async ({ page, context }) => {

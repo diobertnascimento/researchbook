@@ -15,7 +15,7 @@ const dataLonga = (dia) => new Date(`${dia}T12:00:00`).toLocaleDateString('pt-BR
 const nomeCap = (t) => (t.capitulo ? `Capítulo ${t.capitulo}, ${t.titulo}` : t.titulo);
 
 export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
-  const est = { escolher: false, mudarPlano: false, mudarInicio: false };
+  const est = { escolher: false, mudarPlano: false, mudarInicio: false, marcar: false };
   const naVisao = () => /^#(dissertacao|jornada)/.test(location.hash);
   const redesenhar = () => naVisao() && window.render?.();
   const veu = () => document.getElementById('veu');
@@ -64,6 +64,20 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
       ${est.escolher && outros.length ? `<ul class="diss-outros">${outros.map((c) => `<li><button class="btn" data-diss-sessao="${esc(c.id)}">${esc(nomeCap(c))}</button></li>`).join('')}</ul>` : ''}</section>`;
   }
 
+  /* ---------- Sessões marcadas na agenda: um compromisso com ele mesmo, que aparece no Hoje ---------- */
+  // São eventos da dissertação (os mesmos da agenda do app), marcados com sessaoEscrita. Se a agenda do Google
+  // estiver ligada, vão para lá como os outros eventos.
+  const marcadas = () => disc.proximos('dissertacao', 60).filter((e) => e.sessaoEscrita);
+  function marcadasHTML(plano) {
+    const ms = marcadas();
+    const hoje = diaLocal();
+    const amanha = new Date();
+    amanha.setDate(amanha.getDate() + 1);
+    const noGoogle = window.rb?.agenda?.estado().ligada;
+    return `${ms.length ? `<ul class="linha-l diss-marcadas">${ms.map((e) => `<li><span class="quando">${e.dia === hoje ? 'Hoje' : DIAS[new Date(`${e.dia}T12:00:00`).getDay()]}</span><span>Marcada para ${esc(e.inicio || '')}<small>${e.dia === hoje ? '' : `${dataLonga(e.dia)}. `}${noGoogle ? 'Está no Hoje e na agenda researchbook do Google.' : 'Aparece no Hoje.'}</small></span><button class="btn fant" data-diss-desmarcar="${esc(e.id)}" aria-label="Desmarcar a sessão de ${dataLonga(e.dia)}">Desmarcar</button></li>`).join('')}</ul>` : ''}
+      ${est.marcar ? `<form class="diss-marcar" id="sessao-form"><div class="campo"><label for="ss-dia">Dia</label><input id="ss-dia" type="date" required min="${hoje}" value="${diaLocal(amanha)}"></div><div class="campo"><label for="ss-hora">Hora</label><input id="ss-hora" type="time" required value="07:30"></div><button class="btn" type="submit">Marcar ${plano.minutos} minutos</button></form>` : `<p class="diss-marcar-l"><button class="lnk" data-diss-marcar>Marcar uma sessão na agenda</button></p>`}`;
+  }
+
   /* ---------- Tela ---------- */
   function tela() {
     const { tese, plano } = sess.config();
@@ -87,7 +101,8 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
             ${est.mudarPlano ? `<div class="linha2 diss-plano-campos">
               <div class="campo"><label for="pl-sessoes">Sessões por semana</label><select id="pl-sessoes" data-diss-plano-campo="sessoes">${[1, 2, 3, 4, 5, 6, 7].map((n) => `<option ${n === plano.sessoes ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
               <div class="campo"><label for="pl-minutos">Minutos por sessão</label><select id="pl-minutos" data-diss-plano-campo="minutos">${[15, 25, 40, 50].map((n) => `<option ${n === plano.minutos ? 'selected' : ''}>${n}</option>`).join('')}</select></div></div>` : ''}
-            ${semana.length ? `<ul class="linha-l">${semana.map((s) => `<li><span class="quando">${DIAS[new Date(s.inicio).getDay()]}</span><span>${s.minutos} min${s.palavras > 0 ? `, ${plural(s.palavras, 'palavra', 'palavras')}` : ''}<small>${esc(s.capitulo ? `Capítulo ${s.capitulo}, ${s.titulo}` : s.titulo)}</small></span></li>`).join('')}</ul>` : '<p class="mute">Nenhuma sessão nesta semana ainda.</p>'}
+            ${marcadasHTML(plano)}
+            ${semana.length ? `<ul class="linha-l">${semana.map((s) => `<li><span class="quando">${DIAS[new Date(s.inicio).getDay()]}</span><span>${s.minutos} min${s.palavras > 0 ? `, ${plural(s.palavras, 'palavra', 'palavras')}` : ''}<small>${esc(s.capitulo ? `Capítulo ${s.capitulo}, ${s.titulo}` : s.titulo)}</small></span></li>`).join('')}</ul>` : marcadas().length ? '' : '<p class="mute">Nenhuma sessão nesta semana ainda.</p>'}
             <p class="t-meta mute linha-nota">Uma semana sem sessão não apaga nada. O plano recomeça na segunda.</p>
           </section>
           <section class="proj-sec" aria-labelledby="dv-ori"><h2 id="dv-ori">Com a orientação <a class="lnk-sec" href="#orientacao">Abrir a orientação</a></h2>
@@ -293,6 +308,19 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
   });
 
   ouvir('submit', async (e) => {
+    if (e.target.id === 'sessao-form') {
+      e.preventDefault();
+      const dia = document.getElementById('ss-dia').value;
+      const hora = document.getElementById('ss-hora').value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || !/^\d{2}:\d{2}$/.test(hora)) return toast('Escolha o dia e a hora.');
+      const { plano } = sess.config();
+      const [h, m] = hora.split(':').map(Number);
+      const fimMin = Math.min(23 * 60 + 59, h * 60 + m + plano.minutos);
+      await disc.salvarEvento({ disciplinaId: 'dissertacao', tipo: 'estudo', titulo: 'Sessão de escrita', data: dia, inicio: hora, fim: `${String(Math.floor(fimMin / 60)).padStart(2, '0')}:${String(fimMin % 60).padStart(2, '0')}`, sessaoEscrita: true });
+      est.marcar = false;
+      redesenhar();
+      return toast('Sessão marcada. Ela aparece no Hoje nesse dia.');
+    }
     if (e.target.id !== 'marco-form') return;
     e.preventDefault();
     const titulo = document.getElementById('marco-titulo').value.trim();
@@ -305,9 +333,22 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-diss-mudar-inicio],[data-diss-marco-apagar],[data-diss-sessao],[data-diss-escolher],[data-diss-plano],[data-diss-novo-cap],[data-diss-encerrar],[data-diss-continuar]');
+    const b = e.target.closest('[data-diss-marcar],[data-diss-desmarcar],[data-diss-mudar-inicio],[data-diss-marco-apagar],[data-diss-sessao],[data-diss-escolher],[data-diss-plano],[data-diss-novo-cap],[data-diss-encerrar],[data-diss-continuar]');
     if (!b) return;
     const d = b.dataset;
+    if (d.dissMarcar !== undefined) {
+      est.marcar = true;
+      redesenhar();
+      return document.getElementById('ss-dia')?.focus();
+    }
+    if (d.dissDesmarcar) {
+      const desfazer = await disc.apagarEvento(d.dissDesmarcar);
+      redesenhar();
+      return toast('Sessão desmarcada', async () => {
+        await desfazer();
+        redesenhar();
+      });
+    }
     if (d.dissMudarInicio !== undefined) {
       est.mudarInicio = !est.mudarInicio;
       return redesenhar();

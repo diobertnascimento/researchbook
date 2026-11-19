@@ -2,6 +2,13 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.12.0 (19/11/2026)
+Dissertação: sessões de escrita marcadas na agenda.
+- Na Visão, em "Esta semana", "Marcar uma sessão na agenda" pede o dia e a hora e cria um compromisso com a duração do seu plano.
+- A sessão marcada aparece no Hoje daquele dia e, se a agenda do Google estiver ligada, na agenda researchbook.
+- "Desmarcar" tem desfazer. Marcar não cria obrigação: uma sessão marcada e não feita não vira falta em lugar nenhum.
+- Corrigido no Projeto da dissertação: se o parecer terminava de chegar no mesmo instante em que você marcava uma obra para buscar ou decidia um ponto, uma das duas mudanças podia se perder. Agora as mudanças numa versão são gravadas uma por vez, a partir do que está guardado.
+
 ## 2.11.0 (19/11/2026)
 Projetos: arquivos e fotos no Estúdio.
 - "Enviar arquivo ou foto" no Estúdio: guarda qualquer arquivo de até 25 MB no projeto (no celular, o botão também oferece tirar uma foto). Dá para escolher vários de uma vez.

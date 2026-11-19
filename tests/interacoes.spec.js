@@ -59,7 +59,11 @@ test('disciplina: abas trocam o conteúdo', async ({ page }) => {
 
 test('leitor: selecionar texto e grifar cria a marcação', async ({ page }, info) => {
   test.skip(info.project.name === 'celular', 'Seleção por mouse só no computador');
+  // O app redesenha a tela do leitor quando termina de iniciar, e redesenhar fecha o menu de grifo.
+  // O teste espera o início acabar antes de selecionar, senão falha quando a máquina está carregada.
+  await page.addInitScript(() => document.addEventListener('rb:pronto', () => { window.__rbPronto = true; }));
   await abrirApp(page);
+  await page.waitForFunction(() => window.__rbPronto === true);
   const leitor = await page.$$eval('a[href^="#leitor/"]', (as) => as[0]?.getAttribute('href'));
   await irPara(page, leitor);
   const antes = await page.locator('#doc mark').count();
