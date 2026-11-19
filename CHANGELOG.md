@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.3.0 (18/11/2026)
+Nada se perde: primeira entrega da base funcional, antes do visual novo.
+- Lixeira: o que você apaga vai inteiro para a lixeira (antes ficava só uma marca, sem o conteúdo). Textos, fichamentos e argumentos ficam lá até você tirar; o resto sai depois de 90 dias. O que foi apagado junto volta junto. A lixeira sincroniza entre os aparelhos.
+- Versões dos textos, agora sozinhas e sem depender de internet: o app guarda o estado anterior na primeira mudança, a cada 10 minutos de escrita, antes de usar uma versão do Copilot, antes de restaurar e antes de receber o mesmo texto de outro aparelho. Ficam neste aparelho e vão para o Drive quando há conexão. Restaurar não apaga: o texto da tela vira mais uma versão.
+- Cópia diária neste aparelho: uma por dia, ficam as 30 mais recentes. "Recuperar o que falta" traz de volta o que foi apagado, sem mexer no que existe, e "Baixar" salva a cópia em arquivo.
+- Ajustes ganhou a página Cópias de segurança, com a cópia do dia, a proteção do navegador, as cópias guardadas e a lixeira.
+- "Guardar versão agora" diz onde a versão ficou: neste aparelho e no Drive, ou só neste aparelho até a conexão voltar.
+
 ## 1.2.0 (14/11/2026)
 - Importar para a biblioteca: vários PDFs de uma vez, um arquivo exportado do Zotero (BibTeX, RIS, CSL JSON ou Zotero RDF) ou a pasta inteira que o Zotero exporta com "Exportar arquivos". Cada PDF é ligado à sua obra; palavras-chave e coleções do Zotero viram tags. Antes de gravar, você confere o que é novo, o que já está na biblioteca e o que parece repetido.
 - Organizar (nova aba da Biblioteca): o app procura no Crossref o DOI das obras que não têm. Quando o resultado bate muito bem, aparece como "Muito provável"; quando fica em dúvida, a IA lê o começo do PDF e indica o candidato certo (nunca inventa DOI). Você aceita, recusa ou marca que a obra não tem DOI. Aceitar completa só os campos vazios.

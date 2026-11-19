@@ -23,6 +23,7 @@ import { criarMemoriaUI } from './memoria-ui.js';
 import { criarEscrita } from './escrita.js';
 import { criarCopiloto } from './copiloto.js';
 import { criarEscritaUI } from './escrita-ui.js';
+import { criarSegurancaUI } from './seguranca-ui.js';
 import { criarDisciplinas } from './disciplinas.js';
 import { criarDisciplinasUI } from './disciplinas-ui.js';
 import { criarDissertacao } from './dissertacao.js';
@@ -185,9 +186,15 @@ async function iniciar() {
       drive,
       registros: reg,
       aparelho: idAparelho,
+      // Um texto daqui que vai ser trocado pelo de outro aparelho fica guardado como versão.
+      aoSubstituir: async (c, local, remoto) => {
+        if (c === 'textos') await window.rb.escrita?.guardarAntesDeReceber(local, remoto);
+      },
       aoEstado: (e) => {
         if (e.fase === 'desconectado') google.expirar();
         if (e.fase === 'ok') {
+          fazerCopiaDoDia();
+          window.rb.escrita?.enviarVersoesPendentes();
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
           // Dados de outro aparelho: recarrega e redesenha as telas que só leem (nunca no meio de um formulário).
           window.rb.historico?.enviarPendentes();
@@ -212,6 +219,14 @@ async function iniciar() {
     sinc.sincronizar();
   }
 
+  /** Recarrega do banco tudo o que as telas guardam em memória e redesenha (depois de restaurar algo). */
+  async function recarregarTudo() {
+    const r = window.rb;
+    await r.biblioteca?.carregar();
+    await Promise.all([r.fichUI?.carregar(), r.argUI?.carregar(), r.trilhasUI?.carregar(), r.conflitosUI?.carregar(), r.historico?.carregar(), r.memoriaUI?.carregar(), r.escrita?.carregar(), r.disciplinas?.carregar(), r.dissertacao?.carregar(), r.dialogos?.carregar(), r.cartoes?.carregar()]);
+    window.render?.();
+  }
+
   const telaDeLeitura = () => /^(#painel|#trilhas|#argumentos|#fichamentos|#conflitos|#memoria|#disciplinas|#disciplina|#aula|#escrita|#projeto|#orientacao)?(\/|$)/.test(location.hash || '');
 
   async function salvar(colecao, item) {
@@ -220,6 +235,79 @@ async function iniciar() {
     sinc?.agendar();
     return novo;
   }
+
+  // Lixeira: o que é apagado vai inteiro para lá antes de virar só a marca de apagado.
+  // O que foi apagado junto (uma obra e os seus grifos) sai e volta junto: é um lote.
+  const SEM_PRAZO = new Set(['textos', 'fichamentos', 'argumentos']);
+  const LIXEIRA_DIAS = 90;
+  let lote = { id: null, t: 0 };
+  async function apagar(colecao, id) {
+    if (colecao !== 'lixeira') {
+      const atual = await arm.um(db, colecao, id);
+      if (atual && !atual.apagado) {
+        const agora = Date.now();
+        if (agora - lote.t > 2000) lote = { id: `lote-${agora}`, t: agora };
+        lote.t = agora;
+        await salvar('lixeira', { id: `${colecao}:${id}`, colecao, itemId: id, item: atual, apagadoEm: new Date(agora).toISOString(), lote: lote.id });
+      }
+    }
+    return salvar(colecao, { id, apagado: true });
+  }
+  /** O que está na lixeira e continua apagado (o que voltou por um "Desfazer" não aparece). */
+  async function lixeira() {
+    const fora = [];
+    for (const x of await arm.todos(db, 'lixeira')) {
+      if (x.apagado) continue;
+      const vivo = await arm.um(db, x.colecao, x.itemId);
+      if (!vivo || vivo.apagado) fora.push(x);
+    }
+    return fora.sort((a, b) => b.apagadoEm.localeCompare(a.apagadoEm));
+  }
+  /** Traz de volta um item da lixeira e tudo o que foi apagado junto com ele. Devolve quantos voltaram. */
+  async function restaurarDaLixeira(id) {
+    const todos = await lixeira();
+    const x = todos.find((i) => i.id === id);
+    if (!x) return 0;
+    const grupo = todos.filter((i) => i.id === id || (x.lote && i.lote === x.lote));
+    for (const i of grupo) {
+      await salvar(i.colecao, i.item);
+      await salvar('lixeira', { id: i.id, apagado: true });
+    }
+    registrar('ui', 'lixeira.restaurar', { det: `${grupo.length} itens` });
+    return grupo.length;
+  }
+  /** Depois de 90 dias, sai da lixeira o que não é texto, fichamento ou argumento do autor. */
+  async function limparLixeira() {
+    const limite = Date.now() - LIXEIRA_DIAS * 86400000;
+    let n = 0;
+    for (const x of await arm.todos(db, 'lixeira')) {
+      if (x.apagado || SEM_PRAZO.has(x.colecao) || Date.parse(x.apagadoEm) > limite) continue;
+      await salvar('lixeira', { id: x.id, apagado: true });
+      n++;
+    }
+    if (n) registrar('app', 'lixeira.limpeza', { det: `${n} itens com mais de ${LIXEIRA_DIAS} dias` });
+  }
+  /** Traz de uma cópia guardada o que hoje não existe ou está apagado. Não mexe no que existe. */
+  async function recuperarDaCopia(criadoEm) {
+    const b = await arm.lerBackup(db, criadoEm);
+    if (!b) return 0;
+    let n = 0;
+    for (const [c, itens] of Object.entries(b.foto.colecoes)) {
+      if (c === 'lixeira' || !arm.COLECOES.includes(c)) continue;
+      for (const it of itens) {
+        if (it.apagado) continue;
+        const atual = await arm.um(db, c, it.id);
+        if (atual && !atual.apagado) continue;
+        await salvar(c, it);
+        n++;
+      }
+    }
+    registrar('ui', 'copia.recuperar', { det: `${n} itens` });
+    return n;
+  }
+  let copiaDoDia = null;
+  /** Cópia diária neste aparelho (uma por dia). Roda depois da primeira sincronização, ou sozinha se não houver login. */
+  const fazerCopiaDoDia = () => (copiaDoDia ??= arm.backupDiario(db).then((em) => em && registrar('app', 'copia.diaria'), (e) => registrar('erro', 'copia.diaria', { det: e.message, st: 'aviso' })));
 
   ouvir('click', async (e) => {
     const b = e.target.closest('[data-google]');
@@ -262,7 +350,18 @@ async function iniciar() {
       contarBackups: () => arm.contarBackups(db),
       espaco: arm.espaco,
       salvar,
-      apagar: (colecao, id) => salvar(colecao, { id, apagado: true }),
+      apagar,
+      lixeira,
+      restaurarDaLixeira,
+      copias: () => arm.backups(db),
+      lerCopia: (criadoEm) => arm.lerBackup(db, criadoEm),
+      recuperarDaCopia,
+      versoes: {
+        guardar: (v) => arm.gravar(db, 'versoes', v),
+        doTexto: (id) => arm.versoesDe(db, id),
+        todas: () => arm.todos(db, 'versoes'),
+        apagar: (id) => arm.removerDe(db, 'versoes', id),
+      },
       // Inclusive os apagados (a agenda do Google precisa saber o que saiu).
       listarTudo: (colecao) => arm.todos(db, colecao),
       listar: async (colecao) => (await arm.todos(db, colecao)).filter((i) => !i.apagado),
@@ -349,6 +448,10 @@ async function iniciar() {
     await biblioteca.carregar();
     await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar(), window.rb.disciplinas.carregar(), window.rb.dissertacao.carregar(), window.rb.dialogos.carregar(), window.rb.cartoes.carregar()]);
     window.rb.disciplinas.retomarPendentes();
+    window.rb.segurancaUI = criarSegurancaUI({ dados: window.rb.dados, recarregar: recarregarTudo, registrar });
+    limparLixeira().catch((e) => registrar('erro', 'lixeira.limpeza', { det: e.message, st: 'aviso' }));
+    // Sem login (ou sem internet), a cópia do dia não espera a sincronização.
+    setTimeout(fazerCopiaDoDia, 15000);
   }
   ligarDrive();
   registrar('app', 'app.pronto', { dur: Math.round(performance.now() - inicio) });

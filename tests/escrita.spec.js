@@ -150,7 +150,7 @@ test.describe('no computador', () => {
     // Versões no Drive: guardar e restaurar.
     await page.getByRole('tab', { name: 'Versões' }).click();
     await page.getByRole('button', { name: 'Guardar versão agora' }).click();
-    await expect(page.locator('#toast')).toContainText('Versão guardada no seu Drive');
+    await expect(page.locator('#toast')).toContainText('Versão guardada neste aparelho e no Drive');
     expect(g.caminhos().some((c) => c.startsWith(`escrita/${id}/versoes/`))).toBe(true);
     await page.locator('#esc-corpo p').first().click();
     await page.keyboard.press('Control+A');

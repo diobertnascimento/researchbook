@@ -213,10 +213,12 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
       .join('')}`;
   }
 
+  const MOTIVOS = { automática: 'gravada sozinha', manual: 'guardada por você' };
   function painelVersoes(t) {
-    const vs = t.versoes || [];
-    return `<p class="sub">Versões guardadas no seu Drive (escrita/…/versoes).</p><button class="btn" data-esc-salvar-versao>Guardar versão agora</button>${
-      vs.length ? `<ul class="vers-lista">${vs.map((v) => `<li><span>${new Date(v.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}<small>${v.palavras} palavras${v.motivo === 'antes de restaurar' ? ', antes de restaurar' : ''}</small></span><button class="btn fant" data-esc-restaurar="${esc(v.arquivo)}">Restaurar</button></li>`).join('')}</ul>` : '<p class="mute">Nenhuma versão ainda.</p>'
+    const vs = escrita.versoesDe(t);
+    const quando = (em) => new Date(em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return `<p class="sub">O app guarda uma versão sozinho a cada 10 minutos de escrita e antes de toda mudança grande. Ficam neste aparelho e no seu Drive. Restaurar não apaga nada: o texto da tela vira mais uma versão.</p><button class="btn" data-esc-salvar-versao>Guardar versão agora</button>${
+      vs.length ? `<ul class="vers-lista">${vs.map((v) => `<li><span>${quando(v.em)}<small>${v.palavras} palavras, ${esc(MOTIVOS[v.motivo] || v.motivo || 'guardada')}</small></span><button class="btn fant" data-esc-restaurar="${esc(v.arquivo)}">Restaurar</button></li>`).join('')}</ul>` : '<p class="mute">Nenhuma versão ainda.</p>'
     }`;
   }
 
@@ -299,8 +301,12 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   }
 
   /* ---------- Ações ---------- */
+  // Motivo da próxima versão automática: marcado antes de uma mudança grande (usar um texto do Copilot).
+  let motivoVersao = null;
   async function guardar(t, mudancas, { redesenha = false } = {}) {
-    const novo = await escrita.salvar({ ...t, ...mudancas });
+    const versao = motivoVersao;
+    motivoVersao = null;
+    const novo = await escrita.salvar({ ...t, ...mudancas }, { versao });
     if (redesenha) redesenhar();
     return novo;
   }
@@ -607,6 +613,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     if (d.escAba) {
       await salvarCorpo();
       est.aba = d.escAba;
+      if (est.aba === 'versoes') await escrita.carregarVersoes(t.id);
       return redesenhar();
     }
     if (d.escChat !== undefined) {
@@ -668,6 +675,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
       alvo.dataset.autoria = 'coautoria';
       alvo.dataset.ia = limpo;
       est.versoes = null;
+      motivoVersao = 'antes de usar a versão do Copilot';
       await salvarCorpo();
       registrar('ui', 'copilot.usar_versao', { det: x.tipo });
       redesenharPainel();
@@ -701,8 +709,9 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     if (d.escSalvarVersao !== undefined) {
       await salvarCorpo();
       try {
-        await escrita.salvarVersao(t.id);
-        toast('Versão guardada no seu Drive');
+        await escrita.carregarVersoes(t.id);
+        const r = await escrita.salvarVersao(t.id);
+        toast(r?.noDrive ? 'Versão guardada neste aparelho e no Drive' : 'Versão guardada neste aparelho. Vai para o Drive quando houver conexão.');
       } catch (err) {
         toast(err.message);
       }
@@ -711,7 +720,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     if (d.escRestaurar) {
       try {
         await escrita.restaurarVersao(t.id, d.escRestaurar);
-        toast('Versão restaurada. A anterior foi guardada antes.');
+        toast('Versão restaurada. O texto que estava na tela foi guardado como mais uma versão.');
       } catch (err) {
         toast(err.message);
       }

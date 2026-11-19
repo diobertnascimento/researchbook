@@ -427,7 +427,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     }
     // Tudo o que aponta para as obras que saem passa a apontar para a que fica.
     for (const c of arm.COLECOES) {
-      if (c === 'leituras') continue;
+      if (c === 'leituras' || c === 'lixeira') continue;
       for (const item of await dados.listar(c)) {
         let json = JSON.stringify(item);
         let mudou = false;
