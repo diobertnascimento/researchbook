@@ -191,6 +191,35 @@ test.describe('no computador', () => {
     expect(gem.pedidos.length).toBe(pedidos);
   });
 
+  test('sessão marcada na agenda: vira compromisso no Hoje, com desmarcar e desfazer', async ({ page, context }) => {
+    const { g } = await entrar(page, context);
+    await page.getByRole('button', { name: 'Marcar uma sessão na agenda' }).click();
+    const hoje = await page.evaluate(() => { const d = new Date(); const z = (x) => String(x).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`; });
+    await page.getByLabel('Dia').fill(hoje);
+    await page.getByLabel('Hora').fill('23:50');
+    await page.getByRole('button', { name: 'Marcar 25 minutos' }).click();
+    await expect(page.locator('#toast')).toContainText('Sessão marcada');
+    const marcada = page.locator('.diss-marcadas li');
+    await expect(marcada).toHaveCount(1);
+    await expect(marcada).toContainText('Hoje');
+    await expect(marcada).toContainText('Marcada para 23:50');
+    await expect(marcada).toContainText('Aparece no Hoje.');
+    // É um evento da agenda do app: dura o tempo do plano (sem passar da meia-noite) e sincroniza.
+    const ev = await page.evaluate(() => window.rb.dados.listar('eventos'));
+    expect(ev).toHaveLength(1);
+    expect(ev[0]).toMatchObject({ disciplinaId: 'dissertacao', tipo: 'estudo', titulo: 'Sessão de escrita', data: hoje, inicio: '23:50', fim: '23:59', sessaoEscrita: true });
+    await expect.poll(() => noDrive(g, 'eventos').length, { timeout: 10_000 }).toBe(1);
+    await page.goto('/#painel');
+    await expect(page.locator('.compromissos')).toContainText('Sessão de escrita');
+    await expect(page.locator('.compromissos')).toContainText('23:50');
+
+    await page.goto('/#dissertacao');
+    await marcada.getByRole('button', { name: /Desmarcar a sessão/ }).click();
+    await expect(marcada).toHaveCount(0);
+    await page.locator('#toast').getByRole('button', { name: 'Desfazer' }).click();
+    await expect(marcada).toHaveCount(1);
+  });
+
   test('regras: semana começa na segunda; sessão sem tempo e sem texto não vira registro; sessão esquecida é largada', async ({ page, context }) => {
     await entrar(page, context);
     const r = await page.evaluate(async () => {

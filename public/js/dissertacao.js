@@ -173,6 +173,26 @@ export function criarDissertacao({ dados, ia, bib, fichUI, historico, disc, driv
     return item;
   }
 
+  /**
+   * Muda uma versão do projeto a partir do que está gravado, uma mudança por vez. O parecer chega minutos depois
+   * do envio; se ele e um clique (marcar uma obra para buscar, decidir um ponto) gravassem a partir da cópia em
+   * memória, o que gravasse por último apagaria a mudança do outro.
+   */
+  let filaRevisoes = Promise.resolve();
+  function mudarRevisao(id, mudanca) {
+    filaRevisoes = filaRevisoes
+      .catch(() => {})
+      .then(async () => {
+        const atual = (await dados.listar('revisoes')).find((r) => r.id === id);
+        const novo = atual && mudanca(atual);
+        if (!novo) return null;
+        const salvo = await dados.salvar('revisoes', novo);
+        await carregar();
+        return salvo;
+      });
+    return filaRevisoes;
+  }
+
   /* ---------- Parecer da versão: o que ajustar para a qualificação ---------- */
   /** O texto de cada página do PDF, para conferir os trechos que a IA citar. Sem texto legível, devolve null. */
   async function textoDasPaginas(arquivo) {
@@ -214,7 +234,7 @@ export function criarDissertacao({ dados, ia, bib, fichUI, historico, disc, driv
       .sort((a, b) => ordemG[a.gravidade] - ordemG[b.gravidade] || ordemP[a.parte] - ordemP[b.parte]);
     const resolvidos = (j.resolvidos || []).map((x) => ({ x, p: antes.find((p) => p.id === x.id) })).filter(({ p }) => p).map(({ x, p }) => ({ titulo: p.a.titulo, parte: p.a.parte, como: x.como || '' }));
     const parecer = { feitoEm: new Date().toISOString(), modelo: resp.modelo, achados, resolvidos, sobreVersao: anterior?.versao || null, conferencia: paginas ? 'feita' : 'sem-texto' };
-    await dados.salvar('revisoes', { ...revisao(revId), parecer });
+    await mudarRevisao(revId, (atual) => ({ ...atual, parecer }));
     try {
       const c = await historico.nova({ funcao: 'parecer_projeto', alvo: { tipo: 'revisao', id: revId }, titulo: `Parecer do projeto, versão ${r.versao}` });
       await historico.acrescentar(c.id, { de: 'ia', tarefa: 'parecer_projeto', resposta: j, modelo: resp.modelo, uso: resp.uso, custo: resp.custo, instrucao: resp.instrucao });
@@ -227,27 +247,21 @@ export function criarDissertacao({ dados, ia, bib, fichUI, historico, disc, driv
   }
   /** Decisão do autor sobre um achado: 'pendencia', 'ignorado' ou null (ainda sem decisão). Devolve a decisão anterior, para o desfazer. */
   async function decidirAchado(revId, achadoId, decisao) {
-    const r = revisao(revId);
-    const a = r?.parecer?.achados.find((x) => x.id === achadoId);
-    if (!a) return undefined;
-    const antes = a.decisao;
-    await dados.salvar('revisoes', { ...r, parecer: { ...r.parecer, achados: r.parecer.achados.map((x) => (x.id === achadoId ? { ...x, decisao, feito: decisao === 'pendencia' ? x.feito : false } : x)) } });
+    let antes;
+    await mudarRevisao(revId, (r) => {
+      const a = r.parecer?.achados.find((x) => x.id === achadoId);
+      if (!a) return null;
+      antes = a.decisao;
+      return { ...r, parecer: { ...r.parecer, achados: r.parecer.achados.map((x) => (x.id === achadoId ? { ...x, decisao, feito: decisao === 'pendencia' ? x.feito : false } : x)) } };
+    });
     registrar('ui', 'parecer.decisao', { det: decisao || 'desfeita' });
-    await carregar();
     return antes;
   }
-  async function marcarPendencia(revId, achadoId, feito) {
-    const r = revisao(revId);
-    if (!r?.parecer) return;
-    await dados.salvar('revisoes', { ...r, parecer: { ...r.parecer, achados: r.parecer.achados.map((x) => (x.id === achadoId ? { ...x, feito } : x)) } });
-    await carregar();
-  }
+  const marcarPendencia = (revId, achadoId, feito) => mudarRevisao(revId, (r) => (r.parecer ? { ...r, parecer: { ...r.parecer, achados: r.parecer.achados.map((x) => (x.id === achadoId ? { ...x, feito } : x)) } } : null));
 
   async function marcarParaBuscar(revId, indice) {
-    const r = revisao(revId);
-    await dados.salvar('revisoes', { ...r, buscar: [...new Set([...(r.buscar || []), indice])] });
+    await mudarRevisao(revId, (r) => ({ ...r, buscar: [...new Set([...(r.buscar || []), indice])] }));
     registrar('ui', 'revisao.para_buscar');
-    await carregar();
   }
 
   /** Trilha com as obras de prioridade alta e média que já estão na biblioteca, na ordem da revisão. */

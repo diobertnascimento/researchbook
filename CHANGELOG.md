@@ -2,6 +2,24 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.13.0 (19/11/2026)
+Escrever: imagem no texto.
+- Na linha vazia, o "+" agora oferece "Imagem" (PNG, JPG ou WebP, até 25 MB). Colar uma imagem copiada, como uma captura de tela, também funciona.
+- A imagem entra como figura numerada. O app pede o título e a fonte; dá para deixar para depois, e a figura sem fonte avisa que a ABNT pede a fonte mesmo quando a figura é sua.
+- No Word, a figura sai no formato da ABNT: "Figura 1 – título" acima, a imagem centralizada (no máximo 16 cm de largura) e "Fonte: ..." abaixo, em fonte 10. A numeração segue a ordem das figuras no texto inteiro.
+- A imagem é regravada ao entrar: no máximo 1600 pontos no lado maior e sem os dados da câmera (local, aparelho, data).
+- Ela fica neste aparelho e no seu Drive, na pasta escrita/imagens. Em outro aparelho, vem do Drive na primeira vez. Sem internet, sobe quando a conexão voltar.
+- "Tirar do texto" tem desfazer. Tirar a figura não apaga a imagem: uma versão antiga do texto continua abrindo com ela.
+- Não entrou: incorporar vídeo ou página de fora. Não vai para o Word e exigiria abrir o app para endereços de terceiros; o link continua sendo o caminho.
+- Só existe o tipo "Figura". Quadro, gráfico e tabela com numeração própria ficam para depois.
+
+## 2.12.0 (19/11/2026)
+Dissertação: sessões de escrita marcadas na agenda.
+- Na Visão, em "Esta semana", "Marcar uma sessão na agenda" pede o dia e a hora e cria um compromisso com a duração do seu plano.
+- A sessão marcada aparece no Hoje daquele dia e, se a agenda do Google estiver ligada, na agenda researchbook.
+- "Desmarcar" tem desfazer. Marcar não cria obrigação: uma sessão marcada e não feita não vira falta em lugar nenhum.
+- Corrigido no Projeto da dissertação: se o parecer terminava de chegar no mesmo instante em que você marcava uma obra para buscar ou decidia um ponto, uma das duas mudanças podia se perder. Agora as mudanças numa versão são gravadas uma por vez, a partir do que está guardado.
+
 ## 2.11.0 (19/11/2026)
 Projetos: arquivos e fotos no Estúdio.
 - "Enviar arquivo ou foto" no Estúdio: guarda qualquer arquivo de até 25 MB no projeto (no celular, o botão também oferece tirar uma foto). Dá para escolher vários de uma vez.

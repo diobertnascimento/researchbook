@@ -5,6 +5,8 @@
 // fonte Times New Roman 12, espaçamento 1,5, recuo de primeira linha de 1,25 cm e texto justificado.
 // Citação longa: recuo de 4 cm, fonte 10, espaçamento simples. Seção primária numerada, em negrito e caixa alta.
 // Referências (NBR 6023): alinhadas à esquerda, espaçamento simples, uma linha em branco entre elas.
+// Ilustrações (NBR 14724): identificação acima ("Figura 1 – título"), fonte abaixo, em fonte 10; imagem centralizada,
+// com no máximo a largura da mancha (16 cm). A numeração segue a ordem das figuras no texto inteiro.
 // Os marcadores de autoria nunca vão para o arquivo.
 
 /* ---------- Zip (método "store") ---------- */
@@ -23,7 +25,7 @@ function crc32(bytes) {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-/** arquivos: [{ nome, conteudo (string) }] → Blob zip. */
+/** arquivos: [{ nome, conteudo (string ou Uint8Array) }] → Blob zip. */
 export function zip(arquivos) {
   const enc = new TextEncoder();
   const partes = [];
@@ -33,7 +35,7 @@ export function zip(arquivos) {
   const u32 = (v) => [v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff];
   for (const a of arquivos) {
     const nome = enc.encode(a.nome);
-    const dados = enc.encode(a.conteudo);
+    const dados = typeof a.conteudo === 'string' ? enc.encode(a.conteudo) : a.conteudo;
     const crc = crc32(dados);
     // bit 11: nomes em UTF-8; método 0: sem compressão; data fixa (1/1/2026) para o arquivo sair igual sempre.
     const cab = new Uint8Array([0x50, 0x4b, 0x03, 0x04, ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x5c21), ...u32(crc), ...u32(dados.length), ...u32(dados.length), ...u16(nome.length), ...u16(0)]);
@@ -78,8 +80,48 @@ const P_CORPO = `<w:spacing w:line="360" w:lineRule="auto" w:after="0"/><w:ind w
 const P_CITACAO = `<w:spacing w:line="240" w:lineRule="auto" w:before="240" w:after="240"/><w:ind w:left="${CM(4)}"/><w:jc w:val="both"/>`;
 const P_LISTA = `<w:spacing w:line="360" w:lineRule="auto" w:after="0"/><w:ind w:left="${CM(1.25)}" w:hanging="${CM(0.5)}"/><w:jc w:val="both"/>`;
 
+/** Figuras de um HTML de seção, na ordem: [{ id, largura, altura, titulo, fonte }]. */
+export function figurasDe(html) {
+  if (!html || !html.includes('data-img')) return [];
+  const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+  return [...doc.body.firstChild.querySelectorAll('figure[data-img]')].map((f) => ({ id: f.getAttribute('data-img'), largura: Number(f.getAttribute('data-l')) || 0, altura: Number(f.getAttribute('data-a')) || 0, titulo: f.getAttribute('data-titulo') || '', fonte: f.getAttribute('data-fonte') || '' }));
+}
+
+const EMU_CM = 360000;
+const P_FIG = `<w:keepNext/><w:spacing w:line="240" w:lineRule="auto" w:before="240" w:after="60"/><w:jc w:val="center"/>`;
+/** Figura: identificação, imagem e fonte. ctx: { n (contador), imagens (Map id → bytes), midia (lista do que entra no arquivo) }. */
+function figuraParaXml(el, ctx) {
+  const id = el.getAttribute('data-img');
+  const titulo = el.getAttribute('data-titulo') || '';
+  const fonte = el.getAttribute('data-fonte') || '';
+  const n = ++ctx.n;
+  const saida = [par(runs([{ texto: `Figura ${n}${titulo ? ` – ${titulo}` : ''}` }], { tamanho: 20 }), P_FIG)];
+  const bytes = ctx.imagens.get(id);
+  if (bytes) {
+    let m = ctx.midia.find((x) => x.id === id);
+    if (!m) {
+      m = { id, rid: `rIdImg${ctx.midia.length + 1}`, nome: `imagem${ctx.midia.length + 1}.${id.endsWith('.png') ? 'png' : 'jpeg'}`, bytes };
+      ctx.midia.push(m);
+    }
+    // 96 pontos por polegada na origem; no papel, no máximo 16 cm de largura e 20 cm de altura.
+    const l = Number(el.getAttribute('data-l')) || 800;
+    const a = Number(el.getAttribute('data-a')) || 600;
+    const escala = Math.min(1, (16 * EMU_CM) / (l * 9525), (20 * EMU_CM) / (a * 9525));
+    const cx = Math.round(l * 9525 * escala);
+    const cy = Math.round(a * 9525 * escala);
+    const desc = xml(titulo || `Figura ${n}`);
+    saida.push(par(`<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${n}" name="Figura ${n}" descr="${desc}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="${m.nome}" descr="${desc}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${m.rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`, `<w:keepNext/><w:spacing w:line="240" w:lineRule="auto" w:after="60"/><w:jc w:val="center"/>`));
+  } else {
+    saida.push(par(runs([{ texto: '[A imagem desta figura não estava no aparelho em que o arquivo foi exportado.]', i: true }], { tamanho: 20 }), `<w:spacing w:line="240" w:lineRule="auto" w:after="60"/><w:jc w:val="center"/>`));
+  }
+  // Sem fonte informada, a linha da fonte não é inventada.
+  if (fonte) saida.push(par(runs([{ texto: `Fonte: ${fonte}` }], { tamanho: 20 }), `<w:spacing w:line="240" w:lineRule="auto" w:after="240"/><w:jc w:val="center"/>`));
+  else saida.push(par('', `<w:spacing w:line="240" w:lineRule="auto" w:after="120"/>`));
+  return saida.join('');
+}
+
 /** Converte o HTML de uma seção em parágrafos do Word. */
-function secaoParaXml(html) {
+function secaoParaXml(html, ctx) {
   const doc = new DOMParser().parseFromString(`<div>${html || ''}</div>`, 'text/html');
   const saida = [];
   for (const el of doc.body.firstChild.children) {
@@ -90,6 +132,8 @@ function secaoParaXml(html) {
       saida.push(par(runs(trechos(el, { b: true }), { tamanho: 28 }), `<w:keepNext/><w:spacing w:before="360" w:after="120" w:line="360" w:lineRule="auto"/>`));
     } else if (t === 'PRE') {
       for (const linha of el.textContent.split('\n')) saida.push(par(`<w:r><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/><w:sz w:val="20"/></w:rPr><w:t xml:space="preserve">${xml(linha)}</w:t></w:r>`, `<w:spacing w:line="240" w:lineRule="auto" w:after="0"/>`));
+    } else if (t === 'FIGURE' && el.getAttribute('data-img')) {
+      saida.push(figuraParaXml(el, ctx));
     } else if (t === 'HR') {
       saida.push(par('<w:r><w:t>* * *</w:t></w:r>', `<w:spacing w:before="240" w:after="240"/><w:jc w:val="center"/>`));
     } else if (t === 'H3') {
@@ -113,24 +157,27 @@ function referenciaParaXml(refHtml) {
 
 /**
  * texto: { titulo, secoes: [{ titulo, html }] }. referencias: lista de HTML de referência ABNT (NBR 6023).
+ * imagens: Map do id da imagem para os bytes (Uint8Array); figura sem imagem no mapa sai com um aviso no lugar.
  * Devolve um Blob .docx.
  */
-export function gerarDocx(texto, referencias = []) {
+export function gerarDocx(texto, referencias = [], imagens = new Map()) {
+  const ctx = { n: 0, imagens, midia: [] };
   const corpo = [
     par(runs([{ texto: texto.titulo.toUpperCase(), b: true }]), `<w:spacing w:after="480" w:line="360" w:lineRule="auto"/><w:jc w:val="center"/>`),
-    ...(texto.secoes || []).map((s, i) => par(runs([{ texto: `${i + 1} ${s.titulo.toUpperCase()}`, b: true }]), `<w:keepNext/><w:spacing w:before="360" w:after="240" w:line="360" w:lineRule="auto"/>`) + secaoParaXml(s.html)),
+    ...(texto.secoes || []).map((s, i) => par(runs([{ texto: `${i + 1} ${s.titulo.toUpperCase()}`, b: true }]), `<w:keepNext/><w:spacing w:before="360" w:after="240" w:line="360" w:lineRule="auto"/>`) + secaoParaXml(s.html, ctx)),
     ...(referencias.length ? [par(runs([{ texto: 'REFERÊNCIAS', b: true }]), `<w:pageBreakBefore/><w:spacing w:after="480"/><w:jc w:val="center"/>`), ...referencias.map(referenciaParaXml)] : []),
   ].join('');
   const documento = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${corpo}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${CM(3)}" w:right="${CM(2)}" w:bottom="${CM(2)}" w:left="${CM(3)}" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${corpo}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${CM(3)}" w:right="${CM(2)}" w:bottom="${CM(2)}" w:left="${CM(3)}" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`;
   const estilos = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="pt-BR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="360" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
   return zip([
-    { nome: '[Content_Types].xml', conteudo: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>` },
+    { nome: '[Content_Types].xml', conteudo: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>` },
     { nome: '_rels/.rels', conteudo: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>` },
-    { nome: 'word/_rels/document.xml.rels', conteudo: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { nome: 'word/_rels/document.xml.rels', conteudo: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${ctx.midia.map((m) => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.nome}"/>`).join('')}</Relationships>` },
     { nome: 'word/document.xml', conteudo: documento },
     { nome: 'word/styles.xml', conteudo: estilos },
+    ...ctx.midia.map((m) => ({ nome: `word/media/${m.nome}`, conteudo: m.bytes })),
     { nome: 'docProps/core.xml', conteudo: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(texto.titulo)}</dc:title><dc:language>pt-BR</dc:language><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString().slice(0, 19)}Z</dcterms:created></cp:coreProperties>` },
   ]);
 }
