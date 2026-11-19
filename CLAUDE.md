@@ -20,7 +20,7 @@ App web instalável (PWA) servido por HTTPS no GitHub Pages, usado em dois compu
 
 - **Dados:** pasta `researchbook/` no Google Drive do Diobert, acessada pela API do Drive com login Google (OAuth, escopo `drive.file`). Cópia local no IndexedDB para funcionar sem internet; sincroniza quando volta.
 - **Agenda:** API oficial do Google Agenda, numa agenda separada chamada "researchbook".
-- **IA:** API do Gemini chamada direto do navegador, com o token do login Google (ou a chave aberta do cofre). Modelo por tarefa conforme `docs/especificacao.md`.
+- **IA:** API do Gemini chamada direto do navegador, com o token do login Google (ou a chave aberta do cofre), ou pelo servidor da chave (v2.14.0, pasta `servidor/`, publicado no Cloud Run do Diobert por `servidor/publicar.sh`; fora do GitHub Pages). O servidor é o único lugar com código fora do navegador: sem dependências, sem banco além do contador do dia, e nunca registra texto, e-mail ou token. Mudou o servidor: rode `tests/servidor.spec.js` e publique de novo. Modelo por tarefa conforme `docs/especificacao.md`.
 - **Atualizações:** service worker detecta versão nova e mostra "Nova versão disponível"; o Diobert decide quando recarregar.
 - **Esquema de dados versionado:** toda mudança de formato tem migração automática e faz backup antes de migrar.
 

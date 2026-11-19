@@ -32,7 +32,10 @@ export async function googleFalso(context, opcoes = {}) {
 export const ESCOPOS = ['openid', 'https://www.googleapis.com/auth/userinfo.email', '${DRIVE_FILE}'];
 export const ESCOPO_DRIVE = '${DRIVE_FILE}';
 export const ESCOPO_IA = '${ESCOPO_IA}';
-export const ESCOPO_AGENDA = '${ESCOPO_AGENDA}';`,
+export const ESCOPO_AGENDA = '${ESCOPO_AGENDA}';
+export const SERVIDOR_IA = '';
+// Nos testes, o servidor da chave é simulado no endereço que o teste gravar aqui.
+export const servidorIA = () => localStorage.getItem('rb.teste.servidor') || '';`,
     }),
   );
 

@@ -1,0 +1,8 @@
+{
+  "name": "researchbook-servidor-da-chave",
+  "private": true,
+  "type": "module",
+  "description": "Guarda a chave do Gemini fora do navegador. Publicado no Cloud Run por servidor/publicar.sh.",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": ">=22" }
+}
