@@ -135,8 +135,9 @@ test.describe('no computador', () => {
     await expect(page.locator('.ev')).toContainText('Ler Moraes e Lins');
 
     await page.goto('/#painel');
-    await expect(page.locator('.tambem')).toContainText('Sessão de estudo: Ler Moraes e Lins');
-    await expect(page.locator('.tambem')).toContainText('Hoje. Avaliação de Artefatos');
+    // v2.1.0: os compromissos de hoje têm lugar próprio no Hoje, com a hora em destaque.
+    await expect(page.locator('.compromissos')).toContainText('Sessão de estudo: Ler Moraes e Lins');
+    await expect(page.locator('.compromissos')).toContainText('Hoje. Avaliação de Artefatos');
 
     await page.goto(`/#disciplina/${id}`);
     await page.locator('.ev').getByRole('button', { name: 'Editar' }).click();

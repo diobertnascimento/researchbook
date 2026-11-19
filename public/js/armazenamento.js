@@ -9,7 +9,7 @@
 //    um backup completo na coleção "backups" (ficam os 5 mais recentes).
 
 const NOME = 'researchbook';
-export const ESQUEMA = 6;
+export const ESQUEMA = 7;
 export const ESQUEMA_DADOS = 1;
 
 // Coleções criadas no esquema 1. As que vieram depois entram por um passo próprio em ESTRUTURA.
@@ -17,7 +17,7 @@ const COLECOES_V1 = [
   'leituras', 'grifos', 'fichamentos', 'argumentos', 'trilhas', 'textos', 'dialogos',
   'cartoes', 'disciplinas', 'aulas', 'eventos', 'encontros', 'memoria', 'conversas',
 ];
-export const COLECOES = [...COLECOES_V1, 'revisoes', 'lixeira'];
+export const COLECOES = [...COLECOES_V1, 'revisoes', 'lixeira', 'tarefas'];
 
 const ESTRUTURA = {
   1: (db) => {
@@ -50,6 +50,10 @@ const ESTRUTURA = {
   6: (db) => {
     db.createObjectStore('lixeira', { keyPath: 'id' });
     db.createObjectStore('versoes', { keyPath: 'id' }).createIndex('textoId', 'textoId');
+  },
+  // v2.1.0: tarefas do dia (lista livre do Hoje), sincronizadas como as outras coleções.
+  7: (db) => {
+    db.createObjectStore('tarefas', { keyPath: 'id' });
   },
 };
 

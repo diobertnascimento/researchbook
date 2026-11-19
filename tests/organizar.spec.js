@@ -79,8 +79,8 @@ test.describe('no computador', () => {
     await expect(tambem.nth(0)).toContainText('2 obras até');
     await expect(tambem.nth(0)).toContainText('faltam 5 dias');
     await expect(tambem.nth(1)).toContainText('Fazer o fichamento: Logística reversa');
-    await page.locator('.semana-det summary').click();
-    await expect(page.locator('.dist')).toContainText('Evidência');
+    // v2.1.0: os gráficos da semana saíram do Hoje, a pedido do autor.
+    await expect(page.locator('.semana-det')).toHaveCount(0);
     await page.getByRole('link', { name: 'Continuar a leitura' }).click();
     await expect(page).toHaveURL(/#leitor\/moraes-2024$/);
   });

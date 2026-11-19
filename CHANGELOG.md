@@ -2,6 +2,13 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.1.0 (19/11/2026)
+Hoje redesenhado.
+- Tarefas do dia: uma lista livre no Hoje. Você anota pelo teclado, marca e apaga; tudo é gravado na hora e sincroniza entre os aparelhos. O que ficou sem fazer continua na lista no dia seguinte; o que foi feito sai no outro dia. Tarefa apagada vai para a lixeira.
+- Os compromissos de hoje ganharam lugar próprio, com a hora em destaque, e os prazos aparecem com o dia grande. No último dia, o prazo fica em vermelho. Antes vinham misturados em "Também para hoje".
+- O próximo passo fica num painel cinza, com o único botão azul da tela.
+- Os gráficos de "Sua semana" saíram do Hoje.
+
 ## 2.0.0 (19/11/2026)
 Visual novo, primeira parte: sistema visual e navegação.
 - Papel branco e cinzas neutros no lugar do fundo amarelado. Um azul só, o petróleo (#1D5A7A), para o que se pode tocar e para onde você está. A cor do conteúdo continua sendo a dos grifos.
