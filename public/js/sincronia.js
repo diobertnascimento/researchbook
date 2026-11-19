@@ -172,7 +172,7 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
         await enviarRegistros();
         const conflitos = (await arm.todos(db, 'conflitos')).length;
         // Só deixa de estar pendente se nada mudou aqui enquanto a sincronização rodava.
-        mudar({ fase: 'ok', ultima: new Date().toISOString(), erro: null, conflitos, pendente: mudancas !== vistas, pendentes: 0, recebidos: total.baixados });
+        mudar({ fase: 'ok', ultima: new Date().toISOString(), erro: null, conflitos, pendente: mudancas !== vistas, pendentes: 0, recebidos: total.baixados, enviados: total.enviados });
         registrar('arq', 'sinc.ok', {
           det: `${total.baixados} recebidos, ${total.enviados} enviados, ${total.conflitos} conflitos`,
           dur: Math.round(performance.now() - inicio),

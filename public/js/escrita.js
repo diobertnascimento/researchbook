@@ -153,8 +153,15 @@ export function criarEscrita({ dados, bib, drive, registrar }) {
   const conteudoDe = (t) => JSON.stringify([t.titulo, (t.secoes || []).map((x) => [x.titulo, x.html])]);
   const temTexto = (t) => (t.secoes || []).some((x) => (x.html || '').replace(/<[^>]+>/g, '').trim());
 
+  // Textos que mudaram por fora desta tela (outro aparelho, restauração): a próxima gravação daqui guarda antes uma versão deles.
+  const mudouPorFora = new Set();
   async function carregar() {
+    const antes = new Map(textos.map((t) => [t.id, t]));
     textos = (await dados.listar('textos')).sort((a, b) => (b.atualizadoEm || '').localeCompare(a.atualizadoEm || ''));
+    for (const t of textos) {
+      const a = antes.get(t.id);
+      if (a && a.atualizadoEm !== t.atualizadoEm && conteudoDe(a) !== conteudoDe(t)) mudouPorFora.add(t.id);
+    }
   }
   const obter = (id) => textos.find((t) => t.id === id) || null;
 
@@ -190,6 +197,7 @@ export function criarEscrita({ dados, bib, drive, registrar }) {
   async function salvar(t, { versao = null } = {}) {
     const antes = obter(t.id);
     let indice = t.versoes || [];
+    if (mudouPorFora.delete(t.id) && !versao) versao = 'antes de escrever por cima do que veio de outro aparelho';
     if (antes && temTexto(antes) && conteudoDe(antes) !== conteudoDe(t)) {
       const ultima = ultimaVersao.get(t.id) ?? (Date.parse((antes.versoes || [])[0]?.em || '') || 0);
       if (versao || Date.now() - ultima >= ENTRE_VERSOES_MS) indice = [await guardarVersao(antes, versao || 'automática'), ...indice].slice(0, 100);
@@ -318,5 +326,5 @@ export function criarEscrita({ dados, bib, drive, registrar }) {
     return t;
   }
 
-  return { carregar, todos: () => textos, obter, novo, salvar, apagar, salvarVersao, restaurarVersao, carregarVersoes, versoesDe, guardarAntesDeReceber, enviarVersoesPendentes, gravarLegivel, medir: medirAutoria, referencias: (t) => referencias(t, bib.leituras()) };
+  return { carregar, todos: () => textos, obter, novo, salvar, apagar, salvarVersao, restaurarVersao, carregarVersoes, versoesDe, guardarAntesDeReceber, enviarVersoesPendentes, mudouPorFora: (id) => mudouPorFora.has(id), gravarLegivel, medir: medirAutoria, referencias: (t) => referencias(t, bib.leituras()) };
 }
