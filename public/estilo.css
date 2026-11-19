@@ -1554,3 +1554,38 @@ body.leitor main{max-width:none}
   .tabbar{background:rgba(255,255,255,.96)}
   .tabbar a{flex-direction:row;font-size:var(--fs-ui);line-height:20px;font-weight:600}
 }
+
+/* ---------- Hoje (v2.1.0): protagonista em painel cinza, tarefas, agenda do dia e prazos ---------- */
+.hoje-grid{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:var(--e-12);align-items:start}
+.hoje-col{display:flex;flex-direction:column;gap:var(--e-12);min-width:0}
+.hoje-grid.so-um{grid-template-columns:minmax(0,1fr)}
+.hoje-grid.so-um .hoje-col{max-width:760px}
+.proximo{background:var(--superficie-2);border:0;border-radius:var(--r-4);padding:var(--e-10)}
+.proximo .rot{font-size:var(--fs-ui);font-weight:600;color:var(--texto)}
+.proximo .prox-tit{font-size:var(--fs-titulo-1);line-height:1.2}
+.tambem{background:none;border:0;border-radius:0;padding:0}
+.tambem h2,.tarefas h2,.compromissos h2,.prazos h2{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.3;font-weight:500;margin:0 0 var(--e-2)}
+.tarefas h2 small{font-family:var(--ui);font-size:var(--fs-meta);font-weight:400;color:var(--texto-3);margin-left:var(--e-2)}
+.tarefas ul,.compromissos ul,.prazos ul{list-style:none;margin:0;padding:0}
+.tarefas li{display:flex;align-items:center;gap:var(--e-3);min-height:48px;border-bottom:1px solid var(--borda)}
+.tarefas label{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:var(--e-3);min-height:48px;font-size:var(--fs-corpo);line-height:22px;cursor:pointer}
+.tarefas input[type=checkbox]{width:20px;height:20px;flex:none;margin:0}
+.tarefas li.feita label span{color:var(--texto-3);text-decoration:line-through}
+.tarefas li .btn{opacity:0}
+.tarefas li:hover .btn,.tarefas li .btn:focus-visible{opacity:1}
+.tarefa-nova{display:flex;gap:var(--e-2);margin-top:var(--e-4)}
+.tarefa-nova input{flex:1 1 auto;min-width:0}
+.compromissos a,.prazos a{display:flex;align-items:baseline;gap:var(--e-4);padding:var(--e-3) 0;border-bottom:1px solid var(--borda);text-decoration:none;color:var(--texto)}
+.compromissos .hora{flex:0 0 60px;font-weight:600;font-size:var(--fs-corpo)}
+.compromissos a > span,.prazos a > span:last-child{min-width:0;font-size:var(--fs-corpo);line-height:22px}
+.compromissos small,.prazos a > span:last-child small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.prazos a{align-items:center}
+.prazos .dia-g{flex:0 0 60px;font-family:var(--leitura);font-size:var(--fs-titulo-1);line-height:1}
+.prazos .dia-g small{display:block;font-family:var(--ui);font-size:var(--fs-legenda);line-height:16px;color:var(--texto-3)}
+.prazos a > span:last-child small.urg{color:var(--perigo)}
+@media (pointer:coarse){.tarefas li .btn{opacity:1}}
+@media (max-width:1000px){
+  .hoje-grid{grid-template-columns:minmax(0,1fr);gap:var(--e-10)}
+  .hoje-col{gap:var(--e-10)}
+  .proximo{padding:var(--e-6) var(--e-5)}
+}
