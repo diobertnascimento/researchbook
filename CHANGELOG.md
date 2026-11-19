@@ -2,6 +2,12 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.5.0 (18/11/2026)
+Sincronização entre aparelhos.
+- Com o app aberto há horas, a sessão do Google vence. Agora, ao voltar para o app (ou com ele parado, sem ninguém mexendo), ele renova a sessão sozinho e a sincronização continua. Nunca no meio de um campo ou de uma janela aberta. Se o Google não renovar, o estado continua oferecendo "Reconectar" e contando o que espera para subir.
+- Ajustes ganhou a página Sincronização: o estado deste aparelho, quantas mudanças esperam para subir, conflitos e a lista dos seus aparelhos com a última sincronização de cada um. Um aparelho parado há mais de 2 dias aparece com aviso.
+- Se um texto aberto no editor muda em outro aparelho, a tela mostra o que chegou. Se você já estava escrevendo, o que chegou é guardado como versão antes de ser coberto.
+
 ## 1.4.0 (18/11/2026)
 Confirmação honesta: o app diz onde cada mudança está.
 - O estado da sincronização agora tem dois níveis. Logo depois de uma mudança ele mostra "Gravado neste aparelho. Enviando ao Drive…" e só volta a "Sincronizado às…" quando a mudança subiu de verdade. Antes ele continuava dizendo "Sincronizado" durante a espera.

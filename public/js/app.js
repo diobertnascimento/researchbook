@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '1.4.0';
+const APP_VERSAO = '1.5.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -749,7 +749,7 @@ function secAparelho(){
 }
 
 // Ajustes em subpáginas (#ajustes/<seção>): uma seção por vez, com o índice sempre à vista.
-const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa'],['custo','Uso e custo'],['registros','Registros'],['aparelho','Este aparelho'],['seguranca','Cópias de segurança'],['agenda','Google Agenda'],['cores','Marca-textos'],['pasta','Conta e pasta']];
+const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa'],['custo','Uso e custo'],['registros','Registros'],['aparelho','Este aparelho'],['seguranca','Cópias de segurança'],['sincronizacao','Sincronização'],['agenda','Google Agenda'],['cores','Marca-textos'],['pasta','Conta e pasta']];
 V.ajustes = (sec) => { const atual=SECOES_AJ.some(([k])=>k===sec)?sec:'ia'; return `
   <div class="topo"><div><h1>Ajustes</h1><p>IA, custos, registros, agenda, cores e a pasta onde tudo fica.</p></div></div>
   <div class="aj-wrap">
@@ -767,6 +767,7 @@ V.ajustes = (sec) => { const atual=SECOES_AJ.some(([k])=>k===sec)?sec:'ia'; retu
     ${modoReal()&&window.rb&&window.rb.iaUso?window.rb.iaUso.secCusto():secCusto()}
     ${secRegistros()}
     ${secAparelho()}
+    ${modoReal()&&window.rb&&window.rb.sincronizacaoUI?window.rb.sincronizacaoUI.secaoHTML():`<section id="sec-sincronizacao"><h2>Sincronização</h2><p>Com os seus dados abertos, esta página mostra o estado deste aparelho e a última sincronização de cada um.</p></section>`}
     ${modoReal()&&window.rb&&window.rb.segurancaUI?window.rb.segurancaUI.secaoHTML():`<section id="sec-seguranca"><h2>Cópias de segurança</h2><p>Com os seus dados abertos, esta página mostra a cópia diária deste aparelho, a lixeira e o que dá para trazer de volta.</p></section>`}
     ${modoReal()&&window.rb&&window.rb.iaUso?window.rb.iaUso.secCores(FUNCOES):`<section id="sec-cores">
       <h2>Marca-textos</h2>

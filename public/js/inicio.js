@@ -25,6 +25,7 @@ import { criarCopiloto } from './copiloto.js';
 import { criarEscritaUI } from './escrita-ui.js';
 import { criarSegurancaUI } from './seguranca-ui.js';
 import { paraBibTeX } from './importar.js';
+import { criarSincronizacaoUI, nomeDoAparelho } from './sincronizacao-ui.js';
 import { criarDisciplinas } from './disciplinas.js';
 import { criarDisciplinasUI } from './disciplinas-ui.js';
 import { criarDissertacao } from './dissertacao.js';
@@ -185,6 +186,49 @@ async function iniciar() {
     if (/^#ajustes/.test(location.hash) && !digitando && typeof window.render === 'function') window.render();
   };
   let ultimaSinc = null;
+
+  // Registro deste aparelho no Drive (aparelhos/<id>.json): é o que permite dizer, em outro aparelho, que este está parado.
+  let aparelhoGravadoEm = 0;
+  async function registrarAparelho(e) {
+    if (!driveAtual || !idAparelho) return;
+    const mexeu = (e.enviados || 0) + (e.recebidos || 0) > 0;
+    if (aparelhoGravadoEm && !mexeu && Date.now() - aparelhoGravadoEm < 15 * 60_000) return;
+    aparelhoGravadoEm = Date.now();
+    try {
+      await driveAtual.gravar(`aparelhos/${idAparelho}.json`, JSON.stringify({ app: 'researchbook', id: idAparelho, nome: nomeDoAparelho(ap), sistema: ap.sistema, navegador: ap.navegador, instalado: ap.instalado, versao, ultima: e.ultima }, null, 1));
+    } catch (err) {
+      registrar('erro', 'aparelho.registro', { det: err.message, st: 'aviso' });
+    }
+  }
+  async function listarAparelhos() {
+    if (!driveAtual || !google.sessao()) return [];
+    const lista = [];
+    for (const f of await driveAtual.listar('aparelhos')) {
+      try {
+        const a = JSON.parse((await driveAtual.ler(`aparelhos/${f.name}`)) || 'null');
+        if (a?.id) lista.push(a);
+      } catch {
+        // Arquivo ilegível de outro aparelho: fica fora da lista, sem derrubar a tela.
+      }
+    }
+    return lista.sort((a, b) => (b.ultima || '').localeCompare(a.ultima || ''));
+  }
+
+  // Com o app aberto há horas, a sessão do Google vence e a sincronização para. Ao voltar para o app (ou parado,
+  // sem ninguém mexendo), ele renova em silêncio, como faz ao abrir. Nunca no meio de um campo ou de uma janela.
+  let ultimaInteracao = Date.now();
+  for (const tipo of ['keydown', 'pointerdown']) addEventListener(tipo, () => (ultimaInteracao = Date.now()), true);
+  function renovarSeVenceu({ voltando = false } = {}) {
+    if (document.visibilityState !== 'visible' || google.sessao() || !google.conta()) return;
+    const digitando = document.activeElement?.matches?.('input, textarea, select, [contenteditable]');
+    const modalAberto = document.getElementById('veu')?.classList.contains('on');
+    if (digitando || modalAberto) return;
+    if (!voltando && Date.now() - ultimaInteracao < 2 * 60_000) return;
+    google.renovarEmSilencio({ registrar });
+  }
+  document.addEventListener('visibilitychange', () => renovarSeVenceu({ voltando: true }));
+  setInterval(() => renovarSeVenceu(), 60_000);
+
   function ligarDrive() {
     if (sinc || !db || !google.sessao()) return;
     const drive = criarDrive({ token: () => google.sessao()?.token, registrar });
@@ -205,6 +249,7 @@ async function iniciar() {
           if (ultimaSinc && e.recebidos) window.toast?.(e.recebidos === 1 ? '1 mudança veio de outro aparelho' : `${e.recebidos} mudanças vieram de outro aparelho`);
           ultimaSinc = e.ultima;
           fazerCopiaDoDia();
+          registrarAparelho(e);
           window.rb.escrita?.enviarVersoesPendentes();
           window.rb.biblioteca?.carregar().then(() => window.rb.biblioteca.enviarPendentes());
           // Dados de outro aparelho: recarrega e redesenha as telas que só leem (nunca no meio de um formulário).
@@ -218,6 +263,9 @@ async function iniciar() {
             const modalAberto = document.getElementById('veu')?.classList.contains('on');
             const digitando = document.activeElement?.matches?.('input, textarea, select, [contenteditable]');
             if (!modalAberto && !digitando && telaDeLeitura()) window.render?.();
+            // O texto aberto no editor mudou em outro aparelho: mostra o que chegou (o daqui já virou versão).
+            const aberto = /^#texto\/(.+)/.exec(location.hash)?.[1];
+            if (aberto && !modalAberto && !digitando && window.rb.escrita?.mudouPorFora(decodeURIComponent(aberto))) window.render?.();
             if (!modalAberto) window.desenhaMenu?.(location.hash.slice(1) || 'painel');
             window.rb.disciplinas?.retomarPendentes();
             window.rb.agenda?.sincronizar();
@@ -461,6 +509,7 @@ async function iniciar() {
     await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar(), window.rb.disciplinas.carregar(), window.rb.dissertacao.carregar(), window.rb.dialogos.carregar(), window.rb.cartoes.carregar()]);
     window.rb.disciplinas.retomarPendentes();
     window.rb.segurancaUI = criarSegurancaUI({ dados: window.rb.dados, recarregar: recarregarTudo, registrar });
+    window.rb.sincronizacaoUI = criarSincronizacaoUI({ estado: () => sinc?.estado() ?? null, aparelhos: listarAparelhos, idAparelho });
     limparLixeira().catch((e) => registrar('erro', 'lixeira.limpeza', { det: e.message, st: 'aviso' }));
     // Sem login (ou sem internet), a cópia do dia não espera a sincronização.
     setTimeout(fazerCopiaDoDia, 15000);
