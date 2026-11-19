@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '1.3.0';
+const APP_VERSAO = '1.4.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -466,6 +466,8 @@ V.fichamento = (id) => {
     const real=window.rb&&window.rb.fichUI&&window.rb.fichUI.tela(decodeURIComponent(id||''));
     if(real) return real;
     if(!window.rb||!window.rb.fichUI) return esqueleto('Fichamento', 'texto');
+    // Com os dados reais abertos, a tela de exemplo nunca aparece no lugar de um fichamento que não existe.
+    return `<div class="topo"><div><h1>Fichamento</h1><p>Este fichamento não foi encontrado neste aparelho.</p></div></div><p><a class="btn" href="#fichamentos">Ver os fichamentos</a></p>`;
   }
   const l=L(id)||L('venable2016'); const p=S.passoFich;
   const cores=PASSOS[p].cores;
@@ -829,7 +831,7 @@ ${modoReal()?`<pre class="arvore">researchbook/
     └── exportar/</pre>`}
       <div class="aviso"><span>ⓘ</span><div>Pode usar os dois computadores e o celular ao mesmo tempo: cada mudança vai para o Drive e chega aos outros aparelhos na próxima sincronização. Se o mesmo item mudar em dois lugares antes disso, fica a versão mais recente e a outra é guardada para você decidir. A chave do Gemini fica só em cada aparelho, nunca na pasta.</div></div>
       <div class="flex gap-3 wrap">
-        <button class="btn" data-acao="toast" data-msg="Na versão funcional, gera um .bib com toda a biblioteca.">Exportar referências (BibTeX)</button>
+        <button class="btn" data-baixar="bibtex">Exportar referências (BibTeX)</button>
         <a class="btn fant" href="#memoria">Exportar memória para outras IAs</a>
       </div>
     </section>
@@ -1772,11 +1774,13 @@ function statusDriveHTML(){
   if(!rb) return linha('pendente','Abrindo…');
   const e=rb.sincronia?rb.sincronia.estado():{fase:rb.google.conectado()?'parado':'desconectado'};
   const conf=e.conflitos?`, <a href="#conflitos">${e.conflitos} ${e.conflitos===1?'conflito para revisar':'conflitos para revisar'}</a>`:'';
+  const n=e.pendentes||0, esp=n?` ${n} ${n===1?'mudança espera':'mudanças esperam'} o Drive.`:'';
+  if(e.fase==='ok'&&e.pendente) return linha('pendente','Gravado neste aparelho. Enviando ao Drive…');
   if(e.fase==='ok') return linha('ok',`<span>Sincronizado às ${new Date(e.ultima).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${conf}</span>`);
-  if(e.fase==='sincronizando'||e.fase==='parado') return linha('pendente','Sincronizando com o Drive…');
-  if(e.fase==='offline') return linha('aviso','Sem internet: salvo neste aparelho');
-  if(e.fase==='desconectado') return linha('aviso','Salvo neste aparelho. <button data-google="entrar">Reconectar ao Google</button>');
-  return linha('erro','Não deu para sincronizar. <a href="#ajustes/pasta">Ver detalhes</a>');
+  if(e.fase==='sincronizando'||e.fase==='parado') return linha('pendente',e.pendente?'Gravado neste aparelho. Enviando ao Drive…':'Sincronizando com o Drive…');
+  if(e.fase==='offline') return linha('aviso',`Sem internet: salvo neste aparelho.${n?` ${n} ${n===1?'mudança sobe':'mudanças sobem'} quando a conexão voltar.`:''}`);
+  if(e.fase==='desconectado') return linha('aviso',`Salvo neste aparelho.${esp} <button data-google="entrar">Reconectar ao Google</button>`);
+  return linha('erro',`Não deu para sincronizar.${esp} <a href="#ajustes/pasta">Ver detalhes</a>`);
 }
 window.statusDriveHTML=statusDriveHTML;
 // Celular: o menu lateral (com o status) some; um aviso acima da barra inferior aparece quando a sincronização precisa de você.
@@ -1830,6 +1834,7 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-baixar]'); if(!b||!window.rb) return;
   const dia=new Date().toISOString().slice(0,10);
   if(b.dataset.baixar==='registros'){baixar(`researchbook-registros-${dia}.csv`,window.rb.registros.csv(),'text/csv;charset=utf-8');toast('Registros exportados')}
+  if(b.dataset.baixar==='bibtex'){const ls=window.rb.biblioteca?window.rb.biblioteca.leituras():[];if(!ls.length){toast('A biblioteca está vazia: não há referências para exportar.');return}baixar(`researchbook-referencias-${dia}.bib`,window.rb.paraBibTeX(ls),'application/x-bibtex;charset=utf-8');toast(`${ls.length} ${ls.length===1?'referência exportada':'referências exportadas'}`)}
   if(b.dataset.baixar==='dados'){const d=await window.rb.dados.exportar();baixar(`researchbook-dados-${dia}.json`,JSON.stringify(d,null,2),'application/json');toast('Cópia dos dados baixada')}
 });
 
