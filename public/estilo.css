@@ -1895,3 +1895,26 @@ body.sessao .esc-sec-tit{pointer-events:none}
 .fich-antigo p{font-family:var(--leitura);font-size:var(--fs-corpo);line-height:28px;margin:0 0 var(--e-3);white-space:pre-wrap}
 .fich-novo > .pe,.fich-wiz > .pe{margin-top:var(--e-8)}
 @media (max-width:1000px){.fich-destino{grid-template-columns:minmax(0,1fr)}.fich-pergunta{font-size:var(--fs-titulo-2)}}
+
+/* ---------- Conectar a IA: os quatro passos conferidos pelo app; Entrar (v2.9.0) ---------- */
+.ia-passos{list-style:none;margin:0 0 var(--e-5);padding:0}
+.ia-passo{display:grid;grid-template-columns:28px minmax(0,1fr);gap:var(--e-4);padding:var(--e-4) 0;border-bottom:1px solid var(--borda)}
+.ia-passo:last-child{border-bottom:0}
+.ia-marca{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--borda-forte);font-size:var(--fs-meta);font-weight:600;color:var(--texto-2)}
+.ia-passo.ok .ia-marca{background:var(--sucesso-suave);border-color:transparent;color:var(--sucesso)}
+.ia-passo.erro .ia-marca{background:var(--perigo-suave);border-color:var(--perigo-linha);color:var(--perigo)}
+.ia-passo h3{font-size:var(--fs-corpo);line-height:24px;font-weight:600;margin:2px 0 var(--e-1)}
+.ia-passo p{margin:0 0 var(--e-2);font-size:var(--fs-ui);line-height:22px;color:var(--texto-2)}
+.ia-passo small{display:block;font-size:var(--fs-meta);line-height:18px;color:var(--texto-3)}
+.ia-passo .campo{margin-bottom:var(--e-2)}
+.ia-gasto p{max-width:46em}
+.entrar-pede{margin:var(--e-8) 0 0;padding-top:var(--e-5);border-top:1px solid var(--borda)}
+.entrar-pede h2{font-size:var(--fs-meta);line-height:18px;font-weight:600;color:var(--texto-3);margin:0 0 var(--e-3)}
+.entrar-pede ul{list-style:none;margin:0;padding:0}
+.entrar-pede li{font-size:var(--fs-ui);line-height:22px;color:var(--texto-2);padding:var(--e-2) 0}
+.entrar-pede li b{display:block;color:var(--texto);font-weight:600}
+.entrar-passos{list-style:none;margin:0;padding:0}
+.entrar-passos li{display:flex;gap:var(--e-3);align-items:center;font-size:var(--fs-corpo);line-height:24px;color:var(--texto-2);padding:var(--e-2) 0}
+.entrar-passos li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--acento);animation:pulso 1.2s ease-in-out infinite}
+@keyframes pulso{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.entrar-passos li::before{animation:none}}

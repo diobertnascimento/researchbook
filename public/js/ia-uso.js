@@ -92,6 +92,19 @@ export function criarIAUso({ registros, drive, registrar }) {
       <p class="t-legenda m-0 mt-2 mute-2">As escolhas valem em todos os seus aparelhos.</p></section>`;
   }
 
+  /** Gasto do mês e limite definido aqui, em texto, para a tela de conexão. Null enquanto os registros não foram lidos. */
+  function resumoDoMes() {
+    if (!chamadas) {
+      carregar();
+      return null;
+    }
+    const agora = new Date();
+    const mes = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+    const total = chamadas.filter((c) => c.t.startsWith(mes)).reduce((n, c) => n + (c.custo || 0), 0);
+    const limite = cfg('rb.ia.limite', null);
+    return { total: usd(total), limite: limite ? usd(limite) : null };
+  }
+
   /* ---------- Uso e custo ---------- */
   function secCusto() {
     if (!chamadas) {
@@ -197,5 +210,5 @@ export function criarIAUso({ registros, drive, registrar }) {
     redesenhar();
   });
 
-  return { secModelos, secCusto, secCores, descricoes, carregar, recarregar: () => ((chamadas = null), carregar()) };
+  return { secModelos, secCusto, secCores, descricoes, resumoDoMes, carregar, recarregar: () => ((chamadas = null), carregar()) };
 }

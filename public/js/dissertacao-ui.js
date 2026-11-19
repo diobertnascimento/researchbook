@@ -35,6 +35,12 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   };
 
   /* =================== Revisão do projeto =================== */
+  // O campo de arquivo da versão fica fora da tela desenhada: se a página se redesenhar com a janela de escolha
+  // aberta (o parecer da versão anterior terminando, por exemplo), o arquivo escolhido não se perde.
+  const entradaPDF = Object.assign(document.createElement('input'), { type: 'file', accept: 'application/pdf', hidden: true });
+  entradaPDF.dataset.revPdf = '';
+  document.body.append(entradaPDF);
+
   /* ---------- Parecer da versão: o que ajustar para a qualificação ---------- */
   const arquivosDaSessao = new Map(); // PDF de cada versão enviada nesta sessão, para pedir o parecer sem escolher de novo
   const nomeParte = Object.fromEntries(PARTES_PARECER.map(([k, n]) => [k, n]));
@@ -101,7 +107,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   function projeto() {
     const revs = diss.todasRevisoes();
     const topo = `<div class="topo"><div><h1>Projeto</h1><p>Envie cada versão do projeto em PDF. A IA faz duas leituras: o parecer do que ajustar para a qualificação e a lista das obras que você cita, por prioridade de leitura.</p></div>
-      <div class="acoes"><label class="btn prim">${icone('upload')}${revs.length ? 'Enviar nova versão' : 'Enviar a versão atual'}<input type="file" accept="application/pdf" data-rev-pdf hidden></label></div></div>`;
+      <div class="acoes"><button class="btn prim" data-rev-escolher>${icone('upload')}${revs.length ? 'Enviar nova versão' : 'Enviar a versão atual'}</button></div></div>`;
     if (!revs.length) return `${topo}<div class="bib-vazia"><h2>Nenhuma versão enviada</h2><p>A cada versão, o parecer diz o que foi resolvido desde a anterior, e a lista de obras mostra as novas, as removidas e os problemas de citação resolvidos. O PDF fica no seu Drive (dissertacao/versoes).</p></div>`;
     const r = (est.rev && diss.revisao(est.rev)) || revs[0];
     const res = r.resultado;
@@ -293,7 +299,11 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
 
   /* =================== Eventos =================== */
   document.addEventListener('change', (e) => {
-    if (e.target.matches?.('[data-rev-pdf]') && e.target.files?.[0]) enviarVersao(e.target.files[0]);
+    if (e.target.matches?.('[data-rev-pdf]') && e.target.files?.[0]) {
+      const arquivo = e.target.files[0];
+      e.target.value = ''; // o mesmo arquivo pode ser escolhido de novo
+      enviarVersao(arquivo);
+    }
     if (e.target.matches?.('[data-par-pdf]') && e.target.files?.[0]) rodarParecer(e.target.dataset.parPdf, e.target.files[0]);
     if (e.target.matches?.('[data-par-feito]')) {
       const r = (est.rev && diss.revisao(est.rev)) || diss.todasRevisoes()[0];
@@ -391,7 +401,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-par-decidir],[data-par-pedir],[data-rev-versao],[data-rev-buscar],[data-rev-trilha],[data-ori-registrar],[data-ori-tipo],[data-ori-agendar],[data-ori-pauta],[data-ori-processar],[data-ori-transcrever],[data-ori-apagar],[data-ori-feito],[data-dlg-novo],[data-dlg-fechar],[data-dlg-sel],[data-dlg-modo],[data-dlg-encerrar],[data-dlg-memoria],[data-dlg-argumento],[data-dlg-descartar],[data-dlg-apagar]');
+    const b = e.target.closest('[data-rev-escolher],[data-par-decidir],[data-par-pedir],[data-rev-versao],[data-rev-buscar],[data-rev-trilha],[data-ori-registrar],[data-ori-tipo],[data-ori-agendar],[data-ori-pauta],[data-ori-processar],[data-ori-transcrever],[data-ori-apagar],[data-ori-feito],[data-dlg-novo],[data-dlg-fechar],[data-dlg-sel],[data-dlg-modo],[data-dlg-encerrar],[data-dlg-memoria],[data-dlg-argumento],[data-dlg-descartar],[data-dlg-apagar]');
     if (!b) return;
     const d = b.dataset;
     if (d.dlgFechar !== undefined) return fechar();
@@ -399,6 +409,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       est.rev = d.revVersao;
       return redesenhar();
     }
+    if (d.revEscolher !== undefined) return entradaPDF.click();
     if (d.parPedir) return rodarParecer(d.parPedir, arquivosDaSessao.get(d.parPedir));
     if (d.parDecidir) {
       const [achadoId, decisao] = d.parDecidir.split('|');

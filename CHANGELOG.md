@@ -2,6 +2,17 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.9.0 (19/11/2026)
+Entrar e Conectar a IA.
+- Entrar: a tela diz em uma frase por que a entrada é com a conta Google, tem um botão só e lista o que o app pede ao Google agora (e-mail e a pasta researchbook no Drive) e o que só pede se você ligar depois (agenda e Gemini).
+- Se o aparelho já guarda dados do researchbook, a tela avisa quantos e diz que eles voltam a abrir quando você entrar.
+- Enquanto conecta, a tela mostra o que está sendo conferido.
+- Conectar a IA (Ajustes): no acesso pela conta Google, a configuração virou quatro passos que o próprio app confere: API ativa, permissão, projeto com cobrança e um teste com uma pergunta de verdade. Cada passo mostra se passou e a que horas foi conferido.
+- Quando o Google recusa, o erro aparece traduzido no passo certo, com o que fazer.
+- O gasto do mês e o limite aparecem na mesma tela.
+- Corrigido: o ID do projeto digitado podia ser apagado se a tela se redesenhasse antes de você salvar.
+- Não entrou: "Abrir sem conectar" na tela de entrada. Sem internet o app já abre sozinho com os dados do aparelho, sem passar por essa tela. Ela só aparece depois de "Sair da conta", e ali o botão seria um jeito de abrir os dados sem login.
+
 ## 2.8.0 (19/11/2026)
 Fichamento refeito.
 - As cinco etapas saíram. O fichamento agora tem dois caminhos que alimentam as mesmas notas, e você pode usar os dois na mesma obra.

@@ -1,4 +1,5 @@
-// Ajustes > Gemini: como o app acessa o Gemini, teste de conexão e perfil do autor.
+// Ajustes > Gemini: como o app acessa o Gemini, os quatro passos da conexão conferidos pelo próprio app,
+// teste com uma pergunta de verdade e perfil do autor.
 import { FRASE_MINIMA } from './cofre.js';
 import { ErroIA } from './gemini.js';
 import { ouvir } from './ui.js';
@@ -11,6 +12,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
   let teste = null; // { ok, texto }
   let perfil = null; // texto carregado
   let rascunhoPerfil = null;
+  let rascunhoProjeto = null; // o que foi digitado no ID do projeto e ainda não foi salvo: um redesenho da seção não pode apagar
   let msgCofre = null;
 
   async function atualizar() {
@@ -33,14 +35,54 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
     else redesenhar();
   };
 
+  /* ---------- A última conferência: o que o teste de verdade mostrou, e quando ---------- */
+  // Fica só neste aparelho. Guarda o código do erro e a hora; nunca o texto do pedido nem a resposta.
+  const CONFERENCIA = 'rb.ia.conferencia';
+  const lerConferencia = () => {
+    try {
+      const c = JSON.parse(localStorage.getItem(CONFERENCIA) || 'null');
+      return c && c.modo === ia.ajustes.modo() && c.projeto === ia.ajustes.projeto() ? c : null;
+    } catch {
+      return null;
+    }
+  };
+  const gravarConferencia = (c) => {
+    try {
+      localStorage.setItem(CONFERENCIA, JSON.stringify({ ...c, em: new Date().toISOString(), modo: ia.ajustes.modo(), projeto: ia.ajustes.projeto() }));
+    } catch {
+      // Sem armazenamento local, a conferência vale só para esta tela.
+    }
+  };
+  const hora = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  // Em qual passo cada erro do Google cai. O que não está aqui é erro do próprio teste (passo 4).
+  const PASSO_DO_ERRO = { api: 1, permissao: 2, sessao: 2, projeto: 3, negado: 3, limite: 3 };
+  const O_QUE_FAZER = {
+    api: 'No Google Cloud, abra o projeto do researchbook, ative a Generative Language API e volte aqui para testar.',
+    permissao: 'Selecione "Conectar o Gemini" e aceite a permissão que o Google mostrar.',
+    sessao: 'Reconecte ao Google e teste de novo.',
+    projeto: 'Cole o ID do projeto do Google Cloud em que o Gemini é cobrado e salve.',
+    negado: 'Confira se o ID do projeto está certo e se, no Google AI Studio, a cobrança está ligada nesse projeto.',
+    limite: 'No Google AI Studio, aumente o limite de gasto do mês ou espere o mês virar.',
+  };
+
   function blocoGoogle() {
     const a = ia.ajustes;
     const perm = a.temPermissao();
+    const conf = lerConferencia();
+    const falhou = conf && !conf.ok ? PASSO_DO_ERRO[conf.codigo] || 4 : 0;
+    // Um passo só fica "conferido" quando o teste passou por ele: funcionou, ou falhou num passo posterior.
+    const passou = (n) => !!conf && (conf.ok || falhou > n);
+    const quando = conf ? `<small>Conferido às ${hora(conf.em)}</small>` : '';
+    const passo = (n, titulo, corpo, { ok = passou(n), erro = falhou === n } = {}) =>
+      `<li class="ia-passo ${erro ? 'erro' : ok ? 'ok' : 'pendente'}"><span class="ia-marca" aria-hidden="true">${erro ? '!' : ok ? '✓' : n}</span><div><h3>${titulo}</h3>${corpo}${erro ? `<p class="erro-campo" role="alert">${esc(conf.texto)}</p><p>${O_QUE_FAZER[conf.codigo] || ''}</p>` : ''}${(ok || erro) && conf ? quando : ''}</div></li>`;
     return `<div class="ia-bloco">
-      <div class="larg-form campo"><label for="ia-projeto">ID do projeto do Google Cloud <small>onde o uso do Gemini é cobrado</small></label>
-        <div class="linha-doi"><input id="ia-projeto" value="${esc(a.projeto())}" placeholder="ex.: researchbook-123456" autocomplete="off" spellcheck="false"><button class="btn" data-ia-projeto>Salvar</button></div></div>
-      <p class="ia-status ${perm ? 'ok' : ''}"><i></i>${perm ? 'Permissão do Gemini concedida neste login.' : 'O login atual ainda não tem a permissão do Gemini.'}</p>
-      ${perm ? '' : '<button class="btn prim" data-ia-conectar data-ocupado="Conectando…">Conectar o Gemini</button>'}
+      <ol class="ia-passos">
+        ${passo(1, 'Ativar a API do Gemini no seu projeto do Google', `<p>${passou(1) ? 'O app conferiu: está ativa.' : falhou === 1 ? '' : 'O app só consegue conferir este passo com o teste do passo 4.'}</p>`)}
+        ${passo(2, 'Autorizar o app a usar o Gemini', `<p class="ia-status ${perm ? 'ok' : ''}"><i></i>${perm ? 'Permissão do Gemini concedida neste login.' : 'O login atual ainda não tem a permissão do Gemini.'}</p>${perm ? '' : '<button class="btn prim" data-ia-conectar data-ocupado="Conectando…">Conectar o Gemini</button>'}`, { ok: perm && falhou !== 2 })}
+        ${passo(3, 'Informar o projeto em que o Gemini é cobrado', `<div class="larg-form campo"><label for="ia-projeto">ID do projeto do Google Cloud <small>onde o uso do Gemini é cobrado</small></label>
+          <div class="linha-doi"><input id="ia-projeto" value="${esc(rascunhoProjeto ?? a.projeto())}" placeholder="ex.: researchbook-123456" autocomplete="off" spellcheck="false"><button class="btn" data-ia-projeto>Salvar</button></div></div>${a.projeto() && !passou(3) && falhou !== 3 ? '<p>Informado. Falta conferir com o teste.</p>' : ''}`)}
+        ${passo(4, 'Testar com uma pergunta de verdade', `<p>O app faz uma pergunta curta ao Gemini e mostra a resposta do Google, o modelo e o tempo.${conf?.ok ? ` Funcionou: o Gemini respondeu em ${(conf.dur / 1000).toFixed(1).replace('.', ',')} s (${esc(conf.modelo)}).` : ''}</p><div class="ia-linha"><button class="btn ${perm ? 'prim' : ''}" data-ia-testar data-ocupado="Perguntando ao Gemini…">${conf ? 'Testar de novo' : 'Testar conexão'}</button></div><div id="ia-teste">${msgHTML(teste)}</div>`)}
+      </ol>
       <details class="como"><summary>O que preparar no Google</summary><ol>
         <li>No Google Cloud, no projeto do researchbook (o mesmo do login), ative a <b>Generative Language API</b>.</li>
         <li>Na tela de permissão OAuth do mesmo projeto, acrescente a permissão <code>generative-language.retriever</code>.</li>
@@ -74,14 +116,20 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
     </div>`;
   }
 
+  function gastoHTML() {
+    const r = window.rb?.iaUso?.resumoDoMes?.();
+    return `<div class="ia-gasto"><h3 class="ia-sub">Gasto</h3><p>${r ? `Neste mês, neste aparelho: ${r.total}. ${r.limite ? `Limite que você definiu aqui: ${r.limite} por mês, com aviso em 80%.` : 'Nenhum limite definido aqui.'}` : 'Lendo os registros deste aparelho…'} <a href="#ajustes/custo">${r?.limite ? 'Mudar o limite' : 'Definir um limite'}</a></p>
+      <p class="t-meta mute">O limite que de fato para o gasto fica no Google AI Studio (Spend, Monthly spend cap). O daqui só avisa.</p></div>`;
+  }
+
   function secaoHTML() {
     if (estadoCofre === null || perfil === null) queueMicrotask(atualizar);
     const modo = ia.ajustes.modo();
     const t = `<div id="ia-teste">${msgHTML(teste)}</div>`;
     const perfilTexto = rascunhoPerfil ?? perfil ?? '';
     return `<section id="sec-ia">
-      <h2>Conexão com o Gemini</h2>
-      <p>Escolha como este aparelho acessa o Gemini. As duas formas funcionam nos computadores e no celular.</p>
+      <h2>Conectar a IA</h2>
+      <p>O tutor, o Copilot, as perguntas do fichamento e o parecer do projeto usam o Gemini. A configuração é feita uma vez. A IA só é chamada quando você pede; sem ela, o resto do app funciona normalmente.</p>
       <div class="ia-modos" role="radiogroup" aria-label="Acesso ao Gemini">
         <label class="ia-modo ${modo === 'google' ? 'on' : ''}"><input type="radio" name="ia-modo" value="google" ${modo === 'google' ? 'checked' : ''} data-ia-modo>
           <span><b>Pelo seu login Google</b> <span class="chip">mais seguro</span><small>Nenhuma chave guardada em lugar nenhum. O acesso vence junto com o login, em cerca de uma hora.</small></span></label>
@@ -89,17 +137,18 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
           <span><b>Chave num cofre no seu Drive</b><small>A chave fica cifrada com uma frase-senha sua. Use quando a chave for de outra conta Google, ou se o login não funcionar com o Gemini.</small></span></label>
       </div>
       ${modo === 'google' ? blocoGoogle() : modo === 'cofre' ? blocoCofre() : ''}
-      ${modo ? `<div class="ia-linha"><button class="btn" data-ia-testar data-ocupado="Testando…">Testar conexão</button></div>${t}` : ''}
+      ${modo === 'cofre' ? `<div class="ia-linha"><button class="btn" data-ia-testar data-ocupado="Perguntando ao Gemini…">Testar conexão</button></div>${t}` : ''}
+      ${gastoHTML()}
       <h3 class="ia-sub">Perfil do autor</h3>
       <p>Quem você é, como escreve e o que prefere. Entra em todo pedido à IA e fica no seu Drive (memoria/autor.md), fora do código do app.</p>
       <div class="campo"><label for="ia-perfil">Perfil</label><textarea id="ia-perfil" rows="8">${esc(perfilTexto)}</textarea></div>
       <button class="btn" data-ia-perfil data-ocupado="Salvando…">Salvar perfil</button>
-      <div class="aviso"><span>ⓘ</span><div>Defina um limite de gasto mensal no Google AI Studio (Spend &gt; Monthly spend cap). Mesmo que algo dê errado, o gasto para no limite.</div></div>
     </section>`;
   }
 
   document.addEventListener('input', (e) => {
     if (e.target.id === 'ia-perfil') rascunhoPerfil = e.target.value;
+    if (e.target.id === 'ia-projeto') rascunhoProjeto = e.target.value;
   });
   document.addEventListener('change', (e) => {
     if (e.target.matches?.('[data-ia-modo]')) {
@@ -117,11 +166,13 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
     const lembrar = () => !!document.getElementById('ia-lembrar')?.checked;
     if (b.dataset.iaProjeto !== undefined) {
       ia.ajustes.definirProjeto(v('ia-projeto'));
+      rascunhoProjeto = null;
       toast('Projeto salvo neste aparelho');
-      return;
+      return redesenhar();
     }
     if (b.dataset.iaConectar !== undefined) {
       if (v('ia-projeto')) ia.ajustes.definirProjeto(v('ia-projeto'));
+      rascunhoProjeto = null;
       ia.ajustes.conectarGoogle();
       return;
     }
@@ -132,10 +183,17 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
       try {
         const r = await ia.testar();
         teste = { ok: true, texto: `Conectado. O Gemini respondeu (${r.modelo}, ${(r.dur / 1000).toFixed(1)} s).` };
+        gravarConferencia({ ok: true, modelo: r.modelo, dur: r.dur });
       } catch (err) {
         teste = { ok: false, texto: err instanceof ErroIA ? err.message : `Não deu para testar: ${err.message}` };
+        gravarConferencia({ ok: false, codigo: err instanceof ErroIA ? err.codigo : 'erro', texto: teste.texto });
       }
       b.disabled = false;
+      // No acesso pela conta Google, o resultado aparece nos quatro passos; a mensagem solta é do acesso com chave.
+      if (ia.ajustes.modo() === 'google') {
+        if (!teste.ok && (PASSO_DO_ERRO[lerConferencia()?.codigo] || 4) !== 4) teste = null;
+        return redesenhar();
+      }
       mostrar('ia-teste', teste);
       return;
     }

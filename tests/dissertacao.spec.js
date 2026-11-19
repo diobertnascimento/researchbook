@@ -75,8 +75,10 @@ test.describe('no computador', () => {
     await page.getByRole('button', { name: 'Criar trilha com 1 leitura' }).click();
     await expect(page.locator('#toast')).toContainText('Trilha "Revisão da versão 1" criada com 1 leitura');
 
+    // O parecer da versão 1 corre em segundo plano; a versão seguinte é enviada depois dele, como no uso real.
+    await expect(page.locator('.parecer h2')).toHaveText('Parecer da versão 1', { timeout: 20_000 });
     await page.locator('[data-rev-pdf]').setInputFiles({ name: 'projeto-v2.pdf', mimeType: 'application/pdf', buffer: PDF });
-    await expect(page.locator('#toast')).toContainText('Versão 2 revisada');
+    await expect(page.locator('#toast')).toContainText('Versão 2 revisada', { timeout: 15_000 });
     await expect(page.locator('.versao')).toContainText('Desde a anterior: 1 obra nova, 0 removidas, 1 problema resolvido');
     await expect(page.locator('.versoes button')).toHaveText(['v2', 'v1']);
     await page.locator('.versoes button', { hasText: 'v1' }).click();
