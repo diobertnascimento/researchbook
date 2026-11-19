@@ -2,6 +2,13 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.9.1 (19/11/2026)
+Dissertação, Projeto: a página em seções.
+- A página do projeto deixou de ser um texto corrido. Ela tem duas seções com cabeçalho e resumo próprios, Parecer e Leituras e citações, e um índice no topo ("Nesta página") que leva a cada uma e às suas pendências.
+- No parecer, cada gravidade é um grupo com cabeçalho, e cada ponto é uma linha: a parte do projeto, o problema e a situação (sem decisão, nas suas pendências, ignorado). O detalhe abre ao tocar, separado em "No seu projeto", "O que se espera" e "Como resolver".
+- Só o primeiro ponto sem decisão vem aberto. "Abrir todos" e "Recolher todos" ficam no cabeçalho.
+- As suas pendências acompanham a rolagem no computador e mostram quantas já foram feitas.
+
 ## 2.9.0 (19/11/2026)
 Entrar e Conectar a IA.
 - Entrar: a tela diz em uma frase por que a entrada é com a conta Google, tem um botão só e lista o que o app pede ao Google agora (e-mail e a pasta researchbook no Drive) e o que só pede se você ligar depois (agenda e Gemini).

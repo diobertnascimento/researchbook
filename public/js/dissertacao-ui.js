@@ -20,7 +20,7 @@ const prio = (n) => `<span class="prio" aria-label="Prioridade ${['', 'baixa', '
 const tirarIds = (s) => String(s || '').replace(/\s*\[A\d+\]/g, '');
 
 export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) {
-  const est = { parecerCorrendo: null, parecerErro: {}, rev: null, msgs: {}, carregando: new Set(), ocupado: null, erro: null, tipoReg: 'anotacao', abertos: new Set() };
+  const est = { achados: {}, parecerCorrendo: null, parecerErro: {}, rev: null, msgs: {}, carregando: new Set(), ocupado: null, erro: null, tipoReg: 'anotacao', abertos: new Set() };
   const redesenhar = () => /^#(projeto|orientacao|dialogos)/.test(location.hash) && window.render?.();
   const veu = () => document.getElementById('veu');
   const abrirModal = (html) => {
@@ -46,27 +46,37 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   const nomeParte = Object.fromEntries(PARTES_PARECER.map(([k, n]) => [k, n]));
   const refParte = Object.fromEntries(PARTES_PARECER.map(([k, , ref]) => [k, ref]));
   const CONTAGEM = { compromete: ['compromete a aprovação', 'comprometem a aprovação'], importante: ['importante', 'importantes'], ajuste: ['ajuste', 'ajustes'] };
-  function achadoHTML(a) {
+  // Cada gravidade tem a sua frase: é o que separa os três grupos na tela.
+  const SOBRE_GRAVIDADE = { compromete: 'Do jeito que está, a banca pode não aprovar ou pedir reformulação.', importante: 'A banca vai cobrar, mas não impede a aprovação.', ajuste: 'Melhora o texto e custa pouco.' };
+  const NIVEL = { compromete: 3, importante: 2, ajuste: 1 };
+  /** Os pontos abertos nesta versão. Sem escolha dele, abre o primeiro que ainda espera decisão. */
+  function abertosDe(r) {
+    if (!est.achados[r.id]) est.achados[r.id] = new Set([r.parecer.achados.find((a) => !a.decisao)?.id].filter(Boolean));
+    return est.achados[r.id];
+  }
+  function achadoHTML(a, aberto) {
     const onde = a.pagina ? `p. ${a.pagina}` : '';
     const aviso = a.conferido === 'nao' ? 'Não encontrei este trecho no PDF. Confira antes de levar em conta.' : a.conferido === 'outra' ? 'O trecho está no PDF, em outra página.' : '';
-    const cab = `<header><span class="chip">${nomeParte[a.parte]}</span><h4>${esc(a.titulo)}</h4></header>`;
-    if (a.decisao === 'ignorado') return `<article class="achado ignorado">${cab}<div class="ach-estado"><span>Ignorado.</span><button class="lnk" data-par-decidir="${esc(a.id)}|">Desfazer</button></div></article>`;
-    return `<article class="achado ${a.decisao ? 'decidido' : ''}">${cab}
-      ${a.trecho ? `<blockquote>“${esc(a.trecho)}”<cite>${[onde, aviso].filter(Boolean).join('. ')}</cite></blockquote>` : onde ? `<p class="t-meta mute">${onde}</p>` : ''}
-      <p><b>O que se espera.</b> ${esc(a.esperado)} <small>Critério: ${esc(refParte[a.parte])}.</small></p>
-      <p><b>Como resolver.</b> ${esc(a.como_resolver)}</p>
-      ${a.decisao === 'pendencia'
-        ? `<div class="ach-estado"><span>Nas suas pendências.</span><button class="lnk" data-par-decidir="${esc(a.id)}|">Desfazer</button></div>`
-        : `<div class="acao-l"><button class="btn" data-par-decidir="${esc(a.id)}|pendencia">Adicionar às pendências</button><button class="btn fant" data-par-decidir="${esc(a.id)}|ignorado">Ignorar</button></div>`}
-    </article>`;
+    const estado = a.decisao === 'pendencia' ? 'Nas suas pendências' : a.decisao === 'ignorado' ? 'Ignorado' : 'Sem decisão';
+    // A linha mostra a parte, o problema e a situação. O resto abre ao tocar.
+    return `<article class="achado ${a.decisao || 'aberto-a-decidir'} ${aberto ? 'on' : ''}">
+      <h4><button class="ach-linha" data-par-abrir="${esc(a.id)}" aria-expanded="${aberto}" aria-controls="ach-${esc(a.id)}"><span class="chip">${nomeParte[a.parte]}</span><span class="ach-tit">${esc(a.titulo)}</span><span class="ach-sit">${estado}</span></button></h4>
+      <div class="ach-corpo" id="ach-${esc(a.id)}" ${aberto ? '' : 'hidden'}>
+        ${a.trecho ? `<div class="ach-parte"><h5>No seu projeto</h5><blockquote>“${esc(a.trecho)}”<cite>${[onde, aviso].filter(Boolean).join('. ')}</cite></blockquote></div>` : onde ? `<div class="ach-parte"><h5>No seu projeto</h5><p class="mute">${onde}</p></div>` : ''}
+        <div class="ach-parte"><h5>O que se espera</h5><p>${esc(a.esperado)} <small>Critério: ${esc(refParte[a.parte])}.</small></p></div>
+        <div class="ach-parte"><h5>Como resolver</h5><p>${esc(a.como_resolver)}</p></div>
+        ${a.decisao
+          ? `<div class="ach-estado"><span>${a.decisao === 'pendencia' ? 'Nas suas pendências.' : 'Ignorado.'}</span><button class="lnk" data-par-decidir="${esc(a.id)}|">Desfazer</button></div>`
+          : `<div class="acao-l"><button class="btn" data-par-decidir="${esc(a.id)}|pendencia">Adicionar às pendências</button><button class="btn fant" data-par-decidir="${esc(a.id)}|ignorado">Ignorar</button></div>`}
+      </div></article>`;
   }
   function parecerHTML(r) {
     const p = r.parecer;
     if (!p) {
-      if (est.parecerCorrendo === r.id) return `<section class="proximo parecer-espera" role="status"><div class="rot">Lendo o projeto para o parecer</div><p>O Gemini está lendo a versão ${r.versao} inteira, parte por parte. Leva alguns minutos; a lista de obras abaixo já pode ser usada.</p></section>`;
+      if (est.parecerCorrendo === r.id) return `<section class="proximo parecer-espera" id="sec-parecer" role="status"><div class="rot">Lendo o projeto para o parecer</div><p>O Gemini está lendo a versão ${r.versao} inteira, parte por parte. Leva alguns minutos; a lista de obras abaixo já pode ser usada.</p></section>`;
       const erro = est.parecerErro[r.id];
       const acao = arquivosDaSessao.has(r.id) ? `<button class="btn" data-par-pedir="${esc(r.id)}">${erro ? 'Tentar de novo' : 'Pedir o parecer'}</button>` : `<label class="btn">Escolher o PDF da versão ${r.versao}<input type="file" accept="application/pdf" data-par-pdf="${esc(r.id)}" hidden></label>`;
-      return `<section class="proximo parecer-espera"><div class="rot">${erro ? 'O parecer desta versão não saiu' : 'Esta versão ainda não tem parecer'}</div>
+      return `<section class="proximo parecer-espera" id="sec-parecer"><div class="rot">${erro ? 'O parecer desta versão não saiu' : 'Esta versão ainda não tem parecer'}</div>
         ${erro ? erroHTML(erro) : `<p>O parecer aponta o que ajustar para a qualificação, parte por parte.${arquivosDaSessao.has(r.id) ? '' : ' Para pedir, escolha de novo o PDF desta versão.'}</p>`}<div class="acao-l">${acao}</div></section>`;
     }
     const n = (g) => p.achados.filter((a) => a.gravidade === g).length;
@@ -74,17 +84,19 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     const pend = p.achados.filter((a) => a.decisao === 'pendencia');
     const semDecisao = p.achados.filter((a) => !a.decisao).length;
     const resumo = p.achados.length ? `${p.achados.length} ${p.achados.length === 1 ? 'ponto' : 'pontos'}: ${partes.join(', ')}.${semDecisao ? ` ${semDecisao === 1 ? 'Falta decidir 1' : `Faltam decidir ${semDecisao}`}.` : ' Todos decididos.'}` : 'Esta leitura não encontrou ponto a ajustar. Isso não substitui a leitura de quem orienta.';
-    return `<section class="parecer" aria-labelledby="par-t"><h2 id="par-t">Parecer da versão ${r.versao}</h2>
-      <p class="par-resumo">${resumo}</p>
+    const abertos = abertosDe(r);
+    return `<section class="proj-secao parecer" id="sec-parecer" aria-labelledby="par-t">
+      <header class="proj-secao-cab"><h2 id="par-t">Parecer da versão ${r.versao}</h2><p class="par-resumo">${resumo}</p>
+        ${p.achados.length > 1 ? `<button class="lnk" data-par-todos="${abertos.size === p.achados.length ? 'fechar' : 'abrir'}">${abertos.size === p.achados.length ? 'Recolher todos' : 'Abrir todos'}</button>` : ''}</header>
       ${p.conferencia === 'sem-texto' && p.achados.some((a) => a.trecho) ? '<p class="t-meta mute">Não deu para ler o texto deste PDF no aparelho, então os trechos abaixo não foram conferidos.</p>' : ''}
       ${p.resolvidos?.length ? `<details class="par-resolvidos"><summary>Resolvido desde a versão ${p.sobreVersao} (${p.resolvidos.length})</summary><ul>${p.resolvidos.map((x) => `<li><b>${esc(x.titulo)}</b>${x.como ? ` ${esc(x.como)}` : ''}</li>`).join('')}</ul></details>` : ''}
       <div class="proj-grid"><div class="achados">
         ${GRAVIDADES.map(([g, nome]) => {
           const as = p.achados.filter((a) => a.gravidade === g);
-          return as.length ? `<h3>${nome} (${as.length})</h3>${as.map(achadoHTML).join('')}` : '';
+          return as.length ? `<section class="ach-grupo" aria-label="${nome}"><header>${prio(NIVEL[g]).replace(/aria-label="[^"]*"/, 'aria-hidden="true"')}<h3>${nome} (${as.length})</h3><p>${SOBRE_GRAVIDADE[g]}</p></header>${as.map((a) => achadoHTML(a, abertos.has(a.id))).join('')}</section>` : '';
         }).join('')}
       </div>
-      <aside class="lado"><section class="bloco pendencias"><h3>Suas pendências</h3>
+      <aside class="lado"><section class="bloco pendencias" id="sec-pendencias"><h3>Suas pendências${pend.length ? ` (${pend.filter((a) => a.feito).length} de ${pend.length} feitas)` : ''}</h3>
         ${pend.length ? `<ul>${pend.map((a) => `<li><label><input type="checkbox" data-par-feito="${esc(a.id)}" ${a.feito ? 'checked' : ''}><span>${esc(a.titulo)}<small>${nomeParte[a.parte]}</small></span></label></li>`).join('')}</ul>` : '<p class="mute m-0">Nenhuma ainda. Em cada ponto do parecer, você decide se ele entra aqui.</p>'}</section>
         <section class="bloco"><details class="ajuda-det"><summary>Como o parecer é feito?</summary><p class="m-0 mt-3 t-meta mute">A IA lê o PDF inteiro com nove critérios fixos: introdução e problema, propósito, perguntas, literatura e teoria, método, ética, coerência entre as partes, cronograma e forma. Ela aponta o que falta e não reescreve o seu texto. Os trechos citados são conferidos no próprio PDF, sem IA. O parecer só muda quando você envia outra versão.</p></details></section>
       </aside></div></section>`;
@@ -131,8 +143,13 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     return `${topo}
       <div class="versao"><div class="pdf-ic">PDF</div><div class="info"><b>${esc(r.arquivo.nome)}</b><span>Versão ${r.versao}${res.paginas ? `, ${res.paginas} páginas` : ''}, ${res.obras.length} obras citadas, enviada em ${new Date(r.enviadoEm).toLocaleDateString('pt-BR')}.${cmp && r.versao > 1 ? ` Desde a anterior: ${cmp.novas?.length || 0} ${cmp.novas?.length === 1 ? 'obra nova' : 'obras novas'}, ${cmp.removidas?.length || 0} ${cmp.removidas?.length === 1 ? 'removida' : 'removidas'}, ${cmp.problemas_resolvidos || 0} ${cmp.problemas_resolvidos === 1 ? 'problema resolvido' : 'problemas resolvidos'}.` : ''}</span></div>
         ${revs.length > 1 ? `<div class="versoes"><span>Versões</span>${revs.map((x) => `<button data-rev-versao="${esc(x.id)}" class="${x.id === r.id ? 'on' : ''}">v${x.versao}</button>`).join('')}</div>` : ''}</div>
+      <nav class="proj-indice" aria-label="Nesta página"><span>Nesta página</span>
+        <button class="btn" data-proj-ir="sec-parecer">Parecer${r.parecer ? `, ${r.parecer.achados.length} ${r.parecer.achados.length === 1 ? 'ponto' : 'pontos'}` : ''}</button>
+        ${r.parecer ? `<button class="btn" data-proj-ir="sec-pendencias">Suas pendências, ${r.parecer.achados.filter((a) => a.decisao === 'pendencia').length}</button>` : ''}
+        <button class="btn" data-proj-ir="sec-leituras">Leituras e citações, ${res.obras.length} ${res.obras.length === 1 ? 'obra' : 'obras'}</button></nav>
       ${parecerHTML(r)}
-      <h2 class="proj-leituras">Leituras e citações</h2>
+      <section class="proj-secao" id="sec-leituras" aria-labelledby="lei-t">
+      <header class="proj-secao-cab"><h2 id="lei-t" class="proj-leituras">Leituras e citações</h2><p class="par-resumo">${res.obras.length} ${res.obras.length === 1 ? 'obra citada' : 'obras citadas'} nesta versão, ${res.obras.filter((o) => o.prioridade === 3).length} de prioridade alta. ${res.problemas.length ? `${res.problemas.length} ${res.problemas.length === 1 ? 'problema' : 'problemas'} nas referências.` : 'Nenhum problema nas referências.'}</p></header>
       <div class="proj-grid"><div>
         ${grupos
           .map(([n, nome, desc]) => {
@@ -150,7 +167,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
           <li>Função no texto: sustenta uma decisão, um argumento, uma comparação ou só contextualiza.</li>
           <li>O que falta: fora da biblioteca, leitura incompleta, sem fichamento.</li>
           <li>Combinados com a orientação sobem um nível.</li></ol></details></section>
-      </aside></div>`;
+      </aside></div></section>`;
   }
 
   async function enviarVersao(arquivo) {
@@ -401,13 +418,29 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-rev-escolher],[data-par-decidir],[data-par-pedir],[data-rev-versao],[data-rev-buscar],[data-rev-trilha],[data-ori-registrar],[data-ori-tipo],[data-ori-agendar],[data-ori-pauta],[data-ori-processar],[data-ori-transcrever],[data-ori-apagar],[data-ori-feito],[data-dlg-novo],[data-dlg-fechar],[data-dlg-sel],[data-dlg-modo],[data-dlg-encerrar],[data-dlg-memoria],[data-dlg-argumento],[data-dlg-descartar],[data-dlg-apagar]');
+    const b = e.target.closest('[data-proj-ir],[data-par-abrir],[data-par-todos],[data-rev-escolher],[data-par-decidir],[data-par-pedir],[data-rev-versao],[data-rev-buscar],[data-rev-trilha],[data-ori-registrar],[data-ori-tipo],[data-ori-agendar],[data-ori-pauta],[data-ori-processar],[data-ori-transcrever],[data-ori-apagar],[data-ori-feito],[data-dlg-novo],[data-dlg-fechar],[data-dlg-sel],[data-dlg-modo],[data-dlg-encerrar],[data-dlg-memoria],[data-dlg-argumento],[data-dlg-descartar],[data-dlg-apagar]');
     if (!b) return;
     const d = b.dataset;
     if (d.dlgFechar !== undefined) return fechar();
     if (d.revVersao) {
       est.rev = d.revVersao;
       return redesenhar();
+    }
+    if (d.projIr) {
+      const alvo = document.getElementById(d.projIr);
+      alvo?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      return alvo?.querySelector('h2, h3')?.focus?.({ preventScroll: true });
+    }
+    if (d.parAbrir || d.parTodos) {
+      const r = (est.rev && diss.revisao(est.rev)) || diss.todasRevisoes()[0];
+      const abertos = abertosDe(r);
+      if (d.parTodos) est.achados[r.id] = new Set(d.parTodos === 'abrir' ? r.parecer.achados.map((a) => a.id) : []);
+      else if (abertos.has(d.parAbrir)) abertos.delete(d.parAbrir);
+      else abertos.add(d.parAbrir);
+      const y = scrollY;
+      redesenhar();
+      scrollTo({ top: y });
+      return document.querySelector(d.parAbrir ? `[data-par-abrir="${CSS.escape(d.parAbrir)}"]` : '[data-par-todos]')?.focus({ preventScroll: true });
     }
     if (d.revEscolher !== undefined) return entradaPDF.click();
     if (d.parPedir) return rodarParecer(d.parPedir, arquivosDaSessao.get(d.parPedir));
