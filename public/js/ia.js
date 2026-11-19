@@ -1,6 +1,7 @@
 // Núcleo da IA no app: acesso (login Google ou cofre), perfil do autor, memória aprovada, montagem do
 // contexto, chamada ao Gemini, conferência das citações e histórico. As telas só chamam daqui.
 import * as google from './google.js';
+import { servidorIA } from './config.js';
 import { criarGemini, ErroIA, tarefa as configDaTarefa } from './gemini.js';
 import { instrucao, juntarAcervo, montarPedido, conferir, sinaisDeForma, normalizar } from './contexto.js';
 import { autorCurto, citacao } from './abnt.js';
@@ -90,6 +91,8 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
       if (s && !google.temPermissaoIA()) throw new ErroIA('permissao', 'Falta a permissão do Gemini no login. Em Ajustes > Gemini, selecione "Conectar o Gemini" e aceite a permissão.');
       return { modo, token: s?.token || null, projeto: lerLS(PROJETO) };
     }
+    // Pelo servidor da chave: vai só o token do login; a chave fica no servidor.
+    if (modo === 'servidor') return { modo, token: google.sessao()?.token || null, servidor: servidorIA() };
     if (modo === 'cofre') return { modo, chave: await cofre.chave() };
     return null;
   }
@@ -105,6 +108,8 @@ export function criarIA({ db, dados, bib, fichUI, argUI, historico, cofre, drive
     projeto: () => lerLS(PROJETO) || '',
     definirProjeto: (p) => gravarLS(PROJETO, String(p || '').trim()),
     temPermissao: () => google.temPermissaoIA(),
+    servidor: () => servidorIA(),
+    estadoDoServidor: () => gemini.estadoDoServidor(),
     conectarGoogle: () => google.entrar({ registrar, comIA: true }),
   };
 

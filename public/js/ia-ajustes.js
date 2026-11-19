@@ -116,10 +116,20 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
     </div>`;
   }
 
+  // Acesso pelo servidor da chave: nada para configurar aqui; a tela mostra se ele respondeu e o uso do dia.
+  let usoServidor = null;
+  function blocoServidor() {
+    const conf = lerConferencia();
+    const estado = !conf ? '<p class="ia-status"><i></i>Ainda não testado neste aparelho.</p>' : conf.ok ? `<p class="ia-status ok"><i></i>Funcionou às ${hora(conf.em)}: o servidor aceitou o seu login e o Gemini respondeu.</p>` : '';
+    const uso = usoServidor ? `<p class="t-meta mute" id="ia-uso-servidor">Pedidos hoje: ${usoServidor.pedidosHoje} de ${usoServidor.limite}. O limite zera à meia-noite e é definido na publicação do servidor.</p>` : '';
+    return `<div class="ia-bloco">${estado}
+      <p class="mute ia-nota">A chave fica guardada no Google Cloud, no seu projeto, e nunca chega a este aparelho. O servidor só atende o seu login e para de repassar pedidos quando o limite do dia é atingido.</p>${uso}</div>`;
+  }
+
   function gastoHTML() {
     const r = window.rb?.iaUso?.resumoDoMes?.();
     return `<div class="ia-gasto"><h3 class="ia-sub">Gasto</h3><p>${r ? `Neste mês, neste aparelho: ${r.total}. ${r.limite ? `Limite que você definiu aqui: ${r.limite} por mês, com aviso em 80%.` : 'Nenhum limite definido aqui.'}` : 'Lendo os registros deste aparelho…'} <a href="#ajustes/custo">${r?.limite ? 'Mudar o limite' : 'Definir um limite'}</a></p>
-      <p class="t-meta mute">O limite que de fato para o gasto fica no Google AI Studio (Spend, Monthly spend cap). O daqui só avisa.</p></div>`;
+      <p class="t-meta mute">${ia.ajustes.modo() === 'servidor' ? 'O limite que de fato para o uso é o do servidor: pedidos por dia. O daqui só avisa.' : 'O limite que de fato para o gasto fica no Google AI Studio (Spend, Monthly spend cap). O daqui só avisa.'}</p></div>`;
   }
 
   function secaoHTML() {
@@ -133,11 +143,13 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
       <div class="ia-modos" role="radiogroup" aria-label="Acesso ao Gemini">
         <label class="ia-modo ${modo === 'google' ? 'on' : ''}"><input type="radio" name="ia-modo" value="google" ${modo === 'google' ? 'checked' : ''} data-ia-modo>
           <span><b>Pelo seu login Google</b> <span class="chip">mais seguro</span><small>Nenhuma chave guardada em lugar nenhum. O acesso vence junto com o login, em cerca de uma hora.</small></span></label>
+        ${ia.ajustes.servidor() ? `<label class="ia-modo ${modo === 'servidor' ? 'on' : ''}"><input type="radio" name="ia-modo" value="servidor" ${modo === 'servidor' ? 'checked' : ''} data-ia-modo>
+          <span><b>Por um servidor seu, que guarda a chave</b><small>Para chave de outra conta Google. A chave fica no servidor e não passa por este aparelho. O servidor só atende o seu login e tem limite de pedidos por dia.</small></span></label>` : ''}
         <label class="ia-modo ${modo === 'cofre' ? 'on' : ''}"><input type="radio" name="ia-modo" value="cofre" ${modo === 'cofre' ? 'checked' : ''} data-ia-modo>
-          <span><b>Chave num cofre no seu Drive</b><small>A chave fica cifrada com uma frase-senha sua. Use quando a chave for de outra conta Google, ou se o login não funcionar com o Gemini.</small></span></label>
+          <span><b>Chave num cofre no seu Drive</b><small>A chave fica cifrada com uma frase-senha sua e é aberta neste aparelho a cada uso. Use se não houver servidor, ou se o login não funcionar com o Gemini.</small></span></label>
       </div>
-      ${modo === 'google' ? blocoGoogle() : modo === 'cofre' ? blocoCofre() : ''}
-      ${modo === 'cofre' ? `<div class="ia-linha"><button class="btn" data-ia-testar data-ocupado="Perguntando ao Gemini…">Testar conexão</button></div>${t}` : ''}
+      ${modo === 'google' ? blocoGoogle() : modo === 'servidor' ? blocoServidor() : modo === 'cofre' ? blocoCofre() : ''}
+      ${modo === 'cofre' || modo === 'servidor' ? `<div class="ia-linha"><button class="btn" data-ia-testar data-ocupado="Perguntando ao Gemini…">Testar conexão</button></div>${t}` : ''}
       ${gastoHTML()}
       <h3 class="ia-sub">Perfil do autor</h3>
       <p>Quem você é, como escreve e o que prefere. Entra em todo pedido à IA e fica no seu Drive (memoria/autor.md), fora do código do app.</p>
@@ -155,6 +167,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
       ia.ajustes.definirModo(e.target.value);
       teste = null;
       msgCofre = null;
+      usoServidor = null;
       redesenhar();
       if (e.target.value === 'cofre') atualizar();
     }
@@ -184,6 +197,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
         const r = await ia.testar();
         teste = { ok: true, texto: `Conectado. O Gemini respondeu (${r.modelo}, ${(r.dur / 1000).toFixed(1)} s).` };
         gravarConferencia({ ok: true, modelo: r.modelo, dur: r.dur });
+        if (ia.ajustes.modo() === 'servidor') usoServidor = await ia.ajustes.estadoDoServidor().catch(() => null);
       } catch (err) {
         teste = { ok: false, texto: err instanceof ErroIA ? err.message : `Não deu para testar: ${err.message}` };
         gravarConferencia({ ok: false, codigo: err instanceof ErroIA ? err.codigo : 'erro', texto: teste.texto });
@@ -194,6 +208,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
         if (!teste.ok && (PASSO_DO_ERRO[lerConferencia()?.codigo] || 4) !== 4) teste = null;
         return redesenhar();
       }
+      if (ia.ajustes.modo() === 'servidor') return redesenhar();
       mostrar('ia-teste', teste);
       return;
     }

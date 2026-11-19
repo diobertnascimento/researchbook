@@ -18,3 +18,11 @@ export const ESCOPO_IA = 'https://www.googleapis.com/auth/generative-language.re
 // Permissão extra do Google Agenda, pedida só quando o Diobert liga a agenda em Ajustes. É a mais estreita da API:
 // o app cria a própria agenda ("researchbook") e mexe só nos eventos dela; não vê as outras agendas.
 export const ESCOPO_AGENDA = 'https://www.googleapis.com/auth/calendar.app.created';
+
+// Servidor da chave do Gemini (pasta servidor/, publicado no Cloud Run do Diobert). O endereço é público:
+// o servidor só atende o login da conta cadastrada nele, e a chave fica lá, nunca aqui.
+// Vazio = servidor ainda não publicado; a opção não aparece em Ajustes. Ao preencher, acrescente o mesmo
+// endereço em connect-src, na regra de segurança de public/index.html.
+export const SERVIDOR_IA = '';
+/** O endereço em uso (os testes trocam este arquivo por um simulado). */
+export const servidorIA = () => SERVIDOR_IA;

@@ -367,3 +367,80 @@ test.describe('Conectar a IA', () => {
     await expect(passos.nth(3)).toHaveClass(/pendente/);
   });
 });
+
+// v2.14.0: acesso pelo servidor da chave. O servidor é simulado no mesmo endereço do app (a regra de segurança
+// só aceita endereços conhecidos); o servidor de verdade é testado em tests/servidor.spec.js.
+test.describe('Gemini pelo servidor da chave', () => {
+  test.beforeEach(({}, info) => test.skip(info.project.name !== 'computador', 'Fluxos rodam no computador'));
+  const SERVIDOR = 'http://localhost:4173/servidor-falso';
+
+  async function rotear(context, responder) {
+    const pedidos = [];
+    await context.route(`${SERVIDOR}/**`, (r) => {
+      const req = r.request();
+      const p = { metodo: req.method(), caminho: new URL(req.url()).pathname.replace('/servidor-falso', ''), cabecalhos: req.headers(), corpo: req.postData() };
+      pedidos.push(p);
+      const { status = 200, corpo } = responder(p);
+      return r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(corpo) });
+    });
+    return pedidos;
+  }
+  /** Como depois de publicar: o endereço do servidor passa a existir e o acesso escolhido é por ele. */
+  async function ligar(page) {
+    await page.evaluate((s) => {
+      localStorage.setItem('rb.teste.servidor', s);
+      localStorage.setItem('rb.ia.acesso', 'servidor');
+    }, SERVIDOR);
+    await page.reload();
+    await page.waitForFunction(() => window.rb && window.rb.sincronia && window.rb.sincronia.estado().fase === 'ok');
+    await page.goto('/#ajustes');
+  }
+  const BOA = { candidates: [{ content: { parts: [{ text: 'ok' }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 1 } };
+
+  test('sem servidor publicado, a opção não aparece; com ele, o teste passa só com o login, sem chave neste aparelho', async ({ page, context }) => {
+    const pedidos = await rotear(context, (p) => (p.caminho === '/estado' ? { corpo: { ok: true, pedidosHoje: 7, limite: 300 } } : { corpo: BOA }));
+    const { gem } = await entrar(page, context, { modo: null });
+    await page.goto('/#ajustes');
+    await expect(page.locator('#sec-ia [data-ia-modo]')).toHaveCount(2);
+    await expect(page.locator('#sec-ia')).not.toContainText('servidor seu');
+
+    await ligar(page);
+    await expect(page.locator('#sec-ia [data-ia-modo]')).toHaveCount(3);
+    await expect(page.locator('#sec-ia [data-ia-modo][value="servidor"]')).toBeChecked();
+    await expect(page.locator('#sec-ia .ia-bloco')).toContainText('Ainda não testado neste aparelho');
+    expect(pedidos).toHaveLength(0); // abrir a tela não chama o servidor
+
+    await page.getByRole('button', { name: 'Testar conexão' }).click();
+    await expect(page.locator('#sec-ia .ia-status.ok')).toContainText('o servidor aceitou o seu login e o Gemini respondeu');
+    await expect(page.locator('#ia-uso-servidor')).toHaveText('Pedidos hoje: 7 de 300. O limite zera à meia-noite e é definido na publicação do servidor.');
+
+    const gerar = pedidos.find((p) => p.metodo === 'POST');
+    expect(gerar.caminho).toMatch(/^\/v1beta\/models\/gemini-[a-z0-9.-]+:generateContent$/);
+    expect(gerar.cabecalhos.authorization).toBe('Bearer tok-falso');
+    expect(gerar.cabecalhos['x-goog-api-key']).toBeUndefined();
+    expect(gerar.cabecalhos['x-goog-user-project']).toBeUndefined();
+    // Nada foi direto ao Gemini, e o registro diz por onde o pedido passou.
+    expect(gem.pedidos).toHaveLength(0);
+    const regs = await page.evaluate(() => window.rb.registros.lista().filter((r) => r.ev === 'ia.resposta').map((r) => r.det));
+    expect(regs.at(-1)).toContain('acesso servidor');
+    const noAparelho = await page.evaluate(() => JSON.stringify(localStorage) + JSON.stringify(sessionStorage));
+    expect(noAparelho).not.toMatch(/AIza|x-goog-api-key/);
+  });
+
+  test('recusas do servidor chegam traduzidas: limite do dia e conta que não é a cadastrada', async ({ page, context }) => {
+    let resposta = { status: 429, corpo: { error: { message: 'O limite de 300 pedidos por dia deste servidor foi atingido. Ele zera à meia-noite.', status: 'limite-dia', origem: 'servidor', codigo: 'limite-dia' } } };
+    const pedidos = await rotear(context, () => resposta);
+    await entrar(page, context, { modo: null });
+    await ligar(page);
+    await page.getByRole('button', { name: 'Testar conexão' }).click();
+    await expect(page.locator('#ia-teste [role="alert"]')).toHaveText('O limite de 300 pedidos por dia deste servidor foi atingido. Ele zera à meia-noite.');
+    // Limite atingido não é tentado de novo (cada tentativa contaria no limite).
+    expect(pedidos.filter((p) => p.metodo === 'POST')).toHaveLength(1);
+
+    resposta = { status: 403, corpo: { error: { message: 'Este servidor só atende a conta cadastrada nele.', status: 'conta', origem: 'servidor', codigo: 'conta' } } };
+    await page.getByRole('button', { name: 'Testar conexão' }).click();
+    await expect(page.locator('#ia-teste [role="alert"]')).toContainText('só atende a conta cadastrada nele. Entre no app com essa conta');
+    const falhas = await page.evaluate(() => window.rb.registros.lista().filter((r) => r.ev === 'ia.falhou').map((r) => r.det));
+    expect(falhas.at(-1)).toContain('servidor: conta');
+  });
+});

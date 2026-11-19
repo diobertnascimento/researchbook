@@ -2,6 +2,15 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.14.0 (19/11/2026)
+Gemini por um servidor seu, que guarda a chave.
+- Nova forma de acesso em Ajustes > Conectar a IA: "Por um servidor seu, que guarda a chave". Serve para chave que é de outra conta Google.
+- A chave fica guardada no Google Cloud, no seu projeto, e nunca chega ao navegador. O app manda só o seu login; o servidor confere que é a sua conta e repassa o pedido ao Gemini.
+- O servidor tem um limite de pedidos por dia (300, ajustável). Passou do limite, ele para de repassar até a meia-noite. A tela mostra quantos pedidos já foram feitos no dia.
+- O áudio das aulas continua indo direto do seu aparelho para o Gemini; pelo servidor passa só o pedido de início do envio.
+- A opção só aparece depois que o servidor for publicado e o endereço dele entrar no app. A publicação é um comando só, no terminal do Google no navegador (servidor/publicar.sh).
+- O cofre e o acesso pelo login continuam funcionando como antes.
+
 ## 2.13.0 (19/11/2026)
 Escrever: imagem no texto.
 - Na linha vazia, o "+" agora oferece "Imagem" (PNG, JPG ou WebP, até 25 MB). Colar uma imagem copiada, como uma captura de tela, também funciona.
