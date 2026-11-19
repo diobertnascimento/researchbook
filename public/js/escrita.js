@@ -180,7 +180,8 @@ export function criarEscrita({ dados, bib, drive, registrar }) {
     textos = (await dados.listar('textos')).sort((a, b) => (b.atualizadoEm || '').localeCompare(a.atualizadoEm || ''));
     for (const t of textos) {
       const a = antes.get(t.id);
-      if (a && a.atualizadoEm !== t.atualizadoEm && conteudoDe(a) !== conteudoDe(t)) mudouPorFora.add(t.id);
+      // O sinal é o conteúdo ser outro. A hora da gravação não entra: duas gravações no mesmo milésimo têm a mesma hora.
+      if (a && conteudoDe(a) !== conteudoDe(t)) mudouPorFora.add(t.id);
     }
   }
   const obter = (id) => textos.find((t) => t.id === id) || null;

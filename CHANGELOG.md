@@ -2,6 +2,12 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.14.1 (19/11/2026)
+O servidor da chave foi publicado e o app passou a conhecê-lo.
+- Em Ajustes > Conectar a IA aparece a opção "Por um servidor seu, que guarda a chave". Escolha essa opção e use "Testar conexão".
+- Depois que o teste passar, o cofre deixa de ser necessário: dá para trancar e apagar a chave guardada nele.
+- Correção: um texto que chegava de outro aparelho no mesmo milésimo da última gravação daqui não era percebido como mudança de fora, e a gravação seguinte não guardava a versão dele antes. Raro no uso real; era a causa de um teste que falhava de vez em quando.
+
 ## 2.14.0 (19/11/2026)
 Gemini por um servidor seu, que guarda a chave.
 - Nova forma de acesso em Ajustes > Conectar a IA: "Por um servidor seu, que guarda a chave". Serve para chave que é de outra conta Google.

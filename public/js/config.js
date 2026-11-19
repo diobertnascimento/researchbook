@@ -23,6 +23,6 @@ export const ESCOPO_AGENDA = 'https://www.googleapis.com/auth/calendar.app.creat
 // o servidor só atende o login da conta cadastrada nele, e a chave fica lá, nunca aqui.
 // Vazio = servidor ainda não publicado; a opção não aparece em Ajustes. Ao preencher, acrescente o mesmo
 // endereço em connect-src, na regra de segurança de public/index.html.
-export const SERVIDOR_IA = '';
+export const SERVIDOR_IA = 'https://researchbook-ia-77uxthwshq-uc.a.run.app';
 /** O endereço em uso (os testes trocam este arquivo por um simulado). */
 export const servidorIA = () => SERVIDOR_IA;
