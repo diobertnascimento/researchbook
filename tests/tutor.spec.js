@@ -26,6 +26,8 @@ async function entrar(page, context, { modo = 'google', cenario = 'bom', projeto
   await crossref(context);
   await page.goto('/#biblioteca', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.rb && window.rb.pronto);
+  // Estes testes são do tutor sobre o PDF: fixam o modo PDF (no celular, o padrão passou a ser o modo leitura).
+  await page.evaluate(() => localStorage.setItem('rb.leitor.modo', 'pdf'));
   if (modo) await page.evaluate(({ modo, projeto }) => { localStorage.setItem('rb.ia.acesso', modo); if (projeto) localStorage.setItem('rb.ia.projeto', projeto); }, { modo, projeto });
   await page.getByRole('button', { name: 'Entrar com Google' }).click();
   await page.waitForFunction(() => window.rb && window.rb.sincronia && window.rb.sincronia.estado().fase === 'ok');
@@ -38,6 +40,8 @@ async function abrirObraComPDF(page) {
   await expect(page.locator('.ad-msg.ok')).toBeVisible();
   await page.getByRole('button', { name: 'Salvar na biblioteca' }).click();
   await expect(page.locator('.pdf-pagina.pronta .textLayer').first()).toContainText('coleta seletiva');
+  // v2.2.0: o tutor fica fechado até ser chamado. No computador, os testes abrem a caixa pelo botão.
+  if ((page.viewportSize()?.width || 0) > 1000) await page.locator('.leitor-barra [data-alt="verTutor"]').click();
 }
 
 async function selecionar(page, trecho) {

@@ -4,6 +4,7 @@
 import { referencia, referenciaTexto, autorCurto, citacao } from './abnt.js';
 import { buscarDOI, limparDOI } from './crossref.js';
 import { montarLeitor, lerInicio, FUNCOES } from './leitor-pdf.js';
+import { montarLeitura } from './leitor-texto.js';
 import { ETAPAS } from './progresso.js';
 import { compararObras } from './duplicatas.js';
 import { assinatura } from './biblioteca.js';
@@ -51,6 +52,19 @@ export function criarBibliotecaUI({ bib, registrar }) {
     </a>`;
   }
 
+  /** A leitura em andamento mexida por último, em destaque no topo do Ler. */
+  function continueLendoHTML(todas) {
+    const l = todas
+      .filter((x) => x.pdf && (x.etapa || 0) === 1)
+      .sort((a, b) => (b.atualizadoEm || '').localeCompare(a.atualizadoEm || ''))[0];
+    if (!l) return '';
+    return `<section class="proximo continue-lendo" aria-labelledby="cl-t"><div class="rot" id="cl-t">Continue lendo</div>
+      <h2 class="prox-tit">${esc(l.titulo)}</h2>
+      <p class="prox-aut">${esc(autorCurto(l))}</p>
+      <div class="acao-l"><a class="btn prim" href="#leitor/${encodeURIComponent(l.id)}">Continuar a leitura</a>${l.totalPaginas ? `<span>p. ${l.paginaAtual || 1} de ${l.totalPaginas}</span>` : ''}</div>
+    </section>`;
+  }
+
   function lista() {
     const todas = bib.leituras();
     const b = busca.toLowerCase();
@@ -66,7 +80,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     if (!todas.length) {
       return `${topo}<div class="bib-vazia"><h2>Sua biblioteca está vazia</h2><p>Adicione um artigo pelo DOI ou envie o PDF. O app busca os dados da obra, monta a referência em ABNT e guarda o PDF no seu Drive e neste aparelho.</p><div class="linha-acoes j-centro"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar a primeira obra</button><button class="btn" data-org-importar>${icone('upload')}Importar PDFs ou o Zotero</button></div></div>`;
     }
-    return `${topo}<div class="tabela" role="table">
+    return `${topo}${busca ? '' : continueLendoHTML(todas)}<div class="tabela" role="table">
       <div class="linha-lv cab" role="row"><span>Obra</span><span>Etapa</span><span>Progresso</span></div>
       ${filtradas.length ? filtradas.map(linha).join('') : `<div class="vazio">Nada encontrado para “${esc(busca)}”.</div>`}
     </div>`;
@@ -273,15 +287,29 @@ export function criarBibliotecaUI({ bib, registrar }) {
       .join('');
   }
 
+  // Modo do leitor neste aparelho: leitura (só texto e figuras) ou PDF. No celular, o padrão é leitura.
+  const MODO = 'rb.leitor.modo';
+  function modoLeitor() {
+    try {
+      const m = localStorage.getItem(MODO);
+      if (m === 'leitura' || m === 'pdf') return m;
+    } catch {
+      // Sem armazenamento local: vale o padrão.
+    }
+    return matchMedia('(max-width: 1000px)').matches ? 'leitura' : 'pdf';
+  }
+
   function leitor(id) {
     const l = bib.obter(id);
     if (!l) return null;
+    const modo = modoLeitor();
     const verGrifos = typeof S !== 'undefined' ? S.verGrifos : false;
     const tutor = window.rb?.tutorUI;
     const verTutor = !!tutor && (typeof S !== 'undefined' ? S.verTutor : false);
     return `<div class="leitor-barra">
-      <a class="btn fant" href="#biblioteca">${icone('voltar')}Biblioteca</a>
+      <a class="btn fant" href="#biblioteca">${icone('voltar')}Ler</a>
       <div class="tit">${esc(l.titulo)}<small>${esc(autorCurto(l))}, ${ETAPAS[l.etapa] || ETAPAS[0]}</small></div>
+      ${l.pdf ? `<div class="alterna modo-leitor" role="group" aria-label="Modo do leitor"><button class="txt" data-modo-leitor="leitura" aria-pressed="${modo === 'leitura'}">Leitura</button><button class="txt" data-modo-leitor="pdf" aria-pressed="${modo === 'pdf'}">PDF</button></div>` : ''}
       <div class="alterna" role="group" aria-label="Painéis do leitor">
         <button class="txt" data-alt="verGrifos" aria-pressed="${verGrifos}">${icone('painelEsq')}Grifos</button>
         ${tutor ? `<button class="txt" data-alt="verTutor" aria-pressed="${verTutor}">${icone('tutor')}Tutor</button>` : ''}
@@ -328,7 +356,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
       return;
     }
     let salvarPagina = null;
-    const controle = await montarLeitor({
+    const opcoes = {
       palco,
       blob: r.blob,
       grifos: bib.grifosDe(id),
@@ -353,7 +381,13 @@ export function criarBibliotecaUI({ bib, registrar }) {
           if (atual && (atual.paginaAtual !== n || atual.totalPaginas !== total)) bib.atualizar(id, { paginaAtual: n, totalPaginas: total, etapa: Math.max(atual.etapa || 0, 1) });
         }, 1500);
       },
-    });
+    };
+    let controle = modoLeitor() === 'leitura' ? await montarLeitura(opcoes) : await montarLeitor(opcoes);
+    if (controle?.semTexto) {
+      // PDF digitalizado (só imagem): não há texto para o modo leitura.
+      toast('Este PDF não tem texto para o modo leitura. Abri no modo PDF.');
+      controle = vale() ? await montarLeitor(opcoes) : null;
+    }
     if (!vale()) {
       controle?.destruir();
       if (montando === eu) montando = null;
@@ -465,6 +499,23 @@ export function criarBibliotecaUI({ bib, registrar }) {
       const ref = document.getElementById('f-ref');
       if (ref) ref.innerHTML = referencia(lerCampos());
     }
+  });
+
+  // Trocar entre leitura e PDF: fecha o que está aberto e monta de novo, na mesma página.
+  ouvir('click', (e) => {
+    const b = e.target.closest('[data-modo-leitor]');
+    if (!b || b.getAttribute('aria-pressed') === 'true') return;
+    try {
+      localStorage.setItem(MODO, b.dataset.modoLeitor);
+    } catch {
+      // Sem armazenamento local, a troca vale só para esta tela.
+    }
+    registrar('ui', 'leitor.modo', { det: b.dataset.modoLeitor });
+    if (leitorAtual) {
+      leitorAtual.controle.destruir();
+      leitorAtual = null;
+    }
+    window.render?.();
   });
 
   // Depois de cada tela desenhada: monta o PDF no leitor; desmonta ao sair.

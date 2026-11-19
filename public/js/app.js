@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.1.0';
+const APP_VERSAO = '2.2.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -169,7 +169,7 @@ const DOC_HTML = `
    ========================================================= */
 const S = {
   filtros:{proj:null,disc:null,conc:null,tag:null,etapa:null}, busca:'',
-  modoLeitura:'limpa', foco:false, logFiltro:'tudo', discAba:'geral', aulaAba:'transcricao', passoTexto:4, marcas:false, abaEsc:'copilot', dlg:'d1', verGrifos:false, verTutor:matchMedia('(min-width:1001px)').matches, versao:'v3', tipoReg:'Áudio', tema:'claro', abaTutor:'tutor', passoFich:3, argSel:'adesao', cartao:0, virado:false,
+  modoLeitura:'limpa', foco:false, logFiltro:'tudo', discAba:'geral', aulaAba:'transcricao', passoTexto:4, marcas:false, abaEsc:'copilot', dlg:'d1', verGrifos:false, verTutor:false, versao:'v3', tipoReg:'Áudio', tema:'claro', abaTutor:'tutor', passoFich:3, argSel:'adesao', cartao:0, virado:false,
   conversa:[
     {de:'eu', trecho:'Users still interpret the artefact, and those interpretations shape whether it works.', t:'Isso muda meu argumento pela adesão?'},
     {de:'tutor', t:['Muda o foco, e a seu favor, mas obriga você a separar duas coisas. A economia simulada mede se o roteirizador produz rotas mais curtas no papel. A interpretação das equipes decide se essas rotas são percorridas.','Pergunta para você: na sua avaliação, onde entra o julgamento de quem percorre as rotas? Se ele não aparece em nenhum critério declarado ex ante, a banca pode apontar essa lacuna.']},
@@ -1709,7 +1709,7 @@ document.addEventListener('click',e=>{
   if(d.dlg){S.dlg=d.dlg;render();return}
   if(d.memOk!==undefined){const it=t.closest('.sug-it');it.style.opacity='.4';it.querySelectorAll('button').forEach(b=>b.disabled=true);toast(d.descartar!==undefined?'Descartado':'Guardado na memória consolidada');return}
   if(d.alt){
-    if(d.alt==='foco'){S.foco=!S.foco; S.verGrifos=false; S.verTutor=!S.foco; if(S.foco) toast('Modo foco. Tecle F ou Esc para sair.')}
+    if(d.alt==='foco'){S.foco=!S.foco; S.verGrifos=false; S.verTutor=false; if(S.foco) toast('Modo foco. Tecle F ou Esc para sair.')}
     else {
       S[d.alt]=!S[d.alt];
       // No celular, grifos e tutor abrem como folhas por cima do texto: uma de cada vez.

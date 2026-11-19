@@ -9,7 +9,8 @@ import { geminiFalso } from './gemini-falso.js';
 test.use({ serviceWorkers: 'block' });
 
 // v2.0.0: o título de tela no computador subiu para 44 px (redesenho v3).
-const TAMANHOS = [12, 13, 14, 16, 18, 22, 26, 30, 44];
+// v2.2.0: o modo leitura usa 20 px no computador.
+const TAMANHOS = [12, 13, 14, 16, 18, 20, 22, 26, 30, 44];
 
 async function entrarComDados(page, context) {
   await googleFalso(context);

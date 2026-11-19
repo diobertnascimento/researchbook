@@ -2,6 +2,15 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.2.0 (19/11/2026)
+Ler e leitor.
+- Modo leitura: o artigo só com o texto e as figuras, numa coluna estreita em Literata, com a marca de cada página. No celular é o padrão; no computador o padrão continua sendo o PDF. A troca fica no topo do leitor e é lembrada em cada aparelho.
+- O grifo feito no modo leitura aparece no PDF, e o feito no PDF aparece no modo leitura. A página em que você parou vale para os dois.
+- Tutor fechado até ser chamado. No computador ele abre numa caixa de conversa no canto, e o texto fica com a largura toda.
+- O Ler mostra "Continue lendo" no topo, com a obra em andamento e a página.
+- No leitor, a barra do app sai: ficam o voltar e os controles da leitura.
+- Limites do modo leitura: o texto vem do PDF na ordem em que o PDF o guarda, então artigos em duas colunas e tabelas podem sair embaralhados; só entram figuras guardadas como imagem (gráfico desenhado com linhas não entra); PDF digitalizado, sem texto, abre no modo PDF.
+
 ## 2.1.0 (19/11/2026)
 Hoje redesenhado.
 - Tarefas do dia: uma lista livre no Hoje. Você anota pelo teclado, marca e apaga; tudo é gravado na hora e sincroniza entre os aparelhos. O que ficou sem fazer continua na lista no dia seguinte; o que foi feito sai no outro dia. Tarefa apagada vai para a lixeira.
