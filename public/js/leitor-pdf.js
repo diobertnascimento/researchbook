@@ -14,7 +14,7 @@ export const FUNCOES = [
   { id: 'dissert', nome: 'Para a dissertação' },
 ];
 
-async function pdfjs() {
+export async function pdfjs() {
   if (!lib) {
     lib = await import(BASE + 'pdf.min.js');
     lib.GlobalWorkerOptions.workerSrc = BASE + 'pdf.worker.min.js';

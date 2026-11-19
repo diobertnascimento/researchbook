@@ -212,6 +212,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v2.2.0 (19/11/2026): modo leitura (`leitor-texto.js`: texto e figuras tirados do PDF pelo PDF.js, cada pedaço com a posição na página, mesma interface de controle do leitor de PDF; preferência em `rb.leitor.modo`), tutor fechado por padrão e em caixa flutuante no computador, "Continue lendo" no Ler, leitor sem a barra do app.
 - v2.1.0 (19/11/2026): Hoje redesenhado. Coleção nova `tarefas` (esquema do banco 7, sincronizada), compromissos e prazos fora de "Também para hoje", gráficos da semana removidos.
 - v2.0.0 (19/11/2026): sistema visual do redesenho v3 (tokens em `:root`: papel branco, cinzas neutros, acento petróleo #1D5A7A, `--fs-tela` 44 px, botões em pílula com alturas 30/38/44) e navegação no topo (`aside.nav` em grade de três colunas; `desenhaMenu` com Hoje, Ler, Escrever, Dissertação, Projetos; celular com Hoje, Ler, Mais e a rota `#mais`).
 - v1.9.0 (19/11/2026): tela "Abrindo os seus dados" na primeira sincronização de um aparelho (`estado().abrindo` em sincronia.js).
