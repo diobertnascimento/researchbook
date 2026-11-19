@@ -1,7 +1,7 @@
 // Telas da Escrita: lista de textos, preparação (enquadrar, ideia, diagnóstico, estrutura), editor com
 // Copilot e material da seção, e "Revisar e exportar" com o .docx.
 import { limpar, blocos, medirAutoria, citacoesDiretasSemFonte, contarPalavras, AUTORIAS } from './escrita.js';
-import { gerarDocx } from './docx.js';
+import { gerarDocx, figurasDe } from './docx.js';
 import { referencia, citacao, autorCurto } from './abnt.js';
 import { normalizar } from './contexto.js';
 import { ErroIA } from './gemini.js';
@@ -18,7 +18,7 @@ const tirarIds = (s) => String(s || '').replace(/\s*\[A\d+\]/g, '');
 const slug = (s) => String(s || 'texto').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'texto';
 const novoId = () => crypto.randomUUID().slice(0, 8);
 
-export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar }) {
+export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, registrar }) {
   const est = { secao: {}, aba: 'copilot', ocupado: null, erro: null, versoes: null, alvo: null, revisao: {}, salvando: null, msg: null };
   const redesenhar = () => /^#(escrita|texto)/.test(location.hash) && window.render?.();
   const atual = () => {
@@ -538,7 +538,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
   flut.innerHTML = botoesHTML;
   const mais = document.createElement('div');
   mais.className = 'esc-mais';
-  mais.innerHTML = '<button type="button" data-esc-mais aria-label="Inserir separador ou código" aria-expanded="false">+</button><span class="ops" hidden><button type="button" data-esc-inserir="hr">Separador</button><button type="button" data-esc-inserir="pre">Código</button></span>';
+  mais.innerHTML = '<button type="button" data-esc-mais aria-label="Inserir imagem, separador ou código" aria-expanded="false">+</button><span class="ops" hidden><button type="button" data-esc-inserir="img">Imagem</button><button type="button" data-esc-inserir="hr">Separador</button><button type="button" data-esc-inserir="pre">Código</button></span>';
   // "Pedir": botão discreto na margem do parágrafo em que o cursor está. A ajuda só aparece quando ele pede,
   // e o resultado fica numa caixa fora do texto, que some ao fechar. As duas primeiras opções não usam IA.
   const pedir = document.createElement('div');
@@ -784,12 +784,145 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     }
     const ins = e.target.closest('[data-esc-inserir]');
     if (!ins) return;
+    if (ins.dataset.escInserir === 'img') {
+      // O lugar da figura é a linha vazia em que o "+" foi aberto: fica guardado enquanto o seletor de arquivo está na frente.
+      alvoDaImagem = blocoAlvo()?.dataset.pid || null;
+      mais.querySelector('.ops').hidden = true;
+      return campoImagem.click();
+    }
     document.getElementById('esc-corpo')?.focus();
     if (ins.dataset.escInserir === 'hr') document.execCommand('insertHTML', false, '<hr><p><br></p>');
     else document.execCommand('formatBlock', false, 'pre');
     posicionarMais();
     agendarSalvar();
   });
+  /* ---------- Figuras ----------
+     No texto gravado a figura é só a marcação (id da imagem, tamanho, título e fonte). O que aparece na tela
+     (número, imagem, fonte e os dois botões) é montado aqui a cada desenho e nunca é gravado. */
+  let alvoDaImagem = null;
+  // O campo de arquivo fica fora da tela desenhada: um redesenho com o seletor aberto não perde a escolha.
+  const campoImagem = document.createElement('input');
+  campoImagem.type = 'file';
+  campoImagem.accept = 'image/png,image/jpeg,image/webp';
+  campoImagem.hidden = true;
+  campoImagem.dataset.escImagem = '';
+  campoImagem.setAttribute('aria-label', 'Escolher a imagem');
+  document.body.appendChild(campoImagem);
+
+  const figurasAntes = (t, i) => (t.secoes || []).slice(0, i).reduce((n, x) => n + figurasDe(x.html).length, 0);
+  function montarFiguras() {
+    const corpo = document.getElementById('esc-corpo');
+    const t = atual();
+    if (!corpo || !t || !imagens) return;
+    let n = figurasAntes(t, secaoAtual(t).i);
+    for (const f of corpo.querySelectorAll('figure[data-img]')) {
+      n++;
+      const { img: id, titulo = '', fonte = '' } = f.dataset;
+      f.contentEditable = 'false';
+      f.classList.add('esc-fig');
+      if (!f.querySelector('.fig-img')) {
+        f.innerHTML = '<span class="fig-t"></span><img class="fig-img" alt=""><span class="fig-erro" role="status" hidden></span><span class="fig-f"></span><span class="fig-acoes"><button type="button" class="btn mini" data-fig-editar>Título e fonte</button><button type="button" class="btn mini fant" data-fig-tirar>Tirar do texto</button></span>';
+        const img = f.querySelector('.fig-img');
+        if (f.dataset.l && f.dataset.a) {
+          img.width = Number(f.dataset.l);
+          img.height = Number(f.dataset.a);
+        }
+        imagens.url(id).then(async (u) => {
+          if (u) return (img.src = u);
+          img.hidden = true;
+          const erro = f.querySelector('.fig-erro');
+          erro.hidden = false;
+          erro.textContent = (await imagens.erroDe(id)) || 'Imagem não encontrada.';
+        });
+      }
+      f.querySelector('.fig-t').textContent = `Figura ${n}${titulo ? ` – ${titulo}` : ''}`;
+      f.querySelector('.fig-img').alt = titulo || `Figura ${n}`;
+      const ff = f.querySelector('.fig-f');
+      ff.textContent = fonte ? `Fonte: ${fonte}` : 'Sem fonte. A ABNT pede a fonte mesmo quando a figura é sua.';
+      ff.classList.toggle('falta', !fonte);
+    }
+  }
+  document.addEventListener('rb:render', montarFiguras);
+
+  async function inserirImagem(arquivo) {
+    const corpo = document.getElementById('esc-corpo');
+    if (!corpo || !arquivo) return;
+    let salva;
+    try {
+      salva = await imagens.guardar(arquivo);
+    } catch (err) {
+      return toast(err.message);
+    }
+    const f = document.createElement('figure');
+    f.dataset.img = salva.id;
+    f.dataset.l = salva.largura;
+    f.dataset.a = salva.altura;
+    const agora = document.getElementById('esc-corpo');
+    if (!agora) return;
+    const linha = alvoDaImagem && agora.querySelector(`[data-pid="${CSS.escape(alvoDaImagem)}"]`);
+    alvoDaImagem = null;
+    // A figura entra no lugar da linha vazia; se a linha já tem texto ou sumiu, entra depois dela ou no fim.
+    if (linha && !linha.textContent.trim() && linha.tagName === 'P') linha.replaceWith(f);
+    else if (linha) (linha.closest('ul, ol, blockquote') || linha).after(f);
+    else agora.appendChild(f);
+    if (!f.nextElementSibling) f.insertAdjacentHTML('afterend', '<p><br></p>');
+    montarFiguras();
+    agendarSalvar();
+    abrirFigura(f, true);
+  }
+  campoImagem.addEventListener('change', async () => {
+    const arquivo = campoImagem.files[0];
+    campoImagem.value = '';
+    if (arquivo) await inserirImagem(arquivo);
+  });
+
+  let figuraAberta = null;
+  function abrirFigura(f, nova = false) {
+    figuraAberta = f;
+    const veu = document.getElementById('veu');
+    veu.innerHTML = `<div class="modal"><h2 id="modal-tit">${nova ? 'Imagem no texto' : 'Título e fonte da figura'}</h2>
+      <p>No Word, o título vai acima da figura, com o número, e a fonte vai abaixo. A ABNT pede a fonte mesmo quando a figura é sua.</p>
+      <form id="fig-form">
+        <div class="campo"><label for="fig-titulo">Título</label><input id="fig-titulo" maxlength="200" autocomplete="off" placeholder="Ex.: Etapas da coleta nas cooperativas" value="${esc(f.dataset.titulo || '')}"></div>
+        <div class="campo"><label for="fig-fonte">Fonte</label><input id="fig-fonte" maxlength="300" autocomplete="off" placeholder="Ex.: elaborado pelo autor, ou Moraes (2024, p. 12)" value="${esc(f.dataset.fonte || '')}"></div>
+        <div class="pe"><span class="cresce"></span><button type="button" class="btn fant" data-acao="fechar">${nova ? 'Deixar para depois' : 'Cancelar'}</button><button class="btn prim" type="submit">Guardar título e fonte</button></div>
+      </form></div>`;
+    veu.classList.add('on');
+    document.getElementById('fig-titulo').focus();
+  }
+  document.addEventListener('submit', (e) => {
+    if (e.target.id !== 'fig-form') return;
+    e.preventDefault();
+    const f = figuraAberta;
+    figuraAberta = null;
+    document.getElementById('veu').classList.remove('on');
+    if (!f?.isConnected) return;
+    const limpo = (v) => v.replace(/\s+/g, ' ').trim();
+    f.dataset.titulo = limpo(document.getElementById('fig-titulo').value);
+    f.dataset.fonte = limpo(document.getElementById('fig-fonte').value).replace(/^fonte:\s*/i, '');
+    montarFiguras();
+    agendarSalvar();
+  });
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-fig-editar],[data-fig-tirar]');
+    const f = b?.closest('#esc-corpo figure[data-img]');
+    if (!f) return;
+    if (b.dataset.figEditar !== undefined) return abrirFigura(f);
+    const pai = f.parentNode;
+    const depois = f.nextSibling;
+    f.remove();
+    montarFiguras();
+    agendarSalvar();
+    toast('Figura tirada do texto', () => {
+      const corpo = document.getElementById('esc-corpo');
+      if (!corpo) return;
+      if (pai?.isConnected) pai.insertBefore(f, depois?.parentNode === pai ? depois : null);
+      else corpo.appendChild(f);
+      montarFiguras();
+      agendarSalvar();
+    });
+  });
+
   document.addEventListener('selectionchange', () => {
     if (!document.getElementById('esc-corpo')) {
       flut.classList.remove('on', 'link');
@@ -812,6 +945,12 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     if (!e.target.closest?.('#esc-corpo')) return;
     // Cola só o texto: formatação de fora (Word, sites) não entra no texto.
     e.preventDefault();
+    // Imagem copiada (uma captura de tela, por exemplo) entra como figura.
+    const colada = [...((e.clipboardData || {}).files || [])].find((f) => /^image\/(png|jpeg|webp)$/.test(f.type));
+    if (colada && imagens) {
+      alvoDaImagem = blocoAlvo()?.dataset.pid || null;
+      return inserirImagem(colada);
+    }
     const txt = (e.clipboardData || window.clipboardData).getData('text/plain');
     document.execCommand('insertText', false, txt);
   });
@@ -1063,7 +1202,18 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
     }
     if (d.escDocx !== undefined) {
       const refs = escrita.referencias(t).map((r) => referencia(bib.obter(r.id)));
-      const blob = gerarDocx(t, refs);
+      // As imagens das figuras entram no arquivo; a que não está disponível neste aparelho vira um aviso no lugar.
+      const figs = new Map();
+      let semImagem = 0;
+      for (const sec of t.secoes || []) {
+        for (const fg of figurasDe(sec.html)) {
+          if (figs.has(fg.id)) continue;
+          const bytes = imagens ? await imagens.bytes(fg.id) : null;
+          if (bytes) figs.set(fg.id, bytes);
+          else semImagem++;
+        }
+      }
+      const blob = gerarDocx(t, refs, figs);
       const nome = `${slug(t.titulo)}.docx`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1084,7 +1234,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, registrar })
         }
       }
       registrar('ui', 'texto.exportar_docx', { det: `${medirAutoria(t).total} palavras, ${refs.length} referências${noDrive ? ', cópia no Drive' : ''}` });
-      toast(noDrive ? 'Word exportado. Cópia no seu Drive.' : 'Word exportado.');
+      toast(`${noDrive ? 'Word exportado. Cópia no seu Drive.' : 'Word exportado.'}${semImagem ? ` ${semImagem === 1 ? 'Uma figura ficou' : `${semImagem} figuras ficaram`} sem a imagem, que não está neste aparelho.` : ''}`);
     }
   });
 

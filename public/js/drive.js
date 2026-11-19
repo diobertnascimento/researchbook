@@ -180,5 +180,11 @@ export function criarDrive({ token, registrar }) {
     return r.blob();
   }
 
-  return { raiz, pasta, listar, ler, gravar, enviarArquivo, baixarArquivo, idRaiz: () => ids.get('') ?? null };
+  /** Baixa um arquivo binário pelo caminho, ou null se ele não existe. */
+  async function baixarDoCaminho(caminho) {
+    const a = await arquivo(caminho);
+    return a.id ? baixarArquivo(a.id, caminho) : null;
+  }
+
+  return { raiz, pasta, listar, ler, gravar, enviarArquivo, baixarArquivo, baixarDoCaminho, idRaiz: () => ids.get('') ?? null };
 }

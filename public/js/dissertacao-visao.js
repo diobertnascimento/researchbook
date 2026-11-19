@@ -237,10 +237,13 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
       const r = document.createRange();
       r.selectNodeContents(corpo);
       r.setEnd(sel.focusNode, sel.focusOffset);
-      const antes = ultimasPalavras(r.toString());
+      // O que a tela desenha dentro de uma figura (número, botões) não é texto do autor.
+      const ate = r.cloneContents();
+      for (const f of ate.querySelectorAll('figure')) f.remove();
+      const antes = ultimasPalavras(ate.textContent);
       if (antes) return antes;
     }
-    const comTexto = [...corpo.children].filter((b) => b.textContent.trim());
+    const comTexto = [...corpo.children].filter((b) => b.tagName !== 'FIGURE' && b.textContent.trim());
     return ultimasPalavras(comTexto.at(-1)?.textContent || '');
   }
 

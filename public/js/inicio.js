@@ -23,6 +23,7 @@ import { criarTutorUI } from './tutor-ui.js';
 import { criarIAAjustes } from './ia-ajustes.js';
 import { criarMemoriaUI } from './memoria-ui.js';
 import { criarEscrita } from './escrita.js';
+import { criarImagens } from './imagens.js';
 import { criarCopiloto } from './copiloto.js';
 import { criarEscritaUI } from './escrita-ui.js';
 import { criarSegurancaUI } from './seguranca-ui.js';
@@ -272,6 +273,7 @@ async function iniciar() {
             if (aberto && !modalAberto && !digitando && window.rb.escrita?.mudouPorFora(decodeURIComponent(aberto))) window.render?.();
             if (!modalAberto) window.desenhaMenu?.(location.hash.slice(1) || 'painel');
             window.rb.disciplinas?.retomarPendentes();
+            window.rb.imagens?.retomarPendentes();
             window.rb.agenda?.sincronizar();
           });
         }
@@ -526,7 +528,8 @@ async function iniciar() {
     window.rb.memoriaUI = criarMemoriaUI({ ia: window.rb.ia, historico, dados: window.rb.dados, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, drive: driveSeConectado, registrar });
     window.rb.escrita = criarEscrita({ dados: window.rb.dados, bib: biblioteca, drive: driveSeConectado, registrar });
     window.rb.copiloto = criarCopiloto({ ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, historico, registrar });
-    window.rb.escritaUI = criarEscritaUI({ escrita: window.rb.escrita, copiloto: window.rb.copiloto, ia: window.rb.ia, bib: biblioteca, drive: driveSeConectado, registrar });
+    window.rb.imagens = criarImagens({ db, drive: driveSeConectado, registrar });
+    window.rb.escritaUI = criarEscritaUI({ escrita: window.rb.escrita, copiloto: window.rb.copiloto, ia: window.rb.ia, bib: biblioteca, drive: driveSeConectado, imagens: window.rb.imagens, registrar });
     window.rb.disciplinas = criarDisciplinas({
       db,
       dados: window.rb.dados,
@@ -570,6 +573,7 @@ async function iniciar() {
     await biblioteca.carregar();
     await Promise.all([window.rb.fichUI.carregar(), window.rb.argUI.carregar(), window.rb.trilhasUI.carregar(), window.rb.conflitosUI.carregar(), historico.carregar(), window.rb.memoriaUI.carregar(), window.rb.escrita.carregar(), window.rb.disciplinas.carregar(), window.rb.dissertacao.carregar(), window.rb.dialogos.carregar(), window.rb.cartoes.carregar(), window.rb.sessoes.carregar()]);
     window.rb.disciplinas.retomarPendentes();
+    window.rb.imagens.retomarPendentes();
     window.rb.segurancaUI = criarSegurancaUI({ dados: window.rb.dados, recarregar: recarregarTudo, registrar });
     window.rb.sincronizacaoUI = criarSincronizacaoUI({ estado: () => sinc?.estado() ?? null, aparelhos: listarAparelhos, idAparelho });
     limparLixeira().catch((e) => registrar('erro', 'lixeira.limpeza', { det: e.message, st: 'aviso' }));

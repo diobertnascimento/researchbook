@@ -12,6 +12,10 @@ const BLOCOS = new Set(['P', 'H2', 'H3', 'LI', 'BLOCKQUOTE', 'PRE']);
 // v2.3.0: título (H2), código (PRE), separador (HR) e link (A, só com endereço http ou https).
 const PERMITIDAS = { P: [], H2: [], H3: [], UL: [], OL: [], LI: [], BLOCKQUOTE: [], PRE: [], HR: [], B: [], STRONG: [], I: [], EM: [], U: [], BR: [], A: ['href'], SPAN: ['data-obra', 'data-pag'] };
 const ATRIBUTOS_BLOCO = ['data-pid', 'data-autoria', 'data-ia'];
+// v2.13.0: figura. No texto fica só a marcação, com o id da imagem, o tamanho, o título e a fonte;
+// o conteúdo da imagem fica fora (imagens.js). O que a tela desenha dentro da figura nunca é gravado.
+const ID_IMAGEM = /^img-[a-z0-9]{8}\.(png|jpg)$/;
+const ATRIBUTOS_FIGURA = ['data-img', 'data-l', 'data-a', 'data-titulo', 'data-fonte'];
 export const AUTORIAS = { autor: 'Seu', coautoria: 'Coautoria: versão do Copilot editada por você', ia: 'IA' };
 
 /** Limpa o HTML do editor: só as marcações de texto permitidas, sem scripts nem estilos; link só para http e https. */
@@ -26,6 +30,16 @@ export function limpar(html) {
         continue;
       }
       const tag = filho.tagName;
+      if (tag === 'FIGURE') {
+        if (!ID_IMAGEM.test(filho.getAttribute('data-img') || '')) {
+          filho.remove();
+          continue;
+        }
+        for (const at of [...filho.attributes]) if (!ATRIBUTOS_FIGURA.includes(at.name)) filho.removeAttribute(at.name);
+        for (const n of ['data-l', 'data-a']) if (!/^\d{1,5}$/.test(filho.getAttribute(n) || '')) filho.removeAttribute(n);
+        filho.textContent = '';
+        continue;
+      }
       if (tag === 'DIV') {
         // Enter no contenteditable às vezes cria <div>: vira parágrafo.
         const p = doc.createElement('p');
