@@ -66,6 +66,22 @@ export async function geminiFalso(context, { cenario = 'bom', ...opcoes } = {}) 
       texto = JSON.stringify(respostaOrganizar(todos, opcoes));
     } else if (props.cartoes || props.mais_importante || props.tracos) {
       texto = JSON.stringify(respostaEstudo(props, todos));
+    } else if (props.perguntas && Object.keys(props).length === 1) {
+      // Perguntas do fichamento: 8 perguntas (o bloco "conceitos" fica de fora, para o app completar), uma de bloco
+      // inexistente (o app recusa) e, na troca, uma pergunta só do bloco pedido.
+      const troca = todos.match(/<trocar>\nBloco: (\w+)/)?.[1];
+      const lista = troca
+        ? [{ bloco: troca, texto: 'Pergunta nova sobre o mesmo bloco, feita para esta obra?', porque: 'Porque a anterior não serviu.' }]
+        : [
+            { bloco: 'essencial', texto: 'Que problema das cooperativas o texto diz que as rotas calculadas não resolvem?', porque: 'É o ponto de partida do texto.' },
+            { bloco: 'essencial', texto: 'O que os autores concluem sobre a adesão das equipes?', porque: 'É a tese que você vai usar ou contestar.' },
+            { bloco: 'essencial', texto: 'Terceira do mesmo bloco, que o app corta?', porque: '' },
+            { bloco: 'metodo', texto: 'Como o estudo observou as rotas em uso?', porque: 'O desenho limita a conclusão.' },
+            { bloco: 'critica', texto: 'O que o texto não explica sobre os casos em que a adesão caiu?', porque: 'É onde uma banca apertaria.' },
+            { bloco: 'dissertacao', texto: /<tese>[\s\S]*Rotas negociadas/.test(todos) ? 'Como este texto sustenta a sua tese sobre rotas negociadas?' : 'Onde este texto entraria na sua pesquisa?', porque: 'Liga a leitura ao que você afirma.' },
+            { bloco: 'bloco-que-nao-existe', texto: 'Pergunta de bloco inválido?', porque: '' },
+          ];
+      texto = JSON.stringify({ perguntas: lista });
     } else if (props.achados && opcoes.falharParecer && !estado.falhouParecer) {
       estado.falhouParecer = true;
       return responder(r, 400, { error: { code: 400, message: 'Request payload size exceeds the limit.', status: 'INVALID_ARGUMENT' } });

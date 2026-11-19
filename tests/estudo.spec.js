@@ -138,8 +138,10 @@ test.describe('no computador', () => {
     const { gem, id } = await entrar(page, context, '/#painel');
     const doEsquema = (k) => gem.pedidos.filter((x) => x.corpo.generationConfig?.responseJsonSchema?.properties?.[k]).at(-1);
     await page.goto(`/#fichamento/${id}`);
-    await page.locator('[data-fpasso="2"]').first().click();
-    await page.locator('#fich-resumo').fill('O texto mostra que negociar as rotas com as equipes reduz conflitos na cooperativa.');
+    // v2.8.0: o tutor comenta as notas do fichamento, a pedido, na tela "Suas notas".
+    await page.locator('.fich-grifos > li').first().getByLabel('Com as suas palavras').fill('O texto mostra que negociar as rotas com as equipes reduz conflitos na cooperativa.');
+    await expect(page.locator('#fich-salvo')).toHaveText('Salvo');
+    await page.locator('.fich-caminho [data-fich-vista="notas"]').click();
     await page.getByRole('button', { name: 'Pedir comentários do tutor' }).click();
     await expect(page.locator('.coment-tutor .ct')).toHaveCount(3);
     await expect(page.locator('.coment-tutor .ct.mais')).toContainText('Falta dizer qual foi o método');
@@ -147,7 +149,7 @@ test.describe('no computador', () => {
     await expect(page.locator('.coment-tutor')).not.toContainText('[A1]');
     const p = doEsquema('mais_importante');
     const txt = p.corpo.contents.at(-1).parts[0].text;
-    expect(txt).toContain('<etapa>\nresumo\n</etapa>');
+    expect(txt).toContain('<etapa>\nanalise_critica\n</etapa>');
     expect(txt).toContain('O texto mostra que negociar as rotas com as equipes reduz conflitos na cooperativa.');
     expect(p.corpo.systemInstruction.parts[0].text).toContain('revisando o fichamento');
 
@@ -155,7 +157,7 @@ test.describe('no computador', () => {
     await page.waitForFunction(() => window.rb?.tutorFich && window.rb.historico.todas().length);
     await page.goto('/#painel');
     await page.goto(`/#fichamento/${id}`);
-    await page.locator('[data-fpasso="2"]').first().click();
+    await page.locator('.fich-caminho [data-fich-vista="notas"]').click();
     await expect(page.locator('.coment-tutor .ct')).toHaveCount(3);
   });
 

@@ -2,6 +2,19 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.8.0 (19/11/2026)
+Fichamento refeito.
+- As cinco etapas saíram. O fichamento agora tem dois caminhos que alimentam as mesmas notas, e você pode usar os dois na mesma obra.
+- Pelos grifos: você passa pelos trechos que marcou, com filtro por função, e escreve com as suas palavras o que cada um afirma.
+- Pelo texto completo: cerca de 8 perguntas em 5 blocos (o essencial, como chegaram lá, conceitos, sua crítica, para a sua dissertação), respondidas de memória, uma por vez.
+- As perguntas podem ser escritas pela IA para aquele texto, uma única vez e só quando você pede, a partir do artigo, dos seus grifos, da sua tese e dos seus argumentos. A IA só pergunta: ela não responde. Sem IA, há um conjunto de perguntas gerais.
+- Ajuda só a pedido, em cada pergunta: "Por que esta pergunta?", "Conferir com o texto" (mostra os seus grifos daquele assunto) e "Trocar a pergunta".
+- Cada resposta vira uma nota com a referência, que pode ser marcada para a dissertação e ligada a um argumento. As ligadas a um argumento aparecem no Mapa.
+- "Suas notas" reúne tudo, com copiar. Os comentários do tutor continuam ali, a pedido.
+- O que você escreveu nas cinco etapas antigas não se perde: continua guardado, aparece em "Suas notas" e segue no arquivo do Drive.
+- O fichamento abre sem a barra do app, como o leitor e o editor.
+- Ainda não entrou: levar uma nota direto para dentro de um capítulo. Por enquanto a nota é marcada e copiada.
+
 ## 2.7.0 (19/11/2026)
 Dissertação: parecer do projeto.
 - Ao enviar uma versão do projeto, a IA passa a fazer também um parecer do que ajustar para a qualificação, parte por parte: introdução e problema, propósito, perguntas, literatura e teoria, método, ética, coerência entre as partes, cronograma e forma.

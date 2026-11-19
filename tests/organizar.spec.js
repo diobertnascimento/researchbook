@@ -242,6 +242,7 @@ test.describe('no computador', () => {
     await entrar(page, context);
     await semear(page, { fichamentos: [{ id: 'prado-2019', leituraId: 'prado-2019', feitos: 4, citacoes: [], resumo: '', analise: {}, trechos: [{ id: 't1', texto: 'Rotas impostas são abandonadas (Prado, 2019, p. 3)', argumento: 'Rotas impostas não duram' }] }] });
     await page.goto('/#fichamento/prado-2019');
+    await page.locator('[data-fich-vista="notas"]').first().click();
     await page.getByRole('button', { name: 'Concluir fichamento' }).click();
     await expect(page.locator('#toast')).toContainText('Fichamento concluído');
     await page.goto('/#argumentos');

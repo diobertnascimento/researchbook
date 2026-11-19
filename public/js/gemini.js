@@ -36,6 +36,7 @@ export const TAREFAS = {
   dialogo_encerrar: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'dialogos.md', maxSaida: 3000 },
   cartoes: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'LOW', instrucao: 'cartoes.md', maxSaida: 4000 },
   fichamento: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'MEDIUM', instrucao: 'fichamento.md', maxSaida: 2500 },
+  fichamento_perguntas: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'MEDIUM', instrucao: 'fichamento-perguntas.md', maxSaida: 3000 },
   overview: { modelo: 'gemini-3.8-flash', reserva: 'gemini-3.6-flash', pensamento: 'MEDIUM', instrucao: 'overview-autor.md', maxSaida: 5000 },
   organizar: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'LOW', instrucao: 'organizar-biblioteca.md', maxSaida: 1500 },
   memoria: { modelo: 'gemini-3.1-flash-lite', reserva: 'gemini-3.5-flash-lite', pensamento: 'MINIMAL', instrucao: 'memoria.md', maxSaida: 2048 },
@@ -66,7 +67,7 @@ export class ErroIA extends Error {
 export const NOMES_TAREFA = {
   tutor: 'Tutor no leitor', copilot_conversa: 'Copilot: conversa', copilot_versoes: 'Copilot: versões do parágrafo', copilot_plano: 'Copilot: diagnóstico e estrutura', revisao_final: 'Revisar e exportar',
   transcricao: 'Transcrição de aulas e reuniões', aula_resumo: 'Resumo da aula', plano_ensino: 'Plano de ensino', revisao_projeto: 'Revisão do projeto', parecer_projeto: 'Parecer do projeto', orientacao: 'Registro da orientação',
-  dialogo: 'Diálogos', dialogo_encerrar: 'Diálogos: posições firmadas', cartoes: 'Cartões', fichamento: 'Tutor no fichamento', overview: 'Overview do autor', organizar: 'Organizar a biblioteca (DOI)', memoria: 'Memória', teste: 'Testar conexão',
+  dialogo: 'Diálogos', dialogo_encerrar: 'Diálogos: posições firmadas', cartoes: 'Cartões', fichamento: 'Tutor no fichamento', fichamento_perguntas: 'Perguntas do fichamento', overview: 'Overview do autor', organizar: 'Organizar a biblioteca (DOI)', memoria: 'Memória', teste: 'Testar conexão',
 };
 export function escolhasModelos() {
   try {

@@ -3,7 +3,7 @@
 import { acervoDe } from './contexto.js';
 import { citacao, referenciaTexto } from './abnt.js';
 import { FUNCOES } from './leitor-pdf.js';
-import { PASSOS, PERGUNTAS } from './fichamento-ui.js';
+import { PASSOS, PERGUNTAS, BLOCOS, PERGUNTAS_GERAIS } from './fichamento-ui.js';
 import { ErroIA } from './gemini.js';
 import { ouvir } from './ui.js';
 
@@ -29,6 +29,7 @@ export function criarTutorFichamento({ ia, bib, fichUI, argUI, historico, regist
       `Resumo:\n${f.resumo || '(vazio)'}`,
       `Análise crítica:\n${PERGUNTAS.map(([k, q]) => `${q} ${f.analise?.[k] || '(vazio)'}`).join('\n')}`,
       `Para a dissertação:\n${(f.trechos || []).map((t) => `- Trecho: ${t.texto || '(vazio)'} | Argumento: ${t.argumento || '(nenhum)'}`).join('\n') || '(nenhum trecho)'}`,
+      `Notas com as palavras do autor:\n${(f.notas || []).filter((n) => n.texto?.trim()).map((n) => `- ${n.pergunta ? `Pergunta: ${n.pergunta} | ` : 'Sobre um grifo | '}Resposta: ${n.texto.trim()}`).join('\n') || '(nenhuma)'}`,
     ].join('\n\n');
   }
 
@@ -62,6 +63,72 @@ export function criarTutorFichamento({ ia, bib, fichUI, argUI, historico, regist
     }
     registrar('ia', 'fichamento.comentario', { det: `${etapa}, ${(r.json?.pontos || []).length} pontos` });
     return item;
+  }
+
+  /* ---------- Perguntas do fichamento pelo texto completo: escritas uma vez, quando ele pede ---------- */
+  const ESQ_PERGUNTAS = {
+    type: 'object',
+    properties: { perguntas: { type: 'array', items: { type: 'object', properties: { bloco: { type: 'string', enum: BLOCOS.map(([k]) => k) }, texto: { type: 'string' }, porque: { type: 'string' } }, required: ['bloco', 'texto'] } } },
+    required: ['perguntas'],
+  };
+  /** O começo do texto da obra, tirado do PDF neste aparelho. Sem PDF, segue só com a referência e os grifos. */
+  async function comecoDoTexto(id) {
+    try {
+      const { blob } = await bib.obterPDFagora(id);
+      if (!blob) return '';
+      const { lerInicio } = await import('./leitor-pdf.js');
+      return (await lerInicio(blob, 30)).texto.replace(/\s+/g, ' ').slice(0, 60000);
+    } catch (e) {
+      registrar('erro', 'fichamento.texto_pdf', { det: e.message, st: 'aviso' });
+      return '';
+    }
+  }
+  /**
+   * Devolve a lista de perguntas (8, com todos os blocos) ou, com `trocar`, uma pergunta só para aquele bloco.
+   * Bloco que a IA deixar sem pergunta é completado com a pergunta geral, para o fichamento nunca ficar sem um bloco.
+   */
+  async function gerarPerguntas(id, { trocar = null } = {}) {
+    const l = bib.obter(id);
+    const acervo = acervoDe(
+      bib.grifosDe(id).map((g) => ({ tipo: `grifo (${(FUNCOES.find((x) => x.id === g.funcao)?.nome || 'grifo').toLowerCase()})`, ref: `grifo:${g.id}`, leituraId: l.id, pagina: g.pagina, citacao: citacao(l, g.pagina), texto: g.texto })),
+    );
+    const texto = await comecoDoTexto(id);
+    const tese = window.rb?.sessoes?.config().tese || '';
+    const r = await ia.gerarTarefa({
+      tarefa: 'fichamento_perguntas',
+      acervo,
+      blocos: [
+        (c) => `<leitura>\n<material-${c}>\n${referenciaTexto(l)}\n</material-${c}>\n</leitura>`,
+        (c) => `<texto>\n<material-${c}>\n${texto || '(sem texto legível neste aparelho)'}\n</material-${c}>\n</texto>`,
+        (c) => `<tese>\n<material-${c}>\n${tese || '(ainda não escrita)'}\n</material-${c}>\n</tese>`,
+        `<argumentos>\n${argUI.todos().map((a) => `[${a.id}] ${a.tese}`).join('\n') || '(nenhum ainda)'}\n</argumentos>`,
+        ...(trocar ? [(c) => `<trocar>\nBloco: ${trocar.bloco}\n<material-${c}>\n${trocar.texto}\n</material-${c}>\n</trocar>`] : []),
+      ],
+      pedido: trocar ? 'Escreva uma única pergunta, do mesmo bloco, no lugar da que veio em <trocar>.' : 'Escreva as 8 perguntas do fichamento desta obra, nos cinco blocos.',
+      lembrete: 'Só perguntas: não responda, não resuma e não adiante a resposta. Responda só com o objeto JSON.',
+      esquema: ESQ_PERGUNTAS,
+    });
+    const validos = new Set(BLOCOS.map(([k]) => k));
+    const novoId = () => `q-${crypto.randomUUID().slice(0, 8)}`;
+    let itens = (r.json?.perguntas || []).filter((p) => validos.has(p.bloco) && p.texto?.trim()).map((p) => ({ id: novoId(), bloco: p.bloco, texto: p.texto.trim(), porque: (p.porque || '').trim() }));
+    try {
+      const conv = historico.deAlvo('fichamento', { tipo: 'leitura', id }) || (await historico.nova({ funcao: 'fichamento', alvo: { tipo: 'leitura', id }, titulo: `Fichamento: ${l.titulo}`.slice(0, 80) }));
+      await historico.acrescentar(conv.id, { de: 'ia', tarefa: 'fichamento_perguntas', resposta: r.json, modelo: r.modelo, uso: r.uso, custo: r.custo, instrucao: r.instrucao });
+    } catch (e) {
+      registrar('erro', 'fichamento.historico', { det: e.message, st: 'aviso' });
+    }
+    registrar('ia', trocar ? 'fichamento.pergunta_trocada' : 'fichamento.perguntas', { det: `${itens.length} perguntas` });
+    if (trocar) {
+      const uma = itens.find((p) => p.bloco === trocar.bloco && p.texto !== trocar.texto);
+      if (!uma) throw new Error('A IA não devolveu outra pergunta para este bloco. Tente de novo.');
+      return uma;
+    }
+    // Ordem dos blocos, no máximo duas por bloco, e nenhum bloco vazio.
+    itens = BLOCOS.flatMap(([k]) => {
+      const doBloco = itens.filter((p) => p.bloco === k).slice(0, 2);
+      return doBloco.length ? doBloco : PERGUNTAS_GERAIS.filter((p) => p.bloco === k).slice(0, 1).map((p) => ({ ...p, id: novoId() }));
+    });
+    return itens;
   }
 
   /** Busca no histórico os últimos comentários desta obra (uma vez por obra, por sessão). */
@@ -111,5 +178,5 @@ export function criarTutorFichamento({ ia, bib, fichUI, argUI, historico, regist
     }
   });
 
-  return { painel, comentar };
+  return { painel, comentar, gerarPerguntas };
 }

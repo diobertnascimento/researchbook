@@ -1,14 +1,17 @@
-// Fichamento real, em cinco etapas, alimentado pelos grifos da obra.
-// Coleção "fichamentos" (um por obra, id = id da obra). Salva sozinho enquanto o Diobert escreve.
+// Fichamento real (refeito na v2.8.0): dois caminhos que alimentam as mesmas notas. Pelos grifos, ele diz com as
+// suas palavras o que cada trecho marcado afirma. Pelo texto completo, responde de memória a cerca de 8 perguntas
+// em 5 blocos fixos. Coleção "fichamentos" (um por obra, id = id da obra). Salva sozinho enquanto ele escreve.
 // Ao concluir, gera também um arquivo legível no Drive: researchbook/fichamentos/<id>.md.
 //
-// Regra de autoria: nada aqui é escrito pela IA. O resumo e a análise são do Diobert; os grifos
-// entram como citação só quando ele escolhe, com página, e a referência sai da ficha da obra.
+// Regra de autoria: nenhuma nota é escrita pela IA. A IA só escreve as perguntas, quando ele pede, e a referência
+// sai da ficha da obra. O que foi escrito nas cinco etapas antigas (citações, resumo, análise, trechos) continua
+// no registro, aparece em "Suas notas" e segue no arquivo do Drive.
 import { referencia, referenciaTexto, citacao, autorCurto } from './abnt.js';
 import { FUNCOES } from './leitor-pdf.js';
 import { ouvir } from './ui.js';
 
-/* global toast, fecharModal */
+/* global toast, fecharModal, I */
+const icone = (n) => (typeof I !== 'undefined' && I[n]) || '';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const palavras = (t) => (String(t || '').trim().match(/\S+/g) || []).length;
 const slug = (s) =>
@@ -34,10 +37,37 @@ export const PERGUNTAS = [
   ['conexao', 'Como isto conversa com a sua pesquisa?'],
 ];
 
+// Os cinco blocos do fichamento pelo texto completo e as cores de grifo que servem de apoio a cada um.
+export const BLOCOS = [
+  ['essencial', 'O essencial', ['conceito', 'evidencia']],
+  ['metodo', 'Como chegaram lá', ['metodo', 'evidencia']],
+  ['conceitos', 'Conceitos', ['conceito']],
+  ['critica', 'Sua crítica', ['critica', 'metodo']],
+  ['dissertacao', 'Para a sua dissertação', ['dissert']],
+];
+// Perguntas que valem para qualquer texto: o caminho sem IA, e o que completa um bloco que a IA deixou vazio.
+export const PERGUNTAS_GERAIS = [
+  { id: 'g1', bloco: 'essencial', texto: 'Que problema o texto enfrenta e por que ele importa?', porque: 'Sem o problema, o resto do texto não tem para que servir.' },
+  { id: 'g2', bloco: 'essencial', texto: 'O que os autores afirmam ao final? Diga em duas ou três frases.', porque: 'É a tese do texto: o que você vai citar ou contestar.' },
+  { id: 'g3', bloco: 'metodo', texto: 'Como eles chegaram a essa conclusão? Que dados, casos ou argumentos usaram?', porque: 'A força da conclusão depende do caminho que levou a ela.' },
+  { id: 'g4', bloco: 'metodo', texto: 'O que no desenho do estudo limita o que se pode concluir?', porque: 'É o que uma banca pergunta primeiro sobre uma fonte.' },
+  { id: 'g5', bloco: 'conceitos', texto: 'Que conceito central o texto usa e como o define?', porque: 'Você só pode usar o conceito como o autor definiu, ou dizer que mudou.' },
+  { id: 'g6', bloco: 'critica', texto: 'Onde o texto é fraco, discutível ou deixa algo sem resposta?', porque: 'O fichamento crítico separa o que o autor diz do que você pensa.' },
+  { id: 'g7', bloco: 'critica', texto: 'Com o que você concorda e com o que não concorda? Por quê?', porque: 'A sua posição é o que entra na dissertação.' },
+  { id: 'g8', bloco: 'dissertacao', texto: 'Onde este texto entra na sua dissertação, e para sustentar o quê?', porque: 'Leitura sem destino tende a não ser usada.' },
+];
+const PERGUNTAS_RESERVA = [
+  { id: 'r1', bloco: 'essencial', texto: 'Para quem o texto foi escrito e a que debate ele responde?', porque: 'Situa o texto antes de usá-lo.' },
+  { id: 'r2', bloco: 'metodo', texto: 'Que evidência do texto mais convenceu você, e qual convenceu menos?', porque: 'Obriga a pesar a evidência, e não só a repetir a conclusão.' },
+  { id: 'r3', bloco: 'conceitos', texto: 'Que termo do texto você não saberia explicar a um colega sem voltar a ele?', porque: 'Mostra o que ainda não foi entendido.' },
+  { id: 'r4', bloco: 'critica', texto: 'Que objeção um leitor atento faria a este texto?', porque: 'Antecipar a objeção prepara a sua resposta.' },
+  { id: 'r5', bloco: 'dissertacao', texto: 'O que muda na sua pesquisa se este texto estiver certo?', porque: 'Liga a leitura a uma decisão sua.' },
+];
+
 export function criarFichamentoUI({ bib, dados, registrar, drive }) {
   let fichamentos = [];
   let argumentos = [];
-  let passo = {}; // passo aberto por obra, só nesta sessão
+  const est = { vista: {}, filtro: {}, pergunta: {}, aberto: new Set(), erro: null }; // o que está aberto por obra, só nesta sessão
   let salvarDepois = null;
   let exportarDepois = null;
 
@@ -59,6 +89,17 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     if (PERGUNTAS.some(([k]) => f.analise[k])) {
       linhas.push('## Análise crítica', '');
       for (const [k, p] of PERGUNTAS) if (f.analise[k]) linhas.push(`### ${p}`, '', f.analise[k], '');
+    }
+    const notas = (f.notas || []).filter((n) => n.texto?.trim());
+    if (notas.length) {
+      linhas.push('## Notas', '');
+      const grifos = bib.grifosDe(l.id);
+      for (const n of notas) {
+        const g = n.chave.startsWith('g:') ? grifos.find((x) => `g:${x.id}` === n.chave) : null;
+        if (g) linhas.push(`> "${g.texto}" ${citacao(l, g.pagina)}`, '');
+        else if (n.pergunta) linhas.push(`### ${n.pergunta}`, '');
+        linhas.push(`${n.texto.trim()} ${citacao(l, n.pagina || undefined)}`, '');
+      }
     }
     if (f.trechos.some((t) => t.texto)) {
       linhas.push('## Para a dissertação', '');
@@ -83,6 +124,9 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
   }
 
   async function salvar(f, { exportarJa = false } = {}) {
+    // Esta gravação leva a versão mais nova: uma gravação agendada antes não pode passar por cima dela.
+    clearTimeout(salvarDepois);
+    pendente = null;
     const salvo = await dados.salvar('fichamentos', f);
     const i = fichamentos.findIndex((x) => x.id === f.id);
     if (i >= 0) fichamentos[i] = salvo;
@@ -100,98 +144,143 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     const leituras = bib.leituras();
     const comFich = leituras.filter((l) => doLivro(l.id));
     const prontas = leituras.filter((l) => !doLivro(l.id) && (l.etapa || 0) >= 2);
-    const topo = `<div class="topo"><div><h1>Fichamentos</h1><p>Cada fichamento passa por cinco etapas. Os grifos de cada cor alimentam a etapa certa.</p></div></div>`;
+    const topo = `<div class="topo"><div><h1>Fichamentos</h1><p>Dois caminhos para a mesma ficha: pelos trechos que você grifou e pelo texto completo, respondendo de memória.</p></div></div>`;
     if (!comFich.length && !prontas.length) {
       return `${topo}<div class="bib-vazia"><h2>Nenhum fichamento ainda</h2><p>Conclua a leitura de uma obra no leitor e selecione “Fazer fichamento”. Os grifos que você fez viram o ponto de partida.</p><a class="btn prim" href="#biblioteca">Ir para a biblioteca</a></div>`;
     }
+    const nNotas = (f) => {
+      const k = (f.notas || []).filter((x) => x.texto?.trim()).length;
+      return `${k} ${k === 1 ? 'nota' : 'notas'}`;
+    };
     const card = (l) => {
       const f = doLivro(l.id);
       const n = f ? Math.min(f.feitos, 5) : 0;
       return `<a class="fich-card" href="#fichamento/${encodeURIComponent(l.id)}">
         <div class="t">${esc(l.titulo)}</div>
         <div class="t-meta mute">${esc(autorCurto(l))}${l.projeto ? ', ' + esc(l.projeto) : ''}</div>
-        <div class="etp">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</div>
-        <div class="t-legenda mute-2">${!f ? 'Leitura concluída: começar o fichamento' : n >= 5 ? 'Completo' : `Etapa ${n + 1} de 5: ${PASSOS[n].nome}`}</div>
+        <div class="t-legenda mute-2">${!f ? 'Leitura concluída: começar o fichamento' : n >= 5 ? `Completo, ${nNotas(f)}` : `Em andamento, ${nNotas(f)}`}</div>
       </a>`;
     };
     return `${topo}<div class="fich-lista">${[...prontas, ...comFich].map(card).join('')}</div>`;
   }
 
-  const grifoBtn = (g, l, modo) =>
-    `<button class="grifo-item" style="border-color:var(--hl-${g.funcao})" data-fich-grifo="${esc(g.id)}" data-modo="${modo}">${esc(g.texto)}<small>${FUNCOES.find((x) => x.id === g.funcao)?.nome}, p. ${g.pagina}</small></button>`;
+  /* ---------- Notas: cada resposta ou comentário de grifo, com as palavras dele ---------- */
+  // chave "g:<id do grifo>" ou "p:<id da pergunta>". A nota guarda o que precisa para ser lida sozinha.
+  const notaDe = (f, chave) => (f.notas || []).find((n) => n.chave === chave) || null;
+  const comTexto = (f) => (f.notas || []).filter((n) => n.texto?.trim());
+  const perguntasDe = (f) => f.perguntas?.itens || [];
+  const referenciaDaNota = (n, l) => citacao(l, n.pagina || undefined);
+  /** As notas que ele marcou para a dissertação ou ligou a um argumento viram trechos: é deles que os Argumentos leem. */
+  function espelhar(f, l) {
+    const antigos = (f.trechos || []).filter((t) => !t.daNota);
+    const novos = comTexto(f)
+      .filter((n) => n.levar || n.argumento?.trim())
+      .map((n) => {
+        const cit = referenciaDaNota(n, l);
+        return { id: `n-${n.id}`, texto: n.texto.includes(cit) ? n.texto.trim() : `${n.texto.trim()} ${cit}`, argumento: n.argumento?.trim() || '', argumentoId: n.argumentoId || undefined, daNota: true };
+      });
+    f.trechos = [...antigos, ...novos];
+    if ((f.feitos || 0) < 5) f.feitos = Math.min(4, Math.max(f.feitos || 0, comTexto(f).length ? 1 : 0));
+    return f;
+  }
+  const temAntigo = (f) => !!(f.resumo || f.citacoes?.length || PERGUNTAS.some(([k]) => f.analise?.[k]) || (f.trechos || []).some((t) => !t.daNota && t.texto));
 
-  function corpoPasso(p, f, l, grifos) {
-    if (p === 0) {
-      const faltam = referencia(l).includes('[a completar]') || referencia(l).includes('[s. d.]');
-      return `<h2>Referência</h2><p class="instr">Confira a referência. Ela sai dos dados da obra, pela ABNT NBR 6023:2018.</p>
-        <div class="mb-3 ref-previa"><small>Referência (ABNT)</small><p>${referencia(l)}</p></div>
-        <p class="t-meta mute">Citação no texto: <b>${esc(citacao(l))}</b></p>
-        ${faltam ? '<div class="ad-msg erro" role="status">Faltam dados na referência. Corrija antes de usar a obra no texto.</div>' : ''}
-        <button class="btn" data-bib-editar="${esc(l.id)}">Corrigir dados da obra</button>`;
+  /** A pergunta aberta: a que ele escolheu ou, sem escolha, a primeira ainda sem resposta. */
+  function indiceAtual(f, id) {
+    const ps = perguntasDe(f);
+    const primeiraVazia = ps.findIndex((p) => !notaDe(f, `p:${p.id}`)?.texto?.trim());
+    return Math.min(est.pergunta[id] ?? Math.max(0, primeiraVazia), ps.length - 1);
+  }
+
+  /* ---------- Telas ---------- */
+  const corDe = (funcao) => FUNCOES.find((x) => x.id === funcao)?.nome || 'Grifo';
+  function destinoHTML(n, chave) {
+    return `<div class="fich-destino"><label class="m-0 check"><input type="checkbox" data-fich-levar="${esc(chave)}" ${n?.levar ? 'checked' : ''}>Levar para a dissertação</label>
+      <div class="m-0 campo"><label for="arg-${esc(chave)}">Sustenta o argumento <span>opcional</span></label><input id="arg-${esc(chave)}" list="fich-args" data-fich-arg="${esc(chave)}" placeholder="Escreva a tese ou escolha uma existente" value="${esc(n?.argumento || '')}" autocomplete="off"></div></div>`;
+  }
+  function vistaGrifos(f, l, grifos) {
+    if (!grifos.length) return `<div class="proximo fich-vazio"><div class="rot">Nenhum grifo nesta obra</div><p>Este caminho passa pelos trechos que você marcou no texto. Grife o que importa e volte, ou siga pelo texto completo.</p><div class="acao-l"><a class="btn" href="#leitor/${encodeURIComponent(l.id)}">Abrir o texto</a></div></div>`;
+    const usadas = FUNCOES.filter((x) => grifos.some((g) => g.funcao === x.id));
+    const filtro = usadas.some((x) => x.id === est.filtro[l.id]) ? est.filtro[l.id] : '';
+    const mostra = grifos.filter((g) => !filtro || g.funcao === filtro);
+    return `<p class="instr">Passe pelos trechos que você grifou. Em cada um, diga com as suas palavras o que ele afirma e por que importa. Trecho sem nota fica de fora do fichamento.</p>
+      ${usadas.length > 1 ? `<div class="alterna fich-filtro" role="group" aria-label="Mostrar grifos de">${[['', 'Todos'], ...usadas.map((x) => [x.id, x.nome])].map(([k, n]) => `<button class="txt" data-fich-filtro="${k}" aria-pressed="${filtro === k}">${n}</button>`).join('')}</div>` : ''}
+      <ol class="fich-grifos">${mostra
+        .map((g) => {
+          const chave = `g:${g.id}`;
+          const n = notaDe(f, chave);
+          return `<li><blockquote style="border-color:var(--hl-${g.funcao})">${esc(g.texto)}<cite>${corDe(g.funcao)}. ${esc(citacao(l, g.pagina))}</cite></blockquote>
+            <div class="campo"><label for="nota-${esc(g.id)}">Com as suas palavras</label><textarea id="nota-${esc(g.id)}" data-fich-nota="${esc(chave)}">${esc(n?.texto || '')}</textarea></div>${destinoHTML(n, chave)}</li>`;
+        })
+        .join('')}</ol>
+      <div class="pe"><span class="cresce"></span><button class="btn prim" data-fich-vista="notas">Ver as suas notas</button></div>`;
+  }
+  function vistaTexto(f, l, grifos) {
+    const ps = perguntasDe(f);
+    if (!ps.length) {
+      const semIA = !window.rb?.ia?.ajustes?.modo?.();
+      return `<section class="proximo fich-comeco" aria-labelledby="fc-t"><div class="rot" id="fc-t">Fichar o texto completo</div>
+        <p>São cerca de 8 perguntas em 5 blocos: o essencial, como chegaram lá, conceitos, sua crítica e para a sua dissertação. Você responde de memória, com o texto fechado.</p>
+        <p>A IA pode escrever as perguntas para este texto, uma única vez, a partir do artigo, dos seus grifos, da sua tese e dos seus argumentos. Ela não responde por você.</p>
+        ${est.erro && est.erro.id === l.id ? `<div class="erro-ia" role="alert"><p>${esc(est.erro.err.message)}</p></div>` : ''}
+        <div class="acao-l">${semIA ? '' : `<button class="btn prim" data-fich-perguntas="ia" data-ocupado="Preparando as perguntas…">Preparar as perguntas com a IA</button>`}<button class="btn ${semIA ? 'prim' : ''}" data-fich-perguntas="geral">Usar perguntas gerais, sem IA</button></div>
+        ${semIA ? '<p class="t-meta mute">O Gemini não está ligado neste aparelho. As perguntas gerais valem para qualquer texto.</p>' : ''}</section>`;
     }
-    if (p === 1) {
-      if (!grifos.length) return `<h2>Citações</h2><p class="instr">Você ainda não grifou esta obra. Volte ao texto, grife os trechos que importam e eles aparecem aqui.</p><a class="btn" href="#leitor/${encodeURIComponent(l.id)}">Abrir a obra</a>`;
-      const escolhidas = new Map(f.citacoes.map((c) => [c.grifoId, c]));
-      return `<h2>Citações</h2><p class="instr">Marque os grifos que merecem citação direta. Para cada um, diga em uma frase por que ele importa para você.</p>
-        ${grifos
-          .map((g) => {
-            const c = escolhidas.get(g.id);
-            return `<div class="citacao ${c ? 'on' : ''}">
-              <label class="m-0 mb-2 check"><input type="checkbox" data-fich-cit="${esc(g.id)}" ${c ? 'checked' : ''}>Usar como citação</label>
-              <blockquote style="border-color:var(--hl-${g.funcao})">${esc(g.texto)}</blockquote>
-              <div class="cit">${esc(citacao(l, g.pagina))}</div>
-              ${c ? `<div class="m-0 mt-2 campo"><textarea data-fich-porque="${esc(g.id)}" placeholder="Por que este trecho importa?">${esc(c.porque)}</textarea></div>` : ''}
-            </div>`;
-          })
-          .join('')}`;
-    }
-    if (p === 2) {
-      return `<h2>Resumo</h2><p class="instr">Explique o texto com as suas palavras, sem olhar o PDF: problema, método, resultado e contribuição. Os grifos de conceito e evidência ficam ao lado como apoio.</p>
-        <div class="campo"><label for="fich-resumo">Resumo <span id="fich-pal">${palavras(f.resumo)} palavras</span></label><textarea id="fich-resumo" data-fich-campo="resumo" style="min-height:240px">${esc(f.resumo)}</textarea></div>`;
-    }
-    if (p === 3) {
-      return `<h2>Análise crítica</h2><p class="instr">Responda a cada pergunta. Separe o que os autores dizem do que você pensa.</p>
-        ${PERGUNTAS.map(([k, q]) => `<div class="campo"><label for="fich-${k}">${q}</label><textarea id="fich-${k}" data-fich-analise="${k}">${esc(f.analise[k] || '')}</textarea></div>`).join('')}`;
-    }
-    const trechos = f.trechos.length ? f.trechos : [{ id: 't1', texto: '', argumento: '' }];
-    return `<h2>Para a dissertação</h2><p class="instr">Escreva trechos que você usaria no texto final, já com a citação. Ligue cada trecho a um argumento: é assim que ele aparece depois em Argumentos.</p>
-      <datalist id="fich-args">${argumentos.map((a) => `<option value="${esc(a.tese)}">`).join('')}</datalist>
-      ${trechos
-        .map(
-          (t) => `<div class="citacao">
-        <div class="campo"><label>Trecho <button class="btn fant mini" data-fich-citar="${esc(t.id)}">Inserir citação</button></label><textarea data-fich-trecho="${esc(t.id)}" style="min-height:110px">${esc(t.texto)}</textarea></div>
-        <div class="m-0 campo"><label>Sustenta o argumento</label><input list="fich-args" data-fich-arg="${esc(t.id)}" placeholder="Escreva a tese ou escolha uma existente" value="${esc(t.argumento)}"></div>
-      </div>`,
-        )
-        .join('')}
-      <button class="btn" data-fich-novo-trecho>Outro trecho</button>`;
+    const i = indiceAtual(f, l.id);
+    const p = ps[i];
+    const chave = `p:${p.id}`;
+    const n = notaDe(f, chave);
+    const bloco = BLOCOS.find(([k]) => k === p.bloco) || BLOCOS[0];
+    const aberto = (o) => est.aberto.has(`${l.id}:${p.id}:${o}`);
+    const apoio = grifos.filter((g) => bloco[2].includes(g.funcao));
+    return `<div class="fich-wiz">
+      <ol class="fich-pontos" aria-label="Perguntas">${ps.map((q, k) => `<li><button data-fich-ir="${k}" class="${k === i ? 'on' : ''} ${notaDe(f, `p:${q.id}`)?.texto?.trim() ? 'feita' : ''}" aria-label="Pergunta ${k + 1}${notaDe(f, `p:${q.id}`)?.texto?.trim() ? ', respondida' : ''}" ${k === i ? 'aria-current="step"' : ''}>${k + 1}</button></li>`).join('')}</ol>
+      <p class="fich-bloco">${bloco[1]}. Pergunta ${i + 1} de ${ps.length}</p>
+      <h2 class="fich-pergunta">${esc(p.texto)}</h2>
+      <div class="campo"><label for="fich-resp">Sua resposta, de memória <span id="fich-pal">${palavras(n?.texto)} palavras</span></label><textarea id="fich-resp" class="fich-resp" data-fich-nota="${esc(chave)}">${esc(n?.texto || '')}</textarea></div>
+      ${destinoHTML(n, chave)}
+      <div class="fich-pedir"><button class="lnk" data-fich-abrir="porque" aria-expanded="${aberto('porque')}">Por que esta pergunta?</button><button class="lnk" data-fich-abrir="conferir" aria-expanded="${aberto('conferir')}">Conferir com o texto</button><button class="lnk" data-fich-trocar="${esc(p.id)}" data-ocupado="Trocando…">Trocar a pergunta</button></div>
+      ${aberto('porque') ? `<p class="fich-porque">${esc(p.porque || 'Pergunta do conjunto geral, que vale para qualquer texto.')}</p>` : ''}
+      ${aberto('conferir') ? `<div class="fich-conf"><h3>Seus grifos de ${bloco[2].map((c) => corDe(c).toLowerCase()).join(' e ')}</h3>${apoio.length ? apoio.map((g) => `<blockquote style="border-color:var(--hl-${g.funcao})">${esc(g.texto)}<cite>${esc(citacao(l, g.pagina))}</cite></blockquote>`).join('') : '<p class="t-meta mute">Nenhum grifo dessas cores nesta obra.</p>'}<a class="lnk" href="#leitor/${encodeURIComponent(l.id)}">Abrir o texto</a></div>` : ''}
+      <div class="pe">${i > 0 ? `<button class="btn fant" data-fich-ir="${i - 1}">Pergunta anterior</button>` : '<span></span>'}<span class="cresce"></span>${i < ps.length - 1 ? `<button class="btn prim" data-fich-ir="${i + 1}">Próxima pergunta</button>` : '<button class="btn prim" data-fich-vista="notas">Ver as suas notas</button>'}</div>
+    </div>`;
+  }
+  function vistaNotas(f, l, grifos) {
+    const notas = comTexto(f);
+    const origem = (n) => {
+      if (n.chave.startsWith('p:')) return `Resposta a: ${esc(n.pergunta || perguntasDe(f).find((p) => `p:${p.id}` === n.chave)?.texto || 'uma pergunta')}`;
+      const g = grifos.find((x) => `g:${x.id}` === n.chave);
+      return g ? `Sobre o grifo: “${esc(g.texto.slice(0, 120))}${g.texto.length > 120 ? '…' : ''}”` : 'Sobre um grifo que foi apagado';
+    };
+    return `${notas.length ? `<p class="instr">Cada nota já traz a referência e pode ser lida sozinha. As marcadas para a dissertação e as ligadas a um argumento aparecem no Mapa de argumentos.</p>
+      <ul class="fich-notas">${notas.map((n) => `<li><p class="nota-t">${esc(n.texto)} <span class="cit">${esc(referenciaDaNota(n, l))}</span></p><small>${origem(n)}${n.levar ? '. Vai para a dissertação' : ''}${n.argumento?.trim() ? `. Argumento: ${esc(n.argumento)}` : ''}</small><button class="btn fant" data-fich-copiar="${esc(n.chave)}">Copiar</button></li>`).join('')}</ul>` : '<p class="mute">Nenhuma nota ainda. Elas nascem dos dois caminhos: pelos grifos e pelo texto completo.</p>'}
+      ${temAntigo(f) ? `<details class="fich-antigo"><summary>Do fichamento em cinco etapas</summary>
+        ${f.citacoes?.length ? `<h3>Citações</h3>${f.citacoes.map((c) => `<blockquote>${esc(c.texto)}<cite>${esc(citacao(l, c.pagina))}${c.porque ? `. Por que importa: ${esc(c.porque)}` : ''}</cite></blockquote>`).join('')}` : ''}
+        ${f.resumo ? `<h3>Resumo</h3><p>${esc(f.resumo)}</p>` : ''}
+        ${PERGUNTAS.filter(([k]) => f.analise?.[k]).map(([k, q]) => `<h3>${q}</h3><p>${esc(f.analise[k])}</p>`).join('')}
+        ${(f.trechos || []).some((t) => !t.daNota && t.texto) ? `<h3>Para a dissertação</h3>${f.trechos.filter((t) => !t.daNota && t.texto).map((t) => `<p>${esc(t.texto)}${t.argumento ? ` <small>Argumento: ${esc(t.argumento)}</small>` : ''}</p>`).join('')}` : ''}
+        <p class="t-meta mute">Escrito antes da mudança do fichamento. Continua guardado, no arquivo do Drive e nos Argumentos.</p></details>` : ''}
+      ${window.rb?.tutorFich ? `<section class="fich-tutor">${window.rb.tutorFich.painel(l.id, 3)}</section>` : ''}
+      <div class="pe"><span class="cresce"></span><button class="btn prim" data-fich-concluir="${esc(l.id)}">${f.feitos >= 5 ? 'Salvar de novo no Drive' : 'Concluir fichamento'}</button></div>`;
   }
 
   function tela(id) {
     const l = bib.obter(id);
     if (!l) return null;
     const f = doLivro(id) || novo(id);
-    const p = passo[id] ?? Math.min(f.feitos, 4);
-    const cores = PASSOS[p].cores;
-    const todos = bib.grifosDe(id);
-    const grifos = p === 1 ? todos : todos.filter((g) => !cores.length || cores.includes(g.funcao));
-    const modo = p === 4 ? 'citar' : 'ver';
-    return `<div class="topo"><div><h1>Fichamento</h1><p>${esc(l.titulo)}</p></div><div class="acoes"><span class="t-legenda mute-2" id="fich-salvo">${doLivro(id) ? 'Salvo' : ''}</span><a class="btn" href="#leitor/${encodeURIComponent(l.id)}">Abrir a obra</a></div></div>
-      <ol class="passos">${PASSOS.map((s, i) => `<li><button data-fpasso="${i}" data-id="${esc(id)}" class="${i === p ? 'on' : i < f.feitos ? 'feito' : ''}"><span class="n">${i < f.feitos ? '✓' : i + 1}</span><span class="rot">${s.nome}</span></button></li>`).join('')}</ol>
-      <div class="fich-real">
-        <section class="editor" data-fich-id="${esc(id)}">
-          ${corpoPasso(p, f, l, todos)}
-          <div class="pe">
-            ${p > 0 ? `<button class="btn fant" data-fpasso="${p - 1}" data-id="${esc(id)}">Voltar para ${PASSOS[p - 1].nome}</button>` : '<span></span>'}
-            ${p < 4 ? `<button class="btn prim" data-fpasso="${p + 1}" data-id="${esc(id)}" data-concluir-passo="${p}">Próxima etapa: ${PASSOS[p + 1].nome}</button>` : `<button class="btn prim" data-fich-concluir="${esc(id)}">${f.feitos >= 5 ? 'Atualizar fichamento' : 'Concluir fichamento'}</button>`}
-          </div>
-        </section>
-        <aside class="painel-lat">
-          ${p === 0 ? '' : `<h4>Seus grifos</h4><p class="sub">${p === 1 ? 'Todos os grifos da obra' : cores.length ? 'Para esta etapa: ' + cores.map((c) => FUNCOES.find((x) => x.id === c).nome.toLowerCase()).join(', ') : ''}${modo === 'citar' ? '. Selecione para inserir a citação no trecho.' : ''}</p>
-          ${grifos.length ? grifos.map((g) => grifoBtn(g, l, modo)).join('') : '<p class="t-meta mute">Nenhum grifo desta cor ainda.</p>'}`}
-          ${window.rb?.tutorFich ? window.rb.tutorFich.painel(id, p) : ''}
-        </aside>
-      </div>`;
+    const grifos = bib.grifosDe(id);
+    const v = est.vista[id] || (grifos.length ? 'grifos' : 'texto');
+    const faltam = referencia(l).includes('[a completar]') || referencia(l).includes('[s. d.]');
+    const corpo = { grifos: vistaGrifos, texto: vistaTexto, notas: vistaNotas }[v](f, l, grifos);
+    const abas = [['grifos', `Pelos grifos, ${grifos.length}`], ['texto', 'Pelo texto completo'], ['notas', `Suas notas, ${comTexto(f).length}`]];
+    return `<a class="voltar" href="#leitor/${encodeURIComponent(id)}">${icone('voltar')}Voltar ao texto</a>
+      <div class="topo fich-topo"><div><h1>Fichamento</h1><p class="fich-obra">${esc(l.titulo)}</p>
+        <p class="ref-previa">${referencia(l)} <button class="lnk" data-bib-editar="${esc(l.id)}">Corrigir dados da obra</button></p>
+        ${faltam ? '<div class="ad-msg erro" role="status">Faltam dados na referência. Corrija antes de usar a obra no texto.</div>' : ''}</div>
+        <div class="acoes"><span class="t-legenda mute-2" id="fich-salvo" role="status">${doLivro(id) ? 'Salvo' : ''}</span></div></div>
+      <div class="alterna fich-caminho" role="group" aria-label="Caminho do fichamento">${abas.map(([k, n]) => `<button class="txt" data-fich-vista="${k}" aria-pressed="${v === k}">${n}</button>`).join('')}</div>
+      <datalist id="fich-args">${argumentos.map((a) => `<option value="${esc(a.tese)}">`).join('')}</datalist>
+      <section class="fich-novo" data-fich-id="${esc(id)}">${corpo}</section>`;
   }
 
   /* ---------- Eventos ---------- */
@@ -199,112 +288,179 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     const ed = document.querySelector('[data-fich-id]');
     if (!ed) return null;
     const id = ed.dataset.fichId;
-    return { id, f: structuredClone(doLivro(id) || novo(id)) };
+    return { id, f: structuredClone(doLivro(id) || novo(id)), l: bib.obter(id) };
   };
   const agendarSalvar = (f) => {
     const st = document.getElementById('fich-salvo');
     if (st) st.textContent = 'Salvando…';
     clearTimeout(salvarDepois);
-    salvarDepois = setTimeout(() => salvar(f), 700);
+    pendente = f;
+    salvarDepois = setTimeout(gravarPendente, 700);
   };
-  const ultimoTrecho = { id: null, pos: null };
+  let pendente = null;
+  const gravarPendente = async () => {
+    clearTimeout(salvarDepois);
+    const f = pendente;
+    pendente = null;
+    if (f) await salvar(f);
+  };
+  // Sair da tela não pode custar o que foi digitado no último instante.
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && gravarPendente());
+  window.addEventListener('pagehide', () => gravarPendente());
+  window.addEventListener('hashchange', () => gravarPendente());
 
-  document.addEventListener('input', (e) => {
-    const t = e.target;
-    if (!t.closest?.('[data-fich-id]')) return;
-    const a = atual();
-    if (!a) return;
-    const { f } = a;
-    if (t.dataset.fichCampo === 'resumo') {
-      f.resumo = t.value;
-      const pal = document.getElementById('fich-pal');
-      if (pal) pal.textContent = `${palavras(t.value)} palavras`;
+  /** Acha ou cria a nota de uma chave, com o que ela precisa para ser lida sozinha. */
+  function notaPara(f, chave, l) {
+    f.notas = f.notas || [];
+    let n = f.notas.find((x) => x.chave === chave);
+    if (n) return n;
+    n = { id: crypto.randomUUID().slice(0, 8), chave, texto: '', levar: false, argumento: '', criadoEm: new Date().toISOString() };
+    if (chave.startsWith('g:')) {
+      const g = bib.grifosDe(l.id).find((x) => `g:${x.id}` === chave);
+      n.pagina = g?.pagina || null;
+    } else {
+      const p = perguntasDe(f).find((x) => `p:${x.id}` === chave);
+      n.pergunta = p?.texto || '';
+      n.bloco = p?.bloco || '';
     }
-    if (t.dataset.fichAnalise) f.analise[t.dataset.fichAnalise] = t.value;
-    if (t.dataset.fichPorque) {
-      const c = f.citacoes.find((x) => x.grifoId === t.dataset.fichPorque);
-      if (c) c.porque = t.value;
-    }
-    if (t.dataset.fichTrecho || t.dataset.fichArg) {
-      const id = t.dataset.fichTrecho || t.dataset.fichArg;
-      if (!f.trechos.length) f.trechos.push({ id: 't1', texto: '', argumento: '' });
-      const tr = f.trechos.find((x) => x.id === id);
-      if (tr) tr[t.dataset.fichTrecho ? 'texto' : 'argumento'] = t.value;
-    }
-    // atualiza a cópia em memória já, para a próxima tecla partir dela
+    f.notas.push(n);
+    return n;
+  }
+  const guardarNaMemoria = (f) => {
     const i = fichamentos.findIndex((x) => x.id === f.id);
     if (i >= 0) fichamentos[i] = f;
     else fichamentos.push(f);
-    agendarSalvar(f);
-  });
+  };
 
-  document.addEventListener('focusout', (e) => {
-    if (e.target.dataset?.fichTrecho) {
-      ultimoTrecho.id = e.target.dataset.fichTrecho;
-      ultimoTrecho.pos = e.target.selectionStart;
+  document.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t.closest?.('[data-fich-id]') || !(t.dataset.fichNota || t.dataset.fichArg)) return;
+    const a = atual();
+    if (!a) return;
+    const n = notaPara(a.f, t.dataset.fichNota || t.dataset.fichArg, a.l);
+    if (t.dataset.fichNota) {
+      n.texto = t.value;
+      const pal = document.getElementById('fich-pal');
+      if (pal && t.id === 'fich-resp') pal.textContent = `${palavras(t.value)} palavras`;
+    } else {
+      n.argumento = t.value;
+      n.argumentoId = undefined;
     }
+    espelhar(a.f, a.l);
+    const aba = document.querySelector('.fich-caminho [data-fich-vista="notas"]');
+    if (aba) aba.textContent = `Suas notas, ${comTexto(a.f).length}`;
+    // atualiza a cópia em memória já, para a próxima tecla partir dela
+    guardarNaMemoria(a.f);
+    agendarSalvar(a.f);
   });
 
   document.addEventListener('change', async (e) => {
-    const id = e.target.dataset?.fichCit;
-    if (!id) return;
+    const chave = e.target.dataset?.fichLevar;
+    if (!chave) return;
     const a = atual();
-    const g = bib.grifosDe(a.id).find((x) => x.id === id);
-    if (e.target.checked) a.f.citacoes.push({ grifoId: g.id, texto: g.texto, pagina: g.pagina, porque: '' });
-    else a.f.citacoes = a.f.citacoes.filter((c) => c.grifoId !== id);
+    notaPara(a.f, chave, a.l).levar = e.target.checked;
+    espelhar(a.f, a.l);
+    guardarNaMemoria(a.f);
     await salvar(a.f);
-    window.render?.();
   });
 
+  async function comecarObra(a) {
+    if ((a.l.etapa || 0) < 3) await bib.atualizar(a.id, { etapa: 3 });
+  }
+
   ouvir('click', async (e) => {
-    const t = e.target.closest('[data-fpasso],[data-fich-concluir],[data-fich-novo-trecho],[data-fich-citar],[data-fich-grifo],[data-bib-editar]');
+    const t = e.target.closest('[data-fich-vista],[data-fich-filtro],[data-fich-ir],[data-fich-abrir],[data-fich-perguntas],[data-fich-trocar],[data-fich-copiar],[data-fich-concluir],[data-bib-editar]');
     if (!t) return;
-    if (t.dataset.bibEditar) {
-      window.rb?.bibUI?.editar(t.dataset.bibEditar);
+    const d = t.dataset;
+    if (d.bibEditar) {
+      window.rb?.bibUI?.editar(d.bibEditar);
       return;
     }
     const a = atual();
     if (!a) return;
-    if (t.dataset.fpasso !== undefined) {
-      clearTimeout(salvarDepois);
-      if (t.dataset.concluirPasso !== undefined) a.f.feitos = Math.max(a.f.feitos, Number(t.dataset.concluirPasso) + 1);
-      await salvar(a.f);
-      if (a.f.feitos >= 1) {
-        const l = bib.obter(a.id);
-        if (l && (l.etapa || 0) < 3) await bib.atualizar(a.id, { etapa: 3 });
+    if (d.fichVista || d.fichIr !== undefined || d.fichFiltro !== undefined) {
+      await gravarPendente();
+      if (d.fichVista) est.vista[a.id] = d.fichVista;
+      if (d.fichIr !== undefined) est.pergunta[a.id] = Number(d.fichIr);
+      if (d.fichFiltro !== undefined) est.filtro[a.id] = d.fichFiltro;
+      if (comTexto(doLivro(a.id) || a.f).length) await comecarObra(a);
+      registrar('ui', 'fichamento.vista', { det: d.fichVista || (d.fichIr !== undefined ? 'pergunta' : 'filtro') });
+      window.render?.();
+      if (d.fichVista || d.fichIr !== undefined) scrollTo({ top: 0 });
+      return;
+    }
+    if (d.fichAbrir) {
+      await gravarPendente();
+      est.pergunta[a.id] = indiceAtual(a.f, a.id);
+      const p = perguntasDe(a.f)[est.pergunta[a.id]];
+      const k = `${a.id}:${p.id}:${d.fichAbrir}`;
+      if (est.aberto.has(k)) est.aberto.delete(k);
+      else est.aberto.add(k);
+      return window.render?.();
+    }
+    if (d.fichPerguntas) {
+      est.erro = null;
+      let itens = PERGUNTAS_GERAIS;
+      let origem = 'geral';
+      if (d.fichPerguntas === 'ia') {
+        try {
+          itens = await window.rb.tutorFich.gerarPerguntas(a.id);
+          origem = 'ia';
+        } catch (err) {
+          est.erro = { id: a.id, err };
+          return window.render?.();
+        }
       }
-      passo[a.id] = Number(t.dataset.fpasso);
-      registrar('ui', 'fichamento.etapa', { det: PASSOS[passo[a.id]].id });
-      window.render?.();
-      scrollTo({ top: 0 });
+      const f = structuredClone(doLivro(a.id) || novo(a.id));
+      f.perguntas = { origem, geradasEm: new Date().toISOString(), itens };
+      await salvar(f);
+      est.pergunta[a.id] = 0;
+      registrar('ui', 'fichamento.perguntas', { det: `${origem}, ${itens.length}` });
+      return window.render?.();
     }
-    if (t.dataset.fichNovoTrecho !== undefined) {
-      if (!a.f.trechos.length) a.f.trechos.push({ id: 't1', texto: '', argumento: '' });
-      a.f.trechos.push({ id: `t${Date.now()}`, texto: '', argumento: '' });
-      await salvar(a.f);
-      window.render?.();
+    if (d.fichTrocar) {
+      await gravarPendente();
+      const f = structuredClone(doLivro(a.id) || a.f);
+      const i = perguntasDe(f).findIndex((p) => p.id === d.fichTrocar);
+      const velha = perguntasDe(f)[i];
+      if (notaDe(f, `p:${velha.id}`)?.texto?.trim()) return toast('Esta pergunta já tem resposta. A resposta fica nas suas notas; troque uma pergunta ainda em branco.');
+      let nova = null;
+      if (f.perguntas.origem === 'ia') {
+        try {
+          nova = await window.rb.tutorFich.gerarPerguntas(a.id, { trocar: velha });
+        } catch (err) {
+          return toast(err.message);
+        }
+      } else {
+        const usadas = new Set(perguntasDe(f).map((p) => p.texto));
+        nova = [...PERGUNTAS_GERAIS, ...PERGUNTAS_RESERVA].find((p) => p.bloco === velha.bloco && !usadas.has(p.texto));
+        if (!nova) return toast('Não há outra pergunta geral para este bloco.');
+        nova = { ...nova, id: `${nova.id}-${Date.now().toString(36)}` };
+      }
+      f.perguntas.itens[i] = nova;
+      await salvar(f);
+      est.pergunta[a.id] = i;
+      return window.render?.();
     }
-    if (t.dataset.fichCitar || (t.dataset.fichGrifo && t.dataset.modo === 'citar')) {
-      // insere "(Autor, ano, p. X)" no trecho, onde o cursor estava
-      const l = bib.obter(a.id);
-      const g = t.dataset.fichGrifo ? bib.grifosDe(a.id).find((x) => x.id === t.dataset.fichGrifo) : null;
-      const alvoId = t.dataset.fichCitar || ultimoTrecho.id || a.f.trechos[0]?.id || 't1';
-      const campo = document.querySelector(`[data-fich-trecho="${CSS.escape(alvoId)}"]`);
-      if (!campo) return;
-      const cit = citacao(l, g?.pagina);
-      const pos = alvoId === ultimoTrecho.id && ultimoTrecho.pos != null ? ultimoTrecho.pos : campo.value.length;
-      const antes = campo.value.slice(0, pos);
-      campo.value = `${antes}${antes && !/\s$/.test(antes) ? ' ' : ''}${cit}${campo.value.slice(pos)}`;
-      campo.dispatchEvent(new Event('input', { bubbles: true }));
-      campo.focus();
-      toast(`Citação inserida: ${cit}`);
+    if (d.fichCopiar) {
+      const n = notaDe(a.f, d.fichCopiar);
+      const texto = `${n.texto.trim()} ${referenciaDaNota(n, a.l)}`;
+      try {
+        await navigator.clipboard.writeText(texto);
+        toast('Nota copiada com a referência');
+      } catch {
+        toast('Não deu para copiar. Selecione o texto da nota e copie.');
+      }
+      return;
     }
-    if (t.dataset.fichConcluir) {
-      clearTimeout(salvarDepois);
-      a.f.feitos = 5;
-      a.f.concluidoEm = a.f.concluidoEm || new Date().toISOString();
-      // Teses novas viram argumentos (com o texto do Diobert), para aparecerem depois em Argumentos.
-      for (const tr of a.f.trechos.filter((x) => x.argumento?.trim())) {
+    if (d.fichConcluir) {
+      await gravarPendente();
+      const f = structuredClone(doLivro(a.id) || a.f);
+      f.feitos = 5;
+      f.concluidoEm = f.concluidoEm || new Date().toISOString();
+      // Teses novas viram argumentos (com o texto do Diobert), para aparecerem depois no Mapa.
+      const alvos = [...(f.notas || []).filter((n) => n.texto?.trim() && n.argumento?.trim()), ...(f.trechos || []).filter((x) => !x.daNota && x.argumento?.trim())];
+      for (const tr of alvos) {
         const tese = tr.argumento.trim();
         let arg = argumentos.find((x) => x.tese.toLowerCase() === tese.toLowerCase());
         if (!arg) {
@@ -313,10 +469,12 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
         }
         tr.argumentoId = arg.id;
       }
-      await salvar(a.f, { exportarJa: true });
+      espelhar(f, a.l);
+      f.feitos = 5;
+      await salvar(f, { exportarJa: true });
       await bib.atualizar(a.id, { etapa: 4 });
       await window.rb?.argUI?.carregar();
-      registrar('ui', 'fichamento.concluir', { det: `${a.f.citacoes.length} citações, ${a.f.trechos.filter((x) => x.texto).length} trechos` });
+      registrar('ui', 'fichamento.concluir', { det: `${comTexto(f).length} notas, ${f.trechos.filter((x) => x.texto).length} trechos` });
       toast('Fichamento concluído e salvo no Drive');
       window.render?.();
     }
