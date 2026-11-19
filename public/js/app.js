@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '1.6.0';
+const APP_VERSAO = '1.9.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -205,13 +205,13 @@ function toast(t,desfazer){const el=document.getElementById('toast');el.innerHTM
    ========================================================= */
 const CORES_DISC = ['#8A6D3B','#7A8B3C','#B8645A'];
 const SECOES = {
-  bib:{nome:'Biblioteca', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos'],['organizar','Organizar']]},
+  bib:{nome:'Biblioteca', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos']]},
   esc:{nome:'Escrita', tabs:[['escrita','Textos'],['dialogos','Diálogos']]},
   diss:{nome:'Dissertação', tabs:[['projeto','Revisão do projeto'],['orientacao','Orientação'],['argumentos','Argumentos']]},
   voce:{nome:'Você', tabs:[['autor','Overview do autor'],['memoria','Memória'],['ajustes','Ajustes']]},
 };
 const SECAO_DE = {}; Object.entries(SECOES).forEach(([k,v])=>v.tabs.forEach(([r])=>SECAO_DE[r]=k));
-Object.assign(SECAO_DE,{leitor:'bib',fichamento:'bib',texto:'esc',cartoes:'hoje'});
+Object.assign(SECAO_DE,{leitor:'bib',fichamento:'bib',texto:'esc',cartoes:'hoje',organizar:'voce'});
 function desenhaMenu(rota){
   const [base,arg]=rota.split('/');
   const sec=SECAO_DE[base];
@@ -749,11 +749,11 @@ function secAparelho(){
 }
 
 // Ajustes em subpáginas (#ajustes/<seção>): uma seção por vez, com o índice sempre à vista.
-const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa'],['custo','Uso e custo'],['registros','Registros'],['aparelho','Este aparelho'],['seguranca','Cópias de segurança'],['sincronizacao','Sincronização'],['agenda','Google Agenda'],['cores','Marca-textos'],['pasta','Conta e pasta']];
-V.ajustes = (sec) => { const atual=SECOES_AJ.some(([k])=>k===sec)?sec:'ia'; return `
+const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa'],['custo','Uso e custo'],['registros','Registros'],['aparelho','Este aparelho'],['seguranca','Cópias de segurança'],['sincronizacao','Sincronização'],['acervo','Acervo'],['agenda','Google Agenda'],['cores','Marca-textos'],['pasta','Conta e pasta']];
+V.ajustes = (sec) => { if(sec==='acervo'){location.hash='#organizar';return ''} const atual=SECOES_AJ.some(([k])=>k===sec)?sec:'ia'; return `
   <div class="topo"><div><h1>Ajustes</h1><p>IA, custos, registros, agenda, cores e a pasta onde tudo fica.</p></div></div>
   <div class="aj-wrap">
-  <nav class="aj-indice" aria-label="Seções dos ajustes">${SECOES_AJ.map(([k,n])=>`<a href="#ajustes/${k}"${k===atual?' class="on" aria-current="page"':''}>${n}</a>`).join('')}</nav>
+  <nav class="aj-indice" aria-label="Seções dos ajustes">${SECOES_AJ.map(([k,n])=>`<a href="${k==='acervo'?'#organizar':'#ajustes/'+k}"${k===atual?' class="on" aria-current="page"':''}>${n}</a>`).join('')}</nav>
   <div class="aj" data-sec="sec-${atual}">
     ${modoReal()&&window.rb&&window.rb.iaAjustes?window.rb.iaAjustes.secaoHTML():`<section id="sec-ia">
       <h2>Conexão com o Gemini</h2>
@@ -1842,6 +1842,13 @@ document.addEventListener('click',async e=>{
 /* =========================================================
    Roteador
    ========================================================= */
+function telaAbrindo(ab){
+  const pct=Math.round(ab.feitas/ab.total*100);
+  return `<div class="abrindo" id="abrindo" role="status" aria-live="polite"><h2>Abrindo os seus dados</h2>
+  <div class="barra" role="img" aria-label="${pct}% baixado"><i style="width:${pct}%"></i></div>
+  <ol class="abrindo-passos"><li class="ok">Conta confirmada</li><li class="ok">Pasta researchbook encontrada no seu Drive</li><li class="agora">Baixando os seus dados: ${ab.feitas} de ${ab.total} partes</li><li>Os PDFs descem depois, quando você abrir cada obra</li></ol>
+  <p class="meta">Se a internet cair agora, o app abre com o que já está neste aparelho e termina depois.</p></div>`;
+}
 function render(){
   const bloqueado=acesso()!=='livre';
   document.body.classList.toggle('bloqueado',bloqueado);
@@ -1854,6 +1861,9 @@ function render(){
   if(v==='revisao') V.revisao=V.cartoes;
   const fn=V[v]||V.painel;
   let html=fn(arg,arg2);
+  // Primeira abertura neste aparelho: enquanto os dados descem do Drive, nenhuma tela aparece como vazia.
+  const ab=modoReal()&&window.rb&&window.rb.sincronia&&window.rb.sincronia.estado().abrindo;
+  if(ab&&v!=='ajustes') html=telaAbrindo(ab);
   if(SECOES[SECAO_DE[v]] && SECOES[SECAO_DE[v]].tabs.some(([r])=>r===v)) html=secaoCab(v)+html.replace(/<h1[^>]*>[\s\S]*?<\/h1>/,'');
   document.getElementById('vista').innerHTML=html;
   pop.classList.remove('on');

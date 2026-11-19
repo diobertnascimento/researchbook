@@ -9,7 +9,7 @@
 // Repetidas: mesmo DOI, mesmo PDF ou mesmo título, ano e autor (idênticas); título quase igual (prováveis).
 // Juntar mantém a obra com mais trabalho (grifos, fichamento, etapa), leva o resto para ela e tem desfazer.
 import * as arm from './armazenamento.js';
-import { procurarPorDados } from './crossref.js';
+import { procurarPorDados, buscarDOI } from './crossref.js';
 import { formatoDe, lerFormato, ligarPDFs, NOMES_FORMATO } from './importar.js';
 import { assinatura } from './biblioteca.js';
 import { pontuar, compararObras, gruposRepetidos, chaveDoPar, peso, similaridadeTitulo, palavras, MUITO_PROVAVEL, PROVAVEL } from './duplicatas.js';
@@ -363,6 +363,57 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     await bib.atualizar(id, { doiBusca: { status: 'erro', recusados: l?.doiBusca?.recusados || [] } });
     return procurarDOIs([id], opcoes);
   }
+  /** Retrato do acervo: quantas obras têm DOI, quantas não, e quais estão sem PDF. */
+  function resumo() {
+    const ls = bib.leituras();
+    return {
+      total: ls.length,
+      comDOI: ls.filter((l) => l.doi).length,
+      naoTem: ls.filter((l) => !l.doi && l.doiBusca?.status === 'nao-tem').length,
+      semDOI: ls.filter((l) => !l.doi && l.doiBusca?.status !== 'nao-tem').length,
+      semPDF: ls.filter((l) => !l.pdf),
+    };
+  }
+
+  // Atualizar pelo DOI: confere no Crossref as obras que já têm DOI e completa só o que está vazio.
+  // O que o autor escreveu nunca é trocado; diferença de ano é só informada.
+  let atualizacao = null;
+  async function atualizarPeloDOI() {
+    if (atualizacao?.rodando) return atualizacao;
+    const ls = bib.leituras().filter((l) => l.doi);
+    atualizacao = { rodando: true, feitos: 0, total: ls.length, completadas: [], diferentes: [], falhas: 0 };
+    avisar();
+    for (const l of ls) {
+      const r = await buscarDOI(l.doi, { registrar });
+      if (r.erro) atualizacao.falhas++;
+      else {
+        const c = r.dados;
+        const m = {};
+        for (const k of CAMPOS_BIB) if (!l[k] && c[k]) m[k] = c[k];
+        if (!l.autores?.length && c.autores?.length) m.autores = c.autores;
+        if (Object.keys(m).length) {
+          const antes = Object.fromEntries(Object.keys(m).map((k) => [k, l[k] ?? null]));
+          await bib.atualizar(l.id, m);
+          atualizacao.completadas.push({ id: l.id, titulo: l.titulo, campos: Object.keys(m), desfazer: () => bib.atualizar(l.id, antes) });
+        }
+        if (l.ano && c.ano && String(l.ano) !== String(c.ano)) atualizacao.diferentes.push({ id: l.id, titulo: l.titulo, aqui: l.ano, la: c.ano });
+      }
+      atualizacao.feitos++;
+      avisar();
+    }
+    atualizacao.rodando = false;
+    registrar('ui', 'organizar.atualizar_doi', { det: `${atualizacao.completadas.length} de ${ls.length} completadas` });
+    avisar();
+    return atualizacao;
+  }
+  async function desfazerAtualizacao() {
+    const feitas = atualizacao?.completadas || [];
+    for (const c of [...feitas].reverse()) await c.desfazer();
+    atualizacao = null;
+    avisar();
+    return feitas.length;
+  }
+
   /** A pedido do autor, para uma obra: a IA lê o começo do PDF e indica o candidato certo (nunca inventa DOI). */
   const pedirIA = (id) => procurarDeNovo(id, { comIA: true });
   /** Desfaz todos os DOIs gravados sozinhos na última procura. */
@@ -502,6 +553,14 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     propostas,
     semResultado,
     procurarDOIs,
+    resumo,
+    atualizarPeloDOI,
+    desfazerAtualizacao,
+    estadoAtualizacao: () => atualizacao,
+    dispensarAtualizacao: () => {
+      atualizacao = null;
+      avisar();
+    },
     pedirIA,
     gravadosAgora: () => gravados,
     desfazerGravados,

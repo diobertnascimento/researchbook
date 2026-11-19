@@ -212,6 +212,9 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v1.9.0 (19/11/2026): tela "Abrindo os seus dados" na primeira sincronização de um aparelho (`estado().abrindo` em sincronia.js).
+- v1.8.0 (19/11/2026): cópias item por item (`diferencasDaCopia`, `trazerDaCopia`) e pasta no computador (`pasta-local.js`, File System Access API, handle guardado no store `meta` com disjuntor de leitura).
+- v1.7.0 (19/11/2026): página Acervo em Ajustes (rota `#organizar`, fora das abas da Biblioteca), com retrato do acervo, obras sem PDF e `atualizarPeloDOI` (completa só campos vazios).
 - v1.6.0 (18/11/2026): Organizar grava sozinho o DOI muito provável (`doiBusca.auto`), com desfazer da procura inteira; a IA só entra por pedido (`pedirIA`).
 - v1.5.0 (18/11/2026): sincronização entre aparelhos. Renovação silenciosa da sessão ao voltar para o app ou parado (nunca com campo em foco), registro por aparelho no Drive (`aparelhos/<id>.json`), página Sincronização em Ajustes, versão automática antes de cobrir um texto que veio de outro aparelho.
 - v1.4.0 (18/11/2026): confirmação honesta. Estado da sincronização com `pendente`, `pendentes` e `recebidos`; espera de 2 s antes de enviar; aviso quando uma ação falha depois do clique; BibTeX exportado de verdade (`paraBibTeX` em importar.js).

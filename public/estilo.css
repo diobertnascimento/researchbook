@@ -1479,3 +1479,17 @@ details:is(.ajuda-det,.como,.meu-reg,.arq-disc,:not([class])) > :not(summary){co
   .passos button{justify-content:center;padding:0 var(--e-1)}
   .vazio-estado,.bib-vazia{padding:var(--e-8) var(--e-5)}
 }
+
+/* Cópias de segurança: o que uma cópia tem de diferente de hoje, aberto embaixo dela. */
+.vers-lista li.seg-bloco{display:block;padding:0 0 12px 16px}
+.vers-lista li.seg-bloco .vers-lista{margin:0}
+
+/* Primeira abertura num aparelho: andamento do que desce do Drive. */
+.abrindo{max-width:520px;margin:12vh auto 0;padding:0 8px}
+.abrindo h2{margin:0 0 16px}
+.abrindo-passos{list-style:none;margin:16px 0;padding:0}
+.abrindo-passos li{padding:6px 0 6px 26px;position:relative;color:var(--ink-3,#6b6b6b)}
+.abrindo-passos li::before{content:'';position:absolute;left:4px;top:13px;width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor;box-sizing:border-box}
+.abrindo-passos li.ok{color:inherit}
+.abrindo-passos li.ok::before{background:currentColor}
+.abrindo-passos li.agora{color:inherit;font-weight:600}

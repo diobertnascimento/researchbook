@@ -30,7 +30,7 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
   const registrar = registros.registrar;
   // pendente: há mudança daqui que ainda não subiu. pendentes: quantas (contadas quando o envio não pode acontecer).
   // recebidos: quantos itens vieram de outro aparelho na última sincronização.
-  let estado = { fase: 'parado', ultima: null, erro: null, conflitos: 0, pendente: false, pendentes: 0, recebidos: 0 };
+  let estado = { fase: 'parado', ultima: null, erro: null, conflitos: 0, pendente: false, pendentes: 0, recebidos: 0, abrindo: null };
   let mudancas = 0;
   let rodando = null;
   let espera = null;
@@ -158,7 +158,9 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
         mudar({ fase: 'offline' });
         return estado;
       }
-      mudar({ fase: 'sincronizando' });
+      // Primeira sincronização deste aparelho: as telas mostram o andamento em vez de parecerem vazias.
+      const primeira = !(await arm.lerMeta(db, 'sinc:leituras'));
+      mudar({ fase: 'sincronizando', abrindo: primeira ? { feitas: 0, total: arm.COLECOES.length } : null });
       const vistas = mudancas;
       const inicio = performance.now();
       const total = { baixados: 0, enviados: 0, conflitos: 0 };
@@ -168,18 +170,19 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
         for (const c of arm.COLECOES) {
           const r = await sincronizarColecao(c, noDrive[`${c}.json`]);
           for (const k in total) total[k] += r[k];
+          if (primeira) mudar({ abrindo: { feitas: arm.COLECOES.indexOf(c) + 1, total: arm.COLECOES.length } });
         }
         await enviarRegistros();
         const conflitos = (await arm.todos(db, 'conflitos')).length;
         // Só deixa de estar pendente se nada mudou aqui enquanto a sincronização rodava.
-        mudar({ fase: 'ok', ultima: new Date().toISOString(), erro: null, conflitos, pendente: mudancas !== vistas, pendentes: 0, recebidos: total.baixados, enviados: total.enviados });
+        mudar({ fase: 'ok', ultima: new Date().toISOString(), erro: null, conflitos, pendente: mudancas !== vistas, pendentes: 0, recebidos: total.baixados, enviados: total.enviados, abrindo: null });
         registrar('arq', 'sinc.ok', {
           det: `${total.baixados} recebidos, ${total.enviados} enviados, ${total.conflitos} conflitos`,
           dur: Math.round(performance.now() - inicio),
         });
       } catch (e) {
         const fase = e.codigo === 401 ? 'desconectado' : e.codigo === 'rede' ? 'offline' : 'erro';
-        mudar({ fase, erro: e.message });
+        mudar({ fase, erro: e.message, abrindo: null });
         contarPendentes();
         registrar(fase === 'erro' ? 'erro' : 'arq', 'sinc.falhou', { det: e.message, dur: Math.round(performance.now() - inicio), st: fase === 'erro' ? 'erro' : 'aviso' });
       } finally {

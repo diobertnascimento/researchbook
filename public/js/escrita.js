@@ -305,9 +305,9 @@ export function criarEscrita({ dados, bib, drive, registrar }) {
   }
 
   /** O texto daqui vai ser trocado pelo que veio de outro aparelho: se o conteúdo é outro, guarda o daqui. */
-  async function guardarAntesDeReceber(local, remoto) {
+  async function guardarAntesDeReceber(local, remoto, motivo = 'antes de receber de outro aparelho') {
     if (!temTexto(local) || (!remoto.apagado && conteudoDe(local) === conteudoDe(remoto))) return;
-    await guardarVersao(local, 'antes de receber de outro aparelho');
+    await guardarVersao(local, motivo);
   }
 
   /** Volta o texto a uma versão. O que está na tela é guardado antes, como mais uma versão. */

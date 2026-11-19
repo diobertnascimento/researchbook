@@ -192,24 +192,42 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const pend = org.pendentes();
     const muitoProvaveis = props.filter((l) => l.doiBusca.confianca === 'muito-provavel');
     if (reps.some((g) => !cacheFica.has(g.ids.join(',')))) calcularQuemFica(reps).then(() => /^#organizar/.test(location.hash) && window.render?.());
-    const topo = `<div class="topo"><div><h1>Organizar</h1><p>O app procura no Crossref os DOIs que faltam e as obras repetidas. Quando título, autor e ano batem, o DOI é gravado na hora, com desfazer. O que deixa dúvida espera a sua decisão.</p></div>
+    const res = org.resumo();
+    const at = org.estadoAtualizacao();
+    const topo = `<div class="topo"><div><p class="meta mb-0"><a href="#ajustes">Ajustes</a></p><h1>Acervo</h1><p>As obras da sua biblioteca, com o PDF e o DOI de cada uma. Quando título, autor e ano batem com o Crossref, o DOI é gravado na hora, com desfazer. O que deixa dúvida espera a sua decisão.</p></div>
       <div class="acoes"><button class="btn" data-org-importar>${icone('upload')}Importar</button>${pend.length && !st.rodando ? `<button class="btn prim" data-org-procurar>Procurar DOIs que faltam (${pend.length})</button>` : ''}</div></div>`;
     const andamento = st.rodando
       ? `<div class="bloco org-andamento" role="status" aria-live="polite"><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><b>Procurando DOIs: ${st.feitos} de ${st.total}</b></div>${st.atual ? `<p class="meta mt-2">${esc(st.atual)}</p>` : ''}<div class="barra mb-0"><i style="width:${st.total ? Math.round((st.feitos / st.total) * 100) : 0}%"></i></div></div>`
       : '';
     const avisoIA = st.avisoIA ? `<div class="aviso"><span>ⓘ</span><div>A IA não respondeu (${esc(st.avisoIA)}). A procura continuou só pelo Crossref. <a href="#ajustes">Abrir Ajustes do Gemini</a></div></div>` : '';
+    const item = (n, v, obs) => `<div class="ap-it"><span>${n}</span><b>${v}</b>${obs ? `<small>${obs}</small>` : ''}</div>`;
+    const resumoHTML = res.total
+      ? `<div class="ap-grade mb-4" id="acervo-resumo">${item('Obras', res.total, '')}${item('Com DOI', res.comDOI, res.naoTem ? `${plural(res.naoTem, 'outra marcada', 'outras marcadas')} como sem DOI` : '')}${item('Sem DOI', res.semDOI, res.semDOI ? 'para procurar ou decidir' : 'nenhuma faltando')}${item('Sem PDF', res.semPDF.length, res.semPDF.length ? 'só a referência, sem o arquivo' : 'todas com o arquivo')}</div>`
+      : '';
+    const ROT = { subtitulo: 'subtítulo', ano: 'ano', veiculo: 'revista', volume: 'volume', numero: 'número', paginas: 'páginas', editora: 'editora', local: 'local', url: 'link', idioma: 'idioma', autores: 'autores' };
+    const semPDFHTML = res.semPDF.length
+      ? `<section class="org-sec" id="acervo-sem-pdf"><details class="como"><summary>Sem PDF anexado (${res.semPDF.length})</summary><ul class="org-lista-sem">${res.semPDF.map((l) => `<li class="org-sem"><span><b>${esc(l.titulo)}</b><small>${esc([autores(l), l.ano].filter(Boolean).join(', ') || 'Sem autores e ano')}</small></span><span class="linha-acoes"><a class="btn mini" href="#leitor/${esc(l.id)}">Anexar o PDF</a></span></li>`).join('')}</ul></details></section>`
+      : '';
+    const resultadoAt = at && !at.rodando
+      ? `<div class="bloco" id="acervo-atualizadas" role="status"><div class="org-cab"><b>${at.completadas.length ? `${plural(at.completadas.length, 'obra completada', 'obras completadas')} pelo DOI` : 'Nada para completar: os dados das obras com DOI já estavam preenchidos'}</b><span class="linha-acoes">${at.completadas.length ? '<button class="btn mini" data-org-desfazer-atualizacao data-ocupado="Desfazendo…">Desfazer</button>' : ''}<button class="btn fant mini" data-org-dispensar-atualizacao>Ok, conferi</button></span></div>${at.completadas.length ? `<ul class="org-lista-sem">${at.completadas.map((c) => `<li class="org-sem"><span><b>${esc(c.titulo)}</b><small>Completou ${esc(c.campos.map((k) => ROT[k] || k).join(', '))}</small></span></li>`).join('')}</ul>` : ''}${at.diferentes.length ? `<p class="meta">Ano diferente do Crossref, sem mexer no que você escreveu: ${at.diferentes.map((x) => `${esc(x.titulo)} (aqui ${esc(x.aqui)}, no Crossref ${esc(x.la)})`).join('; ')}.</p>` : ''}${at.falhas ? `<p class="meta">${plural(at.falhas, 'DOI não respondeu', 'DOIs não responderam')} no Crossref agora. Tente de novo mais tarde.</p>` : ''}</div>`
+      : '';
+    const emOrdemHTML = res.comDOI
+      ? `<section class="org-sec" id="acervo-em-ordem"><div class="org-cab"><h2>Com DOI <span class="chip">${res.comDOI}</span></h2>${at?.rodando ? '' : '<button class="btn mini" data-org-atualizar-doi data-ocupado="Conferindo…">Atualizar os dados pelo DOI</button>'}</div><p class="meta">Atualizar busca no Crossref revista, volume, páginas e o que mais faltar. Completa só o que está vazio; o que você escreveu fica.</p>${at?.rodando ? `<div class="bloco org-andamento" role="status" aria-live="polite"><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><b>Conferindo no Crossref: ${at.feitos} de ${at.total}</b></div></div>` : resultadoAt}</section>`
+      : '';
+    const extra = semPDFHTML + emOrdemHTML;
     const notaIA = org.iaLigada() ? '' : '<p class="meta mb-4">A procura usa só o Crossref. Com o Gemini ligado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o candidato certo. <a href="#ajustes">Ligar em Ajustes</a></p>';
     const grav = org.gravadosAgora();
     const gravadosHTML = grav.length && !st.rodando
       ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Gravados agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com o Crossref, então o DOI foi gravado e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>DOI ${esc(g.doi)}</small></span></li>`).join('')}</ul></section>`
       : '';
     if (!props.length && !reps.length && !sem.length && !pend.length && !st.rodando && !grav.length)
-      return `${topo}<div class="vazio-estado"><h2>Biblioteca organizada</h2><p>Todas as obras têm DOI (ou você marcou que não têm) e não há obras repetidas. Para trazer muitas obras de uma vez, use Importar.</p><button class="btn prim" data-org-importar>${icone('upload')}Importar PDFs ou o Zotero</button></div>`;
-    return `${topo}${andamento}${avisoIA}${notaIA}${gravadosHTML}
+      return `${topo}${resumoHTML}${res.total ? extra : ''}<div class="vazio-estado"><h2>Biblioteca organizada</h2><p>Todas as obras têm DOI (ou você marcou que não têm) e não há obras repetidas. Para trazer muitas obras de uma vez, use Importar.</p><button class="btn prim" data-org-importar>${icone('upload')}Importar PDFs ou o Zotero</button></div>`;
+    return `${topo}${resumoHTML}${andamento}${avisoIA}${notaIA}${gravadosHTML}
       ${props.length ? `<section class="org-sec"><div class="org-cab"><h2>DOIs para conferir <span class="chip">${props.length}</span></h2>${muitoProvaveis.length > 1 ? `<button class="btn mini" data-org-aceitar-todos data-ocupado="Aceitando…">Aceitar os ${muitoProvaveis.length} muito prováveis</button>` : ''}</div>${props.map(cartaoProposta).join('')}</section>` : ''}
       ${reps.length ? `<section class="org-sec"><div class="org-cab"><h2>Obras repetidas <span class="chip">${reps.length}</span></h2>${reps.filter((g) => g.tipo === 'identica').length > 1 ? `<button class="btn mini" data-org-juntar-identicas data-ocupado="Juntando…">Juntar as ${reps.filter((g) => g.tipo === 'identica').length} idênticas</button>` : ''}</div>${reps.map((g) => cartaoRepetidas(g, cacheFica.get(g.ids.join(',')))).join('')}</section>` : ''}
       ${sem.length ? `<section class="org-sec"><details class="como" ${props.length || reps.length ? '' : 'open'}><summary>Sem DOI encontrado (${sem.length})</summary><p class="meta">Livros, capítulos e trabalhos brasileiros antigos muitas vezes não têm DOI. Corrija os dados e procure de novo, ou marque que a obra não tem DOI.</p><ul class="org-lista-sem">${sem.map(cartaoSem).join('')}</ul></details></section>` : ''}
-      ${pend.length && !st.rodando ? `<p class="meta">${plural(pend.length, 'obra ainda não foi procurada', 'obras ainda não foram procuradas')}.</p>` : ''}`;
+      ${pend.length && !st.rodando ? `<p class="meta">${plural(pend.length, 'obra ainda não foi procurada', 'obras ainda não foram procuradas')}.</p>` : ''}
+      ${extra}`;
   }
 
   /* ---------- Eventos ---------- */
@@ -228,7 +246,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
+    const b = e.target.closest('[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
     if (!b) return;
     const d = b.dataset;
     if (d.orgImportar !== undefined) return abrirImportar();
@@ -236,6 +254,20 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.impGravar !== undefined) return gravar();
     if (d.orgProcurar !== undefined) {
       org.procurarDOIs();
+      return redesenhar();
+    }
+    if (d.orgAtualizarDoi !== undefined) {
+      const r = await org.atualizarPeloDOI();
+      redesenhar();
+      return toast(r.completadas.length ? `${plural(r.completadas.length, 'obra completada', 'obras completadas')} pelo DOI` : 'Nada para completar.');
+    }
+    if (d.orgDesfazerAtualizacao !== undefined) {
+      const n = await org.desfazerAtualizacao();
+      redesenhar();
+      return toast(`${plural(n, 'obra voltou', 'obras voltaram')} a como estava.`);
+    }
+    if (d.orgDispensarAtualizacao !== undefined) {
+      org.dispensarAtualizacao();
       return redesenhar();
     }
     if (d.orgIa) {

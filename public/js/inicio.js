@@ -24,6 +24,7 @@ import { criarEscrita } from './escrita.js';
 import { criarCopiloto } from './copiloto.js';
 import { criarEscritaUI } from './escrita-ui.js';
 import { criarSegurancaUI } from './seguranca-ui.js';
+import { criarPastaLocal } from './pasta-local.js';
 import { paraBibTeX } from './importar.js';
 import { criarSincronizacaoUI, nomeDoAparelho } from './sincronizacao-ui.js';
 import { criarDisciplinas } from './disciplinas.js';
@@ -186,6 +187,7 @@ async function iniciar() {
     if (/^#ajustes/.test(location.hash) && !digitando && typeof window.render === 'function') window.render();
   };
   let ultimaSinc = null;
+  let abrindoVisto = null;
 
   // Registro deste aparelho no Drive (aparelhos/<id>.json): é o que permite dizer, em outro aparelho, que este está parado.
   let aparelhoGravadoEm = 0;
@@ -270,6 +272,12 @@ async function iniciar() {
             window.rb.disciplinas?.retomarPendentes();
             window.rb.agenda?.sincronizar();
           });
+        }
+        // Primeira abertura neste aparelho: a tela acompanha o andamento e volta ao normal quando termina.
+        const ab = e.abrindo ? `${e.abrindo.feitas}` : null;
+        if (ab !== abrindoVisto) {
+          abrindoVisto = ab;
+          if (!/^#ajustes/.test(location.hash)) window.render?.();
         }
         atualizarStatus();
       },
@@ -364,9 +372,44 @@ async function iniciar() {
     registrar('ui', 'copia.recuperar', { det: `${n} itens` });
     return n;
   }
+  // Compara o conteúdo, sem o que muda a cada gravação (data, aparelho, índice de versões).
+  const semMeta = ({ atualizadoEm, aparelho, versoes, ...resto }) => JSON.stringify(resto);
+  /** O que há numa cópia guardada que hoje não existe, está apagado ou está diferente. */
+  async function diferencasDaCopia(criadoEm) {
+    const b = await arm.lerBackup(db, criadoEm);
+    if (!b) return [];
+    const difs = [];
+    for (const [c, itens] of Object.entries(b.foto.colecoes)) {
+      if (c === 'lixeira' || !arm.COLECOES.includes(c)) continue;
+      for (const it of itens) {
+        if (it.apagado) continue;
+        const atual = await arm.um(db, c, it.id);
+        const estado = !atual ? 'faltando' : atual.apagado ? 'apagado' : atual.atualizadoEm !== it.atualizadoEm && semMeta(atual) !== semMeta(it) ? 'diferente' : null;
+        if (estado) difs.push({ colecao: c, id: it.id, estado, item: it });
+      }
+    }
+    return difs;
+  }
+  /** Traz de uma cópia a versão de um item. O estado de agora é guardado antes: numa cópia inteira e, se for texto, como versão. */
+  let copiaAntesDeTrazer = null;
+  async function trazerDaCopia(criadoEm, colecao, id) {
+    const b = await arm.lerBackup(db, criadoEm);
+    const it = b?.foto.colecoes[colecao]?.find((x) => x.id === id);
+    if (!it) return false;
+    const atual = await arm.um(db, colecao, id);
+    if (atual && !atual.apagado) {
+      copiaAntesDeTrazer ??= arm.backup(db, 'antes de trazer itens de uma cópia');
+      await copiaAntesDeTrazer;
+      if (colecao === 'textos') await window.rb.escrita?.guardarAntesDeReceber(atual, it, 'antes de trazer de uma cópia');
+    }
+    await salvar(colecao, it);
+    registrar('ui', 'copia.trazer_item', { det: colecao });
+    return true;
+  }
+  const pastaLocal = criarPastaLocal({ lerMeta: (k) => arm.lerMeta(db, k), gravarMeta: (k, v) => arm.gravarMeta(db, k, v), exportar: () => arm.exportar(db), registrar });
   let copiaDoDia = null;
   /** Cópia diária neste aparelho (uma por dia). Roda depois da primeira sincronização, ou sozinha se não houver login. */
-  const fazerCopiaDoDia = () => (copiaDoDia ??= arm.backupDiario(db).then((em) => em && registrar('app', 'copia.diaria'), (e) => registrar('erro', 'copia.diaria', { det: e.message, st: 'aviso' })));
+  const fazerCopiaDoDia = () => (copiaDoDia ??= arm.backupDiario(db).then((em) => em && registrar('app', 'copia.diaria'), (e) => registrar('erro', 'copia.diaria', { det: e.message, st: 'aviso' })).then(() => pastaLocal.diaria()));
 
   ouvir('click', async (e) => {
     const b = e.target.closest('[data-google]');
@@ -416,6 +459,9 @@ async function iniciar() {
       copias: () => arm.backups(db),
       lerCopia: (criadoEm) => arm.lerBackup(db, criadoEm),
       recuperarDaCopia,
+      diferencasDaCopia,
+      trazerDaCopia,
+      pastaLocal,
       versoes: {
         guardar: (v) => arm.gravar(db, 'versoes', v),
         doTexto: (id) => arm.versoesDe(db, id),

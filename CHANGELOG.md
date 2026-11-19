@@ -2,6 +2,21 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 1.9.0 (19/11/2026)
+Primeira abertura num aparelho.
+- Ao entrar pela primeira vez num aparelho, a tela mostra "Abrindo os seus dados", com o andamento do que desce do Drive. Antes, enquanto a primeira sincronização rodava, as telas apareciam como se a biblioteca estivesse vazia.
+
+## 1.8.0 (19/11/2026)
+Cópias de segurança: item por item e pasta no computador.
+- Em cada cópia guardada, "Ver o que mudou" lista o que nela está diferente de hoje, o que não existe mais e o que está apagado. "Trazer esta versão" traz de volta um item só. O que estava aqui é guardado antes: numa cópia inteira e, se for texto, como versão.
+- Pasta no computador: você escolhe uma pasta e o app grava nela uma cópia em arquivo por dia, fora do navegador. Funciona no Chrome e no Edge do computador; o navegador pode pedir a permissão de novo a cada sessão ("Permitir de novo"). Nos outros navegadores, continua valendo "Baixar".
+
+## 1.7.0 (19/11/2026)
+Acervo, em Ajustes.
+- O Organizar saiu das abas da Biblioteca e virou a página Acervo, em Ajustes. Ela abre com o retrato da biblioteca: quantas obras, quantas com DOI, quantas sem DOI e quantas sem PDF.
+- "Sem PDF anexado" lista as obras que só têm a referência, com o caminho para anexar o arquivo.
+- "Atualizar os dados pelo DOI" confere no Crossref as obras que já têm DOI e completa só o que está vazio (revista, volume, páginas, editora). O que você escreveu não é trocado; se o ano for diferente, a tela só informa. Tem desfazer.
+
 ## 1.6.0 (18/11/2026)
 DOIs gravados sozinhos e IA só sob pedido, no Organizar.
 - Quando título, autor e ano batem com o Crossref, o DOI é gravado na hora e os campos vazios da obra são completados. Antes a procura só deixava uma proposta, e nada entrava na obra sem você aceitar uma por uma.
