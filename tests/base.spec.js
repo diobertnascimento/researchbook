@@ -56,6 +56,17 @@ test.describe('configuração', () => {
       expect(readFileSync(join(RAIZ, f), 'utf8'), f).not.toMatch(/GOCSPX-|client_secret\s*[:=]\s*['"]/);
     }
   });
+
+  test('o servidor da chave: endereço exato no app e na regra de segurança, sem curinga', () => {
+    const cfg = readFileSync(join(RAIZ, 'public/js/config.js'), 'utf8');
+    const servidor = cfg.match(/SERVIDOR_IA = '([^']*)'/)[1];
+    const conexoes = readFileSync(join(RAIZ, 'public/index.html'), 'utf8').match(/connect-src([^;]*)/)[1].trim().split(/\s+/);
+    expect(conexoes.join(' ')).not.toContain('*');
+    if (!servidor) return;
+    // Só o endereço do servidor publicado: https, sem caminho, e o mesmo nos dois lugares.
+    expect(servidor).toMatch(/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+$/);
+    expect(conexoes).toContain(servidor);
+  });
 });
 
 test.describe('registros', () => {
