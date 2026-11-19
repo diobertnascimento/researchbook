@@ -2,6 +2,17 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.3.0 (19/11/2026)
+Escrever.
+- A barra fixa de formatação saiu. Ao selecionar um trecho aparece uma barra pequena sobre ele: negrito, itálico, link, título, subtítulo e citação. O link abre um campo na própria barra (Ctrl+K também abre); endereço sem "https://" é completado.
+- Numa linha vazia aparece um "+" à esquerda, para separador e bloco de código.
+- Lista ao digitar: "- " ou "* " no começo da linha vira lista com marcadores, e "1. " vira lista numerada.
+- O texto agora aceita título de seção dentro da seção, bloco de código, separador e link (só http e https). Os quatro saem no Word.
+- Copilot fechado até ser chamado: o painel da direita só abre pelo botão Copilot, e "Versões" fica ao lado do "Salvo". O app lembra, em cada aparelho, se você deixou o painel aberto.
+- No editor, a barra do app sai: ficam o voltar e os comandos do texto.
+- O Escrever mostra "Continue escrevendo" no topo, com o texto mexido por último.
+- Ainda não entrou: inserir imagem pelo "+".
+
 ## 2.2.0 (19/11/2026)
 Ler e leitor.
 - Modo leitura: o artigo só com o texto e as figuras, numa coluna estreita em Literata, com a marca de cada página. No celular é o padrão; no computador o padrão continua sendo o PDF. A troca fica no topo do leitor e é lembrada em cada aparelho.

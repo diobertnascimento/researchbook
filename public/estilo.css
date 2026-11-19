@@ -1627,3 +1627,34 @@ body.leitor main{max-width:none}
 
 /* No leitor a barra do app sai: fica só o texto, com o voltar e os controles da leitura. */
 @media (min-width:1001px){body.leitor aside.nav{display:none}}
+
+/* ---------- Escrever (v2.3.0): formatação como no Medium e a home dos textos ---------- */
+.esc-flut{display:none;position:absolute;z-index:60;align-items:center;gap:2px;padding:4px;border-radius:999px;background:var(--texto);box-shadow:var(--sombra-1)}
+.esc-flut.on{display:inline-flex}
+.esc-flut button{min-width:36px;height:36px;padding:0 var(--e-2);border:0;border-radius:999px;background:transparent;color:#fff;font-family:var(--ui);font-size:var(--fs-ui);cursor:pointer}
+.esc-flut button:hover,.esc-flut button[aria-pressed="true"]{background:rgba(255,255,255,.18)}
+.esc-flut .f-bold{font-weight:700}
+.esc-flut .f-italic{font-family:var(--leitura);font-style:italic}
+.esc-flut .f-h2{font-family:var(--leitura);font-size:var(--fs-titulo-3)}
+.esc-flut .f-h3{font-family:var(--leitura)}
+.esc-flut input{width:280px;height:36px;padding:0 var(--e-3);border:0;border-radius:999px;background:transparent;color:#fff;font-size:var(--fs-ui);outline:none}
+.esc-flut input::placeholder{color:rgba(255,255,255,.7)}
+.esc-mais{display:none;position:absolute;z-index:55;align-items:center;gap:var(--e-2)}
+.esc-mais.on{display:inline-flex}
+.esc-mais > button{width:32px;height:32px;border:1px solid var(--borda-campo);border-radius:50%;background:var(--superficie);color:var(--texto);font-size:var(--fs-titulo-3);line-height:1;cursor:pointer}
+.esc-mais .ops{display:inline-flex;gap:var(--e-1);padding:4px;border-radius:999px;background:var(--superficie);box-shadow:var(--sombra-1)}
+.esc-mais .ops[hidden]{display:none}
+.esc-mais .ops button{height:var(--h-p);padding:0 var(--e-3);border:0;border-radius:999px;background:var(--superficie-2);font-size:var(--fs-meta);cursor:pointer}
+.esc-corpo h2,.esc-corpo pre{margin:0 0 1.1em;padding:2px 0 2px 18px;border-left:3px solid transparent}
+.esc-corpo h2{font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:1.3;font-weight:600}
+.esc-corpo pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:var(--fs-ui);line-height:1.5;white-space:pre-wrap;background:var(--superficie-2);border-radius:var(--r-2);padding:var(--e-3) var(--e-4)}
+.esc-corpo hr{border:0;margin:var(--e-8) auto;width:120px;height:1px;background:var(--borda-forte)}
+.esc-corpo a{color:var(--acento);text-underline-offset:3px}
+.continue-escrevendo{margin-bottom:var(--e-10)}
+
+/* Editor: o Copilot e as versões ficam fechados até serem chamados, e a barra do app sai da tela de escrever. */
+.esc-grid.sem-painel{grid-template-columns:230px minmax(0,1fr)}
+.esc-grid.sem-painel > .esc-painel{display:none}
+.esc-grid.sem-painel .esc-corpo{max-width:680px}
+@media (min-width:1001px){body.editor aside.nav{display:none}}
+@media (max-width:1200px){.esc-grid.sem-painel{grid-template-columns:minmax(0,1fr)}}

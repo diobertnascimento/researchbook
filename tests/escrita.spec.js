@@ -14,6 +14,8 @@ async function entrar(page, context, opcoesGemini = {}) {
   const gem = await geminiFalso(context, opcoesGemini);
   await page.goto('/#escrita', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.rb && window.rb.pronto);
+  // v2.3.0: o painel do Copilot e das versões fica fechado por padrão; estes testes trabalham com ele aberto.
+  await page.evaluate(() => localStorage.setItem('rb.esc.painel', '1'));
   await page.evaluate(() => { localStorage.setItem('rb.ia.acesso', 'google'); localStorage.setItem('rb.ia.projeto', 'projeto-teste'); });
   await page.getByRole('button', { name: 'Entrar com Google' }).click();
   await page.waitForFunction(() => window.rb && window.rb.sincronia && window.rb.sincronia.estado().fase === 'ok' && window.rb.escritaUI);
@@ -254,7 +256,8 @@ test.describe('no computador', () => {
         reescrito: m.medirAutoria(t(`<p data-autoria="coautoria" data-ia="${ia}">Eu acho que quem decide as rotas são as próprias equipes, e por isso elas aderem.</p>`)).participacao,
       };
     });
-    expect(r.limpo).not.toMatch(/script|onclick|onerror|<img|<a |style=/);
+    // v2.3.0: link para http ou https é permitido (só o endereço, sem outros atributos).
+    expect(r.limpo).not.toMatch(/script|onclick|onerror|<img|style=|javascript:/);
     expect(r.limpo).toContain('<b>negrito</b>');
     expect(r.limpo).toContain('data-autoria="ia"');
     expect(r.quaseIgual).toBe(100);
