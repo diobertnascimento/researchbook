@@ -21,6 +21,7 @@ export const NOMES_COLECAO = {
   argumentos: 'Argumento',
   trilhas: 'Trilha',
   textos: 'Texto',
+  lixeira: 'Item da lixeira',
   dialogos: 'Diálogo',
   cartoes: 'Cartão',
   disciplinas: 'Disciplina',

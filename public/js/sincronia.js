@@ -25,7 +25,7 @@ export const marcaVencida = (i, agora = Date.now()) => !!i?.apagado && !!i.atual
 const INTERVALO_MS = 60_000;
 const ESPERA_MUDANCA_MS = 4_000;
 
-export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
+export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSubstituir }) {
   const registrar = registros.registrar;
   let estado = { fase: 'parado', ultima: null, erro: null, conflitos: 0 };
   let rodando = null;
@@ -121,6 +121,12 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado }) {
       enviar = true;
       registrar('arq', 'sinc.limpeza', { det: `${c}: ${vencidas.length} marcas de apagado com mais de ${LIMPAR_APAGADOS_DIAS} dias` });
     }
+    // Nada some em silêncio: quem chamou pode guardar a versão daqui antes de ela ser trocada pela que veio do Drive.
+    if (aoSubstituir)
+      for (const r of paraAqui) {
+        const l = L.get(r.id);
+        if (l && !l.apagado) await aoSubstituir(c, l, r);
+      }
     if (paraAqui.length) await arm.gravarVarios(db, c, paraAqui);
     if (conflitos.length) await arm.gravarVarios(db, 'conflitos', conflitos);
     let remotoModificado = remotoInfo?.modifiedTime ?? null;

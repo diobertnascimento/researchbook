@@ -212,6 +212,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v1.3.0 (18/11/2026): nada se perde. Lixeira com o registro inteiro (coleção `lixeira`, sincronizada; lotes do que foi apagado junto), versões automáticas dos textos (store local `versoes` + arquivo no Drive por versão), cópia diária local (store `backups`, 30 dias) e a página Cópias de segurança em Ajustes. Esquema do banco 6.
 - v1.2.0 (14/11/2026): importar vários arquivos e o Zotero, Organizar (DOI com Crossref e IA, repetidas), sincronização com o celular.
 - v1.1.0 (14/11/2026): design system v2 (Inter e Literata, tokens, botões com carregando, esqueletos, Ajustes em subpáginas, revisão dos textos).
 - v1.0.0 (14/11/2026): etapa 14, busca real, modelos por tarefa, uso e custo, marca-textos, limpeza das marcas de apagado e código fora do HTML. Primeira versão completa.

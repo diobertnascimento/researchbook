@@ -145,6 +145,13 @@ export function citacoesDiretasSemFonte(texto, grifos, normalizar) {
 export function criarEscrita({ dados, bib, drive, registrar }) {
   let textos = [];
   const legivelDepois = new Map();
+  // Versões: guardadas neste aparelho (funcionam sem internet) e copiadas para o Drive quando há conexão.
+  const ENTRE_VERSOES_MS = 10 * 60_000;
+  const ultimaVersao = new Map();
+  const cacheVersoes = new Map();
+  const envios = new Map();
+  const conteudoDe = (t) => JSON.stringify([t.titulo, (t.secoes || []).map((x) => [x.titulo, x.html])]);
+  const temTexto = (t) => (t.secoes || []).some((x) => (x.html || '').replace(/<[^>]+>/g, '').trim());
 
   async function carregar() {
     textos = (await dados.listar('textos')).sort((a, b) => (b.atualizadoEm || '').localeCompare(a.atualizadoEm || ''));
@@ -176,8 +183,18 @@ export function criarEscrita({ dados, bib, drive, registrar }) {
     return t;
   }
 
-  async function salvar(t) {
-    const novoT = await dados.salvar('textos', { ...t, autoria: medirAutoria(t) });
+  /**
+   * Salva o texto. Antes de trocar o conteúdo, guarda sozinho uma versão do estado anterior quando a última
+   * tem mais de 10 minutos, ou sempre que quem chama avisa que a mudança é grande (opção versao, com o motivo).
+   */
+  async function salvar(t, { versao = null } = {}) {
+    const antes = obter(t.id);
+    let indice = t.versoes || [];
+    if (antes && temTexto(antes) && conteudoDe(antes) !== conteudoDe(t)) {
+      const ultima = ultimaVersao.get(t.id) ?? (Date.parse((antes.versoes || [])[0]?.em || '') || 0);
+      if (versao || Date.now() - ultima >= ENTRE_VERSOES_MS) indice = [await guardarVersao(antes, versao || 'automática'), ...indice].slice(0, 100);
+    }
+    const novoT = await dados.salvar('textos', { ...t, versoes: indice, autoria: medirAutoria(t) });
     const i = textos.findIndex((x) => x.id === t.id);
     if (i >= 0) textos[i] = novoT;
     else textos.unshift(novoT);
@@ -211,33 +228,95 @@ export function criarEscrita({ dados, bib, drive, registrar }) {
     }
   }
 
-  /** Guarda uma versão do texto no Drive (escrita/<id>/versoes/<data>.json). */
-  async function salvarVersao(id, motivo = 'manual') {
-    const t = obter(id);
-    const d = drive();
-    if (!t) return null;
-    if (!d) throw new Error('Entre com o Google para guardar versões no seu Drive.');
+  /** Guarda neste aparelho o estado t do texto e manda uma cópia para o Drive (escrita/<id>/versoes/<data>.json). */
+  async function guardarVersao(t, motivo) {
     const em = new Date().toISOString();
-    const arquivo = `escrita/${t.id}/versoes/${em.replace(/[:.]/g, '-')}.json`;
-    await d.gravar(arquivo, JSON.stringify({ app: 'researchbook', texto: t, em, motivo }, null, 1), 'application/json');
-    const v = { em, arquivo, palavras: medirAutoria(t).total, motivo };
-    const novoT = await salvar({ ...t, versoes: [v, ...(t.versoes || [])].slice(0, 100) });
+    const v = { id: `${t.id}:${em}`, textoId: t.id, em, motivo, palavras: medirAutoria(t).total, arquivo: `escrita/${t.id}/versoes/${em.replace(/[:.]/g, '-')}.json`, noDrive: false, texto: { ...t, versoes: [] } };
+    await dados.versoes.guardar(v);
+    ultimaVersao.set(t.id, Date.now());
+    if (cacheVersoes.has(t.id)) cacheVersoes.set(t.id, [v, ...cacheVersoes.get(t.id)]);
+    envios.set(em, enviarVersao(v));
+    enxugar(t.id).catch(() => {});
     registrar('ui', 'texto.versao', { det: motivo });
-    return { v, texto: novoT };
+    return { em, arquivo: v.arquivo, palavras: v.palavras, motivo };
   }
 
-  async function restaurarVersao(id, arquivo) {
+  async function enviarVersao(v) {
     const d = drive();
-    if (!d) throw new Error('Entre com o Google para abrir versões do seu Drive.');
-    const conteudo = await d.ler(arquivo);
-    if (!conteudo) throw new Error('Esta versão não foi encontrada no seu Drive.');
-    const antiga = JSON.parse(conteudo).texto;
-    await salvarVersao(id, 'antes de restaurar');
+    if (v.noDrive) return true;
+    if (!d) return false;
+    try {
+      await d.gravar(v.arquivo, JSON.stringify({ app: 'researchbook', texto: v.texto, em: v.em, motivo: v.motivo }, null, 1), 'application/json');
+      await dados.versoes.guardar({ ...v, noDrive: true });
+      return true;
+    } catch (e) {
+      registrar('erro', 'texto.versao_drive', { det: e.message, st: 'aviso' });
+      return false;
+    }
+  }
+
+  /** Versões guardadas sem internet sobem quando a sincronização volta. */
+  async function enviarVersoesPendentes() {
+    if (!drive()) return;
+    for (const v of (await dados.versoes.todas()).filter((x) => !x.noDrive)) await enviarVersao(v);
+  }
+
+  /** Das versões com mais de 2 dias fica uma por dia; as recentes ficam todas. */
+  async function enxugar(textoId) {
+    const limite = Date.now() - 2 * 86400000;
+    const dias = new Set();
+    for (const v of await dados.versoes.doTexto(textoId)) {
+      if (Date.parse(v.em) > limite) continue;
+      const dia = v.em.slice(0, 10);
+      if (dias.has(dia) && v.motivo === 'automática') await dados.versoes.apagar(v.id);
+      else dias.add(dia);
+    }
+  }
+
+  /** Lê do aparelho as versões do texto (para o painel Versões). */
+  async function carregarVersoes(id) {
+    cacheVersoes.set(id, await dados.versoes.doTexto(id));
+  }
+
+  /** Todas as versões conhecidas do texto: as deste aparelho e as que o texto lista (guardadas em outro aparelho). */
+  function versoesDe(t) {
+    const porData = new Map();
+    for (const v of t.versoes || []) porData.set(v.em, { ...v, aqui: false });
+    for (const v of cacheVersoes.get(t.id) || []) porData.set(v.em, { em: v.em, arquivo: v.arquivo, palavras: v.palavras, motivo: v.motivo, aqui: true });
+    return [...porData.values()].sort((a, b) => b.em.localeCompare(a.em));
+  }
+
+  /** Guarda agora uma versão do texto, a pedido do autor. */
+  async function salvarVersao(id, motivo = 'manual') {
+    const t = obter(id);
+    if (!t) return null;
+    const v = await guardarVersao(t, motivo);
+    const novoT = await salvar({ ...t, versoes: [v, ...(t.versoes || [])].slice(0, 100) });
+    // Dois níveis de confirmação: neste aparelho (sempre) e no Drive (quando há conexão).
+    return { v, texto: novoT, noDrive: await envios.get(v.em) };
+  }
+
+  /** O texto daqui vai ser trocado pelo que veio de outro aparelho: se o conteúdo é outro, guarda o daqui. */
+  async function guardarAntesDeReceber(local, remoto) {
+    if (!temTexto(local) || (!remoto.apagado && conteudoDe(local) === conteudoDe(remoto))) return;
+    await guardarVersao(local, 'antes de receber de outro aparelho');
+  }
+
+  /** Volta o texto a uma versão. O que está na tela é guardado antes, como mais uma versão. */
+  async function restaurarVersao(id, arquivo) {
+    let antiga = (await dados.versoes.doTexto(id)).find((v) => v.arquivo === arquivo)?.texto;
+    if (!antiga) {
+      const d = drive();
+      if (!d) throw new Error('Esta versão foi guardada em outro aparelho. Entre com o Google para abrir do seu Drive.');
+      const conteudo = await d.ler(arquivo);
+      if (!conteudo) throw new Error('Esta versão não foi encontrada no seu Drive.');
+      antiga = JSON.parse(conteudo).texto;
+    }
     const atual = obter(id);
-    const t = await salvar({ ...atual, secoes: antiga.secoes, titulo: antiga.titulo });
+    const t = await salvar({ ...atual, secoes: antiga.secoes, titulo: antiga.titulo }, { versao: 'antes de restaurar' });
     registrar('ui', 'texto.restaurar');
     return t;
   }
 
-  return { carregar, todos: () => textos, obter, novo, salvar, apagar, salvarVersao, restaurarVersao, gravarLegivel, medir: medirAutoria, referencias: (t) => referencias(t, bib.leituras()) };
+  return { carregar, todos: () => textos, obter, novo, salvar, apagar, salvarVersao, restaurarVersao, carregarVersoes, versoesDe, guardarAntesDeReceber, enviarVersoesPendentes, gravarLegivel, medir: medirAutoria, referencias: (t) => referencias(t, bib.leituras()) };
 }

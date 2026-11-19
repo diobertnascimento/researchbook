@@ -9,7 +9,7 @@
 //    um backup completo na coleção "backups" (ficam os 5 mais recentes).
 
 const NOME = 'researchbook';
-export const ESQUEMA = 5;
+export const ESQUEMA = 6;
 export const ESQUEMA_DADOS = 1;
 
 // Coleções criadas no esquema 1. As que vieram depois entram por um passo próprio em ESTRUTURA.
@@ -17,7 +17,7 @@ const COLECOES_V1 = [
   'leituras', 'grifos', 'fichamentos', 'argumentos', 'trilhas', 'textos', 'dialogos',
   'cartoes', 'disciplinas', 'aulas', 'eventos', 'encontros', 'memoria', 'conversas',
 ];
-export const COLECOES = [...COLECOES_V1, 'revisoes'];
+export const COLECOES = [...COLECOES_V1, 'revisoes', 'lixeira'];
 
 const ESTRUTURA = {
   1: (db) => {
@@ -45,6 +45,12 @@ const ESTRUTURA = {
   5: (db) => {
     db.createObjectStore('revisoes', { keyPath: 'id' });
   },
+  // v1.3.0 (nada se perde): a lixeira guarda inteiro o que foi apagado e sincroniza como coleção.
+  // As versões dos textos ficam só neste aparelho (o Drive recebe um arquivo por versão), fora da sincronização.
+  6: (db) => {
+    db.createObjectStore('lixeira', { keyPath: 'id' });
+    db.createObjectStore('versoes', { keyPath: 'id' }).createIndex('textoId', 'textoId');
+  },
 };
 
 // Exemplo de migração de dados futura:
@@ -52,6 +58,9 @@ const ESTRUTURA = {
 const MIGRACOES_DADOS = {};
 
 const MANTER_BACKUPS = 5;
+/** Motivo da cópia feita uma vez por dia; ficam as 30 mais recentes, à parte das cópias de migração. */
+export const DIARIA = 'diária';
+const MANTER_DIARIAS = 30;
 
 const pedido = (req) =>
   new Promise((ok, erro) => {
@@ -123,13 +132,43 @@ export async function backup(db, motivo) {
   const foto = await exportar(db);
   const item = { criadoEm: foto.exportadoEm, motivo, foto };
   await pedido(db.transaction('backups', 'readwrite').objectStore('backups').put(item));
-  const chaves = await pedido(db.transaction('backups').objectStore('backups').getAllKeys());
-  const sobra = chaves.sort().slice(0, Math.max(0, chaves.length - MANTER_BACKUPS));
+  // Cada tipo tem o seu limite: as cópias diárias não empurram para fora as de antes de uma migração ou restauração.
+  const todas = await pedido(db.transaction('backups').objectStore('backups').getAll());
+  const chaves = (diaria) => todas.filter((x) => (x.motivo === DIARIA) === diaria).map((x) => x.criadoEm).sort();
+  const sobra = [...chaves(true).slice(0, -MANTER_DIARIAS), ...chaves(false).slice(0, -MANTER_BACKUPS)];
   if (sobra.length) {
     const st = db.transaction('backups', 'readwrite').objectStore('backups');
     await Promise.all(sobra.map((k) => pedido(st.delete(k))));
   }
   return item.criadoEm;
+}
+
+const diaLocal = (iso) => new Date(iso).toLocaleDateString('sv');
+
+/** Faz a cópia do dia, se ainda não foi feita hoje neste aparelho. Devolve a data da cópia nova, ou null. */
+export async function backupDiario(db) {
+  const chaves = await pedido(db.transaction('backups').objectStore('backups').getAll());
+  const hoje = diaLocal(new Date().toISOString());
+  if (chaves.some((x) => x.motivo === DIARIA && diaLocal(x.criadoEm) === hoje)) return null;
+  return backup(db, DIARIA);
+}
+
+/** Lista das cópias guardadas, da mais nova para a mais velha, só com as contagens (sem o conteúdo). */
+export async function backups(db) {
+  const todas = await pedido(db.transaction('backups').objectStore('backups').getAll());
+  return todas
+    .map((x) => ({ criadoEm: x.criadoEm, motivo: x.motivo, contagem: Object.fromEntries(Object.entries(x.foto.colecoes).map(([c, itens]) => [c, itens.filter((i) => !i.apagado).length])) }))
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+}
+
+export function lerBackup(db, criadoEm) {
+  return pedido(db.transaction('backups').objectStore('backups').get(criadoEm));
+}
+
+/** Versões guardadas de um texto, da mais nova para a mais velha. */
+export async function versoesDe(db, textoId) {
+  const vs = await pedido(db.transaction('versoes').objectStore('versoes').index('textoId').getAll(textoId));
+  return vs.sort((a, b) => b.em.localeCompare(a.em));
 }
 
 export async function contarBackups(db) {
