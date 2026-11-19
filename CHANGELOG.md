@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.10.0 (19/11/2026)
+Escrever: o botão "Pedir".
+- No editor, um botão discreto "Pedir" aparece na margem do parágrafo em que o cursor está. A ajuda só vem quando você pede, e o resultado aparece numa caixa fora do texto, que some ao fechar.
+- "Buscar nos meus grifos e notas": mostra os seus grifos e as notas dos fichamentos que têm palavras em comum com o parágrafo, cada um com a referência e "Copiar com a referência". É busca por palavras, sem IA: sinônimo não é encontrado.
+- "Conferir as citações": confere, sem IA, se cada autor e ano do parágrafo está na sua biblioteca, se a citação direta tem página e se o trecho entre aspas está entre os seus grifos.
+- "Propor outra versão" e "Conversar com o Copilot" abrem o painel do Copilot, que continua fechado até aí.
+- Na sessão de escrita o Pedir também aparece, só com as duas opções que não usam IA.
+
 ## 2.9.1 (19/11/2026)
 Dissertação, Projeto: a página em seções.
 - A página do projeto deixou de ser um texto corrido. Ela tem duas seções com cabeçalho e resumo próprios, Parecer e Leituras e citações, e um índice no topo ("Nesta página") que leva a cada uma e às suas pendências.
