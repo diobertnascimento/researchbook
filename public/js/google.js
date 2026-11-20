@@ -5,7 +5,9 @@
 // - "state" aleatório confere que a volta do login foi pedida por este app;
 // - o token é conferido no Google (tokeninfo): precisa ter sido emitido para o nosso ID de cliente
 //   e precisa incluir a permissão do Drive;
-// - o token dura cerca de 1 hora e fica só neste aparelho; "Sair" revoga o token no Google.
+// - o token dura cerca de 1 hora e vale só enquanto esta aba (ou o app instalado) está aberta: fica em
+//   sessionStorage, que o navegador apaga ao fechar, e nunca em localStorage (v2.14.2). Ao abrir de novo,
+//   o app pede um token novo ao Google em silêncio. "Sair" revoga o token no Google.
 // - quem pode entrar é decidido pelo Google: o app está "em teste" e só aceita os usuários de teste.
 import { GOOGLE_CLIENT_ID, ESCOPOS, ESCOPO_DRIVE, ESCOPO_IA, ESCOPO_AGENDA } from './config.js';
 
@@ -14,6 +16,8 @@ const PREF_IA = 'rb.ia.acesso';
 
 const SESSAO = 'rb.sessao';
 const CONTA = 'rb.conta';
+// Hora da última tentativa de renovar em silêncio que ainda não deu certo (não é segredo).
+const RENOVACAO = 'rb.renovacao.em';
 const AUTORIZAR = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKENINFO = 'https://oauth2.googleapis.com/tokeninfo';
 const REVOGAR = 'https://oauth2.googleapis.com/revoke';
@@ -33,9 +37,24 @@ const gravar = (armazem, chave, valor) => {
 
 export const configurado = () => !!GOOGLE_CLIENT_ID;
 
+// Se o navegador não deixar gravar em sessionStorage, a sessão fica só na memória desta página.
+let naMemoria = null;
+const guardarSessao = (s) => {
+  naMemoria = s ? JSON.stringify(s) : null;
+  gravar(sessionStorage, SESSAO, naMemoria);
+};
+// Versões até a 2.14.1 guardavam a sessão em localStorage: ela é levada para esta aba e apagada de lá.
+{
+  const antiga = ler(localStorage, SESSAO);
+  if (antiga) {
+    if (!ler(sessionStorage, SESSAO)) gravar(sessionStorage, SESSAO, antiga);
+    gravar(localStorage, SESSAO, null);
+  }
+}
+
 export function sessao() {
   try {
-    const s = JSON.parse(ler(localStorage, SESSAO) || 'null');
+    const s = JSON.parse(ler(sessionStorage, SESSAO) || naMemoria || 'null');
     return s && s.expira > Date.now() + 30_000 ? s : null;
   } catch {
     return null;
@@ -129,15 +148,17 @@ export async function concluirRetorno({ registrar }) {
 
   const escopos = (info.scope || '').split(' ').filter(Boolean);
   const s = { token, expira: Date.now() + Number(p.get('expires_in') || info.expires_in || 3600) * 1000, email: info.email || null, escopos };
-  gravar(localStorage, SESSAO, JSON.stringify(s));
+  guardarSessao(s);
   if (s.email) gravar(localStorage, CONTA, s.email);
+  // Deu certo: a próxima abertura do app pode renovar de novo sem esperar.
+  gravar(localStorage, RENOVACAO, null);
   registrar('app', 'conta.login_ok', { dur: Math.round(performance.now() - inicio) });
   return { ok: true };
 }
 
 export async function sair({ registrar, esquecerConta = false }) {
   const s = sessao();
-  gravar(localStorage, SESSAO, null);
+  guardarSessao(null);
   if (esquecerConta) gravar(localStorage, CONTA, null);
   registrar('app', 'conta.sair');
   if (s) {
@@ -147,20 +168,21 @@ export async function sair({ registrar, esquecerConta = false }) {
   }
 }
 
-/** Marca a sessão como vencida (ex.: o Drive respondeu 401). */
 /**
- * Ao abrir o app com a sessão vencida (comum no celular, que guarda o app aberto por horas), tenta renovar
- * em silêncio, no máximo uma vez a cada 10 minutos. Devolve true se mandou para o Google.
+ * Ao abrir o app sem sessão (toda vez que ele é aberto de novo, e também quando a sessão vence com ele aberto),
+ * tenta renovar em silêncio. Depois de uma tentativa que não deu certo, espera 10 minutos antes de tentar de
+ * novo, para não ficar indo e voltando do Google. Devolve true se mandou para o Google.
  */
 export function renovarEmSilencio({ registrar }) {
   if (!configurado() || sessao() || !conta() || !navigator.onLine) return false;
-  const ultima = Number(ler(localStorage, 'rb.renovacao.em') || 0);
+  const ultima = Number(ler(localStorage, RENOVACAO) || 0);
   if (Date.now() - ultima < 10 * 60_000) return false;
-  gravar(localStorage, 'rb.renovacao.em', String(Date.now()));
+  gravar(localStorage, RENOVACAO, String(Date.now()));
   entrar({ registrar, silencioso: true });
   return true;
 }
 
+/** Marca a sessão como vencida (ex.: o Drive respondeu 401). */
 export function expirar() {
-  gravar(localStorage, SESSAO, null);
+  guardarSessao(null);
 }

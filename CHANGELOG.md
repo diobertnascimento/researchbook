@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.14.2 (19/11/2026)
+Segurança: o login deixa de ficar guardado no aparelho.
+- O acesso que o Google dá ao app (vale 1 hora) ficava guardado no aparelho. Agora ele existe só enquanto a aba ou o app instalado está aberto, e some ao fechar.
+- O que muda no uso: ao abrir o app de novo, ele passa pelo Google e volta sozinho, em um instante, sem pedir senha. Se o Google não devolver o acesso em silêncio (conta fechada no navegador, por exemplo), aparece "Reconectar ao Google", como já acontecia quando o acesso vencia.
+- Recarregar a página não passa pelo Google.
+- Quem já estava com o app aberto continua conectado: o acesso antigo é levado para a aba e apagado do aparelho.
+- Os testes do projeto passam a recusar qualquer arquivo do repositório com formato de chave, token ou segredo.
+
 ## 2.14.1 (19/11/2026)
 O servidor da chave foi publicado e o app passou a conhecê-lo.
 - Em Ajustes > Conectar a IA aparece a opção "Por um servidor seu, que guarda a chave". Escolha essa opção e use "Testar conexão".

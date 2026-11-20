@@ -1,6 +1,7 @@
 // Base do app: funcionamento sem internet, atualização, registros, cópia dos dados e dica do iPhone.
 import { test, expect, devices } from '@playwright/test';
 import { readFileSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { abrirApp, irPara } from './ajuda.js';
 
@@ -55,6 +56,33 @@ test.describe('configuração', () => {
     for (const f of ['public/index.html', ...['config', 'google', 'drive', 'sincronia', 'inicio'].map((n) => `public/js/${n}.js`)]) {
       expect(readFileSync(join(RAIZ, f), 'utf8'), f).not.toMatch(/GOCSPX-|client_secret\s*[:=]\s*['"]/);
     }
+  });
+
+  // O repositório é público. Este teste lê todos os arquivos versionados e recusa qualquer coisa com formato
+  // de chave ou token. Os padrões são montados em pedaços para este arquivo não casar com ele mesmo.
+  test('nenhum arquivo do repositório tem formato de chave, token ou segredo', () => {
+    const PADROES = [
+      ['chave de API do Google (Gemini)', new RegExp('AI' + 'za[0-9A-Za-z_-]{35}')],
+      ['segredo do cliente OAuth', new RegExp('GOC' + 'SPX-[0-9A-Za-z_-]{20,}')],
+      ['token de acesso do Google', new RegExp('ya' + '29\\.[0-9A-Za-z_-]{30,}')],
+      ['token de renovação do Google', new RegExp('1/' + '/0[0-9A-Za-z_-]{30,}')],
+      ['chave privada', new RegExp('-----BEGIN ' + '[A-Z ]*PRIVATE KEY-----')],
+      ['token do GitHub', new RegExp('gh[pousr]_' + '[0-9A-Za-z]{36,}')],
+    ];
+    const arquivos = execFileSync('git', ['ls-files', '-z'], { cwd: RAIZ, encoding: 'utf8' }).split('\0').filter(Boolean);
+    expect(arquivos.length).toBeGreaterThan(50);
+    const achados = [];
+    for (const f of arquivos) {
+      if (/\.(png|jpg|jpeg|webp|ico|pdf|woff2?|ttf|mp3|m4a|wasm|map)$/i.test(f) || f.startsWith('public/vendor/')) continue;
+      let texto;
+      try {
+        texto = readFileSync(join(RAIZ, f), 'utf8');
+      } catch {
+        continue; // apagado na pasta de trabalho, mas ainda listado
+      }
+      for (const [nome, padrao] of PADROES) if (padrao.test(texto)) achados.push(`${f}: ${nome}`);
+    }
+    expect(achados, 'Tire o segredo do arquivo, troque a chave no Google e só então grave de novo.').toEqual([]);
   });
 
   test('o servidor da chave: endereço exato no app e na regra de segurança, sem curinga', () => {

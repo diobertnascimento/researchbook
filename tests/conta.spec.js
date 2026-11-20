@@ -7,7 +7,7 @@ test.use({ serviceWorkers: 'block' });
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'computador', 'Basta rodar no computador'));
 
 const pronto = (page) => page.waitForFunction(() => window.rb && window.rb.pronto);
-const fase = (page) => page.evaluate(() => window.rb.sincronia?.estado().fase ?? null);
+const fase = (page) => page.evaluate(() => window.rb?.sincronia?.estado().fase ?? null);
 
 async function entrar(page, rota = '') {
   await page.goto('/' + rota, { waitUntil: 'domcontentloaded' });
@@ -117,6 +117,51 @@ test('sessão vencida: o app continua aberto e oferece reconectar', async ({ pag
   expect(await fase(page)).toBe('desconectado');
   await expect(page.locator('body')).not.toHaveClass(/bloqueado/);
   await expect(page.locator('#status-drive button')).toHaveText('Reconectar ao Google');
+});
+
+// v2.14.2: o token do login vale só enquanto a aba está aberta.
+test('o token do login não fica guardado no aparelho: só nesta aba, e o app aberto de novo volta a entrar sozinho', async ({ page, context }) => {
+  await googleFalso(context);
+  await entrar(page);
+  await expect.poll(() => fase(page)).toBe('ok');
+  const guardado = await page.evaluate(() => ({ fixo: JSON.stringify(localStorage), aba: sessionStorage.getItem('rb.sessao') }));
+  expect(guardado.fixo).not.toContain('tok-falso');
+  expect(guardado.fixo).not.toContain('rb.sessao');
+  expect(JSON.parse(guardado.aba).token).toBe('tok-falso');
+  // Recarregar a mesma aba não pede login de novo nem passa pelo Google.
+  let passagens = 0;
+  context.on('request', (req) => {
+    if (req.url().startsWith('https://accounts.google.com/o/oauth2/v2/auth')) passagens++;
+  });
+  const idas = () => passagens;
+  const antes = idas();
+  await page.reload();
+  await expect.poll(() => fase(page)).toBe('ok');
+  expect(idas()).toBe(antes);
+
+  // Abrir o app de novo (outra aba): nenhum token herdado; ele renova em silêncio e entra sem clique.
+  const outra = await context.newPage();
+  await outra.goto('/#biblioteca', { waitUntil: 'domcontentloaded' });
+  await expect.poll(() => fase(outra)).toBe('ok');
+  expect(idas()).toBe(antes + 1);
+  expect(await outra.evaluate(() => JSON.stringify(localStorage))).not.toContain('tok-falso');
+  // Renovação que deu certo não segura a próxima.
+  expect(await outra.evaluate(() => localStorage.getItem('rb.renovacao.em'))).toBeNull();
+});
+
+test('quem vem de uma versão antiga: a sessão guardada no aparelho passa para a aba e some de lá', async ({ page, context }) => {
+  await googleFalso(context);
+  await entrar(page);
+  await expect.poll(() => fase(page)).toBe('ok');
+  // Como a 2.14.1 deixava: a sessão em localStorage.
+  await page.evaluate(() => {
+    localStorage.setItem('rb.sessao', sessionStorage.getItem('rb.sessao'));
+    sessionStorage.removeItem('rb.sessao');
+  });
+  await page.reload();
+  await expect.poll(() => fase(page)).toBe('ok');
+  const r = await page.evaluate(() => ({ fixo: localStorage.getItem('rb.sessao'), aba: !!sessionStorage.getItem('rb.sessao') }));
+  expect(r).toEqual({ fixo: null, aba: true });
 });
 
 test('token emitido para outro app é recusado', async ({ page, context }) => {
