@@ -2,7 +2,8 @@
 //
 // GOOGLE_CLIENT_ID: o "ID do cliente" OAuth criado no Google Cloud (termina em .apps.googleusercontent.com).
 // Ele é público por natureza: o Google só aceita login vindo dos endereços autorizados no console
-// (diobertnascimento.github.io e localhost:4173), e só de contas cadastradas como usuárias de teste.
+// (researchbook.com.br, o antigo diobertnascimento.github.io e localhost:4173), e só de contas cadastradas
+// como usuárias de teste.
 // NUNCA coloque aqui a "chave secreta do cliente" (client secret): o app não usa e ela não pode ficar pública.
 
 export const GOOGLE_CLIENT_ID = '4685827365-rs7bk5tb5krh60gvp72nmvgdsekjulqa.apps.googleusercontent.com';
@@ -26,3 +27,8 @@ export const ESCOPO_AGENDA = 'https://www.googleapis.com/auth/calendar.app.creat
 export const SERVIDOR_IA = 'https://researchbook-ia-77uxthwshq-uc.a.run.app';
 /** O endereço em uso (os testes trocam este arquivo por um simulado). */
 export const servidorIA = () => SERVIDOR_IA;
+
+// Endereço do app (v2.15.0). Antes era diobertnascimento.github.io/researchbook, dividido com qualquer outro site
+// publicado pela mesma conta do GitHub. Quem ainda abrir o endereço antigo recebe um aviso para vir para cá
+// (mudanca.js). O mesmo endereço está em connect-src (index.html); no GitHub, ele é ligado em Settings > Pages.
+export const ENDERECO = 'https://researchbook.com.br/';

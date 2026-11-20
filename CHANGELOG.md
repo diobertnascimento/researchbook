@@ -2,6 +2,14 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.15.0 (19/11/2026)
+Endereço próprio: researchbook.com.br.
+- O app passa a ter um endereço só dele. O antigo era dividido com qualquer outro site publicado pela mesma conta do GitHub, que por isso enxergaria o que o researchbook guarda no navegador.
+- Para o navegador, endereço novo é app novo: no researchbook.com.br cada aparelho começa vazio, você entra com o Google e os dados vêm do Drive. Nada se perde, desde que tudo deste aparelho já tenha subido antes.
+- Quem abrir o endereço antigo recebe um aviso quando o novo estiver no ar. O aviso só oferece ir quando tudo deste aparelho já está no Drive; se houver mudança esperando, ele pede para esperar o "Sincronizado".
+- O que não vai junto, por ficar só no aparelho: as cópias diárias de segurança, a escolha de como acessar a IA e o app instalado na tela de início (instale de novo pelo endereço novo e apague o ícone antigo).
+- Esta versão precisa ser aceita em cada aparelho ("Atualizar agora") antes de o endereço novo ser ligado. Depois da troca, o endereço antigo não recebe mais versões.
+
 ## 2.14.2 (19/11/2026)
 Segurança: o login deixa de ficar guardado no aparelho.
 - O acesso que o Google dá ao app (vale 1 hora) ficava guardado no aparelho. Agora ele existe só enquanto a aba ou o app instalado está aberto, e some ao fechar.
