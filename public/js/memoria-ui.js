@@ -280,7 +280,7 @@ export function criarMemoriaUI({ ia, historico, dados, bib, fichUI, argUI, drive
               .join('')}
           </div>
           <pre class="prev" id="mem-prev" aria-label="Prévia da exportação">Montando a prévia…</pre>
-          <button class="w-100 j-centro btn prim" data-mem-exportar>Exportar</button>
+          <button class="w-100 j-centro btn" data-mem-exportar>Exportar</button>
           <p class="mem-nota">O arquivo é baixado e uma cópia fica no seu Drive, em memoria/exportar.</p>
         </section>
       </aside>

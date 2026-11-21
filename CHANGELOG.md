@@ -2,6 +2,20 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.22.0 (21/11/2026)
+Polimento visual, parte 3 de 5: botões e controles.
+- Escolher um modo (Leitura ou PDF, o caminho do fichamento, o modo do diálogo, o tipo de registro da conversa) ficou num formato só: um trilho cinza com a opção escolhida em pílula branca.
+- Filtrar uma lista (grifos do fichamento, Estúdio, Acervo) e abrir um painel do leitor (Grifos, Tutor, Referência) ficou em pílulas soltas, com a escolhida em cinza. Saíram os botões retangulares com contorno.
+- O item selecionado tinha seis aparências; ficaram três: sublinhado nas abas da página, pílula branca no trilho e pílula cinza nos filtros e menus. Cartão de escolha (Conectar a IA, lista de diálogos) tem contorno azul.
+- Etapas da preparação do texto: número em círculo e nome numa linha, sem caixa. No celular, aparece o nome da etapa em que você está.
+- Cartões: os quatro botões de resposta viraram pílulas, com o intervalo abaixo do nome.
+- Um botão azul por tela. No Ler, "Adicionar obra" fica cinza quando há o painel "Continue lendo"; nas telas vazias, o botão do topo fica cinza e o do aviso fica azul; em Memória, "Exportar" ficou cinza; no leitor, "Perguntar" do tutor ficou cinza.
+- Apagar: botão discreto azul quando dá para desfazer na hora (tarefa, marco, anotação, item do Estúdio) e vermelho quando apaga o registro inteiro (texto, obra, diálogo, projeto). "Apagar disciplina" passou a "Apagar projeto".
+- Ação no meio de um texto ("Mudar", "Corrigir dados da obra", "Anexar o PDF", "Definir um limite") sem sublinhado e sem o recuo de 8 px.
+- Campos num padrão só: 38 px de altura, cantos de 10 px, letra de 14 px. Valia diferente no Acervo, na Jornada, nos Diálogos, em Memória e em Modelos por tarefa. O campo em foco não muda mais de canto.
+- O campo de texto longo cresce conforme você escreve, até 60% da altura da tela, e perdeu a alça de redimensionar do navegador. Onde o navegador não sabe fazer isso (Firefox), o campo mantém a altura e rola por dentro.
+- Diálogos: o botão de enviar, que era só um ícone, agora diz "Enviar".
+
 ## 2.21.0 (21/11/2026)
 Polimento visual, parte 2 de 5: títulos.
 - O título grande de 44 px ficou só para o nome da seção (Ler, Escrever, Acervo). Título de obra, de texto, de aula e nome de projeto passaram a 30 px (22 no celular) e aparecem inteiros. Um título de 197 caracteres, que ocupava 5 linhas no computador e 8 no celular, agora ocupa 4 e 6.

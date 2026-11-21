@@ -103,7 +103,7 @@ export function criarArgumentosUI({ bib, dados, fichUI, registrar }) {
   function tela(idSel) {
     const todos = lista();
     const topo = `<div class="topo"><div><h1>Argumentos</h1><p>Cada linha é uma afirmação sua. Cada coluna, uma obra fichada. Os números são trechos que você separou para a dissertação. O que está vazio é o que falta ler ou fichar.</p></div>
-      <div class="acoes"><button class="btn prim" data-arg-novo>${icone('mais')}Novo argumento</button></div></div>`;
+      <div class="acoes"><button class="btn ${todos.length ? 'prim' : ''}" data-arg-novo>${icone('mais')}Novo argumento</button></div></div>`;
     if (!todos.length) {
       return `${topo}<div class="bib-vazia"><h2>Nenhum argumento ainda</h2><p>Argumentos nascem de dois jeitos: no passo “Para a dissertação” de um fichamento, quando você liga um trecho a uma tese, ou aqui, escrevendo a tese primeiro.</p><button class="btn prim" data-arg-novo>${icone('mais')}Escrever um argumento</button></div>`;
     }

@@ -75,18 +75,20 @@ export function criarBibliotecaUI({ bib, registrar }) {
     const todas = bib.leituras();
     const b = busca.toLowerCase();
     const filtradas = todas.filter((l) => !b || [l.titulo, l.subtitulo, l.veiculo, l.projeto, ...(l.tags || []), ...(l.autores || []).map((a) => a.sobrenome)].join(' ').toLowerCase().includes(b));
+    const painel = busca ? '' : continueLendoHTML(todas);
+    // Um botão azul por tela: com o painel "Continue lendo" ou o aviso de biblioteca vazia, o do topo fica cinza.
     const topo = `<div class="topo">
       <div><h1>Biblioteca</h1><p>${todas.length ? `${todas.length} ${todas.length === 1 ? 'obra' : 'obras'}. Abra uma obra para ler e grifar.` : 'Suas obras, com o PDF guardado no seu Drive.'}</p></div>
       <div class="acoes">
         ${todas.length ? `<label class="busca">${icone('busca')}<input id="bib-busca" type="search" placeholder="Buscar título, autor, tag" value="${esc(busca)}"></label>` : ''}
         <button class="btn" data-org-importar>${icone('upload')}Importar</button>
-        <button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar obra</button>
+        <button class="btn ${todas.length && !painel ? 'prim' : ''}" data-bib="adicionar">${icone('mais')}Adicionar obra</button>
       </div>
     </div>`;
     if (!todas.length) {
       return `${topo}<div class="bib-vazia"><h2>Sua biblioteca está vazia</h2><p>Adicione um artigo pelo DOI ou envie o PDF. O app busca os dados da obra, monta a referência em ABNT e guarda o PDF no seu Drive e neste aparelho.</p><div class="linha-acoes j-centro"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar a primeira obra</button><button class="btn" data-org-importar>${icone('upload')}Importar PDFs ou o Zotero</button></div></div>`;
     }
-    return `${topo}${busca ? '' : continueLendoHTML(todas)}<div class="tabela" role="table">
+    return `${topo}${painel}<div class="tabela" role="table">
       <div class="linha-lv cab" role="row"><span>Obra</span><span>Etapa</span><span>Progresso</span></div>
       ${filtradas.length ? filtradas.map(linha).join('') : `<div class="vazio">Nada encontrado para “${esc(busca)}”.</div>`}
     </div>`;
@@ -196,7 +198,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
         <div class="campo"><label for="ad-doi">DOI ou link do DOI</label><div class="linha-doi"><input id="ad-doi" placeholder="10.1057/ejis.2011.54 ou https://doi.org/10.1057/ejis.2011.54" autocomplete="off"><button class="btn" data-bib="buscar-doi" data-ocupado="Buscando…">Buscar</button></div></div>
         <div class="campo"><label for="ad-pdf">PDF</label><input type="file" id="ad-pdf" accept="application/pdf,.pdf" multiple></div>
       </div>
-      <p class="meta">Vários PDFs ou a biblioteca do Zotero? <button class="lnk m-0" data-org-importar>Importar de uma vez</button></p>
+      <p class="meta">Vários PDFs ou a biblioteca do Zotero? <button class="lnk" data-org-importar>Importar de uma vez</button></p>
       <button class="btn fant" data-bib="manual">Preencher à mão</button>
       <div id="ad-msg"></div>
       <div id="ad-ficha"></div>
@@ -340,7 +342,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
       <div class="dir"><span class="t-legenda mute-2" id="pdf-pag">${l.totalPaginas ? `p. ${l.paginaAtual || 1} de ${l.totalPaginas}` : ''}</span>${
         l.etapa >= 2
           ? `<a class="btn prim" href="#fichamento/${encodeURIComponent(l.id)}">${l.etapa >= 4 ? 'Ver fichamento' : l.etapa === 3 ? 'Continuar fichamento' : 'Fazer fichamento'}</a>`
-          : `<button class="btn prim" data-bib="concluir" data-id="${esc(l.id)}">Concluir leitura</button>`
+          : `<button class="btn ${l.pdf ? 'prim' : ''}" data-bib="concluir" data-id="${esc(l.id)}">Concluir leitura</button>`
       }</div>
     </div>
     <div class="leitor-grid ${verTutor ? '' : 'sem-tutor'} ${verGrifos ? '' : 'sem-grifos'}">
