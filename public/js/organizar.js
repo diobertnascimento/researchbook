@@ -105,7 +105,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
       }
       const alvoJaUsado = igual && doLote.some((a) => a.alvoId === igual.l.id);
       if (noLote || alvoJaUsado) {
-        Object.assign(it, { status: 'repetida', motivo: `repetida neste envio (${noLote ? noLote.c.motivo : 'mesma obra'})`, incluir: false });
+        Object.assign(it, { status: 'repetida', motivo: `repetida nesta importação (${noLote ? noLote.c.motivo : 'mesma obra'})`, incluir: false });
       } else if (igual?.c.tipo === 'identica') {
         const completa = it.arquivo && !igual.l.pdf;
         Object.assign(it, { status: completa ? 'completa' : 'identica', alvoId: igual.l.id, alvoTitulo: igual.l.titulo, motivo: igual.c.motivo, incluir: completa });
@@ -308,7 +308,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
             outros: lista.filter((x) => x !== escolhido).slice(0, 3).map((x) => resumoCand(x.c, x.nota)),
             confianca: 'ia',
             confiancaIA: resp.escolha.confianca,
-            motivo: String(resp.escolha.motivo || '').slice(0, 240) || 'A IA indicou este candidato.',
+            motivo: String(resp.escolha.motivo || '').slice(0, 240) || 'A IA indicou este resultado.',
             dadosLidos,
             recusados: [...recusados],
             em: new Date().toISOString(),
@@ -422,7 +422,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     const resto = [b.candidato, ...(b.outros || [])].filter((x) => x && !recusados.includes(chaveCand(x)));
     const prox = resto.find((x) => (x.pontos ?? 0) >= PROVAVEL);
     const novo = prox
-      ? { ...b, status: 'proposta', candidato: prox, outros: resto.filter((x) => x !== prox), confianca: 'provavel', motivo: 'Outro candidato com título parecido; confira.', recusados }
+      ? { ...b, status: 'proposta', candidato: prox, outros: resto.filter((x) => x !== prox), confianca: 'provavel', motivo: 'Outro resultado com título parecido; confira.', recusados }
       : { ...b, status: 'recusada', candidato: null, outros: resto, recusados };
     await bib.atualizar(id, { doiBusca: novo });
     registrar('ui', 'organizar.recusar');

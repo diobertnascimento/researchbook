@@ -45,7 +45,7 @@ export function criarFontes({ google, registrar = () => {}, buscar = (...a) => f
       if (codigo === 'rota' && !jeitoAntigo) return { codigo };
       registrar('erro', evento, { det: codigo, dur, st: 'aviso' });
       // A mensagem do servidor é escrita por nós e já diz o que fazer; rota desconhecida é servidor antigo.
-      const texto = codigo === 'rota' ? 'O seu servidor ainda está na versão antiga. Publique de novo (servidor/publicar.sh) para ligar esta busca.' : codigo === 'login' ? 'O servidor não aceitou o login. Entre de novo com o Google e repita o pedido.' : corpo?.error?.origem === 'servidor' ? String(corpo.error.message).slice(0, 240) : `O servidor respondeu com erro (${r.status}).`;
+      const texto = codigo === 'rota' ? 'O seu servidor ainda está na versão antiga. Publique de novo (servidor/publicar.sh) para ligar esta busca.' : codigo === 'login' ? 'O servidor não aceitou o login. Entre de novo com o Google e repita o pedido.' : corpo?.error?.origem === 'servidor' ? String(corpo.error.message).slice(0, 240) : 'O seu servidor não respondeu como esperado. Tente de novo em instantes.';
       return { erro: texto, codigo };
     }
     registrar('arq', evento, { det: 'ok', dur });

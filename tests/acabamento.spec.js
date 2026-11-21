@@ -146,6 +146,10 @@ const APOSENTADOS = [
   [/(Marco|Anotação|Cópia) gravad[oa]|Gravando…|gravado sozinho|gravada sozinha/, 'salvar'],
   [/[nd]o seu acervo|com o seu acervo|pelo acervo/, 'biblioteca'],
   [/chamadas (à IA|no mês|sem preço)/, 'pedidos'],
+  [/respondeu \$\{r\.status\}|respondeu agora \(\$\{|com erro \(\$\{/, 'erro sem código: o código vai para os registros'],
+  [/O problema ficou registrado/, 'o erro está em Ajustes, em Registros'],
+  [/quando o Gemini entrar|vai ficar no seu Google Drive|Quando o Drive estiver ligado|Escreva na Escrita|vão para Organizar/, 'texto de versão antiga'],
+  [/fora do formato esperado|não devolveu o endereço de envio|retorno de login/, 'palavra comum, não a do sistema'],
 ];
 test('escrita: nenhum termo aposentado volta a um texto de tela', () => {
   const achados = [];

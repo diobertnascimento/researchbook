@@ -66,7 +66,7 @@ export async function buscarDOI(entrada, { registrar } = {}) {
   }
   if (!r.ok) {
     registrar?.('erro', 'crossref.buscar', { det: String(r.status), dur, st: 'erro' });
-    return { erro: `O Crossref não respondeu agora (${r.status}). Tente de novo ou preencha à mão.` };
+    return { erro: 'O Crossref não respondeu agora. Tente de novo ou preencha à mão.' };
   }
   const corpo = await r.json();
   registrar?.('arq', 'crossref.buscar', { det: 'ok', dur });
@@ -109,7 +109,7 @@ export async function procurarPorDados(f, { registrar, linhas = 5 } = {}) {
     const dur = Math.round(performance.now() - inicio);
     if (!r.ok) {
       registrar?.('erro', 'crossref.procurar', { det: String(r.status), dur, st: 'erro' });
-      return { erro: `O Crossref não respondeu agora (${r.status}).` };
+      return { erro: 'O Crossref não respondeu agora. Tente de novo em instantes.' };
     }
     const corpo = await r.json();
     const candidatos = (corpo.message?.items || []).map(deCrossref).filter((c) => c.doi && c.titulo);

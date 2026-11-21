@@ -163,7 +163,7 @@ export function criarIAUso({ registros, drive, registrar }) {
   const descricoes = () => ({ ...DESCRICOES_PADRAO, ...cfg('rb.cores', {}) });
   function secCores(funcoes) {
     const d = descricoes();
-    return `<section id="sec-cores"><h2>Marca-textos</h2><p>Cada cor tem uma função. A função decide para qual etapa do fichamento o grifo vai. A descrição aparece quando você passa o mouse sobre a cor no leitor.</p>
+    return `<section id="sec-cores"><h2>Marca-textos</h2><p>Cada cor tem uma função. A função decide em que blocos do fichamento o grifo aparece. No computador, a descrição aparece quando você passa o mouse sobre a cor no leitor.</p>
       ${funcoes.map((f) => `<div class="cor-func"><span class="sw c-${f.id}"></span><strong class="forte">${esc(f.nome)}</strong><input value="${esc(d[f.id] || '')}" data-cor-desc="${f.id}" aria-label="Descrição de ${esc(f.nome)}"></div>`).join('')}</section>`;
   }
 

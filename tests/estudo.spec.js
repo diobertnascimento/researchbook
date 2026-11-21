@@ -68,7 +68,7 @@ test.describe('no computador', () => {
     await page.locator('.modal').getByRole('button', { name: 'Propor cartões' }).click();
     await expect(page.locator('#modal-tit')).toHaveText('Conferir os cartões');
     await expect(page.locator('.pl-it')).toHaveCount(2);
-    await expect(page.locator('.modal')).toContainText('1 proposta foi recusada na conferência');
+    await expect(page.locator('.modal')).toContainText('1 proposta ficou de fora');
     expect(gem.pedidos.find((x) => x.corpo.generationConfig?.responseJsonSchema?.properties?.cartoes).corpo.contents.at(-1).parts[0].text).toContain('[O1] (Evidência) A adesão das equipes');
     await page.getByRole('button', { name: 'Guardar os marcados' }).click();
     await expect(page.locator('#toast')).toContainText('2 cartões guardados');

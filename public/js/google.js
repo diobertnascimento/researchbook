@@ -127,9 +127,9 @@ export async function concluirRetorno({ registrar }) {
   if (p.get('error')) {
     return p.get('error') === 'access_denied'
       ? falha('negado', 'O login foi cancelado. Para usar o researchbook, entre com a conta autorizada.')
-      : falha('google', `O Google não concluiu o login (${p.get('error')}). Tente de novo.`);
+      : falha('google', 'O Google não concluiu o login. Tente de novo.', `google: ${p.get('error')}`);
   }
-  if (!esperado || p.get('state') !== esperado) return falha('estado', 'Este retorno de login não foi pedido por este app. Entre de novo.');
+  if (!esperado || p.get('state') !== esperado) return falha('estado', 'O login não se completou. Entre de novo.');
 
   const token = p.get('access_token');
   const inicio = performance.now();
@@ -141,7 +141,7 @@ export async function concluirRetorno({ registrar }) {
   } catch (e) {
     return falha('rede', 'Sem internet para confirmar o login. Confira e tente de novo.', e.message);
   }
-  if (info.aud !== GOOGLE_CLIENT_ID) return falha('aud', 'Este login não foi emitido para o researchbook. Entre de novo.', 'token de outro app');
+  if (info.aud !== GOOGLE_CLIENT_ID) return falha('aud', 'O login não se completou. Entre de novo.', 'token de outro app');
   if (!(info.scope || '').split(' ').includes(ESCOPO_DRIVE)) {
     return falha('escopo', 'Para guardar seus dados, marque a permissão do Google Drive na tela do Google e entre de novo.', 'sem drive.file');
   }

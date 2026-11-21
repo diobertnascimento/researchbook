@@ -30,7 +30,7 @@ export function criarDrive({ token, registrar }) {
   async function chamar(metodo, url, { corpo, tipo, evento, det = '' } = {}) {
     for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
       const t = token();
-      if (!t) throw new ErroDrive('Sessão do Google vencida', 401);
+      if (!t) throw new ErroDrive('O login do Google venceu. Entre de novo.', 401);
       const inicio = performance.now();
       let r;
       try {
@@ -46,7 +46,7 @@ export function criarDrive({ token, registrar }) {
       }
       if (r.status === 401) {
         registrar('erro', evento, { det: '401: sessão vencida', dur, st: 'erro' });
-        throw new ErroDrive('Sessão do Google vencida', 401);
+        throw new ErroDrive('O login do Google venceu. Entre de novo.', 401);
       }
       if ([429, 500, 502, 503, 504].includes(r.status) && tentativa < TENTATIVAS) {
         registrar('arq', evento, { det: `${r.status}: nova tentativa (${tentativa})`, dur, st: 'aviso' });
@@ -55,7 +55,7 @@ export function criarDrive({ token, registrar }) {
       }
       const texto = await r.text().catch(() => '');
       registrar('erro', evento, { det: `${r.status}: ${texto.slice(0, 120)}`, dur, st: 'erro' });
-      throw new ErroDrive(`O Google Drive respondeu ${r.status}`, r.status);
+      throw new ErroDrive('O Google Drive não respondeu como esperado. Tente de novo em instantes.', r.status);
     }
   }
 
@@ -168,7 +168,7 @@ export function criarDrive({ token, registrar }) {
     const url = a.id ? `${UP}/files/${a.id}?uploadType=resumable&fields=id,modifiedTime` : `${UP}/files?uploadType=resumable&fields=id,modifiedTime`;
     const inicio = await chamar(a.id ? 'PATCH' : 'POST', url, { corpo: JSON.stringify(meta), tipo: 'application/json; charset=UTF-8', evento: 'drive.envio_inicio', det });
     const destino = inicio.headers.get('Location');
-    if (!destino) throw new ErroDrive('O Google Drive não devolveu o endereço de envio', 'envio');
+    if (!destino) throw new ErroDrive('O envio do arquivo ao Drive não começou. Tente de novo.', 'envio');
     const r = await chamar('PUT', destino, { corpo: blob, tipo, evento: 'drive.envio_arquivo', det });
     const j = await r.json();
     ids.set(caminho, j.id);

@@ -91,7 +91,7 @@ export function criarCartoesUI({ cart, bib, disc, registrar }) {
 
   function modalPropostas() {
     const ps = est.propostas;
-    abrirModal(`<h2 id="modal-tit">Conferir os cartões</h2><p>${ps.propostas.length ? 'Desmarque o que não serve. Dá para editar depois.' : 'A IA não conseguiu cartões bons com esta fonte.'}${ps.recusadas ? ` ${ps.recusadas} ${ps.recusadas === 1 ? 'proposta foi recusada' : 'propostas foram recusadas'} na conferência (origem inexistente ou pergunta repetida).` : ''}</p>
+    abrirModal(`<h2 id="modal-tit">Conferir os cartões</h2><p>${ps.propostas.length ? 'Desmarque o que não serve. Dá para editar depois.' : 'A IA não conseguiu cartões bons com esta fonte.'}${ps.recusadas ? ` ${ps.recusadas === 1 ? '1 proposta ficou de fora: repetia uma pergunta ou citava um trecho que não está na fonte.' : `${ps.recusadas} propostas ficaram de fora: repetiam uma pergunta ou citavam um trecho que não está na fonte.`}` : ''}</p>
       <div class="plano-rev">${ps.propostas.map((c, i) => `<label class="pl-it"><input type="checkbox" data-cart-prop="${i}" checked><span><b>${esc(c.pergunta)}</b><small>${esc(c.resposta)}</small><small>${esc(c.origem.citacao)}</small></span></label>`).join('')}</div>
       <div class="pe"><button type="button" class="btn fant" data-cart-fechar>Descartar</button>${ps.propostas.length ? '<button class="btn prim" data-cart-guardar>Guardar os marcados</button>' : ''}</div>`);
   }

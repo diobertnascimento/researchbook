@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.25.0';
+const APP_VERSAO = '2.26.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -709,7 +709,7 @@ function secRegistros(){
     : `<tr><td colspan="5" class="mute">Nenhum registro deste tipo ainda.</td></tr>`;
   return `<section id="sec-registros">
     <h2>Registros</h2>
-    <p>Cada sessão, tela aberta, ação e erro vira um registro, guardado neste aparelho por 180 dias. Os registros nunca guardam o que você escreve, só nomes de ações, telas e tempos. Quando o Drive estiver ligado, cada sessão também vira um arquivo na pasta.</p>
+    <p>Cada sessão, tela aberta, ação e erro vira um registro, guardado neste aparelho por 180 dias. Os registros nunca guardam o que você escreve, só nomes de ações, telas e tempos. Cada sessão também vira um arquivo na pasta do Drive.</p>
     <div class="kpis">
       <div><b>${deHoje.length.toLocaleString('pt-BR')}</b><span>eventos hoje</span><small>${sessoes} ${sessoes===1?'sessão':'sessões'}</small></div>
       <div><b>${erros}</b><span>${erros===1?'erro hoje':'erros hoje'}</span><small>${erros?'veja abaixo, em Erros':'nenhum problema registrado'}</small></div>
@@ -721,7 +721,7 @@ function secRegistros(){
       ${linhas}
     </tbody></table></div>
     <div class="mt-4 a-centro aj-linha">
-      <label class="m-0 check"><input type="checkbox" disabled>Guardar o texto completo de prompts e respostas <span class="t-legenda mute-2">(desligado: só tamanhos, modelo e tempo; disponível quando o Gemini entrar)</span></label>
+      <label class="m-0 check"><input type="checkbox" disabled>Guardar o texto completo dos pedidos e das respostas da IA <span class="t-legenda mute-2">(desligado: os registros guardam só tamanhos, modelo e tempo)</span></label>
       <div class="flex gap-2 j-fim"><button class="btn" data-baixar="registros">Exportar CSV</button></div>
     </div>
     <details class="mt-3 ajuda-det"><summary>O que cada registro guarda?</summary>
@@ -729,7 +729,7 @@ function secRegistros(){
         <li>quando, sessão, versão do app, tela, evento e resultado</li>
         <li>no início da sessão: sistema, navegador, se o app está instalado e o tamanho da tela</li>
         <li>em erros: a mensagem e onde aconteceu</li>
-        <li>na IA (quando entrar): tarefa, modelo, versão da instrução, nível de pensamento, tokens, tempo, custo, tentativa e modelo reserva</li>
+        <li>na IA: tarefa, modelo, versão da instrução, nível de pensamento, tokens, tempo, custo, tentativa e modelo reserva</li>
       </ul>
     </details>
   </section>`;
@@ -741,12 +741,12 @@ function secAparelho(){
   const item=(n,v,obs)=>`<div class="ap-it"><span>${n}</span><b>${v}</b>${obs?`<small>${obs}</small>`:''}</div>`;
   return `<section id="sec-aparelho">
     <h2>Este aparelho</h2>
-    <p>Uma cópia dos seus dados fica guardada aqui, para o app abrir rápido e funcionar sem internet. A cópia oficial vai ficar no seu Google Drive.</p>
+    <p>Uma cópia dos seus dados fica guardada aqui, para o app abrir rápido e funcionar sem internet. A cópia oficial fica no seu Google Drive.</p>
     <div class="ap-grade">
       ${item('Versão do app','v'+rb.versao)}
       ${item('Instalado',a.instalado?'Sim':'Não',a.instalado?'abre em tela cheia':(a.sistema==='iOS'?'no Safari: Compartilhar, Adicionar à Tela de Início':'pelo menu do navegador: Instalar app'))}
       ${item('Armazenamento',d.disponivel?'Ativo':'Indisponível',d.disponivel?(d.persistente?'protegido contra limpeza automática':'o navegador pode limpar se faltar espaço; o Drive guarda a cópia oficial'):'este navegador não permite guardar dados; use o app instalado')}
-      ${item('Formato dos dados','versão '+d.esquema,'muda com migração automática e backup antes')}
+      ${item('Formato dos dados','versão '+d.esquema,'quando muda, o app converte os dados sozinho e faz uma cópia antes')}
     </div>
     <div class="flex gap-2 wrap mt-4"><button class="btn" data-baixar="dados" ${d.disponivel?'':'disabled'}>Baixar cópia dos dados</button></div>
   </section>`;
@@ -787,7 +787,7 @@ V.ajustes = (sec) => { if(sec==='acervo'){location.hash='#acervo';return ''} con
     ${modoReal()&&window.rb&&window.rb.segurancaUI?window.rb.segurancaUI.secaoHTML():`<section id="sec-seguranca"><h2>Cópias de segurança</h2><p>Com os seus dados abertos, esta página mostra a cópia diária deste aparelho, a lixeira e o que dá para trazer de volta.</p></section>`}
     ${modoReal()&&window.rb&&window.rb.iaUso?window.rb.iaUso.secCores(FUNCOES):`<section id="sec-cores">
       <h2>Marca-textos</h2>
-      <p>Cada cor tem uma função. A função decide para qual etapa do fichamento o grifo vai.</p>
+      <p>Cada cor tem uma função. A função decide em que blocos do fichamento o grifo aparece.</p>
       ${FUNCOES.map(f=>`<div class="cor-func"><span class="sw c-${f.id}"></span><strong class="forte">${f.nome}</strong><input value="${f.desc}" aria-label="Descrição de ${f.nome}"></div>`).join('')}
     </section>`}
     ${modoReal()&&window.rb&&window.rb.agendaUI?window.rb.agendaUI.secaoHTML():`<section id="sec-agenda">
@@ -846,7 +846,7 @@ ${modoReal()?`<pre class="arvore">researchbook/
     ├── autor.md  decisoes.md  regras.md
     ├── conversas/           <span>registro completo, por mês</span>
     └── exportar/</pre>`}
-      <p class="nota-info">Pode usar os dois computadores e o celular ao mesmo tempo: cada mudança vai para o Drive e chega aos outros aparelhos na próxima sincronização. Se o mesmo item mudar em dois lugares antes disso, fica a versão mais recente e a outra é guardada para você decidir. A chave do Gemini fica só em cada aparelho, nunca na pasta.</p>
+      <p class="nota-info">Use os computadores e o celular ao mesmo tempo: cada mudança vai para o Drive e chega aos outros aparelhos na próxima sincronização. Se o mesmo item mudar em dois lugares antes disso, fica a versão mais recente e a outra é guardada para você decidir. A chave do Gemini nunca fica legível na pasta: só cifrada, se você usar o cofre.</p>
       <div class="flex gap-3 wrap">
         <button class="btn" data-baixar="bibtex">Exportar referências (BibTeX)</button>
         <a class="btn fant" href="#memoria">Exportar memória para outras IAs</a>
@@ -1120,7 +1120,7 @@ V.texto = (id) => {
       ['A conveniência que suprime o compromisso','Trazer o conceito de Teixeira',['Teixeira'],'~600','Escrita'],
       ['Reputação como modelo de negócio','Mostrar por que não é desvio',['Nogueira e Prado (2023)'],'~700','Em andamento'],
       ['Empresas, investidores e reguladores','Os três níveis da conveniência',['Teixeira','Nogueira e Prado (2023)','lacuna'],'~700','Aguardando fonte'],
-      ['Considerações finais','Retomar a tese e os limites',[],'~400','Não iniciada'],
+      ['Considerações finais','Retomar a tese e os limites',[],'~400','Não começada'],
     ];
     corpo=`
   <section class="larg-1000 editor">

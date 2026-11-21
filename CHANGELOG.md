@@ -2,6 +2,21 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.26.0 (21/11/2026)
+Revisão dos textos, parte 2 de 4: textos que descreviam uma versão antiga do app, e erros.
+- Ajustes, Conta e pasta: o aviso dizia que a chave do Gemini nunca ia para a pasta. Hoje ela vai, cifrada, se você usar o cofre, e o aviso passou a dizer isso.
+- Ajustes, Registros e Este aparelho: o Drive e o Gemini eram tratados como coisa futura ("quando o Gemini entrar", "a cópia oficial vai ficar no Drive"). Agora estão no presente.
+- Ler e Hoje: o fichamento em andamento mostrava "Etapa 3 de 5", de quando o fichamento tinha cinco etapas. Agora mostra "Em andamento, 2 notas".
+- Mapa de argumentos: no lugar do "passo Para a dissertação", que não existe mais, o texto fala da marca "Levar para a dissertação" numa nota.
+- Marca-textos: a função da cor decide em que blocos do fichamento o grifo aparece (o texto falava em etapas).
+- "Obras sem DOI vão para Organizar" e "Escreva na Escrita" citavam nomes antigos de página.
+- Erros sem código: seis mensagens mostravam o número da resposta do Google, do Crossref ou do servidor. O número saiu da frase e continua em Ajustes, em Registros.
+- Erros na língua de quem usa: "O login não se completou" no lugar de "Este retorno de login não foi pedido por este app"; "O Gemini respondeu de um jeito que o app não entendeu" no lugar de "veio fora do formato esperado".
+- "O problema ficou registrado" passou a dizer onde: "o erro está em Ajustes, em Registros".
+- Erros que paravam na constatação ganharam o próximo passo: "Não deu para ler esta imagem. Tente outro arquivo."
+- Cofre: "A frase-senha não abriu o cofre. Confira a frase…" no lugar de "Frase-senha errada".
+- Palavras trocadas: "resultado" no lugar de "candidato" na busca de DOI, "nesta importação" no lugar de "neste envio", "Não começada" no lugar de "Não iniciada".
+
 ## 2.25.0 (21/11/2026)
 Revisão dos textos, parte 1 de 4: um nome para cada coisa. O inventário achou 2.473 textos de tela; 240 mudam, e esta parte cuida dos que usavam dois ou três nomes para a mesma coisa.
 - Biblioteca: os textos que diziam "acervo" para o conjunto das suas obras passam a dizer "biblioteca" ("só cita o que está na sua biblioteca"). O nome da página Acervo muda na parte 4.

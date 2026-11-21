@@ -136,7 +136,7 @@ test.describe('no computador', () => {
     await page.locator('input[data-imp-arquivos]:not([webkitdirectory])').setInputFiles([{ name: 'moraes.pdf', mimeType: 'application/pdf', buffer: readFileSync(PDF_MORAES) }, { name: 'copia.pdf', mimeType: 'application/pdf', buffer: readFileSync(PDF_MORAES) }]);
     await expect(page.locator('#modal-tit')).toHaveText('Conferir a importação', { timeout: 15000 });
     await expect(page.locator('.imp-lista')).toContainText('Completa uma obra da biblioteca');
-    await expect(page.locator('.imp-lista')).toContainText('Repetida neste envio');
+    await expect(page.locator('.imp-lista')).toContainText('Repetida nesta importação');
     await expect(page.locator('[data-imp-gravar]')).toHaveText('Importar 1 obra');
     await page.locator('[data-imp-gravar]').click();
     await expect(page.locator('#toast')).toContainText('1 obra ganhou o PDF');

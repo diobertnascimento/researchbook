@@ -1,9 +1,8 @@
 // Progresso de cada obra e o "próximo passo" do dia.
 // Funções puras: recebem os dados e devolvem a decisão. Hoje, Trilhas e a biblioteca usam as mesmas regras,
 // para o app nunca dizer duas coisas diferentes sobre a mesma obra.
-import { PASSOS } from './fichamento-ui.js';
 
-export const ETAPAS = ['Não iniciada', 'Em leitura', 'Leitura concluída', 'Em fichamento', 'Fichada'];
+export const ETAPAS = ['Não começada', 'Em leitura', 'Leitura concluída', 'Em fichamento', 'Fichada'];
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const rota = (r, id) => `#${r}/${encodeURIComponent(id)}`;
@@ -26,8 +25,8 @@ export function proximaAcao(l, fich) {
   if (e === 1) return { rotulo: 'Continuar a leitura', href: rota('leitor', l.id), detalhe: l.totalPaginas ? `p. ${l.paginaAtual || 1} de ${l.totalPaginas}` : '' };
   if (e === 2) return { rotulo: 'Fazer o fichamento', href: rota('fichamento', l.id), detalhe: 'Leitura concluída' };
   if (e === 3) {
-    const feitos = Math.min(fich?.feitos || 0, 4);
-    return { rotulo: 'Continuar o fichamento', href: rota('fichamento', l.id), detalhe: `Etapa ${feitos + 1} de 5: ${PASSOS[feitos].nome.toLowerCase()}` };
+    const notas = (fich?.notas || []).filter((x) => x.texto?.trim()).length;
+    return { rotulo: 'Continuar o fichamento', href: rota('fichamento', l.id), detalhe: `Em andamento, ${notas} ${notas === 1 ? 'nota' : 'notas'}` };
   }
   return { rotulo: 'Ver o fichamento', href: rota('fichamento', l.id), detalhe: 'Fichada', feita: true };
 }
@@ -89,7 +88,7 @@ export function proximoPasso({ leituras, fichamentos = [], trilhas = [], hoje = 
   if (semFicha.length) return comAcao(semFicha[0], 'Leitura concluída, ainda sem fichamento');
 
   const naFila = leituras.filter((l) => !l.etapa).sort((a, b) => (b.adicionadaEm || '').localeCompare(a.adicionadaEm || ''));
-  if (naFila.length) return comAcao(naFila[0], 'Ainda não iniciada');
+  if (naFila.length) return comAcao(naFila[0], 'Ainda não começada');
 
   return { vazio: 'tudo-fichado' };
 }

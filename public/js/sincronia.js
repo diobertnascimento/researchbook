@@ -55,7 +55,7 @@ export function criarSincronia({ db, drive, registros, aparelho, aoEstado, aoSub
       try {
         remotos = texto ? JSON.parse(texto).itens || [] : [];
       } catch {
-        throw new Error(`O arquivo dados/${c}.json no Drive não pôde ser lido`);
+        throw new Error(`O app não conseguiu ler dados/${c}.json na pasta do Drive. Tente sincronizar de novo.`);
       }
     }
 

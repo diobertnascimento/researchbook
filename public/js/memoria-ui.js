@@ -338,7 +338,7 @@ export function criarMemoriaUI({ ia, historico, dados, bib, fichUI, argUI, drive
         const r = await p;
         aviso = !r.lidas ? 'Nenhuma conversa com mensagens novas.' : r.novas ? `${r.novas} ${r.novas === 1 ? 'proposta nova' : 'propostas novas'}.` : 'Nada novo para lembrar nessas conversas.';
       } catch (err) {
-        aviso = err instanceof ErroIA ? err.message : 'Não deu para procurar agora. O problema ficou registrado.';
+        aviso = err instanceof ErroIA ? err.message : 'Não deu para buscar agora. Tente de novo; o erro está em Ajustes, em Registros.';
         if (!(err instanceof ErroIA)) registrar('erro', 'memoria.procurar_falhou', { det: err.message, st: 'erro' });
       }
       return redesenhar();

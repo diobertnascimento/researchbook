@@ -23,7 +23,7 @@ export async function preparar(arquivo) {
   try {
     bmp = await createImageBitmap(arquivo);
   } catch {
-    throw new Error('Não deu para ler esta imagem.');
+    throw new Error('Não deu para ler esta imagem. Tente outro arquivo.');
   }
   const escala = Math.min(1, LADO_MAX / Math.max(bmp.width, bmp.height));
   const largura = Math.max(1, Math.round(bmp.width * escala));
@@ -41,7 +41,7 @@ export async function preparar(arquivo) {
   ctx.drawImage(bmp, 0, 0, largura, altura);
   bmp.close?.();
   const blob = await new Promise((ok) => tela.toBlob(ok, tipo, 0.88));
-  if (!blob) throw new Error('Não deu para preparar esta imagem.');
+  if (!blob) throw new Error('Não deu para preparar esta imagem. Tente outro arquivo.');
   return { blob, tipo, largura, altura };
 }
 
@@ -102,7 +102,7 @@ export function criarImagens({ db, drive, registrar }) {
       await arm.gravar(db, 'arquivos', { id, blob, tipo, tamanho: blob.size, guardadoEm: new Date().toISOString() });
       return { blob, tipo };
     } catch {
-      return { erro: 'Não deu para baixar a imagem do Drive agora.' };
+      return { erro: 'Não deu para baixar a imagem do Drive agora. Tente de novo.' };
     }
   }
 

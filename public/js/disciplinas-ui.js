@@ -399,7 +399,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     if (!t) return `<section class="editor"><h2>Gravação guardada</h2><p class="instr">A transcrição não foi pedida.</p><button class="btn prim" data-dsc-transcrever="${esc(a.id)}">Transcrever esta aula</button></section>${notasHTML(a)}`;
     if (t.status === 'erro') {
       const config = ERROS_DE_CONFIG.includes(t.codigoErro);
-      return `<section class="editor"><h2>A transcrição parou</h2><div class="erro-ia" role="alert"><p>${esc(t.erro || 'O Gemini não respondeu.')}</p>${config ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}</div><p class="instr">${t.feitos ? `${t.feitos} de ${t.total} partes já estão prontas e não serão refeitas.` : ''}</p><button class="btn prim" data-dsc-transcrever="${esc(a.id)}">Tentar de novo</button></section>`;
+      return `<section class="editor"><h2>A transcrição parou</h2><div class="erro-ia" role="alert"><p>${esc(t.erro || 'O Gemini não respondeu. Tente de novo em instantes.')}</p>${config ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}</div><p class="instr">${t.feitos ? `${t.feitos} de ${t.total} partes já estão prontas e não serão refeitas.` : ''}</p><button class="btn prim" data-dsc-transcrever="${esc(a.id)}">Tentar de novo</button></section>`;
     }
     const outro = t.aparelho && t.aparelho !== window.rb?.dados?.aparelho && !disc.emAndamento(a.id);
     const pct = Math.round(((t.feitos || 0) / (t.total || 1)) * 100);
@@ -581,7 +581,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
         </div>
         ${a ? '' : `<div class="campo"><label for="aula-arquivo">Gravação (MP3, M4A, WAV, OGG)</label><input id="aula-arquivo" type="file" accept="audio/*,.m4a,.mp3,.wav,.ogg,.webm" required></div>
         <label class="check"><input type="checkbox" id="aula-transcrever" checked>Transcrever e resumir com a IA</label>
-        <p class="t-legenda m-0 mt-n1 mb-3 mute-2">Grave só com o consentimento da docência e da turma.</p>`}
+        <p class="t-legenda m-0 mt-n1 mb-3 mute-2">Grave só com o consentimento de quem dá a aula e da turma.</p>`}
         <div class="pe">${a ? `<button type="button" class="btn fant perigo" data-dsc-apagar-aula="${esc(a.id)}">Apagar aula</button><span class="cresce"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${a ? 'Salvar' : 'Enviar e transcrever'}</button></div>
       </form>`);
   }
