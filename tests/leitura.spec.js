@@ -24,7 +24,7 @@ async function entrarComPDF(page, context) {
   await page.waitForFunction(() => window.rb && window.rb.sincronia && window.rb.sincronia.estado().fase === 'ok');
   await page.locator('[data-bib="adicionar"]').first().click();
   await page.locator('#ad-pdf').setInputFiles(PDF);
-  await expect(page.locator('.ad-msg.ok')).toContainText('Encontrei o DOI no PDF');
+  await expect(page.locator('.ad-msg.ok')).toContainText('O DOI estava no PDF');
   await page.getByRole('button', { name: 'Salvar na biblioteca' }).click();
 }
 

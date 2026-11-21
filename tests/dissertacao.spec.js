@@ -99,7 +99,7 @@ test.describe('no computador', () => {
     expect(JSON.stringify(pedido().corpo.systemInstruction)).toContain('Você não reescreve o texto');
 
     // Três achados (o de parte desconhecida é descartado), do mais grave para o mais leve.
-    await expect(parecer.locator('.par-resumo')).toHaveText('3 pontos: 1 compromete a aprovação, 1 importante, 1 ajuste. Faltam decidir 3.');
+    await expect(parecer.locator('.par-resumo')).toHaveText('3 pontos: 1 compromete a aprovação, 1 importante, 1 ajuste. 3 sem decisão.');
     const achados = parecer.locator('.achado');
     await expect(achados).toHaveCount(3);
     await expect(achados.nth(0)).toContainText('O propósito não está declarado');
@@ -109,7 +109,7 @@ test.describe('no computador', () => {
     await expect(achados.nth(0).locator('cite')).toHaveText('p. 1');
     await expect(achados.nth(1)).toContainText('Não há cronograma até a defesa');
     await expect(achados.nth(1).locator('blockquote')).toHaveCount(0);
-    await expect(achados.nth(2).locator('cite')).toContainText('Não encontrei este trecho no PDF');
+    await expect(achados.nth(2).locator('cite')).toContainText('Este trecho não foi encontrado no PDF');
     expect(await page.evaluate(() => window.rb.dissertacao.todasRevisoes()[0].parecer.achados.map((a) => a.conferido))).toEqual(['pagina', null, 'nao']);
 
     // v2.9.1: a página é dividida em seções, e cada ponto é uma linha que abre. Só o primeiro sem decisão vem aberto.
@@ -146,7 +146,7 @@ test.describe('no computador', () => {
     await page.locator('#toast').getByRole('button', { name: 'Desfazer' }).click();
     await expect(achados.nth(2).getByRole('button', { name: 'Ignorar' })).toBeVisible();
     await achados.nth(2).getByRole('button', { name: 'Ignorar' }).click();
-    await expect(parecer.locator('.par-resumo')).toContainText('Falta decidir 1.');
+    await expect(parecer.locator('.par-resumo')).toContainText('1 sem decisão.');
     await parecer.locator('.pendencias input').check();
     await expect(parecer.locator('.pendencias h3')).toHaveText('Suas pendências (1 de 1 feitas)');
     await expect.poll(() => page.evaluate(() => window.rb.dissertacao.todasRevisoes()[0].parecer.achados.map((a) => `${a.decisao}:${a.feito}`))).toEqual(['pendencia:true', 'null:false', 'ignorado:false']);

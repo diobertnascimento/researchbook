@@ -414,7 +414,7 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     const local = await arm.um(db, 'arquivos', `aula-${aulaId}`);
     if (local) return { blob: local.blob };
     const a = item(aulaId);
-    if (!a?.audio) return { erro: 'Não há gravação.' };
+    if (!a?.audio) return { erro: 'Esta aula não tem gravação.' };
     if (!a.audio.driveId) return { erro: 'A gravação foi enviada em outro aparelho e ainda não chegou ao Drive. Abra o app naquele aparelho com internet.' };
     const d = drive();
     if (!d) return { erro: 'Para ouvir a gravação neste aparelho, entre com o Google.' };

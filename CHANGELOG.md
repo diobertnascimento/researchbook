@@ -2,6 +2,17 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.27.0 (21/11/2026)
+Revisão dos textos, parte 3 de 4: quem fala, botões, telas vazias e pontuação.
+- O app não diz mais "eu". "Encontrei o DOI no PDF" virou "O DOI estava no PDF"; "Abri no modo PDF" virou "Ele abriu no modo PDF"; "Não encontrei citação neste parágrafo" virou "Nenhuma citação neste parágrafo". Quem fala em primeira pessoa é a IA, na conversa.
+- O que é seu é "seu", também nos botões: "Adicionar textos seus", "Buscar nos seus grifos e notas", "Sua anotação", "Manter o original" (era "Manter o meu"), "Soa como você?" (era "Isso soa como eu?").
+- Botões que dizem o que fazem: "Usar esta versão", "Mudar o plano", "Mudar o prazo", "Desligar o Google Agenda", "Conferi" (era "Ok, conferi"). Dois botões longos da preparação do texto encurtaram: "Pular a preparação" e "Aprovar e começar a escrever".
+- Telas vazias que só diziam "Nenhum." ou "Nada aqui." agora dizem o que falta: "Nenhuma obra citada ainda.", "Nenhum combinado neste encontro.", "Nenhuma obra nesta prioridade.". A busca sem resultado em Ler sugere tentar o sobrenome do autor ou uma palavra do título.
+- No parecer do projeto, "Faltam decidir 3" virou "3 sem decisão".
+- Avisos curtos de confirmação perderam o ponto final ("Obras juntadas numa só", "Marcada como obra sem DOI"), como os outros.
+- Frases na ordem direta: "Não acha sinônimos" no lugar de "Sinônimo não é encontrado".
+- Dois avisos que juntam frases ("Word exportado. Cópia no seu Drive.") e o "Pensando há 5 s" do tutor ficaram como estavam: a proposta de mudar a pontuação deles não funcionava com a frase montada.
+
 ## 2.26.0 (21/11/2026)
 Revisão dos textos, parte 2 de 4: textos que descreviam uma versão antiga do app, e erros.
 - Ajustes, Conta e pasta: o aviso dizia que a chave do Gemini nunca ia para a pasta. Hoje ela vai, cifrada, se você usar o cofre, e o aviso passou a dizer isso.

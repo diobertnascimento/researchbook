@@ -132,7 +132,7 @@ export function criarBiblioteca({ db, dados, registrar, drive }) {
     if (!l?.pdf) return { erro: 'Esta obra ainda não tem PDF.' };
     if (!l.pdf.driveId) return { erro: 'O PDF foi adicionado em outro aparelho e ainda não chegou ao Drive. Abra o app naquele aparelho com internet.' };
     const d = drive();
-    if (!d) return { erro: 'Para baixar o PDF deste aparelho, entre com o Google.' };
+    if (!d) return { erro: 'Para baixar o PDF neste aparelho, entre com o Google.' };
     if (!navigator.onLine) return { erro: 'Sem internet. O PDF ainda não está guardado neste aparelho.' };
     try {
       const blob = await d.baixarArquivo(l.pdf.driveId, `biblioteca/pdfs/${id}.pdf`, aoProgresso, l.pdf.tamanho || 0);

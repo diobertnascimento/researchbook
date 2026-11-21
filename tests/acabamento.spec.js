@@ -150,6 +150,9 @@ const APOSENTADOS = [
   [/O problema ficou registrado/, 'o erro está em Ajustes, em Registros'],
   [/quando o Gemini entrar|vai ficar no seu Google Drive|Quando o Drive estiver ligado|Escreva na Escrita|vão para Organizar/, 'texto de versão antiga'],
   [/fora do formato esperado|não devolveu o endereço de envio|retorno de login/, 'palavra comum, não a do sistema'],
+  [/Encontrei o DOI|Não encontrei (esta obra|citação|este trecho|o texto)|Abri no modo|Achei um resultado|busquei os dados/, 'o app não diz "eu"'],
+  [/textos meus|Manter o meu|nos meus grifos|Minha anotação|soa como eu/, 'seu, sua'],
+  [/>Ok, conferi<|>Usar<\/button>|>Mudar<\/button>|>Desligar<\/button>/, 'botão diz o que faz'],
 ];
 test('escrita: nenhum termo aposentado volta a um texto de tela', () => {
   const achados = [];

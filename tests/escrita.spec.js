@@ -95,7 +95,7 @@ test.describe('no computador', () => {
     await page.getByLabel('Título da seção 2').fill('Como as rotas são negociadas');
     await page.locator('[data-esc-tirar="2"]').click();
     await expect(page.locator('.estr-ed li')).toHaveCount(2);
-    await page.getByRole('button', { name: 'Aprovar estrutura e começar a escrever' }).click();
+    await page.getByRole('button', { name: 'Aprovar e começar a escrever' }).click();
     await expect(page.locator('.secoes button')).toHaveText(['Introdução', 'Como as rotas são negociadas']);
     await expect(page.locator('#esc-corpo')).toBeVisible();
 
@@ -192,7 +192,7 @@ test.describe('no computador', () => {
     expect(gem.pedidos.at(-1).corpo.contents.at(-1).parts[0].text).toContain('O autor disse: O que falta nesta seção?');
 
     await page.locator('#esc-corpo p').first().click();
-    await page.getByRole('button', { name: 'Isso soa como eu?' }).click();
+    await page.getByRole('button', { name: 'Soa como você?' }).click();
     await expect(page.locator('.versoes-box h4')).toHaveText('Soa como você em parte');
     await page.getByRole('button', { name: 'Fechar' }).click();
 

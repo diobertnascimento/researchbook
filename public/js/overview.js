@@ -86,7 +86,7 @@ export async function textoDoDocx(arquivo) {
     }
     p += 46 + lnome + lextra + lcom;
   }
-  throw new Error('Não encontrei o texto dentro do .docx.');
+  throw new Error('O app não achou texto dentro do .docx. Copie o texto para um .txt e envie.');
 }
 
 export function criarOverview({ db, ia, escrita, drive, registrar }) {

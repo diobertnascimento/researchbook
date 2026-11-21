@@ -44,7 +44,7 @@ test.describe('no computador', () => {
 
     // Plano: padrão de 3 sessões de 25 minutos; mudar grava na hora.
     await expect(page.locator('.diss-plano')).toContainText('Seu plano: 3 sessões de 25 minutos.');
-    await page.getByRole('button', { name: 'Mudar' }).click();
+    await page.getByRole('button', { name: 'Mudar o plano' }).click();
     await page.getByLabel('Sessões por semana').selectOption('2');
     await expect(page.locator('.diss-plano')).toContainText('2 sessões de 25 minutos');
     await page.getByLabel('Minutos por sessão').selectOption('40');

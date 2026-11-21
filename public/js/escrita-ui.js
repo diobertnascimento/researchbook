@@ -127,7 +127,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     const d = t.diagnostico;
     if (!d) return `<section class="editor esc-prep"><h2>Diagnóstico</h2><p class="instr">O Copilot compara a sua tese e as suas respostas com a sua biblioteca: o que está sustentado, o que está frágil e onde falta fonte.</p><button class="btn prim" data-esc-diagnostico ${est.ocupado || !t.tese ? 'disabled' : ''} data-ocupado="Diagnosticando…">Fazer o diagnóstico</button>${!t.tese ? '<p class="mute">Escreva a tese na etapa Ideia primeiro.</p>' : ''}${ocupadoHTML('diagnostico')}${erroHTML()}</section>`;
     const col = (classe, titulo, cor, sub) => `<section class="diag"><h3><i style="background:${cor}"></i>${titulo}</h3><p>${sub}</p>${
-      d.resultado.pontos.filter((p) => p.classe === classe).map((p) => `<div class="diag-item"><b>${esc(p.afirmacao)}</b><span>${esc(tirarIds(p.comentario))}</span><div class="f">${chipsFontes(p.fontes, d)}</div></div>`).join('') || '<p class="mute">Nada aqui.</p>'
+      d.resultado.pontos.filter((p) => p.classe === classe).map((p) => `<div class="diag-item"><b>${esc(p.afirmacao)}</b><span>${esc(tirarIds(p.comentario))}</span><div class="f">${chipsFontes(p.fontes, d)}</div></div>`).join('') || '<p class="mute">Nenhum ponto neste grupo.</p>'
     }</section>`;
     return `<div class="diag-grid">${col('sustentado', 'Sustentado pela biblioteca', 'var(--sucesso)', 'Você tem grifos para isto')}${col('fragil', 'Frágil', '#B8862B', 'Uma fonte só, ou sustenta em parte')}${col('lacuna', 'Lacuna', 'var(--perigo)', 'Fora da sua biblioteca. Sugestões para você adicionar')}</div>
       ${d.resultado.sugestoes_de_busca?.length ? `<section class="mt-4 editor"><h3 class="mt-0">Para adicionar (fora da sua biblioteca; não cite ainda)</h3><ul>${d.resultado.sugestoes_de_busca.map((s) => `<li>${esc(s.descricao)}${s.obra_sugerida ? `: <i>${esc(s.obra_sugerida)}</i>` : ''}</li>`).join('')}</ul></section>` : ''}
@@ -154,12 +154,12 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
 
   function prep(t) {
     const corpo = [passo0, passo1, passo2, passo3][t.passo](t);
-    const prox = t.passo < 3 ? `<button class="btn prim" data-esc-passo="${t.passo + 1}">Próximo: ${PASSOS[t.passo + 1]}</button>` : `<button class="btn prim" data-esc-aprovar ${t.estrutura?.length ? '' : 'disabled'}>Aprovar estrutura e começar a escrever</button>`;
+    const prox = t.passo < 3 ? `<button class="btn prim" data-esc-passo="${t.passo + 1}">Próximo: ${PASSOS[t.passo + 1]}</button>` : `<button class="btn prim" data-esc-aprovar ${t.estrutura?.length ? '' : 'disabled'}>Aprovar e começar a escrever</button>`;
     return `${cabecalho(t, 'Preparação do texto. É feita uma vez; você volta aqui pelo Briefing.')}
       ${trilhaPassos(t)}
       ${t.passo === 0 ? '<p class="setup-intro">O Copilot entrevista você e propõe versões do que você escreveu. Ele não escreve do zero e só cita o que está na sua biblioteca.</p>' : ''}
       ${corpo}
-      <div class="esc-nav">${t.passo > 0 ? `<button class="btn fant" data-esc-passo="${t.passo - 1}">Voltar para ${PASSOS[t.passo - 1]}</button>` : `<button class="btn fant" data-esc-pular>Pular a preparação e começar a escrever</button>`}${prox}</div>`;
+      <div class="esc-nav">${t.passo > 0 ? `<button class="btn fant" data-esc-passo="${t.passo - 1}">Voltar para ${PASSOS[t.passo - 1]}</button>` : `<button class="btn fant" data-esc-pular>Pular a preparação</button>`}${prox}</div>`;
   }
 
   /* ---------- Editor ---------- */
@@ -189,7 +189,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     </div>
     <div class="atalhos">
       <button class="btn fant" data-esc-versoes ${noTeto || est.ocupado ? 'disabled' : ''} data-ocupado="Propondo versões…">Propor versões do parágrafo</button>
-      <button class="btn fant" data-esc-soa ${est.ocupado ? 'disabled' : ''}>Isso soa como eu?</button>
+      <button class="btn fant" data-esc-soa ${est.ocupado ? 'disabled' : ''}>Soa como você?</button>
       ${secaoAtual(t).i < t.secoes.length - 1 ? `<button class="btn fant" data-esc-transicao ${noTeto || est.ocupado ? 'disabled' : ''}>Transição para a próxima seção</button>` : ''}
     </div>
     <div class="tutor-escrever"><textarea id="esc-chat" rows="2" placeholder="Fale com o Copilot sobre esta seção" aria-label="Mensagem ao Copilot"></textarea><button class="btn" data-esc-chat ${est.ocupado ? 'disabled' : ''}>Enviar mensagem</button></div>`;
@@ -211,10 +211,10 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       ${(j.versoes || [])
         .map(
           (x, i) => `<div class="versao-op"><div class="cab"><b>${x.tipo === 'proxima' ? 'Mais próxima do seu texto' : 'Mais acadêmica'}</b>${(x.mudancas || []).slice(0, 3).map((m) => `<span class="chip">${esc(m)}</span>`).join('')}</div>
-          <p>${esc(tirarIds(x.texto))}</p><div class="bts"><button class="btn prim" data-esc-usar="${i}">Usar</button><button class="btn" data-esc-usar="${i}" data-editar>Editar a partir desta</button></div></div>`,
+          <p>${esc(tirarIds(x.texto))}</p><div class="bts"><button class="btn prim" data-esc-usar="${i}">Usar esta versão</button><button class="btn" data-esc-usar="${i}" data-editar>Editar a partir desta</button></div></div>`,
         )
         .join('')}
-      <div class="bts"><button class="btn fant" data-esc-fechar-v>Manter o meu</button></div></div>`;
+      <div class="bts"><button class="btn fant" data-esc-fechar-v>Manter o original</button></div></div>`;
   }
 
   function painelMaterial(t, s) {
@@ -231,7 +231,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     const vs = escrita.versoesDe(t);
     const quando = (em) => new Date(em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     return `<p class="sub">O app guarda uma versão sozinho a cada 10 minutos de escrita e antes de toda mudança grande. Ficam neste aparelho e no seu Drive. Restaurar não apaga nada: o texto da tela vira mais uma versão.</p><button class="btn" data-esc-salvar-versao>Guardar versão agora</button>${
-      vs.length ? `<ul class="vers-lista">${vs.map((v) => `<li><span>${quando(v.em)}<small>${palavrasDe(v.palavras)}, ${esc(MOTIVOS[v.motivo] || v.motivo || 'guardada')}</small></span><button class="btn fant" data-esc-restaurar="${esc(v.arquivo)}">Restaurar</button></li>`).join('')}</ul>` : '<p class="mute">Nenhuma versão ainda.</p>'
+      vs.length ? `<ul class="vers-lista">${vs.map((v) => `<li><span>${quando(v.em)}<small>${palavrasDe(v.palavras)}, ${esc(MOTIVOS[v.motivo] || v.motivo || 'guardada')}</small></span><button class="btn fant" data-esc-restaurar="${esc(v.arquivo)}">Restaurar</button></li>`).join('')}</ul>` : '<p class="mute">Nenhuma versão ainda. A primeira é guardada depois de 10 minutos de escrita.</p>'
     }`;
   }
 
@@ -308,7 +308,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
         </section>
         <aside class="lado">
           <section class="bloco cta-trilha"><h3>Exportar</h3><p>Word com formatação ABNT. Os marcadores de autoria ficam aqui; o arquivo sai limpo. Uma cópia vai para o seu Drive.</p><button class="btn ${acima ? '' : 'prim'}" data-esc-docx ${acima ? 'disabled' : ''} data-ocupado="Exportando…">Exportar para Word (.docx)</button>${acima ? '<p class="mute">Disponível quando a participação da IA ficar dentro do teto.</p>' : ''}</section>
-          <section class="bloco"><h3>Referências</h3>${refs.length ? `<ul class="refs-abnt">${refs.map((r) => `<li>${referencia(bib.obter(r.id))}</li>`).join('')}</ul>` : '<p class="mute">Nenhuma ainda.</p>'}</section>
+          <section class="bloco"><h3>Referências</h3>${refs.length ? `<ul class="refs-abnt">${refs.map((r) => `<li>${referencia(bib.obter(r.id))}</li>`).join('')}</ul>` : '<p class="mute">Nenhuma obra citada ainda.</p>'}</section>
           <section class="bloco"><h3>Autoria deste texto</h3>${barra(a, t.teto)}<div class="mt-3">${legenda}</div></section>
         </aside>
       </div>`;
@@ -562,7 +562,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
   const pedir = document.createElement('div');
   pedir.className = 'esc-pedir';
   pedir.innerHTML = `<button type="button" data-esc-pedir aria-haspopup="true" aria-expanded="false">Pedir</button><div class="ops" role="menu" aria-label="Pedir sobre este parágrafo" hidden>
-    <button type="button" role="menuitem" data-esc-pedido="buscar">Buscar nos meus grifos e notas</button>
+    <button type="button" role="menuitem" data-esc-pedido="buscar">Buscar nos seus grifos e notas</button>
     <button type="button" role="menuitem" data-esc-pedido="citacoes">Conferir as citações</button>
     <button type="button" role="menuitem" data-esc-pedido="versoes" data-ia>Propor outra versão</button>
     <button type="button" role="menuitem" data-esc-pedido="conversar" data-ia>Conversar com o Copilot</button></div>`;
@@ -697,7 +697,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     if (op === 'buscar') {
       achadosDoPedido = buscarNoAcervo(texto, acervoDoAutor());
       return mostrarPedido(
-        `<h3 tabindex="-1">Nos seus grifos e notas</h3><p class="sub">Por palavras em comum com este parágrafo, sem IA. Sinônimo não é encontrado.</p>
+        `<h3 tabindex="-1">Nos seus grifos e notas</h3><p class="sub">Por palavras em comum com este parágrafo, sem IA. Não acha sinônimos.</p>
         ${achadosDoPedido.length ? `<ul>${achadosDoPedido.map((x, i) => `<li><small>${x.tipo}</small><p>${esc(x.texto.length > 280 ? `${x.texto.slice(0, 280)}…` : x.texto)}${x.cit ? ` <span class="cit">${esc(x.cit)}</span>` : ''}</p><div class="ia-linha"><button type="button" class="btn fant" data-esc-pedido-copiar="${i}">Copiar com a referência</button><a class="btn fant" href="${x.href}">Abrir</a></div></li>`).join('')}</ul>` : '<p>Nada nos seus grifos e notas tem palavras em comum com este parágrafo.</p>'}`,
         bloco,
       );
@@ -707,7 +707,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       const rotulo = { ok: 'Na biblioteca', fora: 'Fora da biblioteca', 'sem-pagina': 'Sem página', 'sem-grifo': 'Fora dos seus grifos' };
       return mostrarPedido(
         `<h3 tabindex="-1">Citações deste parágrafo</h3><p class="sub">Conferidas contra a sua biblioteca e os seus grifos, sem IA.</p>
-        ${achados.length ? `<ul>${achados.map((a) => `<li class="${a.tipo}"><small>${rotulo[a.tipo]}</small><p>${esc(a.texto)}</p><p class="sub">${esc(a.detalhe)}</p></li>`).join('')}</ul>` : '<p>Não encontrei citação neste parágrafo.</p>'}`,
+        ${achados.length ? `<ul>${achados.map((a) => `<li class="${a.tipo}"><small>${rotulo[a.tipo]}</small><p>${esc(a.texto)}</p><p class="sub">${esc(a.detalhe)}</p></li>`).join('')}</ul>` : '<p>Nenhuma citação neste parágrafo.</p>'}`,
         bloco,
       );
     }
