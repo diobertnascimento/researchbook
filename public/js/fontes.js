@@ -29,7 +29,14 @@ const NOME_DO_SITE = (host) => String(host || '').replace(/^www\./, '');
 export function criarFontes({ google, registrar = () => {}, buscar = (...a) => fetch(...a) }) {
   const ligado = () => !!servidorIA() && !!google?.sessao?.()?.token;
 
-  async function pedir(caminho, evento) {
+  // O pedido vai no corpo: o que vai no endereço fica no registro de acessos do servidor, e título de obra
+  // e link de artigo não devem ficar lá. Servidor publicado antes da v2.19.1 só entende o jeito antigo.
+  async function pedir(caminho, evento, pedido) {
+    const r = await enviar(caminho, evento, pedido, false);
+    return r.codigo === 'rota' ? enviar(caminho, evento, pedido, true) : r;
+  }
+
+  async function enviar(caminho, evento, pedido, jeitoAntigo) {
     const raiz = servidorIA();
     const token = google?.sessao?.()?.token;
     if (!raiz) return { erro: 'Esta busca passa pelo seu servidor, que ainda não foi publicado.', codigo: 'sem-servidor' };
@@ -37,7 +44,9 @@ export function criarFontes({ google, registrar = () => {}, buscar = (...a) => f
     const inicio = performance.now();
     let r;
     try {
-      r = await buscar(raiz.replace(/\/$/, '') + caminho, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+      const h = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
+      const destino = raiz.replace(/\/$/, '') + caminho;
+      r = jeitoAntigo ? await buscar(`${destino}?${new URLSearchParams(pedido)}`, { headers: h }) : await buscar(destino, { method: 'POST', headers: { ...h, 'Content-Type': 'application/json' }, body: JSON.stringify(pedido) });
     } catch {
       registrar('erro', evento, { det: 'sem conexão', st: 'aviso' });
       return { erro: 'Sem conexão com o seu servidor agora.', codigo: 'conexao' };
@@ -46,6 +55,7 @@ export function criarFontes({ google, registrar = () => {}, buscar = (...a) => f
     const corpo = await r.json().catch(() => null);
     if (!r.ok) {
       const codigo = corpo?.error?.codigo || String(r.status);
+      if (codigo === 'rota' && !jeitoAntigo) return { codigo };
       registrar('erro', evento, { det: codigo, dur, st: 'aviso' });
       // A mensagem do servidor é escrita por nós e já diz o que fazer; rota desconhecida é servidor antigo.
       const texto = codigo === 'rota' ? 'O seu servidor ainda está na versão antiga. Publique de novo (servidor/publicar.sh) para ligar esta busca.' : codigo === 'login' ? 'O servidor não aceitou o login. Reconecte ao Google e tente de novo.' : corpo?.error?.origem === 'servidor' ? String(corpo.error.message).slice(0, 240) : `O servidor respondeu com erro (${r.status}).`;
@@ -59,7 +69,7 @@ export function criarFontes({ google, registrar = () => {}, buscar = (...a) => f
   async function procurarNoOpenAlex(f) {
     const q = [f.titulo, f.subtitulo, (f.autores || []).slice(0, 2).map((a) => a.sobrenome).join(' '), f.ano].filter(Boolean).join(' ').slice(0, 300);
     if (q.trim().length < 3) return { candidatos: [] };
-    const r = await pedir(`/obras/openalex?busca=${encodeURIComponent(q)}`, 'openalex.procurar');
+    const r = await pedir('/obras/openalex', 'openalex.procurar', { busca: q });
     if (r.erro) return r;
     return { candidatos: (r.candidatos || []).map((c) => ({ ...c, fonte: 'openalex' })) };
   }
@@ -68,7 +78,8 @@ export function criarFontes({ google, registrar = () => {}, buscar = (...a) => f
   async function lerPagina(url) {
     const u = endereco(url);
     if (!u) return { erro: 'Isso não parece o endereço de uma página. Ele começa com https://.' };
-    const r = await pedir(`/obras/pagina?url=${encodeURIComponent(u)}`, 'pagina.ler');
+    // Link antigo com http: o servidor só abre https.
+    const r = await pedir('/obras/pagina', 'pagina.ler', { url: u.replace(/^http:/i, 'https:') });
     if (r.erro) return r;
     return { dados: r.dados, site: NOME_DO_SITE(r.site) };
   }

@@ -19,10 +19,13 @@
 //   SITES_PAGINA      sites que o servidor pode abrir para ler os dados de um artigo (opcional; ver SITES)
 //
 // Dados de obras (v2.17.0), para o Acervo do app. As duas rotas pedem o mesmo login e contam no mesmo limite:
-//   GET /obras/openalex?busca=...   procura por título, autor e ano no OpenAlex, com a chave dele
-//   GET /obras/pagina?url=...       abre a página de um artigo e lê os dados que ela publica nas etiquetas
+//   POST /obras/openalex {busca}    procura por título, autor e ano no OpenAlex, com a chave dele
+//   POST /obras/pagina {url}        abre a página de um artigo e lê os dados que ela publica nas etiquetas
 //                                   <meta name="citation_...">. Só abre https, só sites da lista, nunca um
 //                                   endereço interno, e devolve só os campos lidos, nunca a página.
+// O pedido vai no corpo (v2.19.1) para o título e o link não ficarem no registro de acessos do Cloud Run;
+// o GET com ?busca= e ?url= segue aceito para o app antigo. Toda resposta leva X-Researchbook-Servidor
+// (VERSAO_SERVIDOR), e o registro de uma recusa leva o código dela e números (resposta do site, saltos).
 import { createServer } from 'node:http';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
@@ -39,6 +42,19 @@ const CABECALHOS_DE_ENVIO = ['x-goog-upload-protocol', 'x-goog-upload-command', 
 // serviços internos do Google Cloud. Para acrescentar um site, publique de novo com SITES_PAGINA.
 export const SITES = ['scielo.br', 'scielo.org', 'redalyc.org', 'spell.org.br', 'anpad.org.br', 'fgv.br', 'emnuvens.com.br', 'ibict.br', 'usp.br', 'ufmg.br', 'unicamp.br', 'unesp.br', 'ufrgs.br', 'ufsc.br', 'ufrj.br', 'ufpr.br', 'unb.br'];
 const MAX_PAGINA = 1_500_000; // bytes lidos de uma página
+const MAX_SALTOS = 4; // redirecionamentos seguidos, cada um conferido
+const MAX_PEDIDO_DE_OBRA = 8000; // bytes do pedido de dados de obra (uma busca ou um endereço)
+// O servidor se apresenta pelo nome, com o endereço do app: quem cuida do site consegue saber quem pediu.
+const CABECALHOS_DE_LEITURA = {
+  Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5',
+  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+  'User-Agent': 'researchbook/1 (+https://researchbook.com.br; leitura dos dados de um artigo a pedido do autor)',
+};
+const PELO_DOI = 'Copie o DOI que aparece na página do artigo e cole no mesmo campo.';
+/** O tipo de uma falha, sem a mensagem (que pode trazer endereço): nome do erro e código da causa. */
+const motivo = (e) => ({ falha: String(e?.name || 'Error').slice(0, 40), ...(e?.cause?.code ? { causa: String(e.cause.code).slice(0, 40) } : {}) });
+/** Versão do servidor. Vai em toda resposta, para a publicação e o app saberem qual está no ar. Suba a cada mudança. */
+export const VERSAO_SERVIDOR = '3';
 const PRAZO_PAGINA = 8000; // ms
 
 /** Endereço que não é da internet pública (rede interna, a própria máquina, metadados da nuvem). */
@@ -147,10 +163,12 @@ const CAMPOS_OPENALEX = 'id,doi,display_name,publication_year,type,authorships,p
 
 /** Erro que vira resposta: o app lê "codigo" para dizer o que houve e o que fazer. */
 class Recusa extends Error {
-  constructor(status, codigo, mensagem) {
+  constructor(status, codigo, mensagem, nota = null) {
     super(mensagem);
     this.status = status;
     this.codigo = codigo;
+    // Só números e códigos (resposta do site, quantos saltos, tipo de falha). Vai para o registro, nunca para o app.
+    this.nota = nota;
   }
 }
 
@@ -250,24 +268,40 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
       Vary: 'Origin',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': ['authorization', 'content-type', ...CABECALHOS_DE_ENVIO].join(', '),
-      'Access-Control-Expose-Headers': 'x-goog-upload-url, x-goog-upload-status',
+      'Access-Control-Expose-Headers': 'x-goog-upload-url, x-goog-upload-status, x-researchbook-servidor',
       'Access-Control-Max-Age': '3600',
     };
   }
-  function lerCorpo(req) {
+  function lerCorpo(req, maximo = MAX_CORPO) {
     return new Promise((ok, erro) => {
       const partes = [];
       let tamanho = 0;
       req.on('data', (p) => {
         tamanho += p.length;
-        if (tamanho > MAX_CORPO) {
-          erro(new Recusa(413, 'grande', 'O pedido passa de 30 MB. Envie o arquivo pelo envio de arquivos do app.'));
-          req.destroy();
+        if (tamanho > maximo) {
+          // Pedido pequeno que passou do tamanho: o resto é descartado e a resposta ainda chega ao app.
+          // Envio grande: a conexão é cortada para o envio parar.
+          if (maximo < MAX_CORPO) erro(new Recusa(413, 'grande', 'O pedido é grande demais para esta rota.'));
+          else {
+            erro(new Recusa(413, 'grande', 'O pedido passa de 30 MB. Envie o arquivo pelo envio de arquivos do app.'));
+            req.destroy();
+          }
         } else partes.push(p);
       });
       req.on('end', () => ok(Buffer.concat(partes)));
       req.on('error', () => erro(new Recusa(400, 'pedido', 'O pedido chegou incompleto.')));
     });
+  }
+  /** O pedido de dados de obra que veio no corpo: um objeto pequeno, em JSON. */
+  async function lerPedido(req) {
+    const corpo = await lerCorpo(req, MAX_PEDIDO_DE_OBRA);
+    try {
+      const j = JSON.parse(corpo.toString('utf8'));
+      if (j && typeof j === 'object' && !Array.isArray(j)) return j;
+    } catch {
+      /* cai na recusa abaixo */
+    }
+    throw new Recusa(400, 'pedido', 'O pedido chegou em um formato que o servidor não entende.');
   }
   const paraOGemini = (extra = {}) => ({ 'x-goog-api-key': cfg.chave, ...extra });
 
@@ -281,14 +315,16 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
     } catch {
       throw new Recusa(400, 'pagina-endereco', 'Isso não parece o endereço de uma página.');
     }
+    // Link antigo com http: o servidor só abre https, então troca o começo em vez de recusar.
+    if (u.protocol === 'http:' && !u.port) u.protocol = 'https:';
     const host = u.hostname.toLowerCase();
     if (u.protocol !== 'https:' || u.port || u.username || u.password || isIP(host)) throw new Recusa(400, 'pagina-endereco', 'O servidor só abre páginas https de sites conhecidos.');
     if (!siteAceito(host)) throw new Recusa(403, 'pagina-site', `O site ${host} não está na lista de sites que este servidor abre.`);
     let ips;
     try {
       ips = await resolver(host);
-    } catch {
-      throw new Recusa(502, 'pagina-fora', 'O site não foi encontrado.');
+    } catch (e) {
+      throw new Recusa(502, 'pagina-fora', 'O site não foi encontrado.', motivo(e));
     }
     if (!ips.length || ips.some((i) => enderecoInterno(i.address))) throw new Recusa(403, 'pagina-site', 'O endereço deste site aponta para uma rede interna e não será aberto.');
     return u;
@@ -297,20 +333,23 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
     let u = await conferirEndereco(bruto);
     const prazo = AbortSignal.timeout(PRAZO_PAGINA);
     let r;
+    let salto = 0;
     try {
       // Redirecionamento não é seguido às cegas: cada salto passa pela mesma conferência.
-      for (let salto = 0; ; salto++) {
-        r = await buscar(u.href, { redirect: 'manual', signal: prazo, headers: { Accept: 'text/html', 'User-Agent': 'researchbook (leitura dos dados de um artigo, a pedido do autor)' } });
+      for (; ; salto++) {
+        r = await buscar(u.href, { redirect: 'manual', signal: prazo, headers: CABECALHOS_DE_LEITURA });
         if (r.status < 300 || r.status >= 400) break;
         const destino = r.headers.get('location');
-        if (!destino || salto >= 3) throw new Recusa(502, 'pagina-fora', 'A página redireciona demais para ser lida.');
+        if (!destino || salto >= MAX_SALTOS) throw new Recusa(502, 'pagina-fora', `A página redireciona demais para ser lida. ${PELO_DOI}`, { resposta: r.status, saltos: salto });
         u = await conferirEndereco(new URL(destino, u).href);
       }
     } catch (e) {
       if (e instanceof Recusa) throw e;
-      throw new Recusa(504, 'pagina-fora', 'O site não respondeu a tempo.');
+      const noPrazo = e?.name === 'TimeoutError' || e?.name === 'AbortError';
+      throw new Recusa(504, 'pagina-fora', `${noPrazo ? 'O site não respondeu a tempo.' : 'O servidor não conseguiu abrir o site.'} ${PELO_DOI}`, { saltos: salto, ...motivo(e) });
     }
-    if (!r.ok) throw new Recusa(502, 'pagina-fora', `O site respondeu com erro (${r.status}).`);
+    if (r.status === 404 || r.status === 410) throw new Recusa(502, 'pagina-fora', 'O site diz que esta página não existe. Confira o endereço.', { resposta: r.status, saltos: salto });
+    if (!r.ok) throw new Recusa(502, 'pagina-fora', `O site recusou a leitura pelo servidor (resposta ${r.status}). ${PELO_DOI}`, { resposta: r.status, saltos: salto });
     if (!/html/i.test(r.headers.get('content-type') || '')) throw new Recusa(422, 'pagina-sem-dados', 'Este endereço não é uma página (pode ser um PDF). Cole o endereço da página do artigo.');
     // Lê só o começo: as etiquetas ficam no cabeçalho da página.
     const leitor = r.body.getReader();
@@ -324,7 +363,7 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
     }
     leitor.cancel().catch(() => {});
     const dados = lerEtiquetas(new TextDecoder('utf-8').decode(Buffer.concat(partes)));
-    if (!dados) throw new Recusa(422, 'pagina-sem-dados', 'Esta página não publica os dados do artigo de um jeito que dê para ler. Tente pelo DOI ou cole a referência.');
+    if (!dados) throw new Recusa(422, 'pagina-sem-dados', 'Esta página não publica os dados do artigo de um jeito que dê para ler. Tente pelo DOI ou cole a referência.', { resposta: r.status, saltos: salto, bytes: lidos });
     return { dados: { ...dados, url: u.href }, site: u.hostname };
   }
   async function procurarNoOpenAlex(busca) {
@@ -351,14 +390,17 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
       return { status: 200, corpo: JSON.stringify({ ok: true, pedidosHoje: await contar(0), limite: cfg.limite }) };
     }
 
-    if (req.method === 'GET' && caminho === '/obras/openalex') {
-      const busca = (endereco.searchParams.get('busca') || '').trim().slice(0, 300);
-      if (busca.length < 3) throw new Recusa(400, 'pedido', 'Diga o que procurar: título, autor ou ano.');
-      await gastarUm();
-      return { status: 200, corpo: JSON.stringify(await procurarNoOpenAlex(busca)) };
-    }
-    if (req.method === 'GET' && caminho === '/obras/pagina') {
-      const url = (endereco.searchParams.get('url') || '').trim().slice(0, 2000);
+    // Dados de obras. O app manda o pedido no corpo (POST): o que vai no endereço fica no registro de acessos
+    // do Cloud Run, e título de obra e link de artigo não devem ficar lá. O GET segue aceito para o app antigo.
+    if ((req.method === 'GET' || req.method === 'POST') && (caminho === '/obras/openalex' || caminho === '/obras/pagina')) {
+      const pedido = req.method === 'POST' ? await lerPedido(req) : Object.fromEntries(endereco.searchParams);
+      if (caminho === '/obras/openalex') {
+        const busca = String(pedido.busca ?? '').trim().slice(0, 300);
+        if (busca.length < 3) throw new Recusa(400, 'pedido', 'Diga o que procurar: título, autor ou ano.');
+        await gastarUm();
+        return { status: 200, corpo: JSON.stringify(await procurarNoOpenAlex(busca)) };
+      }
+      const url = String(pedido.url ?? '').trim().slice(0, 2000);
       await conferirEndereco(url);
       await gastarUm();
       return { status: 200, corpo: JSON.stringify(await lerPagina(url)) };
@@ -397,15 +439,16 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
 
   return createServer(async (req, res) => {
     const inicio = agora();
-    const base = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
+    const base = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Researchbook-Servidor': VERSAO_SERVIDOR };
     const c = cors(req);
     let status = 500;
+    let motivoDaRecusa = null;
     try {
       // Pedido vindo de uma página que não é o app é recusado antes de qualquer coisa.
       if (req.headers.origin && !c) throw new Recusa(403, 'origem', 'Este servidor só atende o researchbook.');
       if (req.method === 'OPTIONS') {
         status = 204;
-        res.writeHead(204, c || {});
+        res.writeHead(204, { 'X-Researchbook-Servidor': VERSAO_SERVIDOR, ...(c || {}) });
         return res.end();
       }
       const r = await atender(req);
@@ -414,13 +457,15 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
       res.end(r.corpo);
     } catch (e) {
       const deObras = (req.url || '').startsWith('/obras/');
-      const recusa = e instanceof Recusa ? e : deObras ? new Recusa(502, 'obras-fora', 'O servidor não conseguiu buscar os dados agora.') : new Recusa(502, 'gemini', 'O servidor não conseguiu falar com o Gemini agora.');
+      const recusa = e instanceof Recusa ? e : deObras ? new Recusa(502, 'obras-fora', 'O servidor não conseguiu buscar os dados agora.', motivo(e)) : new Recusa(502, 'gemini', 'O servidor não conseguiu falar com o Gemini agora.', motivo(e));
       status = recusa.status;
+      motivoDaRecusa = { codigo: recusa.codigo, ...(recusa.nota || {}) };
       res.writeHead(status, { ...base, ...(c || {}) });
       res.end(JSON.stringify({ error: { message: recusa.message, status: recusa.codigo, origem: 'servidor', codigo: recusa.codigo } }));
     } finally {
-      // Registro sem conteúdo: rota, resultado e tempo.
-      registro(JSON.stringify({ rota: `${req.method} ${new URL(req.url, 'http://x').pathname.replace(/models\/[^:]+/, 'models/…').replace(/files\/.+/, 'files/…')}`, status, ms: agora() - inicio }));
+      // Registro sem conteúdo: rota, resultado, tempo e, na recusa, o código dela (com números como a resposta
+      // do site), para dar para saber o que houve sem guardar o que foi pedido.
+      registro(JSON.stringify({ rota: `${req.method} ${new URL(req.url, 'http://x').pathname.replace(/models\/[^:]+/, 'models/…').replace(/files\/.+/, 'files/…')}`, status, ms: agora() - inicio, ...(motivoDaRecusa || {}) }));
     }
   });
 }
