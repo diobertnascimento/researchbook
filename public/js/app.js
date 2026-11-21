@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.19.3';
+const APP_VERSAO = '2.20.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -1881,7 +1881,7 @@ function render(){
   const rota=(location.hash||'#painel').slice(1);
   const [v,arg,arg2]=rota.split('/');
   document.body.classList.toggle('leitor', v==='leitor');
-  document.body.classList.toggle('editor', v==='texto');
+  document.body.classList.toggle('no-editor', v==='texto');
   document.body.classList.toggle('fichando', v==='fichamento' && modoReal());
   if(v!=='texto') document.body.classList.remove('sessao');
   document.body.classList.toggle('em-projeto', v==='disciplina' && modoReal());

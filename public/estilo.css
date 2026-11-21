@@ -161,7 +161,7 @@ main{min-width:0;padding:var(--e-8) clamp(var(--e-5),3.4vw,var(--e-12)) var(--e-
 .btn[aria-busy="true"]::before{content:"";width:14px;height:14px;flex:none;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:giro .7s linear infinite;opacity:.85}
 .giro{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:giro .7s linear infinite;vertical-align:-2px;flex:none}
 @keyframes giro{to{transform:rotate(360deg)}}
-.lnk{background:none;border:0;padding:0;margin-left:var(--e-2);color:var(--acento);text-decoration:underline;text-underline-offset:2px;font-size:inherit;cursor:pointer}
+.lnk{background:none;border:0;padding:0;margin-left:0;color:var(--acento);text-decoration:underline;text-underline-offset:2px;font-size:inherit;cursor:pointer}
 /* Chip e selos */
 .chip{display:inline-flex;align-items:center;gap:var(--e-1);font-size:var(--fs-legenda);line-height:16px;font-weight:500;padding:2px var(--e-2);border-radius:var(--r-1);background:var(--superficie-2);color:var(--texto-2);white-space:nowrap}
 .chip.proj,.chip.leve{background:transparent;box-shadow:inset 0 0 0 1px var(--borda-forte)}
@@ -1199,7 +1199,7 @@ a.lc:hover{text-decoration:underline}
 .tab-ia .num{text-align:right;white-space:nowrap}
 .tab-ia tr.grp td{background:var(--papel-2);font-weight:500;padding:8px 12px}
 .tab-ia tr.grp small{display:inline;margin-left:8px;font-weight:400}
-.tab-ia select{border:1px solid var(--borda-campo);border-radius:var(--r-s);padding:5px 8px;font-size:var(--fs-legenda);background:var(--superficie);max-width:190px}
+.tab-ia select{border:1px solid var(--borda-campo);border-radius:var(--r-s);padding:5px var(--e-8) 5px 8px;font-size:var(--fs-legenda);background-color:var(--superficie);max-width:190px}
 .tab-ia code{font-size:var(--fs-legenda);background:var(--papel-2);padding:1px 6px;border-radius:4px}
 .logs tr.st-erro td:first-child{box-shadow:inset 3px 0 0 var(--perigo)}
 .logs tr.st-aviso td:first-child{box-shadow:inset 3px 0 0 #B8862B}
@@ -1473,7 +1473,7 @@ a.arg-item{text-decoration:none;color:inherit}
 .ac-achar{display:flex;align-items:center;gap:var(--e-3);flex-wrap:wrap}
 .ac-achar input{height:40px;width:220px;max-width:100%;padding:0 var(--e-4);border:1px solid var(--borda-campo);border-radius:999px;background:var(--superficie);font-size:var(--fs-meta)}
 .ac-ordem{display:flex;align-items:center;gap:var(--e-2);font-size:var(--fs-meta);color:var(--texto-3)}
-.ac-ordem select{height:40px;padding:0 var(--e-3);border:1px solid var(--borda-campo);border-radius:999px;background:var(--superficie);font-size:var(--fs-meta);color:var(--texto)}
+.ac-ordem select{height:40px;padding:0 var(--e-8) 0 var(--e-3);border:1px solid var(--borda-campo);border-radius:999px;background-color:var(--superficie);font-size:var(--fs-meta);color:var(--texto)}
 .ac-tab{width:100%;border-collapse:collapse;font-size:var(--fs-meta);line-height:1.45}
 .ac-tab th{padding:var(--e-2) var(--e-4) var(--e-2) 0;text-align:left;font-weight:500;color:var(--texto-3);border-bottom:1px solid var(--borda)}
 .ac-tab td{padding:var(--e-4) var(--e-4) var(--e-4) 0;vertical-align:top;border-bottom:1px solid var(--borda)}
@@ -1490,7 +1490,9 @@ a.arg-item{text-decoration:none;color:inherit}
 .ac-doi{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .ac-sinal{flex:none;width:8px;height:8px;border-radius:50%;background:var(--texto-3);position:relative;top:-1px}
 .ac-sinal.falta{background:transparent;box-shadow:inset 0 0 0 2px var(--texto)}
-.ac-tab td a{color:var(--texto-3);white-space:nowrap}
+.ac-tab td a{color:var(--texto-3)}
+.ac-tab td[data-rot] a{white-space:nowrap}
+.ac-tab .ac-c-obra{min-width:0;overflow-wrap:anywhere}
 a.ac-obra{text-decoration:none}
 .ac-obra-tit{font-size:var(--fs-titulo-1);line-height:1.2;max-width:26em}
 .ac-ref{font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:1.6;max-width:44em;margin:var(--e-4) 0 var(--e-3)}
@@ -1554,7 +1556,7 @@ details:is(.ajuda-det,.como,.meu-reg,.arq-disc,:not([class])) > :not(summary){co
   #avisos{left:var(--e-3);right:var(--e-3);max-width:none;bottom:calc(76px + env(safe-area-inset-bottom))}
   .toast{bottom:calc(76px + env(safe-area-inset-bottom))}
   .filtro-menu{position:fixed;left:var(--e-3);right:var(--e-3);top:auto;bottom:calc(72px + env(safe-area-inset-bottom));min-width:0;max-height:60vh;overflow:auto}
-  .fechar-folha{display:inline-flex;align-self:flex-end;margin:var(--e-2) var(--e-3) 0}
+  .fechar-folha{display:inline-flex;align-items:center;align-self:flex-end;margin:var(--e-2) var(--e-3) 0;height:40px;padding:0 var(--e-4);border:0;border-radius:999px;background:var(--superficie-2);color:var(--texto);font-size:var(--fs-ui);font-weight:500;cursor:pointer}
   /* iPhone: campo com letra menor que 16 px faz o Safari aumentar o zoom ao tocar */
   :root input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),:root select,:root textarea{font-size:var(--fs-corpo)!important}
   .topo,.esc-cab{margin-bottom:var(--e-5)}
@@ -1761,7 +1763,7 @@ body.leitor main{max-width:none}
 .esc-grid.sem-painel{grid-template-columns:230px minmax(0,1fr)}
 .esc-grid.sem-painel > .esc-painel{display:none}
 .esc-grid.sem-painel .esc-corpo{max-width:680px}
-@media (min-width:1001px){body.editor aside.nav{display:none}}
+@media (min-width:1001px){body.no-editor aside.nav{display:none}}
 @media (max-width:1200px){.esc-grid.sem-painel{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- Projetos (v2.4.0): lista com um protagonista, menu flutuante do projeto, Linha do tempo, Estúdio e Aprendizado ---------- */
@@ -2094,3 +2096,57 @@ body.sessao .esc-pedir [data-ia]{display:none}
 .esc-fig .fig-erro[hidden]{display:none}
 .esc-fig .fig-acoes{display:flex;gap:var(--e-2);flex-wrap:wrap;justify-content:center}
 @media (max-width:1000px){.esc-corpo figure.esc-fig{padding-left:10px}}
+
+/* =====================================================================
+   v2.20.0, polimento visual, lote 1: defeitos (avaliação de 21/11/2026).
+   Cada regra cita o número do achado no relatório.
+   ===================================================================== */
+/* Q2: nome de texto longo no Overview quebra em vez de alargar a página */
+.corpus-lista li{align-items:flex-start}
+.corpus-lista li > *{min-width:0}
+.corpus-lista .check{flex:1;min-width:0}
+.corpus-lista .check > span{min-width:0;white-space:normal;overflow-wrap:anywhere}
+.corpus-lista li > span{flex:none}
+/* Q4: o campo de arquivo do navegador com o botão do app */
+input[type="file"]{font-size:var(--fs-meta);color:var(--texto-2);max-width:100%}
+input[type="file"]::file-selector-button{font:inherit;font-size:var(--fs-ui);font-weight:500;height:var(--h-m);padding:0 var(--e-4);margin-right:var(--e-3);border:0;border-radius:999px;background:var(--superficie-2);color:var(--texto);cursor:pointer}
+input[type="file"]::file-selector-button:hover{background:var(--superficie-3)}
+/* Q5: na janela Adicionar obra, o DOI ocupa a largura toda e o PDF vem abaixo */
+.ad-origem{grid-template-columns:1fr}
+/* Q10: ações das cópias quebram de linha em vez de passar da largura */
+.vers-lista li{flex-wrap:wrap}
+.vers-lista li > span:first-child{min-width:0}
+/* M4: tabela mais larga que a moldura ganha sombra na borda para onde ainda há conteúdo */
+.tab-wrap{background:linear-gradient(to right,var(--superficie) 30%,rgba(255,255,255,0)) left center,linear-gradient(to left,var(--superficie) 30%,rgba(255,255,255,0)) right center,linear-gradient(to right,rgba(0,0,0,.12),rgba(0,0,0,0)) left center,linear-gradient(to left,rgba(0,0,0,.12),rgba(0,0,0,0)) right center;background-repeat:no-repeat;background-size:36px 100%,36px 100%,12px 100%,12px 100%;background-attachment:local,local,scroll,scroll;background-color:var(--superficie)}
+.tab-wrap .tab-ia th{background:transparent}
+/* M4: na busca, a origem não espreme o título do resultado */
+.res-busca a > :first-child{min-width:0}
+@media (max-width:700px){
+  /* Q8: lista do Ler sem colunas no celular */
+  .linha-lv{grid-template-columns:1fr;gap:var(--e-2);padding:var(--e-4)}
+  .linha-lv.cab{display:none}
+  .linha-lv > *{min-width:0}
+  .linha-lv .tit,.linha-lv .aut{overflow-wrap:anywhere}
+  .linha-lv .tags .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .linha-lv .est,.linha-lv .prog{flex-direction:row;gap:var(--e-3);align-items:center}
+  /* Q9: modelos por tarefa, a tarefa numa linha e as escolhas abaixo */
+  .tab-ia.modelos thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .tab-ia.modelos,.tab-ia.modelos tbody{display:block}
+  .tab-ia.modelos tr{display:grid;grid-template-columns:1fr auto;gap:var(--e-2);align-items:center;padding:var(--e-3) var(--e-3);border-top:1px solid var(--borda)}
+  .tab-ia.modelos td{display:block;padding:0;border:0;min-width:0}
+  .tab-ia.modelos td:first-child,.tab-ia.modelos td:nth-child(2){grid-column:1/-1}
+  .tab-ia.modelos select{width:100%;max-width:none;height:40px;font-size:var(--fs-corpo)}
+  /* M3: fileira de abas que rola mostra que continua */
+  .subnav,.aj-indice{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);padding-right:32px}
+  /* M4: resultado da busca com a origem abaixo do título */
+  .res-busca a{flex-direction:column;gap:2px;align-items:flex-start}
+  .res-busca a span{margin-left:0;white-space:normal}
+  /* Ler: a busca ocupa a linha inteira, em vez de encolher até virar só o ícone */
+  .topo .acoes .busca{flex:1 1 100%;min-width:0}
+  /* M4: tabela larga rola dentro da moldura, e a sombra na borda mostra que continua */
+  .aj .tab-wrap table{display:table;overflow:visible}
+  /* M5: áreas de toque */
+  .toast button{min-height:40px;padding:0 var(--e-2)}
+  .seg button{min-height:40px}
+  .popover .cor-n{min-height:40px}
+}

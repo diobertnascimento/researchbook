@@ -77,6 +77,44 @@ test('todas as telas usam só a escala de tipos e alvos de pelo menos 24 × 24 p
   expect(problemas).toEqual([]);
 });
 
+// Polimento visual (v2.20.0): os testes acima usam títulos curtos. Artigo de verdade tem título de 80 a 200
+// caracteres, e era ele que quebrava as telas (o Acervo chegava a 1.904 px numa janela de 1.440).
+const LONGO = 'Avaliação de artefatos em design science research aplicada à gestão de resíduos sólidos urbanos: um quadro de referência para estudos em cooperativas de catadores de materiais recicláveis no Brasil (obra fictícia)';
+
+test('título longo não alarga nenhuma tela: a página tem a largura da janela', async ({ page, context }, info) => {
+  test.setTimeout(150_000);
+  const ids = await entrarComDados(page, context);
+  const extra = await page.evaluate(async (LONGO) => {
+    const rb = window.rb;
+    const o = await rb.biblioteca.adicionar({ tipo: 'artigo', titulo: LONGO, autores: [{ sobrenome: 'Falcão', prenomes: 'Renata' }, { sobrenome: 'Nogueira', prenomes: 'Lia' }, { sobrenome: 'Teixeira', prenomes: 'Marina' }], ano: 2021, veiculo: 'Gestão Pública e Resíduos (fictícia)', projeto: 'Disciplina de exemplo' });
+    const t = await rb.escrita.novo();
+    await rb.escrita.salvar({ ...t, titulo: `Texto: ${LONGO}`, passo: 4, secoes: [{ id: 's1', titulo: 'Introdução', objetivo: '', html: '<p data-pid="p1" data-autoria="autor">Um parágrafo.</p>' }] });
+    const d = await rb.disciplinas.salvar({ nome: 'Métodos Qualitativos de Pesquisa em Administração: Estudos de Caso, Etnografia e Pesquisa-Ação (fictícia)', semestre: '2026/2' });
+    await rb.hojeUI.adicionarTarefa(`Reler ${LONGO}`);
+    await rb.dados.salvar('argumentos', { id: 'arg-longo', tese: LONGO, tipo: 'tese', criadoEm: new Date().toISOString() });
+    return { o, t: t.id, d: d.id };
+  }, LONGO);
+  const rotas = [...rotasDe(ids), '#acervo', `#acervo/${extra.o}`, `#texto/${extra.t}`, `#disciplina/${extra.d}`, '#dissertacao', '#jornada', '#ajustes/seguranca', '#ajustes/sincronizacao', '#mais'];
+  const problemas = [];
+  for (const r of rotas) {
+    await page.evaluate((h) => { location.hash = h; }, r);
+    await page.waitForTimeout(350);
+    // No celular, o navegador alarga a área de desenho quando o conteúdo passa: a medida certa é a da janela configurada.
+    const janela = page.viewportSize().width;
+    const pagina = await page.evaluate(() => document.documentElement.scrollWidth);
+    if (pagina > janela + 1) problemas.push(`${r}: página com ${pagina} px numa janela de ${janela}`);
+  }
+  expect(problemas, `(${info.project.name})\n${problemas.join('\n')}`).toEqual([]);
+});
+
+test('a página do editor não herda o estilo de nenhum cartão: sem moldura e sem respiro a mais', async ({ page, context }) => {
+  const ids = await entrarComDados(page, context);
+  await page.evaluate((h) => { location.hash = h; }, `#texto/${ids.t}`);
+  await page.waitForTimeout(400);
+  const corpo = await page.evaluate(() => { const st = getComputedStyle(document.body); return { borda: st.borderTopWidth, raio: st.borderTopLeftRadius, respiro: st.paddingTop }; });
+  expect(corpo).toEqual({ borda: '0px', raio: '0px', respiro: '0px' });
+});
+
 test('nenhum estilo solto no código: só medidas e cores calculadas ficam no atributo style', async ({}, info) => {
   test.skip(info.project.name !== 'computador', 'Leitura de arquivos; basta uma vez');
   const PERMITIDAS = ['width', 'height', 'min-height', 'max-height', 'left', 'top', 'background', 'background-color', 'border-color', 'grid-template-columns', '--'];
