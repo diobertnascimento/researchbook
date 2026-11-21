@@ -41,7 +41,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (fase === 'escolher')
       return `<h2 id="modal-tit">Adicionar obras</h2>
       <p>Escolha vários PDFs, um arquivo exportado do Zotero ou do Web of Science (.bib, .ris, .json ou .rdf) ou a pasta inteira que o Zotero exportou com os PDFs. Antes de gravar, você confere o que é novo e o que já está na biblioteca.</p>
-      <p class="meta" id="imp-uma">Tem só o DOI do artigo? <button class="lnk m-0" data-imp-uma>Adicionar uma obra pelo DOI</button></p>
+      <p class="meta" id="imp-uma">Tem só o DOI do artigo? <button class="lnk" data-imp-uma>Adicionar uma obra pelo DOI</button></p>
       <div class="linha-acoes mb-4">
         <label class="btn prim">${icone('upload')}Escolher arquivos<input type="file" multiple accept=".pdf,.bib,.bibtex,.ris,.json,.rdf,.txt,application/pdf" data-imp-arquivos hidden></label>
         ${temPasta() ? `<label class="btn">${icone('pasta') || ''}Escolher a pasta do Zotero<input type="file" webkitdirectory multiple data-imp-arquivos hidden></label>` : ''}
@@ -151,7 +151,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     return `<article class="org-item" data-org-obra="${esc(l.id)}">
       <p class="org-motivo"><span class="chip ${classe}">${rot}</span> ${esc(b.motivo || '')} ${cs.length > 1 ? 'Dois resultados parecidos: qual é a sua obra?' : ''} O que está em negrito é diferente do que está na sua obra.</p>
       <div class="ac-rolar"><table class="ac-comp ac-comp-${cs.length}"><thead><tr><th scope="col"><span class="sr">Dado</span></th><th scope="col">Na sua obra</th>${cab}</tr></thead>
-        <tbody>${corpo}<tr class="ac-comp-acoes"><th scope="row"><span class="sr">Escolher</span></th><td><button class="lnk m-0" data-org-nenhuma="${esc(l.id)}" data-chaves="${esc(cs.map(chaveCand).join('|'))}">${cs.length > 1 ? 'Nenhuma das duas' : 'Não é esta'}</button></td>${botoes}</tr></tbody></table></div>
+        <tbody>${corpo}<tr class="ac-comp-acoes"><th scope="row"><span class="sr">Escolher</span></th><td><button class="lnk" data-org-nenhuma="${esc(l.id)}" data-chaves="${esc(cs.map(chaveCand).join('|'))}">${cs.length > 1 ? 'Nenhuma das duas' : 'Não é esta'}</button></td>${botoes}</tr></tbody></table></div>
       <div class="linha-acoes">${org.iaLigada() && b.confianca !== 'ia' ? `<button class="btn fant mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}
         ${
           resto.length
@@ -203,7 +203,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const sobre = [autores(l), l.ano].filter(Boolean).join(', ') || 'Sem autor e sem ano';
     const pdf = l.pdf
       ? `<span class="ac-ok">${sinal(true)}${l.pdf.pendente ? 'Só neste aparelho' : 'No Drive'}</span>`
-      : `<span class="ac-falta">${sinal(false)}Sem PDF</span> <a href="#leitor/${esc(l.id)}">Anexar o PDF</a>`;
+      : `<span class="ac-falta">${sinal(false)}Sem PDF</span> <a class="lnk" href="#leitor/${esc(l.id)}">Anexar o PDF</a>`;
     const doi = l.doi
       ? `<span class="ac-ok ac-doi">${sinal(true)}${esc(l.doi)}</span>`
       : l.doiBusca?.status === 'nao-tem'
@@ -359,7 +359,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       <section class="org-sec" id="obra-uso"><div class="org-cab"><h2>O que você já fez com ela</h2></div>
         <ul class="ac-uso"><li>${grifos ? plural(grifos, 'grifo', 'grifos') : 'Nenhum grifo ainda'}</li>${l.projeto ? `<li>No projeto ${esc(l.projeto)}</li>` : ''}${l.tags?.length ? `<li>Tags: ${esc(l.tags.join(', '))}</li>` : ''}</ul>
       </section>
-      <div class="linha-acoes ac-fim">${!l.doi && l.doiBusca?.status !== 'nao-tem' ? `<button class="lnk" data-org-nao-tem="${esc(l.id)}">Esta obra não tem DOI</button>` : ''}<button class="lnk" data-ac-apagar="${esc(l.id)}">Apagar a obra</button><span class="meta">Apagar manda a obra para a lixeira. Dá para trazer de volta.</span></div>`;
+      <div class="linha-acoes ac-fim">${!l.doi && l.doiBusca?.status !== 'nao-tem' ? `<button class="btn fant mini" data-org-nao-tem="${esc(l.id)}">Esta obra não tem DOI</button>` : ''}<button class="btn fant perigo mini" data-ac-apagar="${esc(l.id)}">Apagar a obra</button><span class="meta">Apagar manda a obra para a lixeira. Dá para trazer de volta.</span></div>`;
   }
 
   function tela() {

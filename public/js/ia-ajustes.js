@@ -128,7 +128,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
 
   function gastoHTML() {
     const r = window.rb?.iaUso?.resumoDoMes?.();
-    return `<div class="ia-gasto"><h3 class="ia-sub">Gasto</h3><p>${r ? `Neste mês, neste aparelho: ${r.total}. ${r.limite ? `Limite que você definiu aqui: ${r.limite} por mês, com aviso em 80%.` : 'Nenhum limite definido aqui.'}` : 'Lendo os registros deste aparelho…'} <a href="#ajustes/custo">${r?.limite ? 'Mudar o limite' : 'Definir um limite'}</a></p>
+    return `<div class="ia-gasto"><h3 class="ia-sub">Gasto</h3><p>${r ? `Neste mês, neste aparelho: ${r.total}. ${r.limite ? `Limite que você definiu aqui: ${r.limite} por mês, com aviso em 80%.` : 'Nenhum limite definido aqui.'}` : 'Lendo os registros deste aparelho…'} <a class="lnk" href="#ajustes/custo">${r?.limite ? 'Mudar o limite' : 'Definir um limite'}</a></p>
       <p class="t-meta mute">${ia.ajustes.modo() === 'servidor' ? 'O limite que de fato para o uso é o do servidor: pedidos por dia. O daqui só avisa.' : 'O limite que de fato para o gasto fica no Google AI Studio (Spend, Monthly spend cap). O daqui só avisa.'}</p></div>`;
   }
 

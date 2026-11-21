@@ -41,7 +41,7 @@ export function criarTrilhasUI({ bib, dados, fichUI, registrar }) {
 
   function tela() {
     const topo = `<div class="topo"><div><h1>Trilhas</h1><p>Filas de leitura com prazo. A ordem da trilha é a ordem sugerida para ler.</p></div>
-      <div class="acoes"><button class="btn ${trilhas.length ? '' : 'prim'}" data-trilha-nova>${icone('mais')}Nova trilha</button></div></div>`;
+      <div class="acoes"><button class="btn" data-trilha-nova>${icone('mais')}Nova trilha</button></div></div>`;
     if (!trilhas.length) {
       const temObras = bib.leituras().length > 0;
       return `${topo}<div class="bib-vazia"><h2>Nenhuma trilha ainda</h2><p>Uma trilha junta as obras que você precisa ler para uma entrega, como a qualificação ou o trabalho de uma disciplina, na ordem em que fazem sentido.</p>${

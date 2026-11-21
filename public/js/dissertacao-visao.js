@@ -181,7 +181,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
         <ul class="linha-l">${marcos.map((m) => {
           const n = diasAte(m.data);
           const nota = m.nota || (m.seu && n >= 0 ? (n === 0 ? 'Hoje' : n === 1 ? 'Amanhã' : `Em ${n} dias`) : '');
-          return `<li class="${m.data < hoje ? 'passou' : ''}"><span class="quando">${m.soMes ? mesAno(m.data).replace(' de ', ' ') : dataCurta(m.data)}</span><span>${m.href ? `<a href="${m.href}">${esc(m.titulo)}</a>` : esc(m.titulo)}${nota ? `<small>${nota}</small>` : ''}</span>${m.seu ? `<button class="btn fant" data-diss-marco-apagar="${esc(m.id)}" aria-label="Apagar o marco ${esc(m.titulo)}">Apagar</button>` : ''}</li>`;
+          return `<li class="${m.data < hoje ? 'passou' : ''}"><span class="quando">${m.soMes ? mesAno(m.data).replace(' de ', ' ') : dataCurta(m.data)}</span><span>${m.href ? `<a href="${m.href}">${esc(m.titulo)}</a>` : esc(m.titulo)}${nota ? `<small>${nota}</small>` : ''}</span>${m.seu ? `<button class="btn fant mini" data-diss-marco-apagar="${esc(m.id)}" aria-label="Apagar o marco ${esc(m.titulo)}">Apagar</button>` : ''}</li>`;
         }).join('')}</ul>
       </section>`;
   }

@@ -112,6 +112,26 @@ test('título longo não alarga nenhuma tela: a página tem a largura da janela'
     });
     for (const linhas of t.painel) if (linhas > 3.1) problemas.push(`${r}: título do painel com ${linhas} linhas`);
     for (const s of t.secoes) if (s !== 'Literata 22px/30px 500') problemas.push(`${r}: título de seção em ${s}`);
+    // v2.22.0: um botão azul por tela; botão com fundo ou contorno é pílula; campo com contorno tem um só formato.
+    const c = await page.evaluate(() => {
+      const vis = (e) => { const b = e.getBoundingClientRect(); return b.width > 0 && b.height > 0 && getComputedStyle(e).visibility !== 'hidden' && !e.closest('[hidden]'); };
+      const nome = (e) => `${e.tagName.toLowerCase()}${e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\s+/).join('.') : ''} "${(e.innerText || e.getAttribute('aria-label') || e.placeholder || '').trim().slice(0, 24)}"`;
+      const azuis = [...document.querySelectorAll('#vista .btn.prim')].filter(vis).map((e) => (e.innerText || '').trim());
+      const transparente = (cor) => cor === 'rgba(0, 0, 0, 0)' || cor === 'transparent';
+      const quadrados = [...document.querySelectorAll('#vista button, #vista a.btn, #vista label.btn')]
+        .filter((e) => vis(e) && !e.matches('.dlg-item, .arg-item, .ach-linha, .lc, .est-t'))
+        .filter((e) => { const st = getComputedStyle(e); const borda = parseFloat(st.borderTopWidth) > 0 && st.borderTopStyle !== 'none' && !transparente(st.borderTopColor); return !transparente(st.backgroundColor) || borda; })
+        .filter((e) => { const st = getComputedStyle(e); const raio = st.borderTopLeftRadius; return !(raio.endsWith('%') ? parseFloat(raio) >= 50 : parseFloat(raio) >= e.getBoundingClientRect().height / 2 - 0.5); })
+        .map(nome);
+      const campos = [...document.querySelectorAll('#vista input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]), #vista select, #vista textarea')]
+        .filter((e) => vis(e) && parseFloat(getComputedStyle(e).borderTopWidth) > 0 && !transparente(getComputedStyle(e).borderTopColor))
+        .filter((e) => { const st = getComputedStyle(e); return st.borderTopLeftRadius !== '10px' || st.borderTopColor !== 'rgb(143, 143, 143)'; })
+        .map((e) => `${nome(e)} raio ${getComputedStyle(e).borderTopLeftRadius} contorno ${getComputedStyle(e).borderTopColor}`);
+      return { azuis, quadrados: [...new Set(quadrados)], campos: [...new Set(campos)] };
+    });
+    if (c.azuis.length > 1) problemas.push(`${r}: ${c.azuis.length} botões azuis (${c.azuis.join(', ')})`);
+    for (const q of c.quadrados) problemas.push(`${r}: botão fora do formato de pílula: ${q}`);
+    for (const q of c.campos) problemas.push(`${r}: campo fora do padrão: ${q}`);
   }
   expect(problemas, `(${info.project.name})\n${problemas.join('\n')}`).toEqual([]);
 });

@@ -61,7 +61,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
   /* ---------- Cabeçalho e passos da preparação ---------- */
   function cabecalho(t, sub) {
     return `<a class="voltar" href="#escrita">${icone('voltar')}Textos</a>
-      <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>${sub}</p></div><div class="acoes"><button class="btn fant" data-esc-apagar="${esc(t.id)}">Apagar texto</button></div></div>`;
+      <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>${sub}</p></div><div class="acoes"><button class="btn fant perigo" data-esc-apagar="${esc(t.id)}">Apagar texto</button></div></div>`;
   }
   function trilhaPassos(t) {
     return `<ol class="passos quatro">${PASSOS.slice(0, 4)

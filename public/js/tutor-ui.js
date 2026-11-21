@@ -78,7 +78,7 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
     return `<div class="tutor-pe">
       ${e.trecho ? `<div class="tutor-trecho"><span>“${esc(e.trecho.texto.length > 160 ? e.trecho.texto.slice(0, 160) + '…' : e.trecho.texto)}”, p. ${e.trecho.pagina}</span><button class="btn fant" data-tutor-tirar="${esc(leituraId)}" aria-label="Tirar o trecho escolhido">Tirar</button></div>` : ''}
       <div class="tutor-acoes" role="group" aria-label="Pedidos sobre o trecho">${Object.entries(ROTULOS_PEDIDO).map(([k, n]) => `<button class="btn fant" data-tutor-acao="${k}" data-id="${esc(leituraId)}" ${e.trecho && !e.pensando ? '' : 'disabled'}>${n}</button>`).join('')}</div>
-      <div class="tutor-escrever"><textarea id="tutor-texto" rows="2" placeholder="Pergunte sobre o texto" aria-label="Pergunta ao tutor" ${e.pensando ? 'disabled' : ''}>${esc(e.rascunho)}</textarea><button class="btn prim" data-tutor-enviar="${esc(leituraId)}" ${e.pensando ? 'disabled' : ''} data-ocupado="Pensando…">Perguntar</button></div>
+      <div class="tutor-escrever"><textarea id="tutor-texto" rows="2" placeholder="Pergunte sobre o texto" aria-label="Pergunta ao tutor" ${e.pensando ? 'disabled' : ''}>${esc(e.rascunho)}</textarea><button class="btn" data-tutor-enviar="${esc(leituraId)}" ${e.pensando ? 'disabled' : ''} data-ocupado="Pensando…">Perguntar</button></div>
     </div>`;
   }
 

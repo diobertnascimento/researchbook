@@ -32,7 +32,7 @@ export function criarCartoesUI({ cart, bib, disc, registrar }) {
   function tela() {
     const todos = cart.todos();
     const topo = (sub) => `<a class="voltar" href="#painel">${icone('voltar')}Hoje</a><div class="topo"><div><h1>Cartões</h1><p>${sub}</p></div>
-      <div class="acoes"><button class="btn ${todos.length ? '' : 'prim'}" data-cart-criar>${icone('mais')}Criar cartões</button>${todos.length ? `<button class="btn fant" data-cart-ver="${est.ver === 'lista' ? 'revisar' : 'lista'}">${est.ver === 'lista' ? 'Revisar' : `Todos os cartões (${todos.length})`}</button>` : ''}</div></div>`;
+      <div class="acoes"><button class="btn" data-cart-criar>${icone('mais')}Criar cartões</button>${todos.length ? `<button class="btn fant" data-cart-ver="${est.ver === 'lista' ? 'revisar' : 'lista'}">${est.ver === 'lista' ? 'Revisar' : `Todos os cartões (${todos.length})`}</button>` : ''}</div></div>`;
     if (!todos.length) return `${topo('Perguntas a partir dos seus grifos e das suas aulas, revistas em intervalos que crescem a cada acerto.')}<div class="bib-vazia"><h2>Nenhum cartão ainda</h2><p>Escolha uma obra que você grifou ou uma aula transcrita. A IA propõe perguntas que pedem explicação, não decoreba, e você confere cada uma antes de guardar.</p><button class="btn prim" data-cart-criar>Criar os primeiros cartões</button></div>`;
     if (est.ver === 'lista') return `${topo('Edite a pergunta ou a resposta, ou apague o que não serve.')}${listaHTML(todos)}`;
     if (!est.sessao || (!est.sessao.fila.length && !est.sessao.feitos)) iniciarSessao();

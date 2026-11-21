@@ -281,7 +281,7 @@ test.describe('no computador', () => {
     // Apagar leva as aulas; desfazer traz tudo de volta.
     await page.goto(`/#disciplina/${id}`);
     await page.getByRole('button', { name: 'Editar' }).first().click();
-    await page.getByRole('button', { name: 'Apagar disciplina' }).click();
+    await page.getByRole('button', { name: 'Apagar projeto' }).click();
     await expect(page).toHaveURL(/#disciplinas$/);
     expect(await page.evaluate(() => window.rb.disciplinas.aulasDe(window.rb.disciplinas.todas()[0]?.id).length)).toBe(0);
     await page.locator('#toast button', { hasText: 'Desfazer' }).click();

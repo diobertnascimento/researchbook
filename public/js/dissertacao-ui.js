@@ -197,7 +197,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     const temas = diss.temas();
     const prox = disc.proximos(DISSERTACAO, 120).find((e) => e.tipo === 'orientacao');
     const topo = `<div class="topo"><div><h1>Orientação</h1><p>Tudo o que passa entre você e a orientação, em ordem. A IA resume, extrai combinados e mostra os temas que voltam.</p></div>
-      <div class="acoes"><button class="btn" data-ori-agendar>${icone('mais')}Agendar encontro</button><button class="btn prim" data-ori-registrar data-ocupado="Registrando…">${icone('mais')}Registrar conversa</button></div></div>`;
+      <div class="acoes"><button class="btn" data-ori-agendar>${icone('mais')}Agendar encontro</button><button class="btn ${es.length ? 'prim' : ''}" data-ori-registrar data-ocupado="Registrando…">${icone('mais')}Registrar conversa</button></div></div>`;
     if (!es.length) return `${topo}<div class="bib-vazia"><h2>Nenhuma conversa registrada</h2><p>Registre do jeito mais fácil: uma anotação, o e-mail recebido, a gravação da reunião ou o PDF com comentários. O que você escreveu fica separado do resumo da IA.</p><button class="btn prim" data-ori-registrar>Registrar a primeira conversa</button></div>`;
     return `${topo}<div class="ori-grid"><div><div class="timeline">${es.map((e, k) => encontroHTML(e, k === 0 || est.abertos.has(e.id))).join('')}</div></div>
       <aside class="lado">
@@ -256,7 +256,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   function dialogos() {
     const ds = dlg.todos();
     const topo = `<div class="topo"><div><h1>Diálogos</h1><p>Conversas sobre as ideias das leituras: testar contrapontos, ser questionado e alinhar a sua visão com o que você já sustenta.</p></div>
-      <div class="acoes"><button class="btn prim" data-dlg-novo>${icone('mais')}Novo diálogo</button></div></div>`;
+      <div class="acoes"><button class="btn" data-dlg-novo>${icone('mais')}Novo diálogo</button></div></div>`;
     if (!ds.length) return `${topo}<div class="bib-vazia"><h2>Nenhum diálogo ainda</h2><p>Escolha um tema ou uma posição, as leituras e o modo. A IA só cita o seu acervo. No fim, as posições que você firmou podem ir para a memória ou atualizar um argumento.</p><button class="btn prim" data-dlg-novo>Começar um diálogo</button></div>`;
     const sel = typeof S !== 'undefined' && S.dlgReal && dlg.obter(S.dlgReal) ? dlg.obter(S.dlgReal) : ds[0];
     const msgs = est.msgs[sel.id];
@@ -277,7 +277,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
         ${sel.leituras.map((i) => bib.obter(i)).filter(Boolean).map((l) => `<a class="sem-sublinhado chip proj" href="#leitor/${encodeURIComponent(l.id)}">${esc(citacao(l))}</a>`).join('')}</div>
         <p class="m-0 t-legenda mute">${esc(MODOS[sel.modo])}.</p></header>
         <div class="corpo" id="dlg-corpo">${msgs ? mensagensHTML(msgs) : '<p class="mute">Abrindo a conversa…</p>'}${est.ocupado === sel.id ? `<p class="mute" role="status">${pensandoHTML('A IA está pensando', desdeDe(`dialogo:${sel.id}:${msgs?.length || 0}`), { tarefa: 'dialogo' })}</p>` : ''}${est.erro && est.erro.id === sel.id ? erroHTML(est.erro.err) : ''}</div>
-        <form class="entrada" data-dlg-enviar="${esc(sel.id)}"><textarea id="dlg-msg" placeholder="${msgs && msgs.length ? 'Continue o diálogo' : 'Diga a sua posição ou a sua dúvida'}" aria-label="Mensagem"></textarea><button type="submit" aria-label="Enviar" ${est.ocupado ? 'disabled' : ''}>${icone('enviar')}</button></form>
+        <form class="entrada" data-dlg-enviar="${esc(sel.id)}"><textarea id="dlg-msg" placeholder="${msgs && msgs.length ? 'Continue o diálogo' : 'Diga a sua posição ou a sua dúvida'}" aria-label="Mensagem"></textarea><button type="submit" class="btn prim" ${est.ocupado ? 'disabled' : ''}>${icone('enviar')}Enviar</button></form>
       </section>
       <aside class="lado">
         <section class="bloco"><h3>Posições que você firmou</h3>
