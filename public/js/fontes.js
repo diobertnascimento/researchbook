@@ -1,36 +1,23 @@
-// Fontes de dados de obras além do Crossref, pelo servidor do autor (pasta servidor/, no Cloud Run):
-// o OpenAlex (por título, autor e ano), que exige chave, e a página do artigo (por link), que o navegador
-// não consegue ler de outro site. O pedido leva o login Google; o servidor confere a conta, conta o pedido
-// no limite do dia e devolve só os dados da obra. Nenhuma chave passa por aqui.
+// Fonte de dados de obras além do Crossref, pelo servidor do autor (pasta servidor/, no Cloud Run): o OpenAlex
+// (por título, autor e ano), que exige chave. O pedido leva o login Google; o servidor confere a conta, conta
+// o pedido no limite do dia e devolve só os dados da obra. Nenhuma chave passa por aqui.
+// A leitura da página de um artigo por link (v2.17.0) foi retirada na v2.19.3: link só vale quando traz o DOI.
 import { servidorIA } from './config.js';
 import { limparDOI } from './crossref.js';
 
-/** Um endereço de página (http ou https), ou null. */
-export function endereco(texto) {
-  const t = String(texto || '').trim();
-  if (!/^https?:\/\/\S+$/i.test(t)) return null;
-  try {
-    return new URL(t).href;
-  } catch {
-    return null;
-  }
-}
-
-/** O que o autor colou: um DOI (também dentro de um link, como doi.org/10...), um link de página, ou nada. */
+/** O que o autor colou: um DOI (também dentro de um link, como doi.org/10...), um link sem DOI, ou nada. */
 export function entender(texto) {
-  const doi = limparDOI(decodeURIComponent(String(texto || '').replace(/%(?![0-9a-f]{2})/gi, '%25')));
+  const t = String(texto || '').trim();
+  const doi = limparDOI(decodeURIComponent(t.replace(/%(?![0-9a-f]{2})/gi, '%25')));
   if (doi) return { doi };
-  const url = endereco(texto);
-  return url ? { url } : {};
+  return /^https?:\/\/\S+$/i.test(t) ? { linkSemDOI: true } : {};
 }
-
-const NOME_DO_SITE = (host) => String(host || '').replace(/^www\./, '');
 
 export function criarFontes({ google, registrar = () => {}, buscar = (...a) => fetch(...a) }) {
   const ligado = () => !!servidorIA() && !!google?.sessao?.()?.token;
 
   // O pedido vai no corpo: o que vai no endereço fica no registro de acessos do servidor, e título de obra
-  // e link de artigo não devem ficar lá. Servidor publicado antes da v2.19.2 só entende o jeito antigo.
+  // não deve ficar lá. Servidor publicado antes da v2.19.2 só entende o jeito antigo.
   async function pedir(caminho, evento, pedido) {
     const r = await enviar(caminho, evento, pedido, false);
     return r.codigo === 'rota' ? enviar(caminho, evento, pedido, true) : r;
@@ -74,15 +61,5 @@ export function criarFontes({ google, registrar = () => {}, buscar = (...a) => f
     return { candidatos: (r.candidatos || []).map((c) => ({ ...c, fonte: 'openalex' })) };
   }
 
-  /** Lê os dados que a página do artigo publica. Devolve { dados, site } ou { erro }. */
-  async function lerPagina(url) {
-    const u = endereco(url);
-    if (!u) return { erro: 'Isso não parece o endereço de uma página. Ele começa com https://.' };
-    // Link antigo com http: o servidor só abre https.
-    const r = await pedir('/obras/pagina', 'pagina.ler', { url: u.replace(/^http:/i, 'https:') });
-    if (r.erro) return r;
-    return { dados: r.dados, site: NOME_DO_SITE(r.site) };
-  }
-
-  return { ligado, procurarNoOpenAlex, lerPagina };
+  return { ligado, procurarNoOpenAlex };
 }

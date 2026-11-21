@@ -16,19 +16,16 @@
 //   LIMITE_DIA        pedidos por dia (padrão 300)
 //   CONTADOR          'firestore' (padrão) ou 'memoria' (testes)
 //   OPENALEX_CHAVE    a chave do OpenAlex (segredo, opcional: sem ela, a busca no OpenAlex fica desligada)
-//   SITES_PAGINA      sites que o servidor pode abrir para ler os dados de um artigo (opcional; ver SITES)
 //
-// Dados de obras (v2.17.0), para o Acervo do app. As duas rotas pedem o mesmo login e contam no mesmo limite:
+// Dados de obras (v2.17.0), para o Acervo do app, com o mesmo login e no mesmo limite do dia:
 //   POST /obras/openalex {busca}    procura por título, autor e ano no OpenAlex, com a chave dele
-//   POST /obras/pagina {url}        abre a página de um artigo e lê os dados que ela publica nas etiquetas
-//                                   <meta name="citation_...">. Só abre https, só sites da lista, nunca um
-//                                   endereço interno, e devolve só os campos lidos, nunca a página.
-// O pedido vai no corpo (v2.19.2) para o título e o link não ficarem no registro de acessos do Cloud Run;
-// o GET com ?busca= e ?url= segue aceito para o app antigo. Toda resposta leva X-Researchbook-Servidor
-// (VERSAO_SERVIDOR), e o registro de uma recusa leva o código dela e números (resposta do site, saltos).
+// O pedido vai no corpo (v2.19.2) para o título não ficar no registro de acessos do Cloud Run; o GET com
+// ?busca= segue aceito para o app antigo. Toda resposta leva X-Researchbook-Servidor (VERSAO_SERVIDOR), e o
+// registro de uma recusa leva o código dela.
+//
+// O servidor não abre página de site nenhum. A leitura da página de um artigo (rota /obras/pagina, v2.17.0)
+// foi retirada na v2.19.3 por decisão do autor: o servidor só fala com o Google e com o OpenAlex.
 import { createServer } from 'node:http';
-import { lookup } from 'node:dns/promises';
-import { isIP } from 'node:net';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
@@ -37,40 +34,11 @@ const MODELO = /^gemini-[a-z0-9.-]{1,60}$/;
 const ARQUIVO = /^[a-z0-9-]{1,80}$/;
 const CABECALHOS_DE_ENVIO = ['x-goog-upload-protocol', 'x-goog-upload-command', 'x-goog-upload-header-content-length', 'x-goog-upload-header-content-type'];
 
-// Sites que o servidor aceita abrir. Vale o domínio e os subdomínios dele (periodicos.ufmg.br entra por ufmg.br).
-// A lista é fechada de propósito: um servidor que abre qualquer endereço pode ser usado para alcançar
-// serviços internos do Google Cloud. Para acrescentar um site, publique de novo com SITES_PAGINA.
-export const SITES = ['scielo.br', 'scielo.org', 'redalyc.org', 'spell.org.br', 'anpad.org.br', 'fgv.br', 'emnuvens.com.br', 'ibict.br', 'usp.br', 'ufmg.br', 'unicamp.br', 'unesp.br', 'ufrgs.br', 'ufsc.br', 'ufrj.br', 'ufpr.br', 'unb.br'];
-const MAX_PAGINA = 1_500_000; // bytes lidos de uma página
-const MAX_SALTOS = 4; // redirecionamentos seguidos, cada um conferido
-const MAX_PEDIDO_DE_OBRA = 8000; // bytes do pedido de dados de obra (uma busca ou um endereço)
-// O servidor se apresenta pelo nome, com o endereço do app: quem cuida do site consegue saber quem pediu.
-const CABECALHOS_DE_LEITURA = {
-  Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5',
-  'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
-  'User-Agent': 'researchbook/1 (+https://researchbook.com.br; leitura dos dados de um artigo a pedido do autor)',
-};
-const PELO_DOI = 'Copie o DOI que aparece na página do artigo e cole no mesmo campo.';
-/** O tipo de uma falha, sem a mensagem (que pode trazer endereço): nome do erro e código da causa. */
+const MAX_PEDIDO_DE_OBRA = 8000; // bytes do pedido de dados de obra (uma busca)
+/** O tipo de uma falha, sem a mensagem (que pode trazer texto do pedido): nome do erro e código da causa. */
 const motivo = (e) => ({ falha: String(e?.name || 'Error').slice(0, 40), ...(e?.cause?.code ? { causa: String(e.cause.code).slice(0, 40) } : {}) });
 /** Versão do servidor. Vai em toda resposta, para a publicação e o app saberem qual está no ar. Suba a cada mudança. */
-export const VERSAO_SERVIDOR = '3';
-const PRAZO_PAGINA = 8000; // ms
-
-/** Endereço que não é da internet pública (rede interna, a própria máquina, metadados da nuvem). */
-export function enderecoInterno(ip) {
-  const v = isIP(ip);
-  if (v === 4) {
-    const [a, b] = ip.split('.').map(Number);
-    return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 192 && b === 0) || a >= 224;
-  }
-  if (v === 6) {
-    const x = ip.toLowerCase();
-    if (x.startsWith('::ffff:')) return enderecoInterno(x.slice(7));
-    return x === '::' || x === '::1' || /^f[cd]/.test(x) || /^fe[89ab]/.test(x) || x.startsWith('ff');
-  }
-  return true;
-}
+export const VERSAO_SERVIDOR = '4';
 
 const ENTIDADES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–', mdash: '—', lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', hellip: '…', ordf: 'ª', ordm: 'º' };
 // Letras acentuadas escritas por nome (&aacute;, &Ccedil;...), comuns em páginas antigas em português.
@@ -98,45 +66,6 @@ export function pessoa(nome) {
   }
   const p = n.split(' ');
   return p.length === 1 ? { sobrenome: p[0], prenomes: '' } : { sobrenome: p[p.length - 1], prenomes: p.slice(0, -1).join(' ') };
-}
-
-/** Lê as etiquetas <meta> de dados bibliográficos (citation_*, usadas pelo Google Acadêmico, e DC.*). */
-export function lerEtiquetas(html) {
-  const m = new Map();
-  for (const [tag] of String(html).slice(0, MAX_PAGINA).matchAll(/<meta\b[^>]*>/gi)) {
-    const at = {};
-    for (const [, k, , v1, v2, v3] of tag.matchAll(/([a-zA-Z:._-]+)\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/g)) at[k.toLowerCase()] = v1 ?? v2 ?? v3 ?? '';
-    const nome = (at.name || at.property || '').toLowerCase();
-    if (!nome || at.content == null) continue;
-    if (!m.has(nome)) m.set(nome, []);
-    m.get(nome).push(texto(at.content));
-  }
-  const um = (...nomes) => nomes.map((n) => m.get(n)?.find(Boolean)).find(Boolean) || null;
-  const titulo = um('citation_title', 'dc.title', 'dcterms.title');
-  if (!titulo) return null;
-  const autores = (m.get('citation_author') || m.get('dc.creator') || m.get('dcterms.creator') || []).map(pessoa).filter(Boolean).slice(0, 40);
-  const data = um('citation_publication_date', 'citation_date', 'citation_online_date', 'citation_year', 'dc.date', 'dcterms.issued', 'dc.date.issued');
-  const ini = um('citation_firstpage');
-  const fim = um('citation_lastpage');
-  const doi = (um('citation_doi', 'dc.identifier.doi') || [...(m.get('dc.identifier') || [])].find((x) => /10\.\d{4,9}\//.test(x)) || '').match(/10\.\d{4,9}\/\S+/)?.[0] || null;
-  const evento = um('citation_conference_title', 'citation_conference');
-  const instituicao = um('citation_dissertation_institution');
-  const livro = um('citation_inbook_title', 'citation_book_title');
-  const revista = um('citation_journal_title');
-  const tipo = revista ? 'artigo' : evento ? 'anais' : instituicao ? 'dissertacao' : livro ? 'capitulo' : um('citation_isbn') ? 'livro' : 'artigo';
-  return {
-    tipo,
-    titulo,
-    autores,
-    ano: data?.match(/(1[5-9]|20)\d{2}/)?.[0] || null,
-    veiculo: revista || evento || livro || null,
-    volume: um('citation_volume'),
-    numero: um('citation_issue'),
-    paginas: ini ? (fim && fim !== ini ? `${ini}-${fim}` : ini) : null,
-    editora: instituicao || um('citation_publisher', 'dc.publisher'),
-    doi,
-    idioma: um('citation_language', 'dc.language'),
-  };
 }
 
 /** Uma obra do OpenAlex nos campos do app. */
@@ -172,7 +101,7 @@ class Recusa extends Error {
   }
 }
 
-export function criarServidor(env = process.env, { buscar = fetch, agora = () => Date.now(), registro = (linha) => console.log(linha), resolver = (nome) => lookup(nome, { all: true }) } = {}) {
+export function criarServidor(env = process.env, { buscar = fetch, agora = () => Date.now(), registro = (linha) => console.log(linha) } = {}) {
   const cfg = {
     chave: env.GEMINI_CHAVE || '',
     email: (env.EMAIL_PERMITIDO || '').trim().toLowerCase(),
@@ -186,7 +115,6 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
     metadados: (env.URL_METADADOS || 'http://metadata.google.internal').replace(/\/$/, ''),
     chaveOpenAlex: env.OPENALEX_CHAVE || '',
     openalex: (env.URL_OPENALEX || 'https://api.openalex.org').replace(/\/$/, ''),
-    sites: (env.SITES_PAGINA ? env.SITES_PAGINA.split(',') : SITES).map((s) => s.trim().toLowerCase().replace(/^\./, '')).filter(Boolean),
   };
 
   /* ---------- Quem está pedindo ---------- */
@@ -306,66 +234,6 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
   const paraOGemini = (extra = {}) => ({ 'x-goog-api-key': cfg.chave, ...extra });
 
   /* ---------- Dados de obras ---------- */
-  const siteAceito = (host) => cfg.sites.some((s) => host === s || host.endsWith('.' + s));
-  /** Confere o endereço antes de abrir: https, site da lista, porta padrão e nenhum IP interno. */
-  async function conferirEndereco(bruto) {
-    let u;
-    try {
-      u = new URL(bruto);
-    } catch {
-      throw new Recusa(400, 'pagina-endereco', 'Isso não parece o endereço de uma página.');
-    }
-    // Link antigo com http: o servidor só abre https, então troca o começo em vez de recusar.
-    if (u.protocol === 'http:' && !u.port) u.protocol = 'https:';
-    const host = u.hostname.toLowerCase();
-    if (u.protocol !== 'https:' || u.port || u.username || u.password || isIP(host)) throw new Recusa(400, 'pagina-endereco', 'O servidor só abre páginas https de sites conhecidos.');
-    if (!siteAceito(host)) throw new Recusa(403, 'pagina-site', `O site ${host} não está na lista de sites que este servidor abre.`);
-    let ips;
-    try {
-      ips = await resolver(host);
-    } catch (e) {
-      throw new Recusa(502, 'pagina-fora', 'O site não foi encontrado.', motivo(e));
-    }
-    if (!ips.length || ips.some((i) => enderecoInterno(i.address))) throw new Recusa(403, 'pagina-site', 'O endereço deste site aponta para uma rede interna e não será aberto.');
-    return u;
-  }
-  async function lerPagina(bruto) {
-    let u = await conferirEndereco(bruto);
-    const prazo = AbortSignal.timeout(PRAZO_PAGINA);
-    let r;
-    let salto = 0;
-    try {
-      // Redirecionamento não é seguido às cegas: cada salto passa pela mesma conferência.
-      for (; ; salto++) {
-        r = await buscar(u.href, { redirect: 'manual', signal: prazo, headers: CABECALHOS_DE_LEITURA });
-        if (r.status < 300 || r.status >= 400) break;
-        const destino = r.headers.get('location');
-        if (!destino || salto >= MAX_SALTOS) throw new Recusa(502, 'pagina-fora', `A página redireciona demais para ser lida. ${PELO_DOI}`, { resposta: r.status, saltos: salto });
-        u = await conferirEndereco(new URL(destino, u).href);
-      }
-    } catch (e) {
-      if (e instanceof Recusa) throw e;
-      const noPrazo = e?.name === 'TimeoutError' || e?.name === 'AbortError';
-      throw new Recusa(504, 'pagina-fora', `${noPrazo ? 'O site não respondeu a tempo.' : 'O servidor não conseguiu abrir o site.'} ${PELO_DOI}`, { saltos: salto, ...motivo(e) });
-    }
-    if (r.status === 404 || r.status === 410) throw new Recusa(502, 'pagina-fora', 'O site diz que esta página não existe. Confira o endereço.', { resposta: r.status, saltos: salto });
-    if (!r.ok) throw new Recusa(502, 'pagina-fora', `O site recusou a leitura pelo servidor (resposta ${r.status}). ${PELO_DOI}`, { resposta: r.status, saltos: salto });
-    if (!/html/i.test(r.headers.get('content-type') || '')) throw new Recusa(422, 'pagina-sem-dados', 'Este endereço não é uma página (pode ser um PDF). Cole o endereço da página do artigo.');
-    // Lê só o começo: as etiquetas ficam no cabeçalho da página.
-    const leitor = r.body.getReader();
-    const partes = [];
-    let lidos = 0;
-    while (lidos < MAX_PAGINA) {
-      const { done, value } = await leitor.read();
-      if (done) break;
-      partes.push(value);
-      lidos += value.length;
-    }
-    leitor.cancel().catch(() => {});
-    const dados = lerEtiquetas(new TextDecoder('utf-8').decode(Buffer.concat(partes)));
-    if (!dados) throw new Recusa(422, 'pagina-sem-dados', 'Esta página não publica os dados do artigo de um jeito que dê para ler. Tente pelo DOI ou cole a referência.', { resposta: r.status, saltos: salto, bytes: lidos });
-    return { dados: { ...dados, url: u.href }, site: u.hostname };
-  }
   async function procurarNoOpenAlex(busca) {
     if (!cfg.chaveOpenAlex) throw new Recusa(503, 'openalex-sem-chave', 'Este servidor foi publicado sem a chave do OpenAlex. Rode a publicação de novo para guardar a chave.');
     const base = `${cfg.openalex}/works?per_page=5&search=${encodeURIComponent(busca)}`;
@@ -391,19 +259,13 @@ export function criarServidor(env = process.env, { buscar = fetch, agora = () =>
     }
 
     // Dados de obras. O app manda o pedido no corpo (POST): o que vai no endereço fica no registro de acessos
-    // do Cloud Run, e título de obra e link de artigo não devem ficar lá. O GET segue aceito para o app antigo.
-    if ((req.method === 'GET' || req.method === 'POST') && (caminho === '/obras/openalex' || caminho === '/obras/pagina')) {
+    // do Cloud Run, e título de obra não deve ficar lá. O GET segue aceito para o app antigo.
+    if ((req.method === 'GET' || req.method === 'POST') && caminho === '/obras/openalex') {
       const pedido = req.method === 'POST' ? await lerPedido(req) : Object.fromEntries(endereco.searchParams);
-      if (caminho === '/obras/openalex') {
-        const busca = String(pedido.busca ?? '').trim().slice(0, 300);
-        if (busca.length < 3) throw new Recusa(400, 'pedido', 'Diga o que procurar: título, autor ou ano.');
-        await gastarUm();
-        return { status: 200, corpo: JSON.stringify(await procurarNoOpenAlex(busca)) };
-      }
-      const url = String(pedido.url ?? '').trim().slice(0, 2000);
-      await conferirEndereco(url);
+      const busca = String(pedido.busca ?? '').trim().slice(0, 300);
+      if (busca.length < 3) throw new Recusa(400, 'pedido', 'Diga o que procurar: título, autor ou ano.');
       await gastarUm();
-      return { status: 200, corpo: JSON.stringify(await lerPagina(url)) };
+      return { status: 200, corpo: JSON.stringify(await procurarNoOpenAlex(busca)) };
     }
 
     let m = /^\/v1beta\/models\/([^/:]+):generateContent$/.exec(caminho);

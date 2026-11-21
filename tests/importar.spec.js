@@ -261,11 +261,11 @@ test.describe('no computador', () => {
     await expect(linhas.filter({ hasText: 'Manual interno' })).toContainText('Faltam a editora e a cidade');
     await page.goto('/#organizar');
     await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
-    // "Adicionar obras" do Acervo leva também à entrada por DOI ou por link da página do artigo.
+    // "Adicionar obras" do Acervo leva também à entrada de uma obra pelo DOI.
     await page.getByRole('button', { name: 'Adicionar obras' }).click();
     await expect(page.locator('#modal-tit')).toHaveText('Adicionar obras');
-    await page.getByRole('button', { name: 'Adicionar uma obra pelo DOI ou pelo link' }).click();
-    await expect(page.locator('label[for="ad-doi"]')).toHaveText('DOI ou link da página do artigo');
+    await page.getByRole('button', { name: 'Adicionar uma obra pelo DOI' }).click();
+    await expect(page.locator('label[for="ad-doi"]')).toHaveText('DOI ou link do DOI');
     await page.locator('#veu').getByRole('button', { name: 'Cancelar' }).click();
 
     await page.getByRole('button', { name: 'Atualizar os dados pelo DOI' }).click();

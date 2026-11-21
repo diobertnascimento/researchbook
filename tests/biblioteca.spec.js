@@ -90,60 +90,32 @@ test('adicionar pelo DOI: busca no Crossref, mostra a referência e salva', asyn
   expect(g.ler('dados/leituras.json')).toContain('Roteirização colaborativa');
 });
 
-test('adicionar pelo link da página do artigo: o servidor lê os dados, o Crossref confere, e site fora da lista é explicado', async ({ page, context }) => {
+test('link no campo do DOI: o link do DOI vai ao Crossref; link de página sem DOI não é aberto e a tela diz o que colar', async ({ page, context }) => {
+  // Nenhum pedido pode sair para o servidor do autor nem para outro site: o app não lê páginas de artigos.
+  const fora = [];
   await page.addInitScript(() => localStorage.setItem('rb.teste.servidor', 'http://localhost:4173/servidor-falso'));
-  const pedidos = [];
-  let antigo = false;
   await context.route('http://localhost:4173/servidor-falso/**', (r) => {
-    const u = new URL(r.request().url());
-    const metodo = r.request().method();
-    // O link vai no corpo do pedido, não no endereço (que o servidor registra).
-    const url = metodo === 'POST' ? r.request().postDataJSON().url : u.searchParams.get('url');
-    pedidos.push({ metodo, caminho: u.pathname.replace('/servidor-falso', ''), noEndereco: u.search, url, auth: r.request().headers().authorization });
-    const json = (status, corpo) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(corpo) });
-    // Servidor publicado antes da v2.19.2: só entende o pedido no endereço.
-    if (antigo && metodo === 'POST') return json(404, { error: { message: 'Este servidor não atende este endereço.', origem: 'servidor', codigo: 'rota' } });
-    if (url.includes('blog.exemplo.com')) return json(403, { error: { message: 'O site blog.exemplo.com não está na lista de sites que este servidor abre.', origem: 'servidor', codigo: 'pagina-site' } });
-    const comDOI = url.includes('com-doi');
-    return json(200, { site: 'www.scielo.br', dados: { tipo: 'artigo', titulo: 'Cooperativas de catadores e contratos municipais', autores: [{ sobrenome: 'Teixeira', prenomes: 'Marina' }], ano: '2021', veiculo: 'Gestão Pública e Resíduos (fictícia)', volume: '8', numero: '3', paginas: '77-98', editora: null, doi: comDOI ? DOI : null, idioma: null, url } });
+    fora.push(r.request().url());
+    return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  await context.route('https://www.scielo.br/**', (r) => {
+    fora.push(r.request().url());
+    return r.abort();
   });
   await entrar(page, context);
   await page.locator('.bib-vazia [data-bib="adicionar"]').click();
-  await expect(page.locator('label[for="ad-doi"]')).toHaveText('DOI ou link da página do artigo');
-  // Página sem DOI: valem os dados lidos nela.
-  await page.locator('#ad-doi').fill('https://www.scielo.br/j/gpr/a/sem-doi');
-  await page.locator('[data-bib="buscar-doi"]').click();
-  await expect(page.locator('#f-titulo')).toHaveValue('Cooperativas de catadores e contratos municipais');
-  await expect(page.locator('#ad-msg')).toContainText('Dados lidos na página do artigo (scielo.br). A página não traz DOI.');
-  await expect(page.locator('#f-ref')).toContainText('TEIXEIRA, M. Cooperativas de catadores e contratos municipais. Gestão Pública e Resíduos (fictícia), v. 8, n. 3, p. 77-98, 2021.');
-  expect(pedidos[0]).toEqual({ metodo: 'POST', caminho: '/obras/pagina', noEndereco: '', url: 'https://www.scielo.br/j/gpr/a/sem-doi', auth: 'Bearer tok-falso' });
-  // Página com DOI: o Crossref confere e os dados dele valem.
-  await page.locator('#ad-doi').fill('https://www.scielo.br/j/gpr/a/com-doi');
-  await page.locator('[data-bib="buscar-doi"]').click();
-  await expect(page.locator('#f-titulo')).toHaveValue('Roteirização colaborativa para cooperativas de reciclagem');
-  await expect(page.locator('#ad-msg')).toContainText('Dados lidos na página do artigo (scielo.br) e busquei os dados no Crossref.');
-  // Link que já traz o DOI vai direto ao Crossref, sem passar pelo servidor.
-  const antes = pedidos.length;
+  await expect(page.locator('label[for="ad-doi"]')).toHaveText('DOI ou link do DOI');
+  // Link do DOI: o DOI sai do link e os dados vêm do Crossref.
   await page.locator('#ad-doi').fill(`https://doi.org/${DOI}`);
   await page.locator('[data-bib="buscar-doi"]').click();
   await expect(page.locator('#ad-msg')).toContainText('Dados encontrados no Crossref');
-  expect(pedidos.length).toBe(antes);
-  // Site fora da lista: a mensagem do servidor diz qual site e nada muda na ficha.
-  await page.locator('#ad-doi').fill('https://blog.exemplo.com/post');
+  await expect(page.locator('#f-titulo')).toHaveValue('Roteirização colaborativa para cooperativas de reciclagem');
+  // Link da página do artigo, sem DOI: nada é aberto, nada muda na ficha, e a tela diz o que colar.
+  await page.locator('#ad-doi').fill('https://www.scielo.br/j/gpr/a/exemplo/?lang=pt');
   await page.locator('[data-bib="buscar-doi"]').click();
-  await expect(page.locator('#ad-msg')).toContainText('O site blog.exemplo.com não está na lista');
-  // Link antigo, com http: vai para o servidor já com https.
-  await page.locator('#ad-doi').fill('http://www.scielo.br/scielo.php?script=sci_arttext&pid=S0000-00002021000300077');
-  await page.locator('[data-bib="buscar-doi"]').click();
-  await expect(page.locator('#ad-msg')).toContainText('Dados lidos na página do artigo (scielo.br)');
-  expect(pedidos.at(-1).url).toBe('https://www.scielo.br/scielo.php?script=sci_arttext&pid=S0000-00002021000300077');
-  // Servidor ainda na versão anterior: o app repete o pedido do jeito que ele entende, e a busca funciona.
-  antigo = true;
-  const ate = pedidos.length;
-  await page.locator('#ad-doi').fill('https://www.scielo.br/j/gpr/a/sem-doi');
-  await page.locator('[data-bib="buscar-doi"]').click();
-  await expect(page.locator('#ad-msg')).toContainText('Dados lidos na página do artigo (scielo.br). A página não traz DOI.');
-  expect(pedidos.slice(ate).map((p) => p.metodo)).toEqual(['POST', 'GET']);
+  await expect(page.locator('.ad-msg.erro')).toContainText('Este link não traz o DOI');
+  await expect(page.locator('#f-titulo')).toHaveValue('Roteirização colaborativa para cooperativas de reciclagem');
+  expect(fora).toEqual([]);
 });
 
 test('DOI inexistente: explica e deixa preencher à mão', async ({ page, context }) => {
