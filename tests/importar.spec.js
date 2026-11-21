@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { googleFalso } from './google-falso.js';
 import { geminiFalso } from './gemini-falso.js';
+import { selectRecusado, erroDeSelect, SELECT_ACEITOS } from './crossref-falso.js';
 
 const FIX = join(import.meta.dirname, 'fixtures');
 const ZOT = join(FIX, 'zotero');
@@ -30,6 +31,12 @@ async function crossrefFalso(context, estado = { pedidos: [] }) {
     const u = new URL(r.request().url());
     const q = (u.searchParams.get('query.bibliographic') || '').toLowerCase();
     estado.pedidos.push(q || u.pathname);
+    // Como o Crossref de verdade: um campo desconhecido em "select" derruba o pedido inteiro.
+    const ruim = selectRecusado(u.href);
+    if (ruim && !estado.aceitarSelect) {
+      estado.recusados = (estado.recusados || 0) + 1;
+      return r.fulfill(erroDeSelect(ruim));
+    }
     if (u.pathname === '/works' && q) {
       const itens = q.includes('venable') ? CANDIDATOS.venable : q.includes('greenwashing') ? CANDIDATOS.greenwashing : [];
       return r.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ message: { items: itens } }) });
@@ -128,6 +135,33 @@ test.describe('no computador', () => {
     await expect(page.locator('#toast')).toContainText('1 obra ganhou o PDF');
     const ls = await page.evaluate(() => window.rb.biblioteca.leituras().map((l) => ({ titulo: l.titulo, pdf: !!l.pdf })));
     expect(ls).toEqual([{ titulo: 'Obra que ainda não tem PDF', pdf: true }]);
+  });
+
+  test('a procura no Crossref só pede campos que ele aceita e, se o pedido for recusado, tenta de novo sem escolher campos', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('rb.exemplo', '1'));
+    const estado = { pedidos: [] };
+    await crossrefFalso(context, estado);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    const campos = await page.evaluate(async () => (await import('/js/crossref.js')).CAMPOS_PROCURA);
+    expect(campos.filter((c) => !SELECT_ACEITOS.has(c))).toEqual([]);
+    const procurar = (f) => page.evaluate(async (ficha) => (await import('/js/crossref.js')).procurarPorDados(ficha), f);
+    const r = await procurar({ titulo: 'Design science research: avaliação de artefatos', autores: [{ sobrenome: 'Venable' }], ano: '2016' });
+    expect(r.candidatos.map((c) => c.doi)).toEqual(['10.0000/venable.2016', '10.0000/outro.2010']);
+    expect(estado.recusados || 0).toBe(0);
+    // O Crossref passa a recusar qualquer "select" (mudou a lista dele): a procura não pode parar de funcionar.
+    await context.unroute('https://api.crossref.org/**');
+    let comSelect = 0;
+    await context.route('https://api.crossref.org/**', (rota) => {
+      const u = new URL(rota.request().url());
+      if (u.searchParams.has('select')) {
+        comSelect++;
+        return rota.fulfill(erroDeSelect('title'));
+      }
+      return rota.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ message: { items: CANDIDATOS.greenwashing } }) });
+    });
+    const r2 = await procurar({ titulo: 'Greenwashing in corporate communication', ano: '2022' });
+    expect(comSelect).toBe(1);
+    expect(r2.candidatos[0].doi).toBe('10.0000/souza.2022');
   });
 
   test('DOI que falta: o que bate com o Crossref é gravado sozinho, com desfazer; a IA só entra quando o autor pede', async ({ page, context }) => {
