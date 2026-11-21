@@ -330,20 +330,22 @@ export function criarBibliotecaUI({ bib, registrar }) {
     const verGrifos = typeof S !== 'undefined' ? S.verGrifos : false;
     const tutor = window.rb?.tutorUI;
     const verTutor = !!tutor && (typeof S !== 'undefined' ? S.verTutor : false);
+    // A ação principal aparece na barra (computador) e no fim do texto (celular): o estilo mostra uma só.
+    const acao =
+      l.etapa >= 2
+        ? `<a class="btn prim" href="#fichamento/${encodeURIComponent(l.id)}">${l.etapa >= 4 ? 'Ver fichamento' : l.etapa === 3 ? 'Continuar fichamento' : 'Fazer fichamento'}</a>`
+        : `<button class="btn ${l.pdf ? 'prim' : ''}" data-bib="concluir" data-id="${esc(l.id)}">Concluir leitura</button>`;
     return `<div class="leitor-barra">
       <a class="btn fant" href="#biblioteca">${icone('voltar')}Ler</a>
       <div class="tit">${esc(l.titulo)}<small>${esc(autorCurto(l))}, ${ETAPAS[l.etapa] || ETAPAS[0]}</small></div>
       ${l.pdf ? `<div class="alterna modo-leitor" role="group" aria-label="Modo do leitor"><button class="txt" data-modo-leitor="leitura" aria-pressed="${modo === 'leitura'}">Leitura</button><button class="txt" data-modo-leitor="pdf" aria-pressed="${modo === 'pdf'}">PDF</button></div>` : ''}
-      <div class="alterna" role="group" aria-label="Painéis do leitor">
+      <button class="btn leitor-mais" data-bib="paineis" aria-expanded="false" aria-controls="leitor-paineis">${icone('painelEsq')}Painéis</button>
+      <div class="alterna" id="leitor-paineis" role="group" aria-label="Painéis do leitor">
         <button class="txt" data-alt="verGrifos" aria-pressed="${verGrifos}">${icone('painelEsq')}Grifos</button>
         ${tutor ? `<button class="txt" data-alt="verTutor" aria-pressed="${verTutor}">${icone('tutor')}Tutor</button>` : ''}
         <button class="txt" data-bib="referencia" data-id="${esc(l.id)}">Referência</button>
       </div>
-      <div class="dir"><span class="t-legenda mute-2" id="pdf-pag">${l.totalPaginas ? `p. ${l.paginaAtual || 1} de ${l.totalPaginas}` : ''}</span>${
-        l.etapa >= 2
-          ? `<a class="btn prim" href="#fichamento/${encodeURIComponent(l.id)}">${l.etapa >= 4 ? 'Ver fichamento' : l.etapa === 3 ? 'Continuar fichamento' : 'Fazer fichamento'}</a>`
-          : `<button class="btn ${l.pdf ? 'prim' : ''}" data-bib="concluir" data-id="${esc(l.id)}">Concluir leitura</button>`
-      }</div>
+      <div class="dir"><span class="t-legenda mute-2" id="pdf-pag">${l.totalPaginas ? `p. ${l.paginaAtual || 1} de ${l.totalPaginas}` : ''}</span>${acao}</div>
     </div>
     <div class="leitor-grid ${verTutor ? '' : 'sem-tutor'} ${verGrifos ? '' : 'sem-grifos'}">
       <aside class="col-grifos" aria-label="Grifos neste texto">
@@ -353,7 +355,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
       </aside>
       <div class="palco"><div id="pdf-palco" data-id="${esc(l.id)}">${
         l.pdf ? '<div class="pdf-aviso">Abrindo o PDF…</div>' : `<div class="pdf-aviso"><p>Esta obra ainda não tem PDF.</p><label class="btn prim">Adicionar PDF<input type="file" accept="application/pdf,.pdf" data-bib-pdf="${esc(l.id)}" hidden></label><div class="ref-previa"><small>Referência (ABNT)</small><p>${referencia(l)}</p></div></div>`
-      }</div></div>
+      }</div>${l.pdf ? `<div class="leitor-fim">${acao}</div>` : ''}</div>
       ${tutor ? tutor.painel(l.id) : ''}
     </div>`;
   }
@@ -458,9 +460,22 @@ export function criarBibliotecaUI({ bib, registrar }) {
   /* ---------- Eventos ---------- */
   ouvir('click', async (e) => {
     const b = e.target.closest('[data-bib]');
+    const menu = document.getElementById('leitor-paineis');
+    // Fecha ao tocar fora e também ao escolher um item (Referência abre uma janela sem redesenhar a tela).
+    if (menu?.classList.contains('aberto') && !e.target.closest('[data-bib="paineis"]')) {
+      menu.classList.remove('aberto');
+      document.querySelector('[data-bib="paineis"]')?.setAttribute('aria-expanded', 'false');
+    }
     if (!b) return;
     const acao = b.dataset.bib;
     if (acao === 'adicionar') abrirAdicionar();
+    if (acao === 'paineis') {
+      // No celular, Grifos, Tutor e Referência ficam num menu. Escolher um deles redesenha a tela e fecha o menu.
+      const aberto = b.getAttribute('aria-expanded') === 'true';
+      b.setAttribute('aria-expanded', String(!aberto));
+      document.getElementById('leitor-paineis')?.classList.toggle('aberto', !aberto);
+      return;
+    }
     if (acao === 'buscar-doi') return aoBuscar(document.getElementById('ad-doi').value);
     if (acao === 'manual') {
       mensagem('');

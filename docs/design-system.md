@@ -1,15 +1,16 @@
 # researchbook: design system
 
-Versão 2 (v1.1.0, novembro de 2026). Substitui a direção visual da v0.4. Vale para toda tela nova e para toda mudança em tela existente. Os valores moram em `public/estilo.css` (seção Tokens); este documento explica o porquê e as regras de uso. Um teste (`tests/design.spec.js`) confere as regras que dá para medir.
+Versão 3 (v2.24.0, novembro de 2026). Descreve o sistema que está no ar depois do redesenho (v2.0.0) e do polimento visual (v2.20.0 a v2.24.0). Vale para toda tela nova e para toda mudança em tela existente. Os valores moram em `public/estilo.css` (seção Tokens); este documento explica o porquê e as regras de uso. Um teste (`tests/design.spec.js`) confere as regras que dá para medir, em todas as rotas, no computador e no celular.
 
 ## Direção
 
-Produto acadêmico, bem acabado e consistente, com a calma de aplicativos de produtividade como o Notion e o Claude: fundo claro e quente, pouca cor, tipografia fazendo a hierarquia, superfícies planas separadas por linhas finas, cor de destaque só para a ação principal e para o que está selecionado. A serifa (Literata) marca o que é conteúdo e título; a sans (Inter) marca o que é interface.
+Produto acadêmico, calmo e consistente: papel branco, cinzas neutros, um azul só. A tipografia faz a hierarquia; o conteúdo fica no papel, separado por linhas finas; a cor do conteúdo são os grifos. A serifa (Literata) marca o que é conteúdo e título; a sans (Inter) marca o que é interface.
 
-Três princípios:
+Quatro princípios:
 1. **O conteúdo do Diobert é o protagonista.** Títulos de obras, trechos, teses e textos aparecem em Literata; a interface ao redor fica neutra e baixa.
-2. **Um sistema pequeno, usado sempre.** Sete tamanhos de letra, três alturas de controle, quatro raios. Nada de valor solto no código.
-3. **Toda espera e todo resultado ficam visíveis.** Botão que dispara trabalho mostra que está trabalhando; tela que carrega mostra a forma do que vem; erro diz o que fazer.
+2. **Um sistema pequeno, usado sempre.** Oito tamanhos de letra, três alturas de controle, quatro raios. Nada de valor solto no código.
+3. **Papel com linhas, um painel por tela.** Nada de cartão com contorno. Quando a tela tem um protagonista (o próximo passo, a tela vazia, o cartão de revisão), ele ganha o painel cinza; só um.
+4. **Toda espera e todo resultado ficam visíveis.** Botão que dispara trabalho mostra que está trabalhando; tela que carrega mostra a forma do que vem; erro diz o que fazer.
 
 ## Fontes consultadas
 
@@ -26,95 +27,157 @@ Três princípios:
 
 | Token | Valor | Uso |
 |---|---|---|
-| `--fundo` | `#FBFAF8` | Fundo das telas |
-| `--fundo-lateral` | `#F5F3EF` | Menu lateral, barras de ferramenta |
-| `--superficie` | `#FFFFFF` | Cartões, campos, modais, menus |
-| `--superficie-2` | `#F1EFEA` | Hover, chips, trilhos, fundo de segmentado |
-| `--superficie-3` | `#E7E4DE` | Item selecionado no menu, pressionado |
-| `--borda` | `#E6E2DB` | Linhas e contornos de superfície |
-| `--borda-forte` | `#D6D1C8` | Contorno de botão secundário, divisores fortes |
-| `--borda-campo` | `#948E82` | Contorno de campo (3:1 sobre branco, WCAG 1.4.11) |
-| `--texto` | `#22201C` | Texto principal (15,6:1) |
-| `--texto-2` | `#5C574F` | Texto secundário (6,9:1) |
-| `--texto-3` | `#68625A` | Legendas e metadados (5,3:1; nunca abaixo de 4,5:1) |
-| `--acento` | `#1F4A5A` | Petróleo: botão principal, link, foco, seleção (9,2:1) |
-| `--acento-forte` | `#163845` | Hover do acento |
-| `--acento-suave` | `#E4ECEE` | Fundo de seleção e de aviso informativo |
+| `--fundo`, `--superficie` | `#FFFFFF` | Papel: fundo das telas, campos, modais, menus |
+| `--superficie-2` | `#F4F4F4` | Painel da tela, botão secundário, trilho, pílula selecionada, hover |
+| `--superficie-3` | `#EAEAEA` | Hover de botão secundário, pressionado |
+| `--borda` | `#EDEDED` | Linha entre itens e entre seções |
+| `--borda-forte` | `#D9D9D9` | Divisor forte, contorno de número de etapa |
+| `--borda-campo` | `#8F8F8F` | Contorno de campo (3,2:1 sobre branco, WCAG 1.4.11) |
+| `--texto` | `#1F1F1F` | Texto principal (16,5:1) |
+| `--texto-2` | `#5C5C5C` | Texto secundário (6,7:1) |
+| `--texto-3` | `#6B6B6B` | Legendas e metadados (5,3:1; 4,8:1 sobre o painel cinza) |
+| `--acento` | `#1D5A7A` | Azul petróleo: botão principal, ação discreta, foco, lugar atual no menu (7,5:1) |
+| `--acento-forte` | `#164863` | Hover do acento |
+| `--acento-suave` | `#E8F0F4` | Hover de ação discreta, anel de foco de campo. Nunca fundo de bloco |
 | `--sucesso` / `--sucesso-suave` | `#2E6A38` / `#E7F0E6` | Concluído, sincronizado |
-| `--aviso` / `--aviso-suave` | `#7E5410` / `#FBF1DC` | Atenção, prazo perto |
-| `--perigo` / `--perigo-suave` | `#A23A26` / `#FBEAE5` | Erro, ação destrutiva |
+| `--aviso` / `--aviso-suave` | `#7E5410` / `#FBF1DC` | Aviso de verdade: limite de gasto, IA que não respondeu, sincronização pendente |
+| `--perigo` / `--perigo-suave` | `#A23A26` / `#FBEAE5` | Erro, prazo no último dia, apagar o registro inteiro |
 
-Cores de grifo (por função, não mudam): Conceito `#F5D768`, Evidência `#B4DBA2`, Método `#A9CBEA`, Crítica `#F2AE9F`, Para a dissertação `#D0BDEB`. Cor nunca é o único sinal: status leva texto ou ícone junto.
+Cores de grifo (por função, não mudam): Conceito `#F5D768`, Evidência `#B4DBA2`, Método `#A9CBEA`, Crítica `#F2AE9F`, Para a dissertação `#D0BDEB`.
+
+Regras de cor:
+- **Azul só em ação e lugar.** Botão principal, ação discreta, foco, item atual do menu. Nunca como fundo de um bloco de conteúdo.
+- **Vermelho só em erro, prazo no último dia e apagar o registro inteiro.** Estado neutro ("Fora da biblioteca", "Sem PDF") é cinza com o texto dizendo o estado.
+- **Âmbar só em aviso de verdade.** Nota informativa é texto comum (`.nota-info`).
+- Cor nunca é o único sinal: status leva texto ou ícone junto.
+- Os nomes antigos (`--papel`, `--cartao`, `--linha`, `--tinta`, `--grafite`, `--petroleo` e as variações) ainda existem e apontam para os tokens acima. Em regra nova, use o nome novo.
 
 ### Tipografia
 
-Inter (interface) e Literata (títulos de página, conteúdo e leitura), servidas pelo app.
+Inter (interface) e Literata (títulos, conteúdo e leitura), servidas pelo app.
 
-| Token | Tamanho / entrelinha | Peso | Papel |
+| Token | Tamanho | Papel |
+|---|---|---|
+| `--fs-legenda` | 12 | Legendas, contadores, cabeçalho de coluna |
+| `--fs-meta` | 13 | Metadados, ajuda de campo, rótulo de grupo |
+| `--fs-ui` | 14 | Padrão da interface: botões, campos, filtros, linhas de lista |
+| `--fs-corpo` | 16 | Parágrafo de apoio, subtítulo de bloco, campos no celular |
+| `--fs-titulo-3` | 18 | Título de item numa lista (Literata) |
+| `--fs-leitor` | 20 | Texto do leitor e do editor (Literata) |
+| `--fs-titulo-2` | 22 | Título de seção (Literata); título de conteúdo no celular |
+| `--fs-titulo-1` | 30 (26 até 700 px) | Título de conteúdo e título do painel (Literata) |
+| `--fs-tela` | 44 (26 até 1000 px) | Nome da seção: Ler, Escrever, Dissertação, Acervo |
+
+Os títulos têm papéis fixos. Um teste confere os três primeiros em toda rota.
+
+| Papel | Como marcar | Letra | Corte |
 |---|---|---|---|
-| `--fs-legenda` | 12 / 16 | 400–500 | Legendas, contadores, atalhos de teclado |
-| `--fs-meta` | 13 / 18 | 400 | Metadados, ajuda de campo, textos secundários |
-| `--fs-ui` | 14 / 20 | 400–500 | Padrão da interface: botões, campos, listas, rótulos |
-| `--fs-corpo` | 16 / 24 | 400 | Parágrafos de conteúdo, citações em Literata, campos no celular |
-| `--fs-titulo-3` | 18 / 26 | 600 (Inter) ou 500 (Literata) | Título de seção e de cartão; corpo do leitor e do editor |
-| `--fs-titulo-2` | 22 / 30 | 500, Literata | Título de painel, tese, pergunta de cartão |
-| `--fs-titulo-1` | 30 / 38 (26 no celular) | 500, Literata | Título da página (um por tela) |
+| Nome de seção | `h1` em `.topo` | Literata 44, peso 500 | Não corta |
+| Título de conteúdo (obra, texto, aula, nome do projeto) | `h1.tit-conteudo`, `.esc-cab h1`, `.ac-obra-tit` | Literata 30 (22 no celular), peso 500 | Nunca corta: aparece inteiro |
+| Título do painel | `h2` dentro de `.proximo` | Literata 30, peso 500 | 3 linhas, com reticências |
+| Título de seção | todo `h2` de `#vista` e de `.modal` | Literata 22/30, peso 500 | Não corta |
+| Subtítulo de bloco | todo `h3` de `#vista` | Inter 16/24, peso 600 | Não corta |
+| Rótulo de grupo | `.proj-sec h3` | Inter 13/18, peso 600, cinza | Não corta |
+| Título de item numa lista | `.linha-lv .tit`, `.fich-card .t`, `.txt-card .t`, `.seq .t` | Literata 18/26, peso 500 | 3 linhas, com reticências |
 
-Regras: só esses tamanhos (o teste confere); peso 600 só em títulos Inter; nunca itálico na interface; números de tabela com `font-variant-numeric: tabular-nums`; linha de leitura com até 70 caracteres.
+Regras: só os tamanhos da tabela (o teste confere); nunca itálico na interface; nada em caixa-alta; números de tabela com `font-variant-numeric: tabular-nums`; linha de leitura com até 70 caracteres. A linha de apoio fica a 12 px do título. Texto do autor nunca recebe `white-space: nowrap` sem reticências, e toda tela mantém a largura da janela com um título de 200 caracteres (o teste confere).
 
 ### Espaço, forma e movimento
 
-- Espaço em múltiplos de 4: `--e-1` 4, `--e-2` 8, `--e-3` 12, `--e-4` 16, `--e-5` 20, `--e-6` 24, `--e-8` 32, `--e-10` 40, `--e-12` 48.
-- Raios: `--r-1` 4 (chips, atalhos), `--r-2` 6 (botões, campos, itens de menu), `--r-3` 10 (cartões, painéis, menus), `--r-4` 14 (modais, destaque do Hoje). Círculo só em avatar, ponto de status e número de etapa.
-- Sombra só no que flutua: `--sombra-1` (menus, folhas) e `--sombra-2` (modais). Cartões são planos, com borda.
+- Espaço em múltiplos de 4: `--e-1` 4, `--e-2` 8, `--e-3` 12, `--e-4` 16, `--e-5` 20, `--e-6` 24, `--e-8` 32, `--e-10` 40, `--e-12` 48, `--e-16` 64.
+- Raios: `--r-1` 4 (chips, foco), `--r-2` 10 (campos, blocos de código), `--r-3` 14 (menus que flutuam, cartão de escolha), `--r-4` 20 (painel da tela, trilho que quebra em duas linhas). Botão é pílula (999 px). Círculo só em avatar, ponto de status e número de etapa.
+- Alturas de controle: `--h-p` 30, `--h-m` 38, `--h-g` 44. No toque: 34, 40 e 44.
+- Sombra só no que flutua: `--sombra-1` (menus, folhas, tutor) e `--sombra-2` (modais). Nada que está no papel tem sombra.
 - Movimento: `--t-rapido` 120 ms, `--t-medio` 200 ms, curva `--curva`. Com "reduzir movimento" ligado, nada anima; o texto do botão continua dizendo o que está acontecendo.
-- Foco: anel de 2 px em `--acento` com 2 px de afastamento, em todo elemento focável.
+- Foco: anel de 2 px em `--acento` com 2 px de afastamento, em todo elemento focável. O campo em foco troca o contorno para `--acento` e mantém os cantos.
 
 ## Componentes
 
 ### Botão (`.btn`)
 
-| Variante | Classe | Quando |
-|---|---|---|
-| Principal | `.btn.prim` | A ação principal da tela. No máximo uma por área visível |
-| Secundário | `.btn` | Ações de apoio |
-| Discreto | `.btn.fant` | Ações frequentes e de baixo peso em listas e barras ("Editar", "Mostrar") |
-| Destrutivo | `.btn.perigo` (texto) ou `.btn.prim.perigo` (cheio) | Apagar, descartar |
+| Variante | Classe | Aparência | Quando |
+|---|---|---|---|
+| Principal | `.btn.prim` | Pílula azul, texto branco, peso 600 | A ação principal da tela. **Uma por tela** |
+| Secundário | `.btn` | Pílula cinza (`--superficie-2`); branca quando está sobre o painel cinza | Ações de apoio |
+| Discreto | `.btn.fant` | Sem fundo, texto azul | Ações de baixo peso em listas e barras ("Editar", "Cancelar") |
+| Pequeno | `.btn.mini` | 30 px de altura, letra 13 | Ação numa linha de lista |
+| Apagar com desfazer | `.btn.fant.mini` | Discreto azul | Apaga um item da linha e o aviso traz "Desfazer" (tarefa, marco, anotação) |
+| Apagar o registro | `.btn.fant.perigo` | Discreto vermelho | Apaga o registro inteiro (texto, obra, diálogo, projeto) |
+| Ação no meio de um texto | `.lnk` | Letra do botão discreto, sem sublinhado e sem recuo | "Mudar", "Corrigir dados da obra", "Definir um limite" |
+| Ver mais de uma seção | `.lnk-sec` | Azul, 13 px, peso 600 | No cabeçalho de uma seção: "Todas as aulas" |
 
-- Alturas: 34 px (padrão), 28 px (`.btn.mini`, só em linhas densas), 40 px (`.btn.grande` e qualquer botão em tela de toque). Mínimo absoluto de 24 × 24 px (WCAG 2.5.8); no toque, 40 px ou mais.
-- Raio 6 px, texto 14 px peso 500, ícone 16 px à esquerda, 6 px de espaço.
-- **Carregando:** toda ação que espera rede ou IA marca o botão com `aria-busy="true"` depois de 300 ms (antes disso não pisca nada). O botão mantém a largura, troca o ícone por um giro, ignora cliques repetidos e, se tiver `data-ocupado="Salvando…"`, troca o rótulo. Isso é automático para os ouvintes registrados com `ouvir()` de `public/js/ui.js`.
-- Desabilitado: `disabled` com opacidade 0,5 e um texto perto explicando por quê (nunca um botão cinza mudo).
+- **Um botão azul por tela.** Com painel (`.proximo`) ou aviso de tela vazia na tela, o botão do topo é `.btn`. Um modal aberto conta como outra tela. O teste confere.
+- Todo botão com fundo ou contorno é pílula. O teste confere.
+- Texto 14 px, ícone de 16 px à esquerda com 6 px de espaço. Ícone sempre com texto.
+- **Carregando:** toda ação que espera rede ou IA marca o botão com `aria-busy="true"` depois de 300 ms. O botão mantém a largura, troca o ícone por um giro, ignora cliques repetidos e, se tiver `data-ocupado="Salvando…"`, mostra esse texto.
+- Desabilitado: `disabled` com opacidade 0,5 e um texto perto explicando por quê.
 - Link que leva a outra tela é link (`<a>`), não botão; pode ter a aparência de botão.
 
-### Campo (`.campo`)
+### Escolher e filtrar
 
-Rótulo acima (13 px, peso 500), campo com 34 px de altura (40 px no toque, letra de 16 px no celular para o iPhone não dar zoom), ajuda abaixo em `--fs-meta`, erro abaixo em `--perigo` com o que fazer. Placeholder só como exemplo, nunca como rótulo. Foco: borda em `--acento` e halo `--acento-suave`.
+O item selecionado tem três aparências. Não crie outra.
+
+| Para | Componente | Selecionado |
+|---|---|---|
+| Trocar de tela dentro da seção | Abas (`.subnav`, `.abas-lat`) | Sublinhado de 2 px |
+| Escolher um modo entre poucos | Trilho (`.seg`, `.tipo-reg`, `.alterna.modo-leitor`, `.alterna.fich-caminho`) | Pílula branca sobre o trilho cinza |
+| Filtrar uma lista, abrir um painel, item de menu | Pílulas soltas (`.alterna`, `.ac-filtros`), `.secoes`, `.proj-menu`, `.aj-indice` | Pílula cinza, peso 600 |
+
+- Cartão de escolha (`.ia-modo`, `.dlg-item`): é a única caixa com contorno no papel. Selecionado: contorno azul.
+- Etapas de assistente (`.passos`): número em círculo e nome numa linha, sem caixa; a atual com o número em azul, as feitas com a marca de conferido. No celular aparece só o nome da etapa atual.
+- No celular, um trilho com muitas opções quebra em duas linhas.
+
+### Campo
+
+Rótulo acima (13 px, peso 500), campo com 38 px de altura (40 no toque), cantos de 10 px, contorno `--borda-campo`, letra de 14 px (16 no celular, para o iPhone não dar zoom). Ajuda abaixo em `--fs-meta`, erro abaixo em `--perigo` com o que fazer. Placeholder só como exemplo, nunca como rótulo.
+
+- Um formato só: não dê altura, canto, contorno ou letra própria a um campo. O teste confere.
+- O campo de texto longo cresce com o conteúdo (`field-sizing: content`) até 60% da altura da tela e não tem a alça de redimensionar. Onde o navegador não sabe fazer isso, ele mantém a altura mínima e rola por dentro.
+- Busca (`.busca`): o mesmo campo, com a lupa dentro.
 
 ### Navegação
 
-- Menu lateral (240 px, `--fundo-lateral`): item ativo com `--superficie-3` e texto em peso 500; contadores em `--fs-legenda`.
-- Abas de página (`.subnav`) e de painel (`.abas`, `.abas-lat`): sublinhado de 2 px em `--texto` no ativo.
-- Etapas de assistente (`.passos`): número em círculo e rótulo, linha entre etapas; a atual em `--acento`, as feitas com marca de conferido.
-- Barra inferior no celular com os mesmos destinos do menu.
+- Barra de cima no computador: marca, as seções (a atual com um traço azul embaixo), a busca e o avatar. No celular, barra de baixo com Hoje, Ler e Mais.
+- Dentro de um projeto: menu flutuante à esquerda no computador; no celular, ele ocupa a barra de baixo.
+- Abas da seção (`.subnav`): sublinhado. No celular, a fileira rola e a borda direita esmaece para mostrar que há mais.
+- Leitor e editor no celular: o cabeçalho cabe numa linha e o resto fica num menu ("Painéis" no leitor, "Seções e ações" no editor). A ação principal do leitor vai para o fim do texto.
 
 ### Superfícies e listas
 
-- Cartão (`.bloco` e similares): `--superficie`, borda `--borda`, raio 10 px, 20–24 px de respiro. Não aninhar cartão dentro de cartão: dentro, use divisórias.
-- Linha de lista: 12–16 px de respiro vertical, divisória `--borda`, hover `--superficie-2` quando a linha inteira é clicável.
-- Chip (`.chip`): 12 px, raio 4 px, `--superficie-2`; variantes de status com texto e cor de fundo suave.
+- **Papel:** seção é título e conteúdo, sem moldura. Seções em sequência se separam por espaço e, quando ajuda, por uma linha (`border-top: 1px solid var(--borda)`).
+- **Lista:** linhas no papel, 16 px de respiro vertical, linha entre os itens. A linha inteira é o link e o título sublinha ao passar o cursor. Tabela só quando há colunas para comparar (Acervo, Mapa, Ajustes).
+- **Coluna lateral** (`.lado`): blocos sem caixa, separados por linha.
+- **Painel da tela:** fundo `--superficie-2`, cantos de 20 px, 40 px de respiro, alinhado à esquerda. Usos: próximo passo (`.proximo`), tela vazia (`.bib-vazia`, `.vazio-estado`), sugestões da memória (`.sug`), cartão de revisão (`.face`). Um por tela.
+- **Contorno nos quatro lados** só em cartão de escolha e no que flutua (modal, tutor, menus, a página do PDF). O teste recusa qualquer outra caixa.
+- **Data:** dia grande em Literata com o mês embaixo, para prazo e para compromisso; a hora vai na linha de apoio. No Hoje, compromisso do dia leva a hora em negrito.
+- Chip (`.chip`): 12 px, cantos de 4 px, `--superficie-2`. Bloco de código (`pre.arvore`, `pre.prev`): fundo `--superficie-2`, sem contorno.
 
 ### Carregamento e vazios
 
-- Tela abrindo: `esqueleto()` de `ui.js` desenha o título real e blocos cinza na forma do conteúdo (NN/g: esqueleto para carga de página inteira). Nunca "Carregando…" sozinho.
-- Ação longa (IA, transcrição): indicador no próprio botão; acima de 10 s, progresso com etapa ("Transcrevendo parte 2 de 6").
-- Estado vazio (`.vazio-estado`): o que vai aparecer aqui, por que está vazio e um botão para começar. Uma ação só.
+- Tela abrindo: `esqueleto()` de `ui.js` desenha o título real e blocos cinza na forma do conteúdo. Nunca "Carregando…" sozinho.
+- Ação longa (IA, transcrição): indicador no próprio botão; acima de 10 s, progresso com etapa ("Transcrevendo parte 2 de 6"). Nunca "leva cerca de N minutos" fixo nem porcentagem sem saber o total.
+- Tela vazia: o painel cinza, com o que vai aparecer ali, por que está vazio e o botão azul para começar. O botão do topo fica cinza.
 
 ### Mensagens
 
-- Toast (`#toast`): confirmação curta em `--texto` com o mesmo verbo do botão ("Salvar" → "Salvo"), com "Desfazer" quando a ação apaga ou substitui.
-- Aviso em linha (`.aviso`, `.erro-ia`): ícone, o que houve, o que fazer, e o botão do próximo passo.
+- Toast (`#toast`): confirmação curta com o mesmo verbo do botão ("Salvar" → "Salvo"), com "Desfazer" quando a ação apaga ou substitui.
+- Aviso em linha (`.aviso`, `.erro-ia`): o que houve, o que fazer e o botão do próximo passo. Só para aviso de verdade; informação é `.nota-info`.
 - Modal só para decisão que interrompe de propósito (confirmar, formulário curto). Título com verbo, botão principal à direita.
+
+## O que o teste confere
+
+`tests/design.spec.js` percorre todas as rotas com dados de exemplo, no computador (1440 × 900) e no celular (390 × 844), e recusa:
+- tamanho de letra fora da escala e alvo de toque menor que 24 × 24 px;
+- página mais larga que a janela com um título de 200 caracteres;
+- título do painel com mais de 3 linhas e título de seção fora de Literata 22/30;
+- mais de um botão azul na tela; botão com fundo ou contorno que não seja pílula; campo fora do padrão;
+- caixa com contorno nos quatro lados fora das exceções;
+- no celular, cabeçalho do leitor com mais de uma linha e texto do editor começando abaixo de um terço da tela;
+- medida ou cor escrita no atributo `style`; contraste de texto abaixo de 4,5:1 e de contorno de campo abaixo de 3:1.
+
+## Dívida conhecida
+
+`public/estilo.css` ainda tem, no começo, regras do sistema anterior para classes citadas no código antigo de `app.js`. Elas não aparecem nas telas atuais. Ao redefinir uma regra no fim do arquivo, confira se não cobriu um `@media` de cima: foi a causa de cinco defeitos no celular durante o polimento.
 
 ## Escrita da interface
 

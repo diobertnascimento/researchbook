@@ -303,6 +303,8 @@ test('no celular, o tutor abre como folha e cabe na tela', async ({ page, contex
   await entrar(page, context);
   await abrirObraComPDF(page);
   await expect(page.locator('#tutor-painel')).toBeHidden();
+  // v2.24.0: no celular, Grifos, Tutor e Referência ficam no menu "Painéis".
+  await page.getByRole('button', { name: 'Painéis' }).click();
   await page.getByRole('button', { name: 'Tutor', exact: true }).click();
   await expect(page.locator('#tutor-painel')).toBeVisible();
   await page.locator('#tutor-texto').fill('Do que trata o texto?');
