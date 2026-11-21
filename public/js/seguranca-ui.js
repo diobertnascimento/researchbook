@@ -86,7 +86,7 @@ export function criarSegurancaUI({ dados, recarregar, registrar }) {
     const contagem = (c) => CONTAR.filter(([k]) => c.contagem[k]).map(([k, um, varios]) => plural(c.contagem[k], um, varios)).join(', ') || 'sem dados';
     return `<section id="sec-seguranca">
     <h2>Cópias de segurança</h2>
-    <p>O que você escreve é gravado sozinho neste aparelho e enviado ao seu Drive. Aqui estão as outras proteções e o que dá para trazer de volta. Nada daqui apaga: restaurar e recuperar só acrescentam.</p>
+    <p>O que você escreve é salvo sozinho neste aparelho e enviado ao seu Drive. Aqui estão as outras proteções e o que dá para trazer de volta. Nada daqui apaga: restaurar e recuperar só acrescentam.</p>
     <div class="ap-grade">
       ${item('Cópia diária neste aparelho', copias == null ? 'Conferindo…' : diaria ? `Feita em ${quando(diaria.criadoEm)}` : 'Ainda não feita hoje', 'uma por dia; ficam as 30 mais recentes')}
       ${item('Proteção do navegador', dados.persistente ? 'Confirmada' : 'Não confirmada', dados.persistente ? 'o navegador não apaga os dados deste app para liberar espaço' : 'o navegador pode limpar os dados se faltar espaço; o Drive e as cópias baixadas continuam valendo')}
@@ -119,7 +119,7 @@ export function criarSegurancaUI({ dados, recarregar, registrar }) {
       try {
         const r = d.segPasta === 'escolher' ? await dados.pastaLocal.escolher() : await dados.pastaLocal.gravarAgora({ pedir: true });
         await atualizar();
-        return toast(r.em ? `Cópia gravada na pasta: ${r.nome}` : 'O navegador não deu a permissão para gravar na pasta.');
+        return toast(r.em ? `Cópia salva na pasta: ${r.nome}` : 'O navegador não deu a permissão para salvar na pasta.');
       } catch (err) {
         if (err.name === 'AbortError') return;
         registrar('erro', 'pasta_local.escolher', { det: err.message, st: 'aviso' });

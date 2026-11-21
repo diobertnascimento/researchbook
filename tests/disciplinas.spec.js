@@ -56,7 +56,7 @@ async function enviarGravacao(page, discId, segundos, { transcrever = true } = {
   await page.getByRole('button', { name: 'Enviar gravação de aula' }).first().click();
   await page.getByLabel('Tema').fill('Avaliação de artefatos');
   await page.getByLabel('Gravação (MP3, M4A, WAV, OGG)').setInputFiles({ name: 'aula.wav', mimeType: 'audio/wav', buffer: wav(segundos) });
-  if (!transcrever) await page.getByLabel('Transcrever e resumir com o Gemini').uncheck();
+  if (!transcrever) await page.getByLabel('Transcrever e resumir com a IA').uncheck();
   await page.getByRole('button', { name: 'Enviar e transcrever' }).click();
   await expect(page).toHaveURL(/#aula\//);
   return page.evaluate(() => decodeURIComponent(location.hash.split('/')[2]));
@@ -181,8 +181,8 @@ test.describe('no computador', () => {
     await expect(page.locator('.conceitos-aula dt')).toContainText('Adesão');
     // Leituras citadas: a da biblioteca vira link; a de fora vai para a lista "para buscar".
     await expect(page.locator('.lado .lc').filter({ hasText: 'Moraes; Lins, 2024' })).toHaveAttribute('href', /#leitor\//);
-    await page.getByRole('button', { name: 'Marcar para buscar' }).click();
-    await expect(page.locator('#toast')).toContainText('Na lista para buscar');
+    await page.getByRole('button', { name: 'Marcar para adicionar' }).click();
+    await expect(page.locator('#toast')).toContainText('Na lista para adicionar');
     expect(await page.evaluate((id) => window.rb.disciplinas.obter(id).paraBuscar.map((p) => p.texto), id)).toEqual(['Sonnenberg e vom Brocke']);
     // Combinado com prazo vira entrega na agenda.
     await page.getByRole('button', { name: 'Agendar entrega' }).click();
@@ -273,7 +273,7 @@ test.describe('no computador', () => {
 
     // Arquivar tira do menu e leva para Arquivadas.
     await page.getByRole('button', { name: 'Editar' }).first().click();
-    await page.getByRole('button', { name: 'Arquivar' }).click();
+    await page.getByRole('button', { name: 'Encerrar projeto' }).click();
     await expect(page.locator('#menu')).not.toContainText('Avaliação em Design');
     await page.goto('/#disciplinas');
     await expect(page.locator('.arq-disc summary')).toHaveText('Projetos encerrados (1)');

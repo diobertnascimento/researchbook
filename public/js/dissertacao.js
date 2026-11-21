@@ -297,7 +297,7 @@ export function criarDissertacao({ dados, ia, bib, fichUI, historico, disc, driv
   }
 
   async function novoEncontro({ data, titulo, formato, texto = '' }) {
-    const e = await disc.salvarItem({ id: novoId('enc'), data: data || diaLocal(), titulo: titulo || 'Reunião de orientação', formato, texto, combinados: [], criadoEm: new Date().toISOString() });
+    const e = await disc.salvarItem({ id: novoId('enc'), data: data || diaLocal(), titulo: titulo || 'Encontro de orientação', formato, texto, combinados: [], criadoEm: new Date().toISOString() });
     registrar('ui', 'orientacao.registrar', { det: FORMATOS[formato] });
     return e;
   }

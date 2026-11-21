@@ -483,7 +483,7 @@ export function criarDisciplinas({ db, dados, ia, bib, historico, drive, registr
     let a = item(aulaId);
     if (!a?.audio) return;
     const enc = ehEncontro(aulaId);
-    const disc = enc ? { nome: 'Dissertação (reunião de orientação)' } : obter(a.disciplinaId);
+    const disc = enc ? { nome: 'Dissertação (encontro de orientação)' } : obter(a.disciplinaId);
     const audio = await obterAudio(aulaId);
     if (audio.erro) return atualizarTranscricao(aulaId, { status: 'erro', erro: audio.erro });
     const inicio = performance.now();

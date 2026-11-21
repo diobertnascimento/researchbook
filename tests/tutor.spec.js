@@ -109,7 +109,7 @@ test.describe('no computador', () => {
     await expect(msg.locator('.fonte-ia')).toHaveText('A1');
     await expect(msg.locator('.fonte-ia')).not.toHaveClass(/ruim/);
     await expect(msg.locator('.pergunta-tutor')).toHaveText('Como isso entra no seu critério de avaliação?');
-    await expect(msg.locator('.fora-acervo')).toContainText('fora do seu acervo');
+    await expect(msg.locator('.fora-acervo')).toContainText('fora da sua biblioteca');
     await expect(msg.locator('.conf-ia')).toHaveCount(0);
     await msg.getByRole('button', { name: 'Útil' }).click();
     await expect(page.locator('.msg.tutor').last()).toContainText('Marcada como útil');
@@ -172,7 +172,7 @@ test.describe('no computador', () => {
     await page.locator('#tutor-texto').fill('Sobre o que é o texto?');
     await page.getByRole('button', { name: 'Perguntar', exact: true }).click();
     await expect(page.locator('.erro-ia')).toContainText('Generative Language API');
-    await expect(page.locator('.erro-ia a')).toHaveText('Abrir Ajustes do Gemini');
+    await expect(page.locator('.erro-ia a')).toHaveText('Conectar o Gemini');
     expect(gem.pedidos).toHaveLength(1); // erro de configuração não é repetido
     await expect(page.locator('#tutor-texto')).toHaveValue('Sobre o que é o texto?'); // a pergunta não se perde
   });
@@ -190,7 +190,7 @@ test.describe('no computador', () => {
     await entrar(page, context, { modo: null });
     await abrirObraComPDF(page);
     await expect(page.locator('.tutor-vazio')).toContainText('conecte o Gemini');
-    await page.getByRole('link', { name: 'Configurar o Gemini' }).click();
+    await page.getByRole('link', { name: 'Conectar o Gemini' }).click();
     await expect(page).toHaveURL(/#ajustes$/);
     await expect(page.locator('#sec-ia h2')).toHaveText('Conectar a IA');
   });

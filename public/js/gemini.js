@@ -87,7 +87,7 @@ export function tarefa(chave) {
 
 // Recusas do servidor da chave (servidor/index.js): o que houve e o que fazer.
 const DO_SERVIDOR = {
-  login: ['sessao', 'O servidor da chave não aceitou o login. Reconecte ao Google e tente de novo.'],
+  login: ['sessao', 'O servidor da chave não aceitou o login. Entre de novo com o Google e repita o pedido.'],
   conta: ['conta', 'O servidor da chave só atende a conta cadastrada nele. Entre no app com essa conta, ou publique o servidor de novo com o e-mail certo.'],
   origem: ['conta', 'O servidor da chave não reconhece o endereço deste app. Publique o servidor de novo com o endereço certo.'],
   'limite-dia': ['limite', null],
@@ -107,7 +107,7 @@ function explicar(status, corpo) {
   }
   const msg = corpo?.error?.message || '';
   const motivo = corpo?.error?.details?.find?.((d) => d.reason)?.reason || corpo?.error?.status || '';
-  if (status === 401) return new ErroIA('sessao', 'O acesso ao Gemini venceu. Reconecte ao Google e tente de novo.', motivo);
+  if (status === 401) return new ErroIA('sessao', 'O login do Google venceu. Entre de novo e repita o pedido.', motivo);
   if (status === 403 && /SCOPE|scope/.test(msg + motivo)) return new ErroIA('permissao', 'Falta a permissão do Gemini no login. Em Ajustes, selecione "Conectar o Gemini" e aceite a permissão.', motivo);
   if (status === 403 && /SERVICE_DISABLED|has not been used|disabled/i.test(msg + motivo)) return new ErroIA('api', 'A API do Gemini não está ativada no projeto do Google Cloud. Ative a "Generative Language API" no projeto e tente de novo.', motivo);
   if (status === 403 && /API_KEY|api key/i.test(msg + motivo)) return new ErroIA('chave', 'O Google recusou a chave. Confira se ela está ativa no Google AI Studio ou guarde uma chave nova no cofre.', motivo);
@@ -125,20 +125,20 @@ function explicar(status, corpo) {
 export function criarGemini({ credenciais, registrar, espera = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
   async function cabecalhos() {
     const c = await credenciais();
-    if (!c) throw new ErroIA('sem-acesso', 'O Gemini ainda não está configurado. Em Ajustes > Gemini, escolha como o app acessa o Gemini.');
+    if (!c) throw new ErroIA('sem-acesso', 'O Gemini ainda não está conectado. Em Ajustes, em Conexão com o Gemini, escolha como o app acessa o Gemini.');
     const h = { 'Content-Type': 'application/json' };
     if (c.modo === 'google') {
-      if (!c.token) throw new ErroIA('sessao', 'O acesso ao Gemini venceu. Reconecte ao Google e tente de novo.');
-      if (!c.projeto) throw new ErroIA('projeto', 'Falta o ID do projeto do Google Cloud em Ajustes > Gemini (é onde a cobrança do Gemini é feita).');
+      if (!c.token) throw new ErroIA('sessao', 'O login do Google venceu. Entre de novo e repita o pedido.');
+      if (!c.projeto) throw new ErroIA('projeto', 'Falta o ID do projeto do Google Cloud em Ajustes, em Conexão com o Gemini (é onde a cobrança do Gemini é feita).');
       h.Authorization = `Bearer ${c.token}`;
       h['x-goog-user-project'] = c.projeto;
     } else if (c.modo === 'servidor') {
-      if (!c.servidor) throw new ErroIA('sem-acesso', 'O servidor da chave ainda não foi publicado. Em Ajustes > Gemini, escolha outra forma de acesso.');
-      if (!c.token) throw new ErroIA('sessao', 'O login venceu. Reconecte ao Google e tente de novo.');
+      if (!c.servidor) throw new ErroIA('sem-acesso', 'O servidor da chave ainda não foi publicado. Em Ajustes, em Conexão com o Gemini, escolha outra forma de acesso.');
+      if (!c.token) throw new ErroIA('sessao', 'O login do Google venceu. Entre de novo e repita o pedido.');
       h.Authorization = `Bearer ${c.token}`;
       return { h, modo: c.modo, ...enderecos(c.servidor.replace(/\/$/, '')) };
     } else {
-      if (!c.chave) throw new ErroIA('trancado', 'O cofre da chave está trancado. Em Ajustes > Gemini, desbloqueie com a sua frase-senha.');
+      if (!c.chave) throw new ErroIA('trancado', 'O cofre da chave está trancado. Em Ajustes, em Conexão com o Gemini, desbloqueie com a sua frase-senha.');
       h['x-goog-api-key'] = c.chave;
     }
     return { h, modo: c.modo, ...enderecos(GOOGLE_IA) };

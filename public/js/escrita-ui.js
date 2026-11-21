@@ -39,7 +39,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
   function lista() {
     const ts = escrita.todos();
     const topo = `<div class="topo"><div><h1>Textos</h1><p>Artigos, resenhas e trabalhos de disciplina, com o Copilot e exportação para o Word.</p></div><div class="acoes"><button class="btn" data-esc-novo>${icone('mais')}Novo texto</button></div></div>`;
-    if (!ts.length) return `${topo}<div class="bib-vazia"><h2>Nenhum texto ainda</h2><p>Comece pelo enunciado da atividade. O Copilot entrevista você, confere o que o seu acervo sustenta e propõe uma estrutura. Ele não escreve do zero: propõe versões do que você escreveu.</p><button class="btn prim" data-esc-novo>${icone('mais')}Começar um texto</button></div>`;
+    if (!ts.length) return `${topo}<div class="bib-vazia"><h2>Nenhum texto ainda</h2><p>Comece pelo enunciado da atividade. O Copilot entrevista você, confere o que a sua biblioteca sustenta e propõe uma estrutura. Ele não escreve do zero: propõe versões do que você escreveu.</p><button class="btn prim" data-esc-novo>${icone('mais')}Começar um texto</button></div>`;
     // O texto mexido por último, em destaque: é por onde a escrita continua.
     const ultimo = [...ts].sort((x, y) => (y.atualizadoEm || '').localeCompare(x.atualizadoEm || ''))[0];
     const quando = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' }) : '');
@@ -68,7 +68,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       .map((n, i) => `<li><button data-esc-passo="${i}" class="${i === t.passo ? 'on' : i < t.passo ? 'feito' : ''}"><span class="n">${i < t.passo ? '✓' : i + 1}</span><span class="rot">${n}</span></button></li>`)
       .join('')}</ol>`;
   }
-  const erroHTML = () => (est.erro ? `<div class="erro-ia" role="alert"><p>${esc(est.erro.mensagem)}</p>${est.erro.acao ? '<a class="btn" href="#ajustes">Abrir Ajustes do Gemini</a>' : ''}</div>` : '');
+  const erroHTML = () => (est.erro ? `<div class="erro-ia" role="alert"><p>${esc(est.erro.mensagem)}</p>${est.erro.acao ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}</div>` : '');
   const ocupadoHTML = (o) => {
     const desde = desdeDe(`copilot:${o}`, est.ocupado === o);
     return est.ocupado === o ? `<p class="mute" role="status">${pensandoHTML('O Copilot está trabalhando', desde, { tarefa: 'copilot' })}</p>` : '';
@@ -80,7 +80,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       <div class="campo"><label for="esc-titulo">Título de trabalho</label><input id="esc-titulo" data-esc-campo="titulo" value="${esc(t.titulo)}"></div>
       <div class="linha2">
         <div class="campo"><label for="esc-tipo">Tipo de texto</label><select id="esc-tipo" data-esc-campo="tipo">${TIPOS.map((x) => `<option ${x === t.tipo ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
-        <div class="campo"><label for="esc-projeto">Disciplina ou projeto</label><input id="esc-projeto" data-esc-campo="projeto" value="${esc(t.projeto)}"></div>
+        <div class="campo"><label for="esc-projeto">Projeto</label><input id="esc-projeto" data-esc-campo="projeto" value="${esc(t.projeto)}"></div>
       </div>
       <div class="campo"><label for="esc-enunciado">Enunciado da atividade <small>cole o texto</small></label><textarea id="esc-enunciado" data-esc-campo="enunciado" rows="4">${esc(t.enunciado)}</textarea></div>
       <div class="campo"><label for="esc-criterios">Critérios de avaliação</label><textarea id="esc-criterios" data-esc-campo="criterios" rows="2">${esc(t.criterios)}</textarea></div>
@@ -118,21 +118,21 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     return (fontes || [])
       .map((f) => {
         const it = itens.get(f.id);
-        return `<span class="chip ${conf.has(f.id) ? '' : 'lac'}" title="${conf.has(f.id) ? 'Trecho conferido no seu acervo' : 'Não conferido: confira antes de usar'}">${conf.has(f.id) ? '' : '⚠ '}${esc(it?.citacao || f.id)}</span>`;
+        return `<span class="chip ${conf.has(f.id) ? '' : 'lac'}" title="${conf.has(f.id) ? 'Trecho conferido na sua biblioteca' : 'Não conferido: confira antes de usar'}">${conf.has(f.id) ? '' : '⚠ '}${esc(it?.citacao || f.id)}</span>`;
       })
       .join('');
   }
 
   function passo2(t) {
     const d = t.diagnostico;
-    if (!d) return `<section class="editor esc-prep"><h2>Diagnóstico</h2><p class="instr">O Copilot compara a sua tese e as suas respostas com o seu acervo: o que está sustentado, o que está frágil e onde falta fonte.</p><button class="btn prim" data-esc-diagnostico ${est.ocupado || !t.tese ? 'disabled' : ''} data-ocupado="Diagnosticando…">Fazer o diagnóstico</button>${!t.tese ? '<p class="mute">Escreva a tese na etapa Ideia primeiro.</p>' : ''}${ocupadoHTML('diagnostico')}${erroHTML()}</section>`;
+    if (!d) return `<section class="editor esc-prep"><h2>Diagnóstico</h2><p class="instr">O Copilot compara a sua tese e as suas respostas com a sua biblioteca: o que está sustentado, o que está frágil e onde falta fonte.</p><button class="btn prim" data-esc-diagnostico ${est.ocupado || !t.tese ? 'disabled' : ''} data-ocupado="Diagnosticando…">Fazer o diagnóstico</button>${!t.tese ? '<p class="mute">Escreva a tese na etapa Ideia primeiro.</p>' : ''}${ocupadoHTML('diagnostico')}${erroHTML()}</section>`;
     const col = (classe, titulo, cor, sub) => `<section class="diag"><h3><i style="background:${cor}"></i>${titulo}</h3><p>${sub}</p>${
       d.resultado.pontos.filter((p) => p.classe === classe).map((p) => `<div class="diag-item"><b>${esc(p.afirmacao)}</b><span>${esc(tirarIds(p.comentario))}</span><div class="f">${chipsFontes(p.fontes, d)}</div></div>`).join('') || '<p class="mute">Nada aqui.</p>'
     }</section>`;
-    return `<div class="diag-grid">${col('sustentado', 'Sustentado pelo acervo', 'var(--sucesso)', 'Você tem grifos para isto')}${col('fragil', 'Frágil', '#B8862B', 'Uma fonte só, ou sustenta em parte')}${col('lacuna', 'Lacuna', 'var(--perigo)', 'Nada no acervo. Sugestões para você buscar')}</div>
-      ${d.resultado.sugestoes_de_busca?.length ? `<section class="mt-4 editor"><h3 class="mt-0">Para buscar (fora do seu acervo, não citar ainda)</h3><ul>${d.resultado.sugestoes_de_busca.map((s) => `<li>${esc(s.descricao)}${s.obra_sugerida ? `: <i>${esc(s.obra_sugerida)}</i>` : ''}</li>`).join('')}</ul></section>` : ''}
-      ${d.conferencia?.ok === false ? `<div class="conf-ia" role="note"><b>Conferência:</b> algumas fontes não batem com o seu acervo e estão marcadas com ⚠.</div>` : ''}
-      <div class="nota-grounding">${icone('tutor')}<span>O Copilot só cita o que está no seu acervo, com página. Sugestões de fora ficam pendentes até você adicionar o texto à biblioteca.</span></div>
+    return `<div class="diag-grid">${col('sustentado', 'Sustentado pela biblioteca', 'var(--sucesso)', 'Você tem grifos para isto')}${col('fragil', 'Frágil', '#B8862B', 'Uma fonte só, ou sustenta em parte')}${col('lacuna', 'Lacuna', 'var(--perigo)', 'Fora da sua biblioteca. Sugestões para você adicionar')}</div>
+      ${d.resultado.sugestoes_de_busca?.length ? `<section class="mt-4 editor"><h3 class="mt-0">Para adicionar (fora da sua biblioteca; não cite ainda)</h3><ul>${d.resultado.sugestoes_de_busca.map((s) => `<li>${esc(s.descricao)}${s.obra_sugerida ? `: <i>${esc(s.obra_sugerida)}</i>` : ''}</li>`).join('')}</ul></section>` : ''}
+      ${d.conferencia?.ok === false ? `<div class="conf-ia" role="note"><b>Conferência:</b> algumas fontes não batem com a sua biblioteca e estão marcadas com ⚠.</div>` : ''}
+      <div class="nota-grounding">${icone('tutor')}<span>O Copilot só cita o que está na sua biblioteca, com página. Sugestões de fora ficam pendentes até você adicionar a obra à biblioteca.</span></div>
       <div class="ia-linha"><button class="btn fant" data-esc-diagnostico ${est.ocupado ? 'disabled' : ''} data-ocupado="Diagnosticando…">Refazer o diagnóstico</button></div>${ocupadoHTML('diagnostico')}${erroHTML()}`;
   }
 
@@ -207,7 +207,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     const conf = v.r.conferencia;
     return `<div class="versoes-box"><h4>Versões a partir do seu parágrafo</h4>
       ${(j.alertas || []).map((a) => `<div class="alerta">⚠ <span>${esc(tirarIds(a.explicacao))} ${esc(tirarIds(a.como_resolver))}</span></div>`).join('')}
-      ${conf?.ok === false ? `<div class="conf-ia">Conferência: ${conf.problemas.length === 1 ? 'uma citação não bate' : `${conf.problemas.length} citações não batem`} com o seu acervo. Confira antes de usar.</div>` : ''}
+      ${conf?.ok === false ? `<div class="conf-ia">Conferência: ${conf.problemas.length === 1 ? 'uma citação não bate' : `${conf.problemas.length} citações não batem`} com a sua biblioteca. Confira antes de usar.</div>` : ''}
       ${(j.versoes || [])
         .map(
           (x, i) => `<div class="versao-op"><div class="cab"><b>${x.tipo === 'proxima' ? 'Mais próxima do seu texto' : 'Mais acadêmica'}</b>${(x.mudancas || []).slice(0, 3).map((m) => `<span class="chip">${esc(m)}</span>`).join('')}</div>
@@ -226,7 +226,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       .join('')}`;
   }
 
-  const MOTIVOS = { automática: 'gravada sozinha', manual: 'guardada por você' };
+  const MOTIVOS = { automática: 'guardada sozinha', manual: 'guardada por você' };
   function painelVersoes(t) {
     const vs = escrita.versoesDe(t);
     const quando = (em) => new Date(em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -903,7 +903,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       <form id="fig-form">
         <div class="campo"><label for="fig-titulo">Título</label><input id="fig-titulo" maxlength="200" autocomplete="off" placeholder="Ex.: Etapas da coleta nas cooperativas" value="${esc(f.dataset.titulo || '')}"></div>
         <div class="campo"><label for="fig-fonte">Fonte</label><input id="fig-fonte" maxlength="300" autocomplete="off" placeholder="Ex.: elaborado pelo autor, ou Moraes (2024, p. 12)" value="${esc(f.dataset.fonte || '')}"></div>
-        <div class="pe"><span class="cresce"></span><button type="button" class="btn fant" data-acao="fechar">${nova ? 'Deixar para depois' : 'Cancelar'}</button><button class="btn prim" type="submit">Guardar título e fonte</button></div>
+        <div class="pe"><span class="cresce"></span><button type="button" class="btn fant" data-acao="fechar">${nova ? 'Deixar para depois' : 'Cancelar'}</button><button class="btn prim" type="submit">Salvar título e fonte</button></div>
       </form></div>`;
     veu.classList.add('on');
     document.getElementById('fig-titulo').focus();
@@ -1191,7 +1191,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       try {
         await escrita.carregarVersoes(t.id);
         const r = await escrita.salvarVersao(t.id);
-        toast(r?.noDrive ? 'Versão guardada neste aparelho e no Drive' : 'Versão guardada neste aparelho. Vai para o Drive quando houver conexão.');
+        toast(r?.noDrive ? 'Versão guardada neste aparelho e no Drive' : 'Versão guardada neste aparelho. Vai para o Drive quando houver internet.');
       } catch (err) {
         toast(err.message);
       }

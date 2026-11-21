@@ -197,7 +197,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
       esquema: ESQ,
     });
     try {
-      const h = await historico.nova({ funcao: 'organizar', alvo: { tipo: 'obra', id: l.id }, titulo: 'Procura de DOI' });
+      const h = await historico.nova({ funcao: 'organizar', alvo: { tipo: 'obra', id: l.id }, titulo: 'Busca de DOI' });
       await historico.acrescentar(h.id, { de: 'ia', tarefa: 'organizar', resposta: r.json, modelo: r.modelo, uso: r.uso, custo: r.custo, instrucao: r.instrucao });
     } catch (e) {
       registrar('erro', 'organizar.historico', { det: e.message, st: 'aviso' });
@@ -405,7 +405,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     const completados = Object.keys(m).filter((k) => k !== 'doiBusca');
     m.origens = { ...(l.origens || {}), ...Object.fromEntries(completados.map((k) => [k, fonte])) };
     await bib.atualizar(id, m);
-    registrar(auto ? 'arq' : 'ui', 'organizar.aceitar', { det: `${auto ? 'gravado sozinho' : b.confianca || 'manual'}, ${fonte}` });
+    registrar(auto ? 'arq' : 'ui', 'organizar.aceitar', { det: `${auto ? 'salvo sozinho' : b.confianca || 'manual'}, ${fonte}` });
     avisar();
     return async () => {
       await bib.atualizar(id, { doi: antes.doi || null, doiBusca: antes.doiBusca || null, origens: antes.origens || null, ...Object.fromEntries(completados.filter((k) => k !== 'doi').map((k) => [k, antes[k] ?? null])) });

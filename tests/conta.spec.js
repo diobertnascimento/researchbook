@@ -117,7 +117,7 @@ test('sessão vencida: o app continua aberto e oferece reconectar', async ({ pag
   await page.evaluate(() => window.rb.sincronia.sincronizar());
   expect(await fase(page)).toBe('desconectado');
   await expect(page.locator('body')).not.toHaveClass(/bloqueado/);
-  await expect(page.locator('#status-drive button')).toHaveText('Reconectar ao Google');
+  await expect(page.locator('#status-drive button')).toHaveText('Entrar de novo');
 });
 
 // v2.14.2: o token do login vale só enquanto a aba está aberta.

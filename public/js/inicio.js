@@ -132,7 +132,7 @@ async function iniciar() {
   addEventListener('click', () => (ultimoClique = Date.now()), true);
   addEventListener('unhandledrejection', (e) => {
     registrar('erro', 'js.erro', { det: descreverRejeicao(e), st: 'erro' });
-    if (Date.now() - ultimoClique < 8000) window.toast?.('Algo falhou e esta ação pode não ter sido gravada. Confira e tente de novo.');
+    if (Date.now() - ultimoClique < 8000) window.toast?.('Algo falhou e esta ação pode não ter sido salva. Confira e tente de novo.');
   });
 
   // Navegação e cliques: só o nome da tela e os atributos de ação, nunca o texto do usuário.

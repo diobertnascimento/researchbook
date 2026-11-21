@@ -242,7 +242,7 @@ export function criarArgumentosUI({ bib, dados, fichUI, registrar }) {
         await navigator.clipboard.writeText(tr.texto);
         toast('Trecho copiado');
       } catch {
-        toast('Não deu para copiar. Selecione o texto e copie à mão.');
+        toast('Não deu para copiar. Selecione o texto e copie.');
       }
       registrar('ui', 'argumento.copiar_trecho');
     }

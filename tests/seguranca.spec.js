@@ -79,7 +79,7 @@ test.describe('no computador', () => {
 
     await page.getByRole('tab', { name: 'Versões' }).click();
     await expect(page.locator('.vers-lista li')).toHaveCount(1);
-    await expect(page.locator('.vers-lista li')).toContainText('gravada sozinha');
+    await expect(page.locator('.vers-lista li')).toContainText('guardada sozinha');
     // A versão também foi para o Drive, sem ninguém pedir.
     await expect.poll(() => g.caminhos().some((c) => c.startsWith(`escrita/${id}/versoes/`))).toBe(true);
 
@@ -167,7 +167,7 @@ test.describe('no computador', () => {
     });
     await page.goto('/#ajustes/seguranca');
     await page.getByRole('button', { name: 'Escolher a pasta' }).click();
-    await expect(page.locator('#toast')).toContainText(/Cópia gravada na pasta: researchbook-\d{4}-\d{2}-\d{2}\.json/);
+    await expect(page.locator('#toast')).toContainText(/Cópia salva na pasta: researchbook-\d{4}-\d{2}-\d{2}\.json/);
     await expect(page.locator('#sec-seguranca')).toContainText('Pasta “Copias”');
     const gravado = await page.evaluate(async () => {
       const pasta = await (await navigator.storage.getDirectory()).getDirectoryHandle('Copias');

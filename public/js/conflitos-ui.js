@@ -48,8 +48,8 @@ const ROTULOS = {
   fim: 'Fim',
   anotacoes: 'Anotações',
   leiturasPlano: 'Leituras do plano de ensino',
-  paraBuscar: 'Para buscar',
-  arquivada: 'Arquivada',
+  paraBuscar: 'Para adicionar',
+  arquivada: 'Encerrado',
   numero: 'Número',
   data: 'Data',
   tema: 'Tema',
@@ -201,7 +201,7 @@ export function criarConflitosUI({ bib, dados, registrar }) {
         ${difs.map((d) => `<div class="conf-l" role="row"><b role="rowheader">${esc(d.rotulo)}</b><div role="cell" data-lado="Em uso">${celula(d.emUso)}</div><div role="cell" data-lado="Guardada">${celula(d.guardada)}</div></div>`).join('')}
       </div>`
           : !difs.length
-            ? '<p class="conf-nota">As duas versões têm o mesmo conteúdo; só a hora de gravação mudou. Pode manter a em uso.</p>'
+            ? '<p class="conf-nota">As duas versões têm o mesmo conteúdo; só a hora em que foram salvas mudou. Pode manter a em uso.</p>'
             : ''
       }
       <div class="conf-acoes"><button class="btn prim" data-conf-manter="${esc(c.id)}">Manter a versão em uso</button><button class="btn" data-conf-usar="${esc(c.id)}">${usar}</button></div>

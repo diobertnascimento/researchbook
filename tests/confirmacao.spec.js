@@ -23,7 +23,7 @@ test.describe('no computador', () => {
     await expect(page.locator('#status-drive')).toContainText('Sincronizado às');
     await page.evaluate(() => window.rb.dados.salvar('argumentos', { id: 'a1', tese: 'A adesão vale mais que a quilometragem.' }));
     expect((await estado(page)).pendente).toBe(true);
-    await expect(page.locator('#status-drive')).toContainText('Gravado neste aparelho. Enviando ao Drive…');
+    await expect(page.locator('#status-drive')).toContainText('Salvo neste aparelho. Enviando ao Drive…');
     // Sobe sozinha, sem ninguém pedir.
     await expect.poll(async () => (await estado(page)).pendente, { timeout: 10_000 }).toBe(false);
     await expect(page.locator('#status-drive')).toContainText('Sincronizado às');
@@ -38,7 +38,7 @@ test.describe('no computador', () => {
       await window.rb.dados.salvar('argumentos', { id: 'a1', tese: 'Primeira.' });
       await window.rb.dados.salvar('argumentos', { id: 'a2', tese: 'Segunda.' });
     });
-    await expect(page.locator('#status-drive')).toContainText('Sem internet: salvo neste aparelho. 2 mudanças sobem quando a conexão voltar.');
+    await expect(page.locator('#status-drive')).toContainText('Sem internet: salvo neste aparelho. 2 mudanças sobem quando a internet voltar.');
     await context.setOffline(false);
     await page.evaluate(() => dispatchEvent(new Event('online')));
     await expect(page.locator('#status-drive')).toContainText('Sincronizado às', { timeout: 10_000 });
@@ -70,7 +70,7 @@ test.describe('no computador', () => {
       document.body.appendChild(b);
     });
     await page.locator('#acao-que-falha').click();
-    await expect(page.locator('#toast')).toContainText('pode não ter sido gravada');
+    await expect(page.locator('#toast')).toContainText('pode não ter sido salva');
   });
 
   test('exportar referências gera um BibTeX de verdade, que o próprio app lê de volta', async ({ page, context }) => {

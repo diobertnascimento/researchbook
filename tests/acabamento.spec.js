@@ -1,7 +1,7 @@
 // Etapa 14: código fora do HTML (CSP sem 'unsafe-inline'), busca real, modelos por tarefa, uso e custo,
 // marca-textos e limpeza das marcas de apagado antigas.
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { googleFalso } from './google-falso.js';
 import { geminiFalso } from './gemini-falso.js';
 
@@ -91,7 +91,7 @@ test('uso e custo vêm dos registros das chamadas; limite avisa em 80%; marca-te
   const { g } = await entrar(page, context);
   await page.evaluate(() => window.rb.ia.testar());
   await page.goto('/#ajustes/custo');
-  await expect(page.locator('#sec-custo .kpis')).toContainText('chamadas no mês');
+  await expect(page.locator('#sec-custo .kpis')).toContainText('pedidos no mês');
   await expect(page.locator('#sec-custo table').first()).toContainText('Testar conexão');
   await page.getByLabel('Limite mensal (US$)').fill('0,0001');
   await page.evaluate(() => window.rb.iaUso.recarregar());
@@ -99,7 +99,7 @@ test('uso e custo vêm dos registros das chamadas; limite avisa em 80%; marca-te
   await page.goto('/#ajustes/custo');
   await expect(page.locator('#sec-custo .aviso')).toContainText('do limite que você definiu');
   await page.goto('/#ajustes/registros');
-  await expect(page.locator('#sec-registros .kpis')).toContainText('1chamadas à IA hoje');
+  await expect(page.locator('#sec-registros .kpis')).toContainText('1pedidos à IA hoje');
   await page.goto('/#ajustes/cores');
   await page.getByLabel('Descrição de Crítica').fill('Onde discordo, com motivo');
   await expect.poll(() => g.ler('ajustes/preferencias.json'), { timeout: 5000 }).toContain('Onde discordo, com motivo');
@@ -130,4 +130,30 @@ test('marcas de apagado com mais de 90 dias saem do aparelho e do Drive; as rece
   expect(noDrive).toEqual(['recente']);
   const reg = await page.evaluate(() => window.rb.registros.lista().filter((e) => e.ev === 'sinc.limpeza').map((e) => e.det));
   expect(reg[0]).toContain('trilhas: 1 marcas de apagado com mais de 90 dias');
+});
+
+// Revisão de textos (v2.25.0): um nome para cada coisa. Os termos abaixo foram aposentados (docs/design-system.md,
+// glossário); se um deles voltar a um texto de tela, este teste diz onde e qual é o nome certo.
+const APOSENTADOS = [
+  [/Reconect(e|ar) ao Google|sessão do Google venceu/i, 'O login do Google venceu. Entre de novo.'],
+  [/quando a conexão voltar|quando houver conexão|Sem conexão para/, 'internet'],
+  [/Ajustes (>|&gt;) (Gemini|Google Agenda)/, 'Em Ajustes, em Conexão com o Gemini'],
+  [/lista para buscar|Marcar para buscar/, 'para adicionar'],
+  [/(Configurar o|Ajustes do|Abrir Ajustes do|Ligue o) Gemini/, 'Conectar o Gemini'],
+  [/Disciplina (salva|apagada|não encontrada)|Projeto arquivado|>Arquivar<|>Desarquivar</, 'projeto, encerrar, reabrir'],
+  [/Grifo tirado|tirado do projeto/, 'apagado'],
+  [/Procur(ar|ando) (pelo|os dados|de novo|nas conversas|no acervo)/, 'buscar'],
+  [/(Marco|Anotação|Cópia) gravad[oa]|Gravando…|gravado sozinho|gravada sozinha/, 'salvar'],
+  [/[nd]o seu acervo|com o seu acervo|pelo acervo/, 'biblioteca'],
+  [/chamadas (à IA|no mês|sem preço)/, 'pedidos'],
+];
+test('escrita: nenhum termo aposentado volta a um texto de tela', () => {
+  const achados = [];
+  for (const f of readdirSync('public/js').filter((n) => n.endsWith('.js'))) {
+    readFileSync(`public/js/${f}`, 'utf8').split('\n').forEach((l, i) => {
+      if (/^\s*(\/\/|\*|\/\*)/.test(l)) return;
+      for (const [re, use] of APOSENTADOS) if (re.test(l)) achados.push(`${f}:${i + 1} ${re} (use: ${use})`);
+    });
+  }
+  expect(achados).toEqual([]);
 });

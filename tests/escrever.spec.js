@@ -243,7 +243,7 @@ test.describe('Pedir, no computador', () => {
     await expect(caixa.locator('li.ok')).toContainText('Lins (2022)');
     await expect(caixa.locator('li.ok')).toContainText('Na biblioteca');
     await expect(caixa.locator('li.fora')).toContainText('Silva (2019)');
-    await expect(caixa.locator('li.fora')).toContainText('Só se cita o que está no acervo');
+    await expect(caixa.locator('li.fora')).toContainText('Só se cita o que está nela');
     await caixa.getByRole('button', { name: 'Fechar' }).click();
     expect(pedidos).toEqual([]);
     expect(await salvo(page, id)).not.toContain('esc-pedido');
@@ -317,7 +317,7 @@ test.describe('figura no texto', () => {
     await expect(fig.locator('.fig-f')).toContainText('Sem fonte');
     await modal.getByLabel('Título').fill('Etapas da coleta');
     await modal.getByLabel('Fonte').fill('Fonte: elaborado pelo autor');
-    await modal.getByRole('button', { name: 'Guardar título e fonte' }).click();
+    await modal.getByRole('button', { name: 'Salvar título e fonte' }).click();
     await expect(fig.locator('.fig-t')).toHaveText('Figura 1 – Etapas da coleta');
     await expect(fig.locator('.fig-f')).toHaveText('Fonte: elaborado pelo autor');
     // A imagem foi reduzida para 1600 px no lado maior.

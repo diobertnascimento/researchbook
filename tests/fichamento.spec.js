@@ -70,7 +70,7 @@ test('pelos grifos e pelo texto completo (perguntas gerais, sem IA): notas com r
 
   // Caminho pelo texto completo, sem IA: 8 perguntas gerais em 5 blocos, respondidas de memória.
   await page.getByRole('button', { name: 'Pelo texto completo' }).click();
-  await expect(page.locator('.fich-comeco')).toContainText('O Gemini não está ligado neste aparelho');
+  await expect(page.locator('.fich-comeco')).toContainText('O Gemini não está conectado neste aparelho');
   await expect(page.getByRole('button', { name: 'Preparar as perguntas com a IA' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Usar perguntas gerais, sem IA' }).click();
   await expect(page.locator('.fich-pontos button')).toHaveCount(8);
@@ -199,7 +199,7 @@ test('corrigir dados da obra a partir do fichamento atualiza a referência', asy
   const { id } = await obraComGrifos(page, context);
   await page.goto(`/#fichamento/${id}`);
   await page.waitForFunction(() => window.rb && window.rb.pronto);
-  await page.getByRole('button', { name: 'Corrigir dados da obra' }).click();
+  await page.getByRole('button', { name: 'Corrigir os dados da obra' }).click();
   await page.locator('#f-local').fill('Belo Horizonte');
   await page.locator('#f-ano').fill('2025');
   await expect(page.locator('#f-ref')).toContainText('Belo Horizonte, v. 12');

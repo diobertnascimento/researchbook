@@ -31,9 +31,9 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
       .split(/\n{2,}/)
       .map((par) => `<p>${par.replace(/\[(A\d+)\]/g, (_, id) => {
         const it = itens.get(id);
-        if (!it) return `<span class="fonte-ia ruim" title="Este id não existe no acervo enviado">${id}?</span>`;
+        if (!it) return `<span class="fonte-ia ruim" title="A IA citou um item que não está na sua biblioteca">${id}?</span>`;
         const ok = conferidas.has(id);
-        return `<button class="fonte-ia ${ok ? '' : 'ruim'}" data-tutor-fonte="${esc(it.leituraId)}|${it.pagina || ''}" title="${ok ? 'Trecho conferido no seu acervo' : 'Trecho não conferido: confira antes de usar'}${it.pagina ? `, p. ${it.pagina}` : ''}">${ok ? '' : '⚠ '}${id}</button>`;
+        return `<button class="fonte-ia ${ok ? '' : 'ruim'}" data-tutor-fonte="${esc(it.leituraId)}|${it.pagina || ''}" title="${ok ? 'Trecho conferido na sua biblioteca' : 'Trecho não conferido: confira antes de usar'}${it.pagina ? `, p. ${it.pagina}` : ''}">${ok ? '' : '⚠ '}${id}</button>`;
       })}</p>`)
       .join('');
   }
@@ -48,8 +48,8 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
     return `<div class="msg tutor"><span class="av">${icone('tutor')}</span><div>
       ${textoComFontes(r.resposta || '', m)}
       ${r.pergunta ? `<p class="pergunta-tutor">${esc(r.pergunta)}</p>` : ''}
-      ${r.fora_do_acervo?.length ? `<div class="fora-acervo"><small>Para buscar (fora do seu acervo, não citar ainda)</small><ul>${r.fora_do_acervo.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
-      ${conf.ok === false ? `<div class="conf-ia" role="note"><b>Conferência:</b> ${conf.problemas.length === 1 ? 'um ponto não bate' : `${conf.problemas.length} pontos não batem`} com o seu acervo. Não use sem conferir.<details><summary>Ver o que não bateu</summary><ul>${conf.problemas.map((p) => `<li>${esc(p)}</li>`).join('')}</ul></details></div>` : ''}
+      ${r.fora_do_acervo?.length ? `<div class="fora-acervo"><small>Para adicionar (fora da sua biblioteca; não cite ainda)</small><ul>${r.fora_do_acervo.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
+      ${conf.ok === false ? `<div class="conf-ia" role="note"><b>Conferência:</b> ${conf.problemas.length === 1 ? 'um ponto não bate' : `${conf.problemas.length} pontos não batem`} com a sua biblioteca. Não use sem conferir.<details><summary>Ver o que não bateu</summary><ul>${conf.problemas.map((p) => `<li>${esc(p)}</li>`).join('')}</ul></details></div>` : ''}
       <div class="fb">${
         m.avaliacao ? `<span class="mute-2">${m.avaliacao === 'util' ? 'Marcada como útil' : 'Marcada como não ajudou'}</span>` : `<button data-tutor-avaliar="util" data-i="${i}" data-id="${esc(leituraId)}">Útil</button><button data-tutor-avaliar="nao" data-i="${i}" data-id="${esc(leituraId)}">Não ajudou</button>`
       }</div>
@@ -59,16 +59,16 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
   function corpoHTML(leituraId) {
     const e = de(leituraId);
     if (!ia.ajustes.modo()) {
-      return `<div class="tutor-vazio"><p>Para conversar com o tutor, conecte o Gemini.</p><a class="btn prim" href="#ajustes" data-ir-gemini>Configurar o Gemini</a></div>`;
+      return `<div class="tutor-vazio"><p>Para conversar com o tutor, conecte o Gemini.</p><a class="btn prim" href="#ajustes" data-ir-gemini>Conectar o Gemini</a></div>`;
     }
     if (e.mensagens === null) return '<p class="mute">Abrindo a conversa…</p>';
     const lista = e.mensagens.map((m, i) => msgHTML(m, i, leituraId)).join('');
     const vazio = !e.mensagens.length
-      ? `<div class="tutor-vazio"><p>Selecione um trecho e escolha <b>Perguntar ao tutor</b>, ou escreva uma pergunta sobre o texto.</p><details class="como"><summary>Como o tutor funciona?</summary><p>Ele pergunta mais do que responde e só cita o que está no seu acervo: o texto desta obra, os seus grifos e fichamentos. Cada fonte é conferida pelo app; o que não bater aparece marcado. A conversa fica guardada no seu Drive.</p></details></div>`
+      ? `<div class="tutor-vazio"><p>Selecione um trecho e escolha <b>Perguntar ao tutor</b>, ou escreva uma pergunta sobre o texto.</p><details class="como"><summary>Como o tutor funciona?</summary><p>Ele pergunta mais do que responde e só cita o que está na sua biblioteca: o texto desta obra, os seus grifos e fichamentos. Cada fonte é conferida pelo app; o que não bater aparece marcado. A conversa fica guardada no seu Drive.</p></details></div>`
       : '';
     const desde = desdeDe(`tutor:${leituraId}`, !!e.pensando);
     const pensando = e.pensando ? `<div class="msg tutor pensando" role="status"><span class="av">${icone('tutor')}</span><div><p>${pensandoHTML('Pensando', desde, { tarefa: 'tutor' })}</p><button class="btn fant" data-tutor-cancelar="${esc(leituraId)}">Parar</button></div></div>` : '';
-    const erro = e.erro ? `<div class="erro-ia" role="alert"><p>${esc(e.erro.mensagem)}</p>${e.erro.acao ? `<a class="btn" href="#ajustes" data-ir-gemini>Abrir Ajustes do Gemini</a>` : ''}</div>` : '';
+    const erro = e.erro ? `<div class="erro-ia" role="alert"><p>${esc(e.erro.mensagem)}</p>${e.erro.acao ? `<a class="btn" href="#ajustes" data-ir-gemini>Conectar o Gemini</a>` : ''}</div>` : '';
     return vazio + lista + pensando + erro;
   }
 

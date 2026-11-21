@@ -192,6 +192,14 @@ Baseada em NN/g, Apple HIG e Microsoft Writing Style Guide, adaptada ao portugu�
 7. **Sem jargão técnico fora de Ajustes:** "área temporária do Gemini" em vez de "Files API"; "login Google" em vez de "OAuth".
 8. **Frases curtas e diretas, na segunda pessoa (você).** Ajuda de campo com uma frase.
 9. **Números e datas no padrão brasileiro:** "14 nov.", "19h", "1.234 palavras", "US$ 0,52".
+10. **O app não diz "eu".** Quem fala em primeira pessoa é a IA, na conversa. O app diz "o app" ou põe a coisa como sujeito: "O DOI estava no PDF", não "Encontrei o DOI no PDF".
+11. **O que é do autor é "seu".** "Sua anotação", "seus grifos", também em botões e rótulos. Nunca "meu".
+12. **"A IA" nas telas de trabalho, "Gemini" em Ajustes e nos erros de conexão.** Tutor e Copilot quando a função importa.
+13. **Erro não mostra código.** O código de resposta fica em Ajustes, em Registros: "O Google Agenda não respondeu como esperado. Tente de novo em instantes."
+14. **Confirmação curta não leva ponto; frase com verbo leva.** "Trilha criada" e "Escolha o dia e a hora."
+15. **Outra tela é citada pelo nome exato que ela tem:** "Em Ajustes, em Conexão com o Gemini", não "Ajustes > Gemini".
+
+As regras 10 a 15 e a segunda parte do glossário vêm da revisão de textos de 21/11/2026 (inventário de 2.473 textos, benchmark em NN/g, Google Material, Apple, Microsoft, Mailchimp e gov.br). `tests/acabamento.spec.js` lê `public/js` e recusa os termos aposentados.
 
 ### Glossário
 
@@ -206,7 +214,21 @@ Baseada em NN/g, Apple HIG e Microsoft Writing Style Guide, adaptada ao portugu�
 | aula | encontro (na disciplina) | |
 | Copilot / Tutor | IA, assistente | Quando a função importa; "IA" para o conjunto |
 | Ajustes | Configurações | |
-| Sincronizado | Salvo na nuvem | Status do Drive |
+| Sincronizado | Salvo na nuvem, Em dia | Status do Drive |
+| biblioteca | acervo | O conjunto das obras. Vale também para o que a IA pode citar |
+| projeto | disciplina | O que o menu Projetos guarda. "Disciplina" só ao explicar o que é um projeto |
+| encerrar, reabrir (projeto) | arquivar, desarquivar | A lista se chama "Projetos encerrados" |
+| salvar | gravar | "Gravação" fica só para áudio. "Guardar" quando a coisa vai para um lugar: memória, cofre, versão, Drive |
+| buscar | procurar | Na busca do app e na busca de dados da obra |
+| para adicionar | para buscar | A lista das obras que faltam na biblioteca |
+| apagar | tirar, remover | Apagar manda para a lixeira. "Tirar" só quando a coisa sai de um lugar e continua existindo |
+| internet | conexão | "Sem internet", "quando a internet voltar" |
+| entrar, login | sessão, reconectar | "O login do Google venceu. Entre de novo." |
+| conectar o Gemini | ligar, configurar | Um só nome para o botão que leva a Ajustes |
+| começar | iniciar | "Não começada" |
+| resultado | candidato | Na busca de DOI |
+| pedido à IA | chamada, prompt | |
+| selecione | clique, toque | Vale para computador e celular. "Toque" só nas instruções do iPhone |
 
 ## Como mudar este sistema
 

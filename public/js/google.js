@@ -139,7 +139,7 @@ export async function concluirRetorno({ registrar }) {
     info = await r.json();
     if (!r.ok) return falha('token', 'O Google não confirmou o login. Entre de novo.', info.error_description || r.status);
   } catch (e) {
-    return falha('rede', 'Sem conexão para confirmar o login. Confira a internet e tente de novo.', e.message);
+    return falha('rede', 'Sem internet para confirmar o login. Confira e tente de novo.', e.message);
   }
   if (info.aud !== GOOGLE_CLIENT_ID) return falha('aud', 'Este login não foi emitido para o researchbook. Entre de novo.', 'token de outro app');
   if (!(info.scope || '').split(' ').includes(ESCOPO_DRIVE)) {

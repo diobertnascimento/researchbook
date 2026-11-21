@@ -45,8 +45,8 @@ export function criarSincronizacaoUI({ estado, aparelhos, idAparelho }) {
     if (!pronto) atualizar();
     const e = estado() || { fase: 'desconectado' };
     const item = (n, v, obs) => `<div class="ap-it"><span>${n}</span><b>${v}</b>${obs ? `<small>${obs}</small>` : ''}</div>`;
-    const agora = { ok: e.pendente ? 'Enviando ao Drive…' : 'Em dia', sincronizando: 'Sincronizando…', parado: 'Sincronizando…', offline: 'Sem internet', desconectado: 'Sessão do Google vencida', erro: 'Não deu para sincronizar' }[e.fase] || 'Sem login';
-    const obsAgora = e.fase === 'ok' ? `última sincronização ${quandoFoi(e.ultima)}` : e.fase === 'desconectado' ? 'toque em Reconectar ao Google, no estado da sincronização' : e.fase === 'offline' ? 'sobe sozinho quando a conexão voltar' : e.fase === 'erro' ? esc(e.erro || '') : '';
+    const agora = { ok: e.pendente ? 'Enviando ao Drive…' : 'Sincronizado', sincronizando: 'Sincronizando…', parado: 'Sincronizando…', offline: 'Sem internet', desconectado: 'Login do Google vencido', erro: 'Não deu para sincronizar' }[e.fase] || 'Sem login';
+    const obsAgora = e.fase === 'ok' ? `última sincronização ${quandoFoi(e.ultima)}` : e.fase === 'desconectado' ? 'selecione “Entrar de novo”, no estado da sincronização' : e.fase === 'offline' ? 'sobe sozinho quando a internet voltar' : e.fase === 'erro' ? esc(e.erro || '') : '';
     const n = e.pendentes || 0;
     return `<section id="sec-sincronizacao">
     <h2>Sincronização</h2>

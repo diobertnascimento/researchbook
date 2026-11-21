@@ -64,7 +64,7 @@ test.describe('no computador', () => {
     await expect(lista.nth(1)).toContainText('iPhone ou iPad');
     await expect(lista.nth(1)).toContainText('há 3 dias');
     await expect(lista.nth(1)).toContainText('Pode ter mudanças paradas nele');
-    await expect(page.locator('#sec-sincronizacao')).toContainText('Em dia');
+    await expect(page.locator('#sec-sincronizacao')).toContainText('Sincronizado');
     await page.getByRole('button', { name: 'Sincronizar agora' }).click();
     await expect(page.locator('#toast')).toContainText('Sincronizado com o Drive');
   });

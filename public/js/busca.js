@@ -36,7 +36,7 @@ export function criarBusca({ rb }) {
     for (const a of rb.argUI?.todos() || []) its.push({ n: a.tese, h: `#argumentos/${enc(a.id)}`, t: 'Argumento' });
     for (const t of rb.trilhasUI?.todas() || []) its.push({ n: t.nome, h: '#trilhas', t: 'Trilha' });
     for (const d of rb.disciplinas?.todas() || []) {
-      its.push({ n: d.nome, h: `#disciplina/${enc(d.id)}`, t: `Disciplina${d.arquivada ? ', arquivada' : ''}`, extra: d.docente || '' });
+      its.push({ n: d.nome, h: `#disciplina/${enc(d.id)}`, t: `Projeto${d.arquivada ? ', encerrado' : ''}`, extra: d.docente || '' });
       for (const a of rb.disciplinas.aulasDe(d.id)) its.push({ n: `Aula ${a.numero}${a.tema ? `: ${a.tema}` : ''}`, h: `#aula/${enc(d.id)}/${enc(a.id)}`, t: d.nome, extra: (a.resumo?.conceitos || []).map((c) => c.nome).join(' ') });
     }
     for (const x of rb.dialogos?.todos() || []) its.push({ n: x.tema, h: '#dialogos', t: `Diálogo, ${x.modo}`, dlg: x.id });

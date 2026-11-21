@@ -138,18 +138,18 @@ export function criarIAUso({ registros, drive, registrar }) {
     const nomeMes = agora.toLocaleDateString('pt-BR', { month: 'long' });
     const pctLimite = limite ? (total / limite) * 100 : null;
     return `<section id="sec-custo"><h2>Uso e custo</h2>
-      <p>Calculado a partir dos registros de cada chamada neste aparelho, com os preços da tabela abaixo. Valores em dólar, como o Google cobra. O limite real de gasto fica no Google AI Studio; o daqui só avisa.</p>
+      <p>Calculado a partir dos registros de cada pedido à IA neste aparelho, com os preços da tabela abaixo. Valores em dólar, como o Google cobra. O limite real de gasto fica no Google AI Studio; o daqui só avisa.</p>
       ${pctLimite != null && pctLimite >= 80 ? `<div class="aviso"><span>!</span><div>O gasto do mês chegou a ${Math.round(pctLimite)}% do limite que você definiu (${usd(limite)}).</div></div>` : ''}
       <div class="kpis">
-        <div><b>${usd(total)}</b><span>gasto em ${nomeMes} até hoje${brl(total, cot)}</span>${semPreco ? `<small>${semPreco} chamadas sem preço na tabela</small>` : ''}</div>
+        <div><b>${usd(total)}</b><span>gasto em ${nomeMes} até hoje${brl(total, cot)}</span>${semPreco ? `<small>${semPreco} pedidos sem preço na tabela</small>` : ''}</div>
         <div><b>${usd(projecao)}</b><span>projeção para ${nomeMes}</span></div>
-        <div><b>${doMes.length.toLocaleString('pt-BR')}</b><span>chamadas no mês</span><small>${(tokens / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil tokens</small></div>
+        <div><b>${doMes.length.toLocaleString('pt-BR')}</b><span>pedidos no mês</span><small>${(tokens / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil tokens</small></div>
         <div><b>${limite ? usd(limite) : 'sem limite'}</b><span>limite mensal daqui</span>${limite ? `<small>aviso em 80%</small>` : ''}</div>
       </div>
       ${doMes.length ? `<div class="barras-dia" role="img" aria-label="Custo por dia em ${nomeMes}">${porDia.map((v, i) => `<div class="${i + 1 > dia ? 'fut' : ''}" title="${i + 1}: ${usd(v)}"><i style="height:${(v / max) * 100}%"></i><span>${i + 1}</span></div>`).join('')}</div>
       <div class="tab-wrap"><table class="tab-ia"><thead><tr><th>Tarefa</th><th>Modelo</th><th class="num">Usos</th><th class="num">Tokens</th><th class="num">Custo no mês</th></tr></thead><tbody>
         ${linhas.map(([k, x]) => `<tr><td>${esc(NOMES_TAREFA[k] || k)}${x.reserva ? `<small>${x.reserva} pelo modelo reserva</small>` : ''}</td><td class="mute">${[...x.modelos].map(esc).join(', ')}</td><td class="num">${x.usos}</td><td class="num">${(x.tokens / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil</td><td class="num">${usd(x.custo)}</td></tr>`).join('')}
-      </tbody></table></div>` : '<p class="mute">Nenhuma chamada ao Gemini neste mês, neste aparelho.</p>'}
+      </tbody></table></div>` : '<p class="mute">Nenhum pedido ao Gemini neste mês, neste aparelho.</p>'}
       <div class="mt-4 aj-linha">
         <div class="campo"><label for="ia-limite">Limite mensal (US$)</label><input id="ia-limite" inputmode="decimal" data-ia-limite value="${limite != null ? String(limite).replace('.', ',') : ''}" placeholder="Ex.: 25,00"></div>
         <div class="campo"><label for="ia-cotacao">Cotação do dólar para mostrar em reais <span>você define</span></label><input id="ia-cotacao" inputmode="decimal" data-ia-cotacao value="${cot != null ? String(cot).replace('.', ',') : ''}" placeholder="Ex.: 5,40"></div>

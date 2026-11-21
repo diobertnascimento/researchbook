@@ -178,7 +178,7 @@ test.describe('no computador', () => {
 
     // Apagar manda para a lixeira (sem prazo para sair), com desfazer.
     await nota.getByRole('button', { name: 'Apagar Combinados do grupo' }).click();
-    await expect(page.locator('#toast')).toContainText('Nota apagada. Fica na lixeira');
+    await expect(page.locator('#toast')).toContainText('Nota apagada. Está na lixeira');
     await expect(itens).toHaveCount(1);
     expect(await page.evaluate(() => window.rb.dados.lixeira().then((l) => l.map((x) => `${x.colecao}:${x.item.titulo}`)))).toEqual(['materiais:Combinados do grupo']);
     await page.locator('#toast button', { hasText: 'Desfazer' }).click();
@@ -244,7 +244,7 @@ test.describe('no computador', () => {
 
     // Tirar do projeto manda para a lixeira, com desfazer.
     await foto.getByRole('button', { name: 'Apagar quadro-da-aula.png' }).click();
-    await expect(page.locator('#toast')).toContainText('Arquivo tirado do projeto. Fica na lixeira');
+    await expect(page.locator('#toast')).toContainText('Arquivo apagado. Está na lixeira');
     await expect(itens).toHaveCount(2);
     await page.locator('#toast button', { hasText: 'Desfazer' }).click();
     await expect(itens).toHaveCount(3);

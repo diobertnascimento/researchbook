@@ -42,7 +42,7 @@ test.describe('no computador', () => {
     await conversa(page, ['Vou usar a adesão das equipes como critério de avaliação do artefato.']);
     await page.goto('/#memoria');
     await expect(page.locator('.sug h3')).toHaveText('A IA quer lembrar (0)');
-    await page.getByRole('button', { name: 'Procurar nas conversas' }).click();
+    await page.getByRole('button', { name: 'Buscar nas conversas' }).click();
     await expect(page.locator('.mem-aviso')).toHaveText('1 proposta nova.');
 
     // O pedido: tarefa da memória, modelo rápido, conversa marcada como material.
@@ -75,7 +75,7 @@ test.describe('no computador', () => {
 
     // A conversa já lida não é lida de novo.
     const n = gem.pedidos.length;
-    await page.getByRole('button', { name: 'Procurar nas conversas' }).click();
+    await page.getByRole('button', { name: 'Buscar nas conversas' }).click();
     await expect(page.locator('.mem-aviso')).toHaveText('Nenhuma conversa com mensagens novas.');
     expect(gem.pedidos.length).toBe(n);
 
@@ -102,7 +102,7 @@ test.describe('no computador', () => {
     await entrar(page, context);
     await conversa(page, ['Prefiro exemplos antes da definição quando o conceito é novo.']);
     await page.goto('/#memoria');
-    await page.getByRole('button', { name: 'Procurar nas conversas' }).click();
+    await page.getByRole('button', { name: 'Buscar nas conversas' }).click();
     await expect(page.locator('.sug-it')).toHaveCount(1);
 
     await page.locator('.sug-it').getByRole('button', { name: 'Descartar' }).click();
@@ -136,7 +136,7 @@ test.describe('no computador', () => {
     await page.evaluate(() => window.rb.memoriaUI.carregar());
     await conversa(page, ['Mudei de ideia: o critério vai ser a adesão das equipes.']);
     await page.goto('/#memoria');
-    await page.getByRole('button', { name: 'Procurar nas conversas' }).click();
+    await page.getByRole('button', { name: 'Buscar nas conversas' }).click();
     await expect(page.locator('.sug-it .subst')).toHaveText('Substitui: Critério de avaliação: economia de rota.');
     await page.getByRole('button', { name: 'Guardar', exact: true }).click();
     const itens = page.locator('.mem-cat').filter({ hasText: 'Decisões' }).locator('.mem-it');
@@ -197,7 +197,7 @@ test('no celular, a tela de memória cabe e as ações aparecem', async ({ page,
   await entrar(page, context);
   await conversa(page, ['Vou usar a adesão das equipes como critério de avaliação do artefato, comparando com a economia simulada das rotas.']);
   await page.goto('/#memoria');
-  await page.getByRole('button', { name: 'Procurar nas conversas' }).click();
+  await page.getByRole('button', { name: 'Buscar nas conversas' }).click();
   await expect(page.locator('.sug-it')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Guardar', exact: true })).toBeVisible();
   const larg = await page.evaluate(() => document.documentElement.scrollWidth);

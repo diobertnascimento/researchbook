@@ -59,7 +59,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
   const O_QUE_FAZER = {
     api: 'No Google Cloud, abra o projeto do researchbook, ative a Generative Language API e volte aqui para testar.',
     permissao: 'Selecione "Conectar o Gemini" e aceite a permissão que o Google mostrar.',
-    sessao: 'Reconecte ao Google e teste de novo.',
+    sessao: 'Entre de novo com o Google e repita o teste.',
     projeto: 'Cole o ID do projeto do Google Cloud em que o Gemini é cobrado e salve.',
     negado: 'Confira se o ID do projeto está certo e se, no Google AI Studio, a cobrança está ligada nesse projeto.',
     limite: 'No Google AI Studio, aumente o limite de gasto do mês ou espere o mês virar.',

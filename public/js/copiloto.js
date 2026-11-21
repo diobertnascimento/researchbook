@@ -65,7 +65,7 @@ export function criarCopiloto({ ia, bib, fichUI, historico, registrar }) {
 
   const briefing = (t) => (cod) => {
     const a = medirAutoria(t);
-    return `<briefing>\n<material-${cod}>\nTítulo: ${t.titulo}\nTipo: ${t.tipo}${t.projeto ? `\nDisciplina ou projeto: ${t.projeto}` : ''}${t.limite ? `\nLimite: ${t.limite} palavras` : ''}${t.entrega ? `\nEntrega: ${t.entrega}` : ''}\nEnunciado: ${t.enunciado || '(não informado)'}\nCritérios: ${t.criterios || '(não informados)'}\nTese de trabalho (palavras do autor): ${t.tese || '(ainda não definida)'}\nTeto da IA: ${t.teto}%. Participação atual: ${a.participacao}%.\n</material-${cod}>\n</briefing>`;
+    return `<briefing>\n<material-${cod}>\nTítulo: ${t.titulo}\nTipo: ${t.tipo}${t.projeto ? `\nProjeto: ${t.projeto}` : ''}${t.limite ? `\nLimite: ${t.limite} palavras` : ''}${t.entrega ? `\nEntrega: ${t.entrega}` : ''}\nEnunciado: ${t.enunciado || '(não informado)'}\nCritérios: ${t.criterios || '(não informados)'}\nTese de trabalho (palavras do autor): ${t.tese || '(ainda não definida)'}\nTeto da IA: ${t.teto}%. Participação atual: ${a.participacao}%.\n</material-${cod}>\n</briefing>`;
   };
   const estrutura = (t) => (cod) => (t.estrutura?.length || t.secoes?.length ? `<estrutura>\n<material-${cod}>\n${(t.secoes?.length ? t.secoes : t.estrutura).map((s, i) => `${i + 1}. ${s.titulo}${s.objetivo ? ` — ${s.objetivo}` : ''}`).join('\n')}\n</material-${cod}>\n</estrutura>` : '');
   const entrevista = (t) => (cod) => (t.entrevista?.length ? `<entrevista>\n<material-${cod}>\n${t.entrevista.map((q) => `P: ${q.pergunta}\nR: ${q.resposta || '(sem resposta)'}`).join('\n')}\n</material-${cod}>\n</entrevista>` : '');
