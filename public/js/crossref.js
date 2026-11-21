@@ -77,12 +77,18 @@ export async function buscarDOI(entrada, { registrar } = {}) {
  * Procura obras no Crossref a partir dos dados da ficha (título, autores, ano), para achar o DOI que falta.
  * Só os dados bibliográficos vão no pedido. Devolve { candidatos: [ficha do Crossref] } ou { erro }.
  */
+// Campos pedidos na procura. O Crossref recusa o pedido inteiro (erro 400) se um nome daqui não estiver
+// na lista de campos que ele aceita em "select"; "language" não está nela (era a causa da procura que
+// nunca achava nada, corrigida na v2.15.1). Um teste confere esta lista contra a do Crossref.
+export const CAMPOS_PROCURA = ['DOI', 'title', 'subtitle', 'author', 'editor', 'issued', 'container-title', 'type', 'volume', 'issue', 'page', 'publisher', 'publisher-location', 'URL'];
+
 export async function procurarPorDados(f, { registrar, linhas = 5 } = {}) {
   const q = [f.titulo, f.subtitulo, (f.autores || []).slice(0, 2).map((a) => a.sobrenome).join(' '), f.ano].filter(Boolean).join(' ').slice(0, 300);
   if (!q.trim()) return { candidatos: [] };
-  const url = `https://api.crossref.org/works?rows=${linhas}&query.bibliographic=${encodeURIComponent(q)}&select=DOI,title,subtitle,author,editor,issued,container-title,type,volume,issue,page,publisher,publisher-location,URL,language`;
+  const base = `https://api.crossref.org/works?rows=${linhas}&query.bibliographic=${encodeURIComponent(q)}`;
+  let url = `${base}&select=${CAMPOS_PROCURA.join(',')}`;
   const inicio = performance.now();
-  for (let tentativa = 1; tentativa <= 2; tentativa++) {
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
     let r;
     try {
       r = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -92,6 +98,12 @@ export async function procurarPorDados(f, { registrar, linhas = 5 } = {}) {
     }
     if (r.status === 429 && tentativa === 1) {
       await new Promise((ok) => setTimeout(ok, 2000));
+      continue;
+    }
+    // Pedido recusado por causa dos campos: tenta uma vez sem escolher campos (resposta maior, mesmo resultado).
+    if (r.status === 400 && url !== base) {
+      registrar?.('erro', 'crossref.procurar', { det: '400 com select; nova tentativa sem', st: 'aviso' });
+      url = base;
       continue;
     }
     const dur = Math.round(performance.now() - inicio);

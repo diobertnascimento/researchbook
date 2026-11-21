@@ -2,6 +2,13 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.15.1 (20/11/2026)
+Correção: a procura do DOI pelo título volta a funcionar.
+- "Procurar DOIs que faltam" rodava e não gravava nada. O pedido que o app fazia ao Crossref incluía um campo que o Crossref não aceita, e por isso ele recusava o pedido inteiro; a obra voltava para a fila sem resultado. Buscar por um DOI digitado e "Atualizar os dados pelo DOI" não tinham o problema.
+- O pedido agora só usa campos aceitos. Se um dia o Crossref recusar de novo, o app tenta mais uma vez sem escolher campos, em vez de parar.
+- Os testes passaram a usar um Crossref simulado que recusa pedidos como o de verdade recusa. Com ele, os testes antigos teriam acusado o erro.
+- Não conferido daqui com o Crossref de verdade: o ambiente onde o código é escrito não alcança o Crossref. Vale testar no Acervo com uma obra sem DOI.
+
 ## 2.15.0 (19/11/2026)
 Endereço próprio: researchbook.com.br.
 - O app passa a ter um endereço só dele. O antigo era dividido com qualquer outro site publicado pela mesma conta do GitHub, que por isso enxergaria o que o researchbook guarda no navegador.
