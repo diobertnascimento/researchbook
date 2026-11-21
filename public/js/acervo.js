@@ -126,3 +126,31 @@ export function nomeDaOrigem(o, l) {
   if (typeof o === 'string' && o.startsWith('importado:')) return `Importado: ${o.slice(10)}`;
   return l?.importadaDe ? `Importado: ${l.importadaDe}` : 'Sem registro de origem';
 }
+
+/* ---------- Resultados lado a lado ---------- */
+
+const chave = (v) => semAcento(v).replace(/[^a-z0-9]+/g, ' ').trim();
+const nomes = (l) => (l?.autores || []).map((a) => [a.sobrenome, a.prenomes].filter(Boolean).join(', ')).join('; ');
+const onde = (l) => [l?.veiculo || l?.editora, l?.volume ? `v. ${l.volume}` : '', l?.numero ? `n. ${l.numero}` : '', l?.paginas ? `p. ${l.paginas}` : ''].filter(Boolean).join(', ');
+const sobrenomes = (l) => (l?.autores || []).map((a) => chave(a.sobrenome)).join(' ');
+
+/**
+ * Monta a comparação entre a obra e até dois resultados da busca, dado por dado.
+ * Cada célula de resultado diz se difere do que está na obra (só quando a obra tem aquele dado):
+ * é o que a tela põe em negrito. Autores comparam pelos sobrenomes, porque as bases escrevem os prenomes
+ * de jeitos diferentes.
+ */
+export function comparar(obra, candidatos) {
+  const cs = candidatos.filter(Boolean).slice(0, 2);
+  const linha = (rotulo, valor, igual = (a, b) => chave(a) === chave(b)) => {
+    const meu = valor(obra);
+    return { rotulo, obra: meu, celulas: cs.map((c) => ({ valor: valor(c), difere: !!meu && !!valor(c) && !igual(meu, valor(c), c) })) };
+  };
+  return [
+    linha('Título', (l) => [l?.titulo, l?.subtitulo].filter(Boolean).join(': ')),
+    linha('Autores', nomes, (a, b, c) => sobrenomes(obra) === sobrenomes(c)),
+    linha('Ano', (l) => (l?.ano ? String(l.ano) : '')),
+    linha('Onde saiu', onde),
+    linha('DOI', (l) => l?.doi || ''),
+  ];
+}

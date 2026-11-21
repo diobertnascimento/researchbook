@@ -3,7 +3,7 @@
 import { ouvir } from './ui.js';
 import { autorCurto, referencia, referenciaTexto, citacao } from './abnt.js';
 import { chaveCand } from './organizar.js';
-import { retrato, filtrar, faltas, camposEmFalta, fraseDaReferencia, esperaDOI, nomeDaOrigem, CAMPOS_REF, FILTROS, ORDENS } from './acervo.js';
+import { retrato, filtrar, faltas, comparar, camposEmFalta, fraseDaReferencia, esperaDOI, nomeDaOrigem, CAMPOS_REF, FILTROS, ORDENS } from './acervo.js';
 
 /* global I, toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -132,22 +132,29 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
 
   /* ---------- Aba Organizar ---------- */
 
+  const NOME_FONTE = { crossref: 'Crossref', openalex: 'OpenAlex' };
+  /** Resultados da busca lado a lado com a obra; o que difere do que está na obra fica em negrito. */
   function cartaoProposta(l) {
     const b = l.doiBusca;
-    const c = b.candidato;
     const [rot, classe] = CONFIANCA[b.confianca] || ['Para conferir', ''];
+    // Ao lado do melhor resultado entra o segundo, quando ele também é parecido o bastante para confundir.
+    const segundo = (b.outros || []).find((o) => (o.pontos ?? 0) >= 0.6);
+    const cs = [b.candidato, segundo].filter(Boolean);
+    const resto = (b.outros || []).filter((o) => o !== segundo);
+    const linhas = comparar(l, cs);
+    const cab = cs.map((c, i) => `<th scope="col">Achado no ${NOME_FONTE[c.fonte] || 'Crossref'}${cs.length > 1 && i === 0 ? '<small>O mais parecido com a sua obra</small>' : ''}</th>`).join('');
+    const corpo = linhas
+      .map((r) => `<tr><th scope="row">${r.rotulo}</th><td>${r.obra ? esc(r.obra) : '<span class="ac-vazio">Não está na obra</span>'}</td>${r.celulas.map((c) => `<td${c.difere ? ' class="ac-difere"' : ''}>${c.valor ? esc(c.valor) : `<span class="ac-vazio">${r.rotulo === 'DOI' ? 'Não tem' : 'Não informado'}</span>`}</td>`).join('')}</tr>`)
+      .join('');
+    const botoes = cs.map((c) => `<td><button class="btn ${cs.length === 1 ? 'prim ' : ''}mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(chaveCand(c))}">${cs.length === 1 ? (c.doi ? 'Aceitar este DOI' : 'É esta obra') : `É esta, do ${NOME_FONTE[c.fonte] || 'Crossref'}`}</button></td>`).join('');
     return `<article class="org-item" data-org-obra="${esc(l.id)}">
-      <div class="org-lados">
-        <div><span class="legenda">Na sua biblioteca</span><b>${esc(l.titulo)}</b><small>${esc([autores(l), l.ano, l.veiculo].filter(Boolean).join(', ') || 'Sem autores e ano')}</small></div>
-        <div><span class="legenda">${c.fonte === 'openalex' ? 'No OpenAlex' : 'No Crossref'}</span><b>${esc(c.titulo)}${c.subtitulo ? `: ${esc(c.subtitulo)}` : ''}</b><small>${esc([autores(c), c.ano, c.veiculo || c.editora].filter(Boolean).join(', '))}</small><small class="org-doi">${c.doi ? `DOI ${esc(c.doi)}` : 'Esta obra não tem DOI'}</small></div>
-      </div>
-      <p class="org-motivo"><span class="chip ${classe}">${rot}</span> ${esc(b.motivo || '')}</p>
-      <div class="linha-acoes">
-        <button class="btn prim mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(chaveCand(c))}">${c.doi ? 'Aceitar este DOI' : 'É esta obra'}</button>
-        <button class="btn mini" data-org-recusar="${esc(l.id)}" data-doi="${esc(chaveCand(c))}">Não é esta</button>${org.iaLigada() && l.doiBusca.confianca !== 'ia' ? `<button class="btn fant mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}
+      <p class="org-motivo"><span class="chip ${classe}">${rot}</span> ${esc(b.motivo || '')} ${cs.length > 1 ? 'Dois resultados parecidos: qual é a sua obra?' : ''} O que está em negrito é diferente do que está na sua obra.</p>
+      <div class="ac-rolar"><table class="ac-comp ac-comp-${cs.length}"><thead><tr><th scope="col"><span class="sr">Dado</span></th><th scope="col">Na sua obra</th>${cab}</tr></thead>
+        <tbody>${corpo}<tr class="ac-comp-acoes"><th scope="row"><span class="sr">Escolher</span></th><td><button class="lnk m-0" data-org-nenhuma="${esc(l.id)}" data-chaves="${esc(cs.map(chaveCand).join('|'))}">${cs.length > 1 ? 'Nenhuma das duas' : 'Não é esta'}</button></td>${botoes}</tr></tbody></table></div>
+      <div class="linha-acoes">${org.iaLigada() && b.confianca !== 'ia' ? `<button class="btn fant mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}
         ${
-          b.outros?.length
-            ? `<details class="org-outros"><summary>Outros candidatos (${b.outros.length})</summary>${b.outros
+          resto.length
+            ? `<details class="org-outros"><summary>Outros resultados (${resto.length})</summary>${resto
                 .map((o) => `<div class="org-cand"><span><b>${esc(o.titulo)}</b><small>${esc([autores(o), o.ano, o.veiculo].filter(Boolean).join(', '))}. ${o.doi ? `DOI ${esc(o.doi)}` : 'Sem DOI'}, ${o.fonte === 'openalex' ? 'no OpenAlex' : 'no Crossref'}</small></span><button class="btn mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(chaveCand(o))}">É esta</button></div>`)
                 .join('')}</details>`
             : ''
@@ -266,6 +273,26 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     </section>`;
   }
 
+  /* ---------- Andamento da busca: barra com número e porcentagem, e as etapas da obra de agora ---------- */
+  const ETAPAS_BUSCA = [['pdf', 'Ler o PDF'], ['doi', 'Procurar pelo DOI'], ['titulo', 'Procurar pelo título'], ['conferir', 'Conferir']];
+  function etapasDaBusca(st) {
+    return `<ol class="etapas" aria-label="Etapas da busca desta obra">${ETAPAS_BUSCA.map(([k, nome]) => {
+      const estado = st.etapa === k ? 'agora' : st.feitas?.[k] || 'espera';
+      const sr = { agora: 'em andamento', feito: 'feito', pulado: 'não foi preciso', espera: 'a fazer' }[estado];
+      return `<li class="${estado}"${estado === 'agora' ? ' aria-current="step"' : ''}><span class="etapa-sinal" aria-hidden="true"></span><span>${nome}<span class="sr">, ${sr}</span></span></li>`;
+    }).join('')}</ol>`;
+  }
+  function andamentoBusca(st, { soEtapas = false } = {}) {
+    const pct = st.total ? Math.round((st.feitos / st.total) * 100) : 0;
+    const cab = soEtapas
+      ? ''
+      : `<div class="andamento-cab"><b>Procurando os dados: ${st.feitos} de ${st.total}</b><span class="andamento-pct">${pct}%</span></div>
+        <div class="barra" role="progressbar" aria-label="Andamento da busca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>`;
+    return `<div class="bloco org-andamento" id="acervo-andamento" role="status" aria-live="polite">${cab}
+      ${st.atual ? `<p class="meta mt-2 mb-0">${esc(st.atual)}</p>` : ''}${etapasDaBusca(st)}
+      ${soEtapas ? '' : '<p class="meta mb-0">O que é achado é gravado na hora. Você pode sair desta página: a busca continua.</p>'}</div>`;
+  }
+
   /* ---------- Página de uma obra ---------- */
   const ROT_VEICULO = { artigo: 'Revista', capitulo: 'Livro', anais: 'Evento', livro: 'Coleção', dissertacao: 'Programa', tese: 'Programa' };
   const valorDe = (l, k) => {
@@ -288,7 +315,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const buscavel = f.ref.length > 0 || f.doi;
     const semAchar = !l.doi && ['sem', 'recusada'].includes(l.doiBusca?.status);
     const painelObra = ocupado
-      ? `<section class="proximo ac-painel" role="status" aria-live="polite"><h2 class="prox-tit">Procurando os dados</h2><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><span>${l.doi ? 'Conferindo no Crossref pelo DOI…' : `Procurando por título, autor e ano${org.fontesLigadas() ? ' no Crossref e no OpenAlex' : ' no Crossref'}…`}</span></div></section>`
+      ? `<section class="proximo ac-painel" aria-labelledby="obra-busca-t"><h2 class="prox-tit" id="obra-busca-t">Procurando os dados</h2>${st.rodando ? andamentoBusca(st, { soEtapas: true }) : '<div class="linha-acoes" role="status"><span class="giro" aria-hidden="true"></span><span>Conferindo no Crossref pelo DOI…</span></div>'}</section>`
       : prop
         ? ''
         : itens.length
@@ -347,9 +374,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const r = retrato(bib.leituras(), reps);
     const topo = `<div class="topo"><div><h1>Acervo</h1><p>${r.total ? `${plural(r.total, 'obra', 'obras')}. ${r.contagem.falta ? `${plural(r.completas, 'completa', 'completas')}, ${r.contagem.falta} com algo faltando.` : 'Todas completas.'}` : 'A central das suas obras: artigos, livros e capítulos, com o PDF, os dados da referência e o DOI de cada um.'}</p></div>
       <div class="acoes"><button class="btn" data-org-importar>${icone('upload')}Adicionar obras</button></div></div>`;
-    const andamento = st.rodando
-      ? `<div class="bloco org-andamento" role="status" aria-live="polite"><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><b>Procurando os dados: ${st.feitos} de ${st.total}</b></div>${st.atual ? `<p class="meta mt-2">${esc(st.atual)}</p>` : ''}<div class="barra mb-0"><i style="width:${st.total ? Math.round((st.feitos / st.total) * 100) : 0}%"></i></div></div>`
-      : '';
+    const andamento = st.rodando ? andamentoBusca(st) : '';
     const avisoIA = st.avisoIA ? `<div class="aviso"><span>ⓘ</span><div>A IA não respondeu (${esc(st.avisoIA)}). A procura continuou só pelo Crossref. <a href="#ajustes">Abrir Ajustes do Gemini</a></div></div>` : '';
     const ROT = { subtitulo: 'subtítulo', ano: 'ano', veiculo: 'revista', volume: 'volume', numero: 'número', paginas: 'páginas', editora: 'editora', local: 'local', url: 'link', idioma: 'idioma', autores: 'autores' };
     const resultadoAt = at && !at.rodando
@@ -398,7 +423,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-ac-filtro],[data-ac-completar],[data-ac-buscar-uma],[data-ac-copiar],[data-ac-apagar],[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
+    const b = e.target.closest('[data-ac-filtro],[data-ac-completar],[data-ac-buscar-uma],[data-ac-copiar],[data-ac-apagar],[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-nenhuma],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
     if (!b) return;
     const d = b.dataset;
     if (d.acBuscarUma) {
@@ -479,6 +504,12 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       const desfazer = await org.aceitar(d.orgAceitar, d.doi);
       redesenhar();
       if (desfazer) toast(`${String(d.doi).startsWith('openalex:') ? 'Obra aceita' : 'DOI aceito'}. Os campos vazios da obra foram completados.`, async () => { await desfazer(); redesenhar(); });
+      return;
+    }
+    if (d.orgNenhuma) {
+      const desfazer = await org.recusarVarios(d.orgNenhuma, String(d.chaves || '').split('|').filter(Boolean));
+      redesenhar();
+      if (desfazer) toast('Recusado. Esses resultados não voltam a ser sugeridos para esta obra.', async () => { await desfazer(); redesenhar(); });
       return;
     }
     if (d.orgRecusar) {

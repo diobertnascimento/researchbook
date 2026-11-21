@@ -9,7 +9,7 @@
 // Repetidas: mesmo DOI, mesmo PDF ou mesmo título, ano e autor (idênticas); título quase igual (prováveis).
 // Juntar mantém a obra com mais trabalho (grifos, fichamento, etapa), leva o resto para ela e tem desfazer.
 import * as arm from './armazenamento.js';
-import { procurarPorDados, buscarDOI } from './crossref.js';
+import { procurarPorDados, buscarDOI, limparDOI } from './crossref.js';
 import { formatoDe, lerFormato, ligarPDFs, NOMES_FORMATO } from './importar.js';
 import { assinatura } from './biblioteca.js';
 import { faltas } from './acervo.js';
@@ -37,7 +37,15 @@ const NOME_FONTE = { crossref: 'Crossref', openalex: 'OpenAlex' };
 export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerInicio, buscarDOI, fontes = null }) {
   const ouvintes = new Set();
   const avisar = () => ouvintes.forEach((f) => f());
-  let busca = { rodando: false, feitos: 0, total: 0, atual: null, avisoIA: null, avisoFonte: null };
+  // etapa: em que passo está a obra de agora ('pdf', 'doi', 'titulo', 'conferir'); feitas: os passos já concluídos
+  // e pulados dela, para a tela mostrar o caminho (acervo: busca passo a passo, v2.18.0).
+  let busca = { rodando: false, feitos: 0, total: 0, atual: null, etapa: null, feitas: {}, avisoIA: null, avisoFonte: null };
+  const passo = (etapa, feitas = {}) => {
+    if (!busca.rodando) return;
+    busca.etapa = etapa;
+    busca.feitas = { ...busca.feitas, ...feitas };
+    avisar();
+  };
 
   /* ---------- Importar ---------- */
 
@@ -208,9 +216,44 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
 
   const resumoCand = (c, nota) => ({ ...c, pontos: nota?.total ?? null });
 
-  /** Procura o DOI de uma obra no Crossref. A IA só entra quando o autor pede (comIA). */
+  /** O DOI escrito nas primeiras páginas do PDF (é o primeiro passo do Zotero também), ou null. */
+  async function doiNoPDF(l) {
+    // Só lê o arquivo que já está neste aparelho: uma procura em lote não pode baixar a biblioteca inteira do Drive.
+    if (!lerInicio) return null;
+    try {
+      const local = await arm.um(db, 'arquivos', l.id);
+      if (!local?.blob) return null;
+      const inicio = await lerInicio(local.blob, 2);
+      // No PDF o DOI às vezes vem quebrado por um espaço depois da barra; o mais comum é vir inteiro.
+      return limparDOI(String(inicio.texto || '').slice(0, 8000).replace(/(10\.\d{4,9}\/)\s+/g, '$1'));
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Procura os dados de uma obra, em passos: ler o DOI no próprio PDF; procurar por esse DOI; sem ele,
+   * procurar por título, autor e ano (Crossref e, na dúvida, OpenAlex); conferir. A IA só entra quando o
+   * autor pede (comIA).
+   */
   async function procurarUma(l, { comIA = false } = {}) {
     let ficha = l;
+    const recusadosAntes = new Set(l.doiBusca?.recusados || []);
+    passo('pdf');
+    const noPDF = l.pdf ? await doiNoPDF(l) : null;
+    if (noPDF && !recusadosAntes.has(noPDF.toLowerCase())) {
+      passo('doi', { pdf: 'feito' });
+      const d = await buscarDOI(noPDF, { registrar });
+      if (d.dados?.titulo) {
+        passo('conferir', { doi: 'feito', titulo: 'pulado' });
+        const c = { ...d.dados, fonte: 'crossref' };
+        const nota = pontuar(ficha, c);
+        // O DOI está escrito no arquivo: basta o título lembrar o da obra (ou a obra ainda ter nome de arquivo).
+        const bate = tituloFraco(l) || nota.titulo >= 0.6;
+        return { status: 'proposta', candidato: resumoCand(c, nota), outros: [], confianca: bate ? 'muito-provavel' : 'provavel', noPDF: true, motivo: bate ? 'O DOI está escrito no próprio PDF.' : 'Há um DOI escrito no PDF, mas o título dele é diferente do da obra. Confira.', recusados: [...recusadosAntes], em: new Date().toISOString() };
+      }
+    }
+    passo('titulo', { pdf: noPDF ? 'feito' : l.pdf ? 'feito' : 'pulado', doi: noPDF ? 'feito' : 'pulado' });
     let r = await procurarPorDados(ficha, { registrar });
     if (r.erro) return { status: 'erro', erro: r.erro, em: new Date().toISOString() };
     const recusados = new Set(l.doiBusca?.recusados || []);
@@ -229,6 +272,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
         lista = ordenar([...doCrossref, ...oa.candidatos.filter((c) => !vistos.has(chaveCand(c)))], ficha);
       }
     }
+    passo('conferir', { titulo: 'feito' });
     const melhor = lista[0];
     if (certo(melhor)) {
       return { status: 'proposta', candidato: resumoCand(melhor.c, melhor.nota), outros: lista.slice(1, 4).map((x) => resumoCand(x.c, x.nota)), confianca: 'muito-provavel', motivo: `Título, ano e autor batem no ${NOME_FONTE[melhor.c.fonte] || 'Crossref'}.`, recusados: [...recusados], avisoFonte, em: new Date().toISOString() };
@@ -299,7 +343,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
       avisar();
       return busca.promessa;
     }
-    busca = { rodando: true, feitos: 0, total: alvo.length, atual: null, avisoIA: null, avisoFonte: null };
+    busca = { rodando: true, feitos: 0, total: alvo.length, atual: null, etapa: null, feitas: {}, avisoIA: null, avisoFonte: null };
     gravados = [];
     avisar();
     busca.promessa = (async () => {
@@ -310,6 +354,9 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
         const l = bib.obter(id);
         if (l && !l.doi) {
           busca.atual = l.titulo;
+          busca.atualId = l.id;
+          busca.etapa = null;
+          busca.feitas = {};
           avisar();
           const t0 = performance.now();
           const res = await procurarUma(l, { comIA: pedirIAaqui });
@@ -329,6 +376,8 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
       }
       busca.rodando = false;
       busca.atual = null;
+      busca.atualId = null;
+      busca.etapa = null;
       avisar();
     })();
     return busca.promessa;
@@ -378,6 +427,18 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     await bib.atualizar(id, { doiBusca: novo });
     registrar('ui', 'organizar.recusar');
     avisar();
+  }
+
+  /** "Nenhuma das duas": recusa de uma vez os resultados mostrados; eles não voltam a ser sugeridos para esta obra. */
+  async function recusarVarios(id, chaves) {
+    const l = bib.obter(id);
+    if (!l?.doiBusca) return null;
+    const antes = l.doiBusca;
+    for (const c of chaves) await recusar(id, c);
+    return async () => {
+      await bib.atualizar(id, { doiBusca: antes });
+      avisar();
+    };
   }
 
   async function marcarSemDOI(id) {
@@ -618,6 +679,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     procurarUma,
     aceitar,
     recusar,
+    recusarVarios,
     marcarSemDOI,
     procurarDeNovo,
     usarDadosLidos,

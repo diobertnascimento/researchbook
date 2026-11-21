@@ -1424,6 +1424,34 @@ a.arg-item{text-decoration:none;color:inherit}
 .org-sem{display:flex;justify-content:space-between;align-items:center;gap:var(--e-3);flex-wrap:wrap;padding:var(--e-3) 0;border-top:1px solid var(--borda)}
 .org-sem > span:first-child{min-width:0;flex:1 1 320px}
 .org-lido{color:var(--acento-forte)!important}
+/* Andamento com número e etapas (v2.18.0): usado na busca do Acervo e nas esperas longas */
+.andamento-cab{display:flex;align-items:baseline;justify-content:space-between;gap:var(--e-3)}
+.andamento-pct{font-weight:600;font-variant-numeric:tabular-nums}
+.org-andamento .barra{margin:var(--e-3) 0 var(--e-2)}
+.barra i{transition:width .5s ease-out}
+.etapas{list-style:none;margin:var(--e-4) 0 var(--e-3);padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--e-2)}
+.etapas li{display:flex;align-items:flex-start;gap:var(--e-2);padding-top:var(--e-3);box-shadow:inset 0 2px 0 var(--borda-forte);font-size:var(--fs-meta);line-height:1.35;color:var(--texto-3);transition:box-shadow .4s}
+.etapas li.feito{box-shadow:inset 0 2px 0 var(--texto);color:var(--texto)}
+.etapas li.agora{box-shadow:inset 0 2px 0 var(--acento);color:var(--texto);font-weight:600}
+.etapa-sinal{flex:none;width:14px;height:14px;box-sizing:border-box;border-radius:50%;border:2px solid var(--borda-forte);position:relative;top:1px}
+.etapas li.agora .etapa-sinal{border-color:var(--borda-forte);border-top-color:var(--acento);animation:giro .8s linear infinite}
+.etapas li.feito .etapa-sinal{border:0;background:var(--texto);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m5 12 5 5 9-10' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m5 12 5 5 9-10' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;border-radius:0}
+.etapas li.pulado .etapa-sinal{border:0;border-radius:0;height:2px;top:8px;background:var(--borda-forte)}
+@media (max-width:560px){.etapas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){.etapas li.agora .etapa-sinal,.giro{animation:none}.barra i,.etapas li{transition:none}}
+/* Resultados lado a lado */
+.ac-rolar{overflow-x:auto;margin:var(--e-3) 0}
+.ac-comp{width:100%;border-collapse:collapse;font-size:var(--fs-meta);line-height:1.45}
+.ac-comp-2{min-width:720px}
+.ac-comp th,.ac-comp td{padding:var(--e-3) var(--e-4) var(--e-3) 0;text-align:left;vertical-align:top;border-bottom:1px solid var(--borda)}
+.ac-comp thead th{font-weight:500;color:var(--texto-3);vertical-align:bottom}
+.ac-comp thead th small{display:block;margin-top:2px;font-weight:600;color:var(--texto)}
+.ac-comp tbody th{width:96px;font-weight:400;color:var(--texto-3)}
+.ac-comp td{overflow-wrap:anywhere}
+.ac-difere{font-weight:600}
+.ac-vazio{color:var(--texto-3)}
+.ac-comp-acoes th,.ac-comp-acoes td{border-bottom:0;padding-bottom:0}
+@media (max-width:760px){.ac-comp-1 tbody th{width:72px}}
 /* Acervo: central das obras (v2.16.0) */
 .ac-painel{margin-bottom:var(--e-8)}
 .ac-painel > p{margin:0;color:var(--texto-2);max-width:60ch}

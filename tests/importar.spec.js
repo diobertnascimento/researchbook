@@ -26,6 +26,12 @@ const CANDIDATOS = {
     { type: 'journal-article', title: ['Sustentabilidade e mercado'], author: [{ family: 'Pereira', given: 'Caio' }], issued: { 'date-parts': [[2019]] }, DOI: '10.0000/pereira.2019' },
   ],
 };
+CANDIDATOS.falcao = [
+  { type: 'journal-article', title: ['Design science nas pesquisas de operações e logística reversa de embalagens'], author: [{ family: 'Falcão', given: 'Renata' }], issued: { 'date-parts': [[2018]] }, 'container-title': ['Revista Fictícia de Operações'], volume: '12', page: '10-29', DOI: '10.0000/falcao.2018' },
+  { type: 'journal-article', title: ['Design science na pesquisa em gestão de operações e logística'], author: [{ family: 'Falcão', given: 'R.' }], issued: { 'date-parts': [[2016]] }, 'container-title': ['Cadernos Fictícios de Gestão'], volume: '4', issue: '1', page: '45-62', DOI: '10.0000/falcao.2016' },
+];
+// O DOI que está escrito dentro do PDF de teste (tests/fixtures/zotero/files/101).
+CANDIDATOS.noPDF = { type: 'journal-article', title: ['Roteirização colaborativa para cooperativas de reciclagem'], author: [{ family: 'Moraes', given: 'Tânia' }, { family: 'Lins', given: 'Rui' }], issued: { 'date-parts': [[2024]] }, 'container-title': ['Revista de Exemplo'], volume: '12', issue: '3', page: '45-67', DOI: '10.9999/teste.2026.001' };
 async function crossrefFalso(context, estado = { pedidos: [] }) {
   await context.route('https://api.crossref.org/**', (r) => {
     const u = new URL(r.request().url());
@@ -38,11 +44,12 @@ async function crossrefFalso(context, estado = { pedidos: [] }) {
       return r.fulfill(erroDeSelect(ruim));
     }
     if (u.pathname === '/works' && q) {
-      const itens = q.includes('venable') ? CANDIDATOS.venable : q.includes('greenwashing') ? CANDIDATOS.greenwashing : [];
+      const itens = q.includes('venable') ? CANDIDATOS.venable : q.includes('greenwashing') ? CANDIDATOS.greenwashing : q.includes('falc') ? CANDIDATOS.falcao : [];
       return r.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ message: { items: itens } }) });
     }
     // DOI direto (Atualizar os dados pelo DOI).
     if (decodeURIComponent(u.pathname) === '/works/10.0000/venable.2016') return r.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ message: CANDIDATOS.venable[0] }) });
+    if (decodeURIComponent(u.pathname) === '/works/10.9999/teste.2026.001' && !estado.semDoiDoPDF) return r.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ message: CANDIDATOS.noPDF }) });
     return r.fulfill({ status: 404, headers: cors, body: 'Resource not found.' });
   });
   return estado;
@@ -386,6 +393,63 @@ test.describe('no computador', () => {
     await page.evaluate(() => window.rb.organizar.procurarDeNovo(window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Indicadores')).id));
     await page.goto('/#acervo');
     await expect(page.locator('#acervo-aviso-fonte')).toContainText('Publique de novo');
+  });
+
+  test('busca passo a passo: o DOI escrito no PDF resolve sozinho; resultados parecidos ficam lado a lado para escolher', async ({ page, context }) => {
+    const { cr } = await entrar(page, context);
+    const pdf = readFileSync(PDF_MORAES).toString('base64');
+    await page.evaluate(async (b64) => {
+      const b = window.rb.biblioteca;
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      // Obra que só tem o arquivo: o título é o nome dele.
+      await b.adicionar({ tipo: 'artigo', titulo: 'artigo_final_v2' }, new File([bytes], 'artigo_final_v2.pdf', { type: 'application/pdf' }));
+      await b.adicionar({ tipo: 'artigo', titulo: 'Design science nas pesquisas de operações e logística', autores: [{ sobrenome: 'Falcão', prenomes: 'Renata' }], ano: '2017' });
+    }, pdf);
+    await page.goto('/#acervo');
+    // As etapas de cada obra ficam registradas enquanto a busca anda.
+    await page.evaluate(() => {
+      window.__etapas = [];
+      window.rb.organizar.aoMudar(() => {
+        const st = window.rb.organizar.estadoBusca();
+        if (st.rodando && st.etapa) window.__etapas.push(`${st.atual.slice(0, 6)}:${st.etapa}`);
+      });
+    });
+    await page.getByRole('button', { name: 'Completar os dados' }).click();
+    await expect(page.locator('#acervo-andamento')).toBeVisible();
+    await expect(page.locator('#acervo-andamento [role="progressbar"]')).toHaveAttribute('aria-valuenow', /^\d+$/);
+    await expect(page.locator('#acervo-andamento .etapas li')).toHaveText([/Ler o PDF/, /Procurar pelo DOI/, /Procurar pelo título/, /Conferir/]);
+    // 1. DOI lido no arquivo: gravado sozinho, com o título de verdade no lugar do nome do arquivo.
+    const gravados = page.locator('#org-gravados');
+    await expect(gravados).toContainText('DOI 10.9999/teste.2026.001, do Crossref', { timeout: 20000 });
+    const obra = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.doi === '10.9999/teste.2026.001'));
+    expect([obra.titulo, obra.veiculo, obra.paginas, obra.doiBusca.auto]).toEqual(['Roteirização colaborativa para cooperativas de reciclagem', 'Revista de Exemplo', '45-67', true]);
+    expect(obra.origens).toMatchObject({ titulo: 'crossref', doi: 'crossref', veiculo: 'crossref' });
+    const etapas = [...new Set(await page.evaluate(() => window.__etapas))];
+    expect(etapas.filter((e) => e.startsWith('artigo'))).toEqual(['artigo:pdf', 'artigo:doi', 'artigo:conferir']);
+    expect(etapas.filter((e) => e.startsWith('Design'))).toEqual(['Design:pdf', 'Design:titulo', 'Design:conferir']);
+    // A obra com o DOI no arquivo não precisou de procura por título.
+    expect(cr.pedidos.filter((p) => !p.startsWith('/works/')).length).toBe(1);
+    // 2. Dois resultados parecidos: lado a lado, com o que difere em negrito, e nada gravado ainda.
+    const comp = page.locator('.ac-comp');
+    await expect(comp.locator('thead th')).toHaveText(['Dado', 'Na sua obra', /Achado no Crossref.*O mais parecido com a sua obra/, 'Achado no Crossref']);
+    const linha = (nome) => comp.locator('tbody tr').filter({ has: page.locator('th', { hasText: new RegExp('^' + nome + '$') }) });
+    await expect(linha('Ano').locator('td')).toHaveText(['2017', '2018', '2016']);
+    await expect(linha('Ano').locator('td.ac-difere')).toHaveCount(2);
+    await expect(linha('Autores').locator('td.ac-difere')).toHaveCount(0);
+    await expect(linha('Título').locator('td.ac-difere')).toHaveCount(2);
+    await expect(linha('Onde saiu').locator('td').first()).toHaveText('Não está na obra');
+    expect((await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design')))).doi || null).toBeNull();
+    // "Nenhuma das duas" recusa as duas de uma vez, com desfazer.
+    await comp.getByRole('button', { name: 'Nenhuma das duas' }).click();
+    await expect(page.locator('#toast')).toContainText('não voltam a ser sugeridos');
+    await expect(page.locator('.ac-comp')).toHaveCount(0);
+    await page.locator('#toast').getByRole('button', { name: 'Desfazer' }).click();
+    await expect(page.locator('.ac-comp')).toHaveCount(1);
+    // Escolher uma: os campos vazios são completados e a origem fica registrada.
+    await page.locator('.ac-comp').getByRole('button', { name: 'É esta, do Crossref' }).nth(1).click();
+    await expect(page.locator('#toast')).toContainText('DOI aceito');
+    const f = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design')));
+    expect([f.doi, f.ano, f.veiculo, f.origens.veiculo]).toEqual(['10.0000/falcao.2016', '2017', 'Cadernos Fictícios de Gestão', 'crossref']);
   });
 
   test('repetidas: junta na obra com mais trabalho, leva grifos e trilhas, e tem desfazer', async ({ page, context }) => {
