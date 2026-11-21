@@ -264,7 +264,7 @@ async function montarObras({ env = {}, sites = {}, dns = {}, openalex = null } =
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(origem ? { Origin: origem } : {}), ...(corpo === undefined ? {} : { 'Content-Type': 'application/json' }) },
       body: corpo === undefined ? undefined : typeof corpo === 'string' ? corpo : JSON.stringify(corpo),
     });
-  // Como o app pede desde a v2.19.1: no corpo. O jeito antigo (no endereço) tem teste próprio.
+  // Como o app pede desde a v2.19.2: no corpo. O jeito antigo (no endereço) tem teste próprio.
   const pagina = (url, o) => pedir('/obras/pagina', { ...o, corpo: { url } });
   const procurar = (busca, o) => pedir('/obras/openalex', { ...o, corpo: { busca } });
   const registros = () => visto.linhas.map((l) => JSON.parse(l));

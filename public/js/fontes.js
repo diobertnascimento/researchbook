@@ -30,7 +30,7 @@ export function criarFontes({ google, registrar = () => {}, buscar = (...a) => f
   const ligado = () => !!servidorIA() && !!google?.sessao?.()?.token;
 
   // O pedido vai no corpo: o que vai no endereço fica no registro de acessos do servidor, e título de obra
-  // e link de artigo não devem ficar lá. Servidor publicado antes da v2.19.1 só entende o jeito antigo.
+  // e link de artigo não devem ficar lá. Servidor publicado antes da v2.19.2 só entende o jeito antigo.
   async function pedir(caminho, evento, pedido) {
     const r = await enviar(caminho, evento, pedido, false);
     return r.codigo === 'rota' ? enviar(caminho, evento, pedido, true) : r;

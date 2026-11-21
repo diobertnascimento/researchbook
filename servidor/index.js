@@ -23,7 +23,7 @@
 //   POST /obras/pagina {url}        abre a página de um artigo e lê os dados que ela publica nas etiquetas
 //                                   <meta name="citation_...">. Só abre https, só sites da lista, nunca um
 //                                   endereço interno, e devolve só os campos lidos, nunca a página.
-// O pedido vai no corpo (v2.19.1) para o título e o link não ficarem no registro de acessos do Cloud Run;
+// O pedido vai no corpo (v2.19.2) para o título e o link não ficarem no registro de acessos do Cloud Run;
 // o GET com ?busca= e ?url= segue aceito para o app antigo. Toda resposta leva X-Researchbook-Servidor
 // (VERSAO_SERVIDOR), e o registro de uma recusa leva o código dela e números (resposta do site, saltos).
 import { createServer } from 'node:http';

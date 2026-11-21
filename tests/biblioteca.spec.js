@@ -101,7 +101,7 @@ test('adicionar pelo link da página do artigo: o servidor lê os dados, o Cross
     const url = metodo === 'POST' ? r.request().postDataJSON().url : u.searchParams.get('url');
     pedidos.push({ metodo, caminho: u.pathname.replace('/servidor-falso', ''), noEndereco: u.search, url, auth: r.request().headers().authorization });
     const json = (status, corpo) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(corpo) });
-    // Servidor publicado antes da v2.19.1: só entende o pedido no endereço.
+    // Servidor publicado antes da v2.19.2: só entende o pedido no endereço.
     if (antigo && metodo === 'POST') return json(404, { error: { message: 'Este servidor não atende este endereço.', origem: 'servidor', codigo: 'rota' } });
     if (url.includes('blog.exemplo.com')) return json(403, { error: { message: 'O site blog.exemplo.com não está na lista de sites que este servidor abre.', origem: 'servidor', codigo: 'pagina-site' } });
     const comDOI = url.includes('com-doi');
