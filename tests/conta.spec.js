@@ -7,7 +7,8 @@ test.use({ serviceWorkers: 'block' });
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'computador', 'Basta rodar no computador'));
 
 const pronto = (page) => page.waitForFunction(() => window.rb && window.rb.pronto);
-const fase = (page) => page.evaluate(() => window.rb?.sincronia?.estado().fase ?? null);
+// A página pode estar no meio do redirecionamento do login: nesse instante não há o que ler, e a conferência tenta de novo.
+const fase = (page) => page.evaluate(() => window.rb?.sincronia?.estado().fase ?? null).catch(() => null);
 
 async function entrar(page, rota = '') {
   await page.goto('/' + rota, { waitUntil: 'domcontentloaded' });

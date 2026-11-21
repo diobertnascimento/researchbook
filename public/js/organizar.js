@@ -12,6 +12,7 @@ import * as arm from './armazenamento.js';
 import { procurarPorDados, buscarDOI } from './crossref.js';
 import { formatoDe, lerFormato, ligarPDFs, NOMES_FORMATO } from './importar.js';
 import { assinatura } from './biblioteca.js';
+import { faltas } from './acervo.js';
 import { pontuar, compararObras, gruposRepetidos, chaveDoPar, peso, similaridadeTitulo, palavras, MUITO_PROVAVEL, PROVAVEL } from './duplicatas.js';
 
 const CAMPOS_BIB = ['subtitulo', 'ano', 'veiculo', 'volume', 'numero', 'paginas', 'editora', 'local', 'url', 'idioma'];
@@ -378,9 +379,9 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
   // Atualizar pelo DOI: confere no Crossref as obras que já têm DOI e completa só o que está vazio.
   // O que o autor escreveu nunca é trocado; diferença de ano é só informada.
   let atualizacao = null;
-  async function atualizarPeloDOI() {
+  async function atualizarPeloDOI({ so = null } = {}) {
     if (atualizacao?.rodando) return atualizacao;
-    const ls = bib.leituras().filter((l) => l.doi);
+    const ls = bib.leituras().filter((l) => l.doi && (!so || so.includes(l.id)));
     atualizacao = { rodando: true, feitos: 0, total: ls.length, completadas: [], diferentes: [], falhas: 0 };
     avisar();
     for (const l of ls) {
@@ -412,6 +413,23 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     atualizacao = null;
     avisar();
     return feitas.length;
+  }
+
+  /**
+   * "Completar os dados" (central do Acervo): procura o DOI das obras que ainda não foram procuradas e,
+   * nas que têm DOI e a referência incompleta, busca no Crossref o que falta. Só completa campo vazio.
+   */
+  const paraCompletar = () => bib.leituras().filter((l) => l.doi && faltas(l).ref.length);
+  async function completar() {
+    registrar('ui', 'acervo.completar', { det: `${pendentes().length} sem DOI, ${paraCompletar().length} com DOI` });
+    if (pendentes().length) await procurarDOIs();
+    const ids = paraCompletar().map((l) => l.id);
+    if (ids.length) {
+      await atualizarPeloDOI({ so: ids });
+      // Nada completado e nenhuma diferença: não deixa um aviso vazio na tela.
+      if (atualizacao && !atualizacao.completadas.length && !atualizacao.diferentes.length) atualizacao = null;
+    }
+    avisar();
   }
 
   /** A pedido do autor, para uma obra: a IA lê o começo do PDF e indica o candidato certo (nunca inventa DOI). */
@@ -555,6 +573,8 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     procurarDOIs,
     resumo,
     atualizarPeloDOI,
+    completar,
+    paraCompletar,
     desfazerAtualizacao,
     estadoAtualizacao: () => atualizacao,
     dispensarAtualizacao: () => {

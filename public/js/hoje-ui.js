@@ -136,7 +136,7 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI, dados 
     const org = window.rb?.organizar?.contagem();
     if (org && (org.propostas || org.repetidas)) {
       const partes = [org.propostas ? (org.propostas === 1 ? '1 DOI para conferir' : `${org.propostas} DOIs para conferir`) : null, org.repetidas ? (org.repetidas === 1 ? '1 obra repetida' : `${org.repetidas} obras repetidas`) : null].filter(Boolean);
-      outros = [{ titulo: 'Organizar a biblioteca', detalhe: partes.join(', '), href: '#organizar' }, ...outros].slice(0, 3);
+      outros = [{ titulo: 'Organizar a biblioteca', detalhe: partes.join(', '), href: '#acervo' }, ...outros].slice(0, 3);
     }
     const nMem = window.rb?.memoriaUI?.pendentes().length || 0;
     if (nMem) outros = [{ titulo: nMem === 1 ? 'Revisar 1 item para a memória' : `Revisar ${nMem} itens para a memória`, detalhe: 'A IA propôs a partir das suas conversas', href: '#memoria' }, ...outros].slice(0, 3);

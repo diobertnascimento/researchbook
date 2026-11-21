@@ -172,8 +172,9 @@ test.describe('no computador', () => {
       await window.rb.biblioteca.adicionar({ tipo: 'livro', titulo: 'Manual interno sem DOI', autores: [{ sobrenome: 'Ninguém', prenomes: 'A.' }], ano: '2001' });
     });
     const obra = (inicio) => page.evaluate((inicio) => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith(inicio)), inicio);
-    await page.goto('/#organizar');
-    await page.getByRole('button', { name: /Procurar DOIs que faltam \(3\)/ }).click();
+    await page.goto('/#acervo');
+    await expect(page.locator('#acervo-resumo')).toContainText('3 obras com algo faltando');
+    await page.getByRole('button', { name: 'Completar os dados' }).click();
 
     // Título, autor e ano batem: gravado na hora, completando só o que faltava (a editora do autor fica).
     const gravados = page.locator('#org-gravados');
@@ -224,7 +225,7 @@ test.describe('no computador', () => {
     await expect(page.locator('#org-gravados')).toContainText('10.0000/venable.2016');
   });
 
-  test('Acervo: mostra o retrato da biblioteca, as obras sem PDF e completa pelo DOI só o que está vazio, com desfazer', async ({ page, context }) => {
+  test('Acervo: é o último item do menu, mostra o que falta em cada obra e completa pelo DOI só o que está vazio, com desfazer', async ({ page, context }) => {
     await entrar(page, context);
     await page.evaluate(async () => {
       const b = window.rb.biblioteca;
@@ -232,17 +233,24 @@ test.describe('no computador', () => {
       await b.adicionar({ tipo: 'livro', titulo: 'Manual interno sem DOI', autores: [{ sobrenome: 'Ninguém', prenomes: 'A.' }], ano: '2001' });
     });
     const obra = () => page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design')));
-    // O Acervo fica em Ajustes; não é mais aba da Biblioteca.
-    await page.goto('/#ajustes');
-    await page.locator('.aj-indice').getByRole('link', { name: 'Acervo' }).click();
+    // O Acervo é o último item do menu; o endereço antigo e o atalho dos Ajustes continuam valendo.
+    await expect(page.locator('#menu > li > a')).toHaveText(['Hoje', 'Ler', 'Escrever', 'Dissertação', 'Projetos', 'Acervo']);
+    await page.locator('#menu').getByRole('link', { name: 'Acervo' }).click();
+    await expect(page).toHaveURL(/#acervo$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
-    const resumo = page.locator('#acervo-resumo');
-    await expect(resumo.locator('.ap-it', { hasText: 'Obras' }).first()).toContainText('2');
-    await expect(resumo.locator('.ap-it', { hasText: 'Com DOI' })).toContainText('1');
-    await expect(resumo.locator('.ap-it', { hasText: 'Sem PDF' })).toContainText('2');
-    await page.locator('#acervo-sem-pdf details').evaluate((d) => (d.open = true));
-    await expect(page.locator('#acervo-sem-pdf li')).toHaveCount(2);
-    await expect(page.locator('#acervo-sem-pdf').getByRole('link', { name: 'Anexar o PDF' }).first()).toHaveAttribute('href', /#leitor\//);
+    await expect(page.locator('#menu a[aria-current="page"]')).toHaveText('Acervo');
+    await expect(page.locator('.topo')).toContainText('2 obras. 0 completas, 2 com algo faltando.');
+    // Livro sem DOI não conta como falta de DOI; os dois estão sem PDF e sem a cidade.
+    const filtro = (nome) => page.locator('.ac-filtros').getByRole('button', { name: new RegExp('^' + nome) });
+    await expect(filtro('Sem PDF')).toContainText('2');
+    await expect(filtro('Sem DOI')).toContainText('0');
+    await expect(filtro('Referência incompleta')).toContainText('2');
+    const linhas = page.locator('#ac-corpo tr');
+    await expect(linhas).toHaveCount(2);
+    await expect(linhas.first().getByRole('link', { name: 'Anexar o PDF' })).toHaveAttribute('href', /#leitor\//);
+    await expect(linhas.filter({ hasText: 'Manual interno' })).toContainText('Faltam a editora e a cidade');
+    await page.goto('/#organizar');
+    await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Atualizar os dados pelo DOI' }).click();
     const feito = page.locator('#acervo-atualizadas');
@@ -256,6 +264,54 @@ test.describe('no computador', () => {
     await expect(page.locator('#toast')).toContainText('1 obra voltou a como estava');
     v = await obra();
     expect(v.editora || null).toBeNull();
+  });
+
+  test('Acervo: filtros com contagem, busca por título ou autor, ordem e "Completar os dados" pelo DOI', async ({ page, context }) => {
+    await entrar(page, context);
+    await page.evaluate(async () => {
+      const b = window.rb.biblioteca;
+      const a = (sobrenome, prenomes) => ({ sobrenome, prenomes });
+      await b.adicionar({ tipo: 'artigo', titulo: 'Roteirização da coleta seletiva', autores: [a('Moraes', 'Ana')], ano: '2019', veiculo: 'Revista Fictícia', volume: '7', paginas: '31-52', doi: '10.0000/moraes.2019' });
+      await b.adicionar({ tipo: 'artigo', titulo: 'Design science em operações', autores: [a('Falcão', 'Renata')], ano: '2017', volume: '11', paginas: '45-62' });
+      await b.adicionar({ tipo: 'artigo', titulo: 'artigo_final_v2' });
+      await b.adicionar({ tipo: 'livro', titulo: 'Design science research: avaliação de artefatos', autores: [a('Venable', 'John')], ano: '2016', local: 'Cidade', doi: '10.0000/venable.2016' });
+    });
+    await page.goto('/#acervo');
+    const filtro = (nome) => page.locator('.ac-filtros').getByRole('button', { name: new RegExp('^' + nome) });
+    const titulos = () => page.locator('#ac-corpo .ac-obra b').allTextContents();
+    await expect(page.locator('#acervo-resumo')).toContainText('4 obras com algo faltando');
+    await expect(page.locator('#acervo-resumo')).toContainText('3 com a referência incompleta, 4 sem PDF e 2 sem DOI');
+    await expect(page.locator('main .btn.prim')).toHaveCount(1);
+    // Filtros: cada um com a sua contagem; a lista troca sem refazer a tela.
+    await expect(filtro('Referência incompleta')).toContainText('3');
+    await filtro('Sem DOI').click();
+    await expect(filtro('Sem DOI')).toHaveAttribute('aria-pressed', 'true');
+    expect(await titulos()).toEqual(['artigo_final_v2', 'Design science em operações']);
+    await expect(page.locator('#ac-resumo')).toHaveText('Mostrando 2 de 4 obras: sem doi.');
+    await expect(page.locator('#ac-corpo tr').filter({ hasText: 'artigo_final_v2' })).toContainText('Faltam 6 dados');
+    await expect(page.locator('#ac-corpo tr').filter({ hasText: 'Design science em operações' })).toContainText('Falta a revista');
+    // Busca sem acento, por autor; o campo não perde o foco.
+    await filtro('Todas').click();
+    await page.locator('#ac-busca').pressSequentially('falcao');
+    expect(await titulos()).toEqual(['Design science em operações']);
+    await expect(page.locator('#ac-busca')).toBeFocused();
+    await page.locator('#ac-busca').fill('zzz');
+    await expect(page.locator('#ac-resumo')).toHaveText('Nenhuma obra com esse texto neste grupo.');
+    await page.locator('#ac-busca').fill('');
+    await page.locator('#ac-ordem').selectOption('titulo');
+    expect(await titulos()).toEqual(['artigo_final_v2', 'Design science em operações', 'Design science research: avaliação de artefatos', 'Roteirização da coleta seletiva']);
+    await page.locator('#ac-ordem').selectOption('autor');
+    expect((await titulos()).slice(0, 3)).toEqual(['Design science em operações', 'Roteirização da coleta seletiva', 'Design science research: avaliação de artefatos']);
+    // A obra abre para corrigir os dados.
+    await page.locator('#ac-corpo .ac-obra').first().click();
+    await expect(page.locator('#veu')).toContainText('Corrigir dados da obra');
+    await page.locator('#veu').getByRole('button', { name: 'Cancelar' }).click();
+    // Completar: o livro com DOI ganha a editora que faltava; o que não foi achado continua na lista, sem aviso vazio.
+    await page.getByRole('button', { name: 'Completar os dados' }).click();
+    await expect(page.locator('#acervo-atualizadas')).toContainText('1 obra completada pelo DOI', { timeout: 15000 });
+    const livro = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design science research')));
+    expect([livro.editora, livro.local]).toEqual(['Editora de Exemplo', 'Cidade']);
+    await expect(filtro('Referência incompleta')).toContainText('2');
   });
 
   test('repetidas: junta na obra com mais trabalho, leva grifos e trilhas, e tem desfazer', async ({ page, context }) => {
@@ -361,6 +417,17 @@ test.describe('sincronização entre aparelhos', () => {
     await page.waitForFunction(() => window.rb && window.rb.pronto);
     expect(g.estado.renovacoes).toBe(2);
   });
+});
+
+test('no celular: o Acervo fica em Mais e a lista cabe na tela, sem rolagem lateral', async ({ page, context }, info) => {
+  test.skip(info.project.name !== 'celular', 'Só no celular');
+  await entrar(page, context);
+  await page.evaluate(() => window.rb.biblioteca.adicionar({ tipo: 'artigo', titulo: 'Indicadores de desempenho em centrais de triagem de materiais recicláveis', autores: [{ sobrenome: 'Nogueira', prenomes: 'Lia' }], ano: '2018', veiculo: 'Revista Fictícia de Logística Urbana', doi: '10.0000/rflu.2018.0307-um-doi-bem-comprido-para-testar' }));
+  await page.goto('/#mais');
+  await page.locator('.mais-lista').getByRole('link', { name: /^Acervo/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
+  await expect(page.locator('#ac-corpo tr')).toContainText('Faltam o volume ou o número e as páginas');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test('no celular: o Hoje mostra a sincronização e o aviso aparece quando ela precisa de você', async ({ page, context }, info) => {
