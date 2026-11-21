@@ -224,3 +224,194 @@ test.describe('servidor da chave', () => {
     }
   });
 });
+
+/* ---------- Dados de obras: OpenAlex e leitura da página do artigo (v2.17.0) ---------- */
+
+const CHAVE_OA = 'chave-openalex-de-teste-0000';
+const PAGINA = (extra = '') => `<!doctype html><html><head><title>x</title>
+<meta name="citation_title" content="Cooperativas de catadores e contratos municipais">
+<meta content="Teixeira, Marina" name="citation_author"><meta name='citation_author' content='Caio Lins'>
+<meta name="citation_journal_title" content="Gest&atilde;o P&uacute;blica e Res&iacute;duos (fict&iacute;cia)">
+<meta name="citation_publication_date" content="2021/08/03"><meta name="citation_volume" content="8"><meta name="citation_issue" content="3">
+<meta name="citation_firstpage" content="77"><meta name="citation_lastpage" content="98"><meta name="citation_doi" content="10.0000/gpr.2021.0230">
+${extra}</head><body><p>O texto do artigo não sai do servidor.</p><script>segredo()</script></body></html>`;
+
+/** Sobe o servidor com a internet simulada: cada endereço https tem uma resposta combinada aqui. */
+async function montarObras({ env = {}, sites = {}, dns = {}, openalex = null } = {}) {
+  const visto = { abertos: [], openalex: [], linhas: [] };
+  const buscar = async (url, opcoes = {}) => {
+    const u = String(url);
+    if (u.startsWith('https://tokeninfo.teste')) return new Response(JSON.stringify({ aud: CLIENTE, azp: CLIENTE, email: EMAIL, email_verified: 'true', expires_in: '3000' }), { status: 200 });
+    if (u.startsWith('https://openalex.teste')) {
+      visto.openalex.push({ url: u, auth: opcoes.headers?.Authorization });
+      return openalex ? openalex(u, opcoes) : new Response(JSON.stringify({ results: [] }), { status: 200 });
+    }
+    visto.abertos.push({ url: u, redirect: opcoes.redirect });
+    const r = sites[u];
+    if (!r) return new Response('nada aqui', { status: 404, headers: { 'content-type': 'text/html' } });
+    return typeof r === 'function' ? r() : new Response(r.corpo ?? '', { status: r.status ?? 200, headers: { 'content-type': r.tipo ?? 'text/html; charset=utf-8', ...(r.location ? { location: r.location } : {}) } });
+  };
+  const resolver = async (nome) => (dns[nome] || ['200.17.141.10']).map((address) => ({ address, family: address.includes(':') ? 6 : 4 }));
+  const servidor = criarServidor(
+    { GEMINI_CHAVE: CHAVE, EMAIL_PERMITIDO: EMAIL, CLIENTE_GOOGLE: CLIENTE, ORIGENS: APP, CONTADOR: 'memoria', URL_TOKENINFO: 'https://tokeninfo.teste', URL_OPENALEX: 'https://openalex.teste', OPENALEX_CHAVE: CHAVE_OA, ...env },
+    { buscar, resolver, registro: (l) => visto.linhas.push(l) },
+  );
+  const base = await ouvir(servidor);
+  const pedir = (caminho, { token = 'token-bom', origem = APP } = {}) => fetch(`${base}${caminho}`, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(origem ? { Origin: origem } : {}) } });
+  const pagina = (url, o) => pedir(`/obras/pagina?url=${encodeURIComponent(url)}`, o);
+  return { pedir, pagina, visto, fim: () => fechar(servidor) };
+}
+
+test.describe('servidor: dados de obras', () => {
+  test.beforeEach(({}, info) => test.skip(info.project.name !== 'computador', 'Sem navegador: roda uma vez só'));
+
+  test('lê os dados que a página do artigo publica e devolve só os campos, nunca a página', async () => {
+    const url = 'https://www.scielo.br/j/gpr/a/exemplo';
+    const s = await montarObras({ sites: { [url]: { corpo: PAGINA() } } });
+    try {
+      const r = await s.pagina(url);
+      expect(r.status).toBe(200);
+      const j = await r.json();
+      expect(j.site).toBe('www.scielo.br');
+      expect(j.dados).toEqual({
+        tipo: 'artigo',
+        titulo: 'Cooperativas de catadores e contratos municipais',
+        autores: [{ sobrenome: 'Teixeira', prenomes: 'Marina' }, { sobrenome: 'Lins', prenomes: 'Caio' }],
+        ano: '2021',
+        veiculo: 'Gestão Pública e Resíduos (fictícia)',
+        volume: '8',
+        numero: '3',
+        paginas: '77-98',
+        editora: null,
+        doi: '10.0000/gpr.2021.0230',
+        idioma: null,
+        url,
+      });
+      expect(JSON.stringify(j)).not.toContain('não sai do servidor');
+      expect(s.visto.abertos).toEqual([{ url, redirect: 'manual' }]);
+      // O registro tem só a rota, sem o endereço pedido.
+      expect(s.visto.linhas.join('\n')).toContain('GET /obras/pagina');
+      expect(s.visto.linhas.join('\n')).not.toContain('scielo');
+    } finally {
+      await s.fim();
+    }
+  });
+
+  test('não abre endereço fora da lista, http, IP, porta, nem site que aponta para rede interna', async () => {
+    const s = await montarObras({ dns: { 'periodicos.ufmg.br': ['169.254.169.254'], 'revistas.usp.br': ['200.1.1.1', '10.0.0.5'] } });
+    try {
+      const casos = [
+        ['https://metadata.google.internal/computeMetadata/v1/', 403, 'pagina-site'],
+        ['https://exemplo-qualquer.com/artigo', 403, 'pagina-site'],
+        ['https://scielo.br.atacante.com/x', 403, 'pagina-site'],
+        ['http://www.scielo.br/j/x', 400, 'pagina-endereco'],
+        ['https://169.254.169.254/latest', 400, 'pagina-endereco'],
+        ['https://www.scielo.br:8443/j/x', 400, 'pagina-endereco'],
+        ['https://usuario:senha@www.scielo.br/j/x', 400, 'pagina-endereco'],
+        ['file:///etc/passwd', 400, 'pagina-endereco'],
+        ['isso não é um endereço', 400, 'pagina-endereco'],
+        ['https://periodicos.ufmg.br/artigo/1', 403, 'pagina-site'],
+        ['https://revistas.usp.br/artigo/2', 403, 'pagina-site'],
+      ];
+      for (const [url, status, codigo] of casos) {
+        const r = await s.pagina(url);
+        expect([url, r.status, (await r.json()).error.codigo]).toEqual([url, status, codigo]);
+      }
+      expect(s.visto.abertos).toEqual([]);
+      // Recusas não gastam o limite do dia.
+      expect((await (await s.pedir('/estado')).json()).pedidosHoje).toBe(0);
+      // Sem login, nem chega a conferir o endereço.
+      expect((await s.pagina('https://www.scielo.br/j/x', { token: null })).status).toBe(401);
+    } finally {
+      await s.fim();
+    }
+  });
+
+  test('redirecionamento só é seguido para site da lista; PDF, página sem dados e site fora do ar têm resposta própria', async () => {
+    const s = await montarObras({
+      sites: {
+        'https://www.scielo.br/antigo': { status: 301, location: '/j/gpr/a/exemplo' },
+        'https://www.scielo.br/j/gpr/a/exemplo': { corpo: PAGINA() },
+        'https://www.scielo.br/sai': { status: 302, location: 'https://metadata.google.internal/computeMetadata/v1/' },
+        'https://www.scielo.br/arquivo.pdf': { corpo: '%PDF-1.7', tipo: 'application/pdf' },
+        'https://www.scielo.br/sobre': { corpo: '<html><head><title>Sobre</title></head></html>' },
+        'https://www.scielo.br/quebrado': { status: 500 },
+      },
+    });
+    try {
+      const codigo = async (url) => {
+        const r = await s.pagina(url);
+        const j = await r.json();
+        return [r.status, j.error?.codigo ?? j.dados?.ano];
+      };
+      expect(await codigo('https://www.scielo.br/antigo')).toEqual([200, '2021']);
+      expect(await codigo('https://www.scielo.br/sai')).toEqual([403, 'pagina-site']);
+      expect(s.visto.abertos.some((a) => a.url.includes('metadata'))).toBe(false);
+      expect(await codigo('https://www.scielo.br/arquivo.pdf')).toEqual([422, 'pagina-sem-dados']);
+      expect(await codigo('https://www.scielo.br/sobre')).toEqual([422, 'pagina-sem-dados']);
+      expect(await codigo('https://www.scielo.br/quebrado')).toEqual([502, 'pagina-fora']);
+      expect(await codigo('https://www.scielo.br/nao-existe')).toEqual([502, 'pagina-fora']);
+    } finally {
+      await s.fim();
+    }
+  });
+
+  test('a lista de sites pode ser trocada na publicação', async () => {
+    const url = 'https://revista.exemplo.org/artigo/9';
+    const s = await montarObras({ env: { SITES_PAGINA: 'exemplo.org, .outro.org' }, sites: { [url]: { corpo: PAGINA() } } });
+    try {
+      expect((await s.pagina(url)).status).toBe(200);
+      expect((await s.pagina('https://www.scielo.br/j/x')).status).toBe(403);
+    } finally {
+      await s.fim();
+    }
+  });
+
+  test('OpenAlex: a chave vai só do servidor para o OpenAlex, e a resposta volta nos campos do app', async () => {
+    const obra = { id: 'https://openalex.org/W123', doi: 'https://doi.org/10.0000/falcao.2017', display_name: 'Design science em pesquisas de operações', publication_year: 2017, type: 'article', authorships: [{ author: { display_name: 'Renata Falcão' } }], primary_location: { source: { display_name: 'Anais do Encontro Fictício de Produção', type: 'conference' } }, biblio: { first_page: '112', last_page: '126' }, language: 'pt' };
+    let recusarSelect = false;
+    const s = await montarObras({
+      openalex: (u) => (recusarSelect && u.includes('select=') ? new Response('{"error":"Invalid query parameters"}', { status: 400 }) : new Response(JSON.stringify({ results: [obra, { display_name: '' }] }), { status: 200 })),
+    });
+    try {
+      const r = await s.pedir('/obras/openalex?busca=' + encodeURIComponent('Design science em pesquisas de operações Falcão 2017'));
+      expect(r.status).toBe(200);
+      const j = await r.json();
+      expect(j.candidatos).toEqual([{ tipo: 'anais', titulo: 'Design science em pesquisas de operações', autores: [{ sobrenome: 'Falcão', prenomes: 'Renata' }], ano: '2017', veiculo: 'Anais do Encontro Fictício de Produção', volume: null, numero: null, paginas: '112-126', doi: '10.0000/falcao.2017', idioma: 'pt', idOpenAlex: 'W123' }]);
+      expect(s.visto.openalex[0].auth).toBe(`Bearer ${CHAVE_OA}`);
+      expect(s.visto.openalex[0].url).not.toContain(CHAVE_OA);
+      expect(JSON.stringify(j) + [...r.headers].join()).not.toContain(CHAVE_OA);
+      expect(s.visto.linhas.join('\n')).not.toMatch(/Falc|Design|chave-openalex/);
+      // Se o OpenAlex recusar os campos escolhidos, o servidor repete sem escolher.
+      recusarSelect = true;
+      const r2 = await s.pedir('/obras/openalex?busca=design%20science');
+      expect((await r2.json()).candidatos).toHaveLength(1);
+      // Busca vazia não vai ao OpenAlex nem conta; sem login, 401.
+      expect((await s.pedir('/obras/openalex?busca=a')).status).toBe(400);
+      expect((await s.pedir('/obras/openalex?busca=design', { token: null })).status).toBe(401);
+      expect((await (await s.pedir('/estado')).json()).pedidosHoje).toBe(2);
+    } finally {
+      await s.fim();
+    }
+  });
+
+  test('OpenAlex sem chave, com chave recusada ou sem franquia: cada caso diz o que fazer', async () => {
+    const sem = await montarObras({ env: { OPENALEX_CHAVE: '' } });
+    try {
+      const r = await sem.pedir('/obras/openalex?busca=design%20science');
+      expect([r.status, (await r.json()).error.codigo]).toEqual([503, 'openalex-sem-chave']);
+      expect(sem.visto.openalex).toEqual([]);
+    } finally {
+      await sem.fim();
+    }
+    for (const [status, codigo, esperado] of [[401, 'openalex-chave', 502], [429, 'openalex-limite', 429], [500, 'openalex-fora', 502]]) {
+      const s = await montarObras({ openalex: () => new Response('{}', { status }) });
+      try {
+        const r = await s.pedir('/obras/openalex?busca=design%20science');
+        expect([r.status, (await r.json()).error.codigo]).toEqual([esperado, codigo]);
+      } finally {
+        await s.fim();
+      }
+    }
+  });
+});
