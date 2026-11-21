@@ -32,6 +32,27 @@ O sistema de novembro (v1.1.0) foi trocado pelo redesenho (v2.0.0) e fechado pel
 - **Textos:** maiúscula só no início, botão com verbo e objeto, erros com o próximo passo. Glossário em `docs/design-system.md`.
 - **Um teste guarda o sistema** (`tests/design.spec.js`), em todas as rotas e nos dois tamanhos: escala de tipos, alvos de 24 px, largura da página com título de 200 caracteres, papéis de título, um botão azul por tela, pílulas, campos, nenhuma caixa com contorno, cabeçalho compacto no celular, contraste dos tokens e nenhum estilo solto no código.
 
+## Textos e nomes (v2.25.0 a v2.28.0, 21/11/2026)
+Revisão de UX writing depois do polimento visual: inventário de 2.473 textos de tela, benchmark em guias de escrita (NN/g, Google Material, Apple, Microsoft, Mailchimp, gov.br) e 240 textos revistos em quatro lotes. As regras (quinze) e o glossário estão em `docs/design-system.md`, "Escrita da interface"; `tests/acabamento.spec.js` recusa os termos aposentados.
+
+Onze nomes de menu e de aba mudaram na v2.28.0. As seções abaixo, escritas antes, ainda usam os nomes antigos; os endereços (`#acervo`, `#jornada`, `#biblioteca`) não mudaram.
+
+| Nome antigo | Nome de hoje | Onde |
+|---|---|---|
+| Acervo | Biblioteca | Menu (`#acervo`) |
+| Biblioteca (título da página de Ler) | Leituras | Ler (`#biblioteca`), igual ao nome da aba |
+| Visão | Início | Dissertação |
+| Projeto | Projeto de pesquisa | Dissertação |
+| Mapa | Argumentos | Dissertação |
+| Jornada | Prazos | Dissertação |
+| Artigos | Leituras | Aba do projeto |
+| Linha do tempo, Tempo | Agenda | Aba do projeto |
+| Estúdio | Materiais | Aba do projeto |
+| Aprendizado, Aprender | Progresso | Aba do projeto |
+| Overview do autor | Retrato da escrita | Você |
+| Briefing, Enquadrar | Sobre o texto | Escrever |
+| Material (aba do editor) | Grifos | Editor |
+
 ## Importar e organizar a biblioteca (v1.2.0, 14/11/2026)
 Pedido do Diobert: enviar muitos arquivos de uma vez e a biblioteca exportada do Zotero; a IA tenta recuperar o DOI pela internet a partir dos dados, numa lista que ele aprova; sincronização garantida com o celular; deduplicação de conteúdos idênticos.
 - **Formatos do Zotero:** BibTeX/BibLaTeX, RIS, CSL JSON e Zotero RDF (os que o Zotero exporta). Recomendado: "Exportar coleção…" em BibTeX ou Zotero RDF com "Exportar arquivos"; o app recebe a pasta inteira e liga cada PDF pelo caminho gravado (`file` no BibTeX, `link:link` no RDF, `L1` no RIS). RIS e CSL JSON trazem só os dados. Coleções do RDF e palavras-chave viram tags. No celular (sem escolha de pasta), seleciona-se o arquivo de dados e os PDFs juntos. Código em `importar.js`.
@@ -220,6 +241,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v2.28.0 (21/11/2026): revisão dos textos, lote 4. Onze nomes de menu e de aba (Biblioteca, Leituras, Início, Projeto de pesquisa, Argumentos, Prazos, Agenda, Materiais, Progresso, Retrato da escrita, Sobre o texto); tabela de nomes na seção "Textos e nomes".
 - v2.27.0 (21/11/2026): revisão dos textos, lote 3. O app não diz "eu"; o que é do autor é "seu"; botões de uma palavra ganham objeto; telas vazias dizem o que falta; pontuação dos avisos curtos.
 - v2.26.0 (21/11/2026): revisão dos textos, lote 2. Treze textos que descreviam versão antiga (chave do Gemini na pasta, etapas do fichamento, páginas renomeadas) e erros sem código, com palavra comum e próximo passo.
 - v2.25.0 (21/11/2026): revisão dos textos, lote 1. Um nome para cada coisa (biblioteca, projeto, salvar, buscar, apagar, login, internet, Conectar o Gemini); seis regras novas de escrita e glossário em `docs/design-system.md`; teste que recusa termo aposentado.

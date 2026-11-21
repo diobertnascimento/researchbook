@@ -349,7 +349,7 @@ test.describe('Conectar a IA', () => {
     // Trocar o projeto invalida a conferência antiga.
     await page.getByLabel(/ID do projeto/).fill('outro-projeto');
     await page.locator('[data-ia-projeto]').click();
-    await expect(page.locator('#toast')).toContainText('Projeto salvo neste aparelho');
+    await expect(page.locator('#toast')).toContainText('ID do projeto salvo neste aparelho');
     await expect(page.locator('#sec-ia .ia-passo.ok')).toHaveCount(1);
     // Gasto e limite na mesma tela.
     await expect(page.locator('#sec-ia .ia-gasto')).toContainText('Neste mês, neste aparelho: US$');

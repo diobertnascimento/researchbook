@@ -215,7 +215,7 @@ As regras 10 a 15 e a segunda parte do glossário vêm da revisão de textos de 
 | Copilot / Tutor | IA, assistente | Quando a função importa; "IA" para o conjunto |
 | Ajustes | Configurações | |
 | Sincronizado | Salvo na nuvem, Em dia | Status do Drive |
-| biblioteca | acervo | O conjunto das obras. Vale também para o que a IA pode citar |
+| biblioteca | acervo | O conjunto das obras. Vale também para o que a IA pode citar. A página que cuida de todas as obras se chama Biblioteca; a de ler se chama Leituras |
 | projeto | disciplina | O que o menu Projetos guarda. "Disciplina" só ao explicar o que é um projeto |
 | encerrar, reabrir (projeto) | arquivar, desarquivar | A lista se chama "Projetos encerrados" |
 | salvar | gravar | "Gravação" fica só para áudio. "Guardar" quando a coisa vai para um lugar: memória, cofre, versão, Drive |
@@ -229,6 +229,10 @@ As regras 10 a 15 e a segunda parte do glossário vêm da revisão de textos de 
 | resultado | candidato | Na busca de DOI |
 | pedido à IA | chamada, prompt | |
 | selecione | clique, toque | Vale para computador e celular. "Toque" só nas instruções do iPhone |
+
+### Nomes de menu e de aba
+
+Um nome diz o que há dentro, e a mesma página tem o mesmo nome no computador e no celular. Desde a v2.28.0: Hoje; Ler (Leituras, Trilhas, Fichamentos); Escrever (Textos, Diálogos); Dissertação (Início, Projeto de pesquisa, Argumentos, Orientação, Prazos); Projetos (Início, Leituras, Agenda, Materiais, Progresso); Biblioteca; Você (Retrato da escrita, Memória, Ajustes). Na preparação de um texto, a primeira etapa é "Sobre o texto". Nome novo ou troca de nome só com o sim do Diobert.
 
 ## Como mudar este sistema
 

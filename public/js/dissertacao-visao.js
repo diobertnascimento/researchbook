@@ -145,7 +145,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     const c = sess.config();
     const anda = andamento(c.inicio, c.meses);
     const hoje = diaLocal();
-    const cab = '<div class="topo"><div><h1>Jornada</h1></div></div>';
+    const cab = '<div class="topo"><div><h1>Prazos</h1></div></div>';
     if (!anda) {
       return `${cab}<section class="proximo jor-comeco" aria-labelledby="jc-t"><div class="rot" id="jc-t">Quando o mestrado começou?</div>
         <p>Com o mês de início e o prazo, esta página mostra em que ponto você está e quanto falta para cada marco. É salvo assim que você escolhe.</p>${camposInicio(c)}</section>`;
@@ -159,8 +159,8 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     const versao = diss.todasRevisoes()[0];
     const combinados = diss.combinadosAbertos().length;
     const fatos = [
-      versao ? `Projeto, versão ${versao.versao}<small>Enviado em ${dataLonga(diaLocal(new Date(versao.enviadoEm)))}</small>` : 'Projeto ainda não enviado para revisão<small>O envio fica na página Projeto</small>',
-      caps.length ? `${milhar(palavras)} ${palavras === 1 ? 'palavra' : 'palavras'} nos capítulos<small>${comTexto} de ${plural(caps.length, 'capítulo', 'capítulos')} com texto</small>` : 'Nenhum capítulo começado<small>Os capítulos ficam na Visão</small>',
+      versao ? `Projeto, versão ${versao.versao}<small>Enviado em ${dataLonga(diaLocal(new Date(versao.enviadoEm)))}</small>` : 'Projeto ainda não enviado para revisão<small>O envio fica em Projeto de pesquisa</small>',
+      caps.length ? `${milhar(palavras)} ${palavras === 1 ? 'palavra' : 'palavras'} nos capítulos<small>${comTexto} de ${plural(caps.length, 'capítulo', 'capítulos')} com texto</small>` : 'Nenhum capítulo começado<small>Os capítulos ficam no Início</small>',
       `${combinados ? plural(combinados, 'combinado', 'combinados') : 'Nenhum combinado'} em aberto com a orientação`,
     ];
     const posicao = (dia) => Math.round(Math.min(1, Math.max(0, (new Date(`${dia}T12:00:00`) - new Date(`${anda.de}T00:00:00`)) / (new Date(`${anda.ate}T23:59:59`) - new Date(`${anda.de}T00:00:00`)))) * 1000) / 10;
@@ -175,7 +175,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
       ${proximo ? `<section class="proximo jor-proximo" aria-labelledby="jp-t"><div class="rot" id="jp-t">Próximo marco, ${diasAte(proximo.data) === 0 ? 'hoje' : diasAte(proximo.data) === 1 ? 'amanhã' : `em ${diasAte(proximo.data)} dias`}</div>
         <h2>${esc(proximo.titulo)}, ${dataLonga(proximo.data)}</h2>
         <ul class="jor-fatos">${fatos.map((f) => `<li>${f}</li>`).join('')}</ul>
-        <div class="acao-l"><a class="btn prim" href="#projeto">Abrir o projeto</a></div></section>` : ''}
+        <div class="acao-l"><a class="btn prim" href="#projeto">Abrir o projeto de pesquisa</a></div></section>` : ''}
       <section class="proj-sec jor-marcos" aria-labelledby="jm-t"><h2 id="jm-t">Marcos</h2>
         <form class="jor-novo" id="marco-form"><input id="marco-titulo" aria-label="Novo marco" placeholder="Qualificação, defesa, entrega de capítulo…" required autocomplete="off"><input id="marco-data" type="date" aria-label="Data do marco" required><button class="btn" type="submit">Adicionar marco</button></form>
         <ul class="linha-l">${marcos.map((m) => {
@@ -376,7 +376,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     if (d.dissNovoCap !== undefined) {
       const t = await sess.novoCapitulo();
       location.hash = `#texto/${encodeURIComponent(t.id)}`;
-      return setTimeout(() => toast('Capítulo criado. Dê um nome a ele no Briefing.'), 60);
+      return setTimeout(() => toast('Capítulo criado. Dê um nome a ele em “Sobre o texto”.'), 60);
     }
     if (d.dissSessao) {
       await gravarTese();

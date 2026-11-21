@@ -13,7 +13,7 @@ import { buscarNoAcervo, conferirCitacoes } from './pedir.js';
 const palavrasDe = (n) => `${n} ${n === 1 ? 'palavra' : 'palavras'}`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const icone = (n) => (typeof I !== 'undefined' && I[n]) || '';
-const PASSOS = ['Enquadrar', 'Ideia', 'Diagnóstico', 'Estrutura', 'Escrever', 'Revisar e exportar'];
+const PASSOS = ['Sobre o texto', 'Ideia', 'Diagnóstico', 'Estrutura', 'Escrever', 'Revisar e exportar'];
 const TIPOS = ['Artigo de disciplina', 'Artigo para periódico', 'Resenha', 'Ensaio', 'Seção de trabalho em equipe', 'Capítulo', 'Outro'];
 const PRIMEIRA = 'O que você quer defender, em uma frase?';
 const tirarIds = (s) => String(s || '').replace(/\s*\[A\d+\]/g, '');
@@ -76,7 +76,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
 
   function passo0(t) {
     return `<section class="editor esc-prep">
-      <h2>Enquadrar</h2><p class="instr">O que é o texto e quais são as regras. O Copilot usa isto em todas as etapas.</p>
+      <h2>Sobre o texto</h2><p class="instr">O que é o texto e quais são as regras. O Copilot usa isto em todas as etapas.</p>
       <div class="campo"><label for="esc-titulo">Título de trabalho</label><input id="esc-titulo" data-esc-campo="titulo" value="${esc(t.titulo)}"></div>
       <div class="linha2">
         <div class="campo"><label for="esc-tipo">Tipo de texto</label><select id="esc-tipo" data-esc-campo="tipo">${TIPOS.map((x) => `<option ${x === t.tipo ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
@@ -155,7 +155,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
   function prep(t) {
     const corpo = [passo0, passo1, passo2, passo3][t.passo](t);
     const prox = t.passo < 3 ? `<button class="btn prim" data-esc-passo="${t.passo + 1}">Próximo: ${PASSOS[t.passo + 1]}</button>` : `<button class="btn prim" data-esc-aprovar ${t.estrutura?.length ? '' : 'disabled'}>Aprovar e começar a escrever</button>`;
-    return `${cabecalho(t, 'Preparação do texto. É feita uma vez; você volta aqui pelo Briefing.')}
+    return `${cabecalho(t, 'Preparação do texto. É feita uma vez; você volta aqui por “Sobre o texto”.')}
       ${trilhaPassos(t)}
       ${t.passo === 0 ? '<p class="setup-intro">O Copilot entrevista você e propõe versões do que você escreveu. Ele não escreve do zero e só cita o que está na sua biblioteca.</p>' : ''}
       ${corpo}
@@ -252,7 +252,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     return `${window.rb?.visaoUI?.barraSessao(t) || ''}<a class="voltar" href="#escrita">${icone('voltar')}Textos</a>
       <div class="esc-cab tem-menu"><div><h1>${esc(t.titulo)}</h1><p>${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.entrega ? `. Entrega em ${t.entrega.split('-').reverse().join('/')}` : ''} <span class="d-inline-flex p-0 salvo" id="esc-salvo"><i></i>${est.salvando || 'Salvo'}</span> <button class="btn fant mini" data-esc-painel="versoes">Versões</button></p></div>
         <button class="btn esc-menu-btn" data-esc-menu aria-expanded="false">Seções e ações</button>
-        <div class="acoes"><button class="btn so-menu" data-esc-painel="versoes">Versões</button><button class="btn" data-esc-painel="copilot" aria-pressed="${painelAberto() && est.aba !== 'versoes'}">Copilot</button><button class="btn" data-esc-passo="0">Briefing</button><button class="btn prim" data-esc-passo="5">Revisar e exportar</button></div></div>
+        <div class="acoes"><button class="btn so-menu" data-esc-painel="versoes">Versões</button><button class="btn" data-esc-painel="copilot" aria-pressed="${painelAberto() && est.aba !== 'versoes'}">Copilot</button><button class="btn" data-esc-passo="0">Sobre o texto</button><button class="btn prim" data-esc-passo="5">Revisar e exportar</button></div></div>
       <div class="esc-grid real ${painelAberto() ? '' : 'sem-painel'}" data-texto="${esc(t.id)}">
         <aside class="lat-esc"><h4 class="t-meta forte m-0 mb-2">Seções</h4>
           <div class="secoes">${t.secoes.map((x, k) => `<button data-esc-secao="${k}" class="${k === i ? 'on' : ''}"><i class="${contarPalavras(blocos(x.html).map((b) => b.texto).join(' ')) ? 'feita' : ''}"></i>${esc(x.titulo)}</button>`).join('')}</div>
@@ -272,7 +272,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
           </div>
         </section>
         <aside class="painel-lat esc-painel">
-          <div class="abas-lat" role="tablist">${[['copilot', 'Copilot'], ['material', 'Material'], ['versoes', 'Versões']].map(([k, n]) => `<button role="tab" data-esc-aba="${k}" class="${est.aba === k ? 'on' : ''}" aria-selected="${est.aba === k}">${n}</button>`).join('')}</div>
+          <div class="abas-lat" role="tablist">${[['copilot', 'Copilot'], ['material', 'Grifos'], ['versoes', 'Versões']].map(([k, n]) => `<button role="tab" data-esc-aba="${k}" class="${est.aba === k ? 'on' : ''}" aria-selected="${est.aba === k}">${n}</button>`).join('')}</div>
           ${est.aba === 'material' ? painelMaterial(t, s) : est.aba === 'versoes' ? painelVersoes(t) : painelCopilot(t, s)}
         </aside>
       </div>
@@ -288,7 +288,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     const acima = a.participacao > t.teto;
     const checks = [
       [acima ? 'bl' : 'ok', 'Participação da IA', `${a.participacao}%, ${acima ? 'acima' : 'dentro'} do teto de ${t.teto}%.${acima ? ' Reescreva trechos com as suas palavras para exportar.' : ''}`],
-      [!t.limite ? 'obs' : a.total > t.limite ? 'at' : 'ok', 'Extensão', t.limite ? `${a.total} de ${t.limite} palavras.` : `${a.total} palavras. Sem limite no briefing.`],
+      [!t.limite ? 'obs' : a.total > t.limite ? 'at' : 'ok', 'Extensão', t.limite ? `${a.total} de ${t.limite} palavras.` : `${a.total} palavras. Sem limite em “Sobre o texto”.`],
       [diretas.length ? 'at' : 'ok', 'Citações diretas', diretas.length ? `${diretas.length} entre aspas não estão nos seus grifos: “${esc(diretas[0].slice(0, 80))}”${diretas.length > 1 ? '…' : ''}` : 'Todas as citações entre aspas estão nos seus grifos.'],
       [refs.length ? 'ok' : 'at', 'Referências', refs.length ? `${refs.length} ${refs.length === 1 ? 'obra citada' : 'obras citadas'}, com referência ABNT gerada da biblioteca.` : 'Nenhuma obra da biblioteca reconhecida no texto.'],
       [vazias.length ? 'at' : 'ok', 'Seções', vazias.length ? `${vazias.length} ${vazias.length === 1 ? 'seção vazia' : 'seções vazias'}: ${vazias.map((s) => esc(s.titulo)).join(', ')}.` : 'Todas as seções têm texto.'],

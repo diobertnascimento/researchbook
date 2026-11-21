@@ -52,7 +52,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
           <li>Em Formato, escolha <b>BibTeX</b> ou <b>Zotero RDF</b>. Esses dois levam os PDFs; RIS e CSL JSON levam só os dados.</li>
           <li>Marque <b>Exportar arquivos</b> e salve. O Zotero cria uma pasta com o arquivo de dados e a pasta files.</li>
           <li>Aqui, escolha essa pasta inteira${temPasta() ? '' : ' (no celular, escolha o arquivo de dados e os PDFs juntos)'}. Cada PDF é ligado à sua obra pelo caminho que o Zotero gravou.</li>
-          <li>As coleções do Zotero viram tags (no formato Zotero RDF). Obras sem DOI ficam no Acervo, onde o app busca o DOI no Crossref.</li>
+          <li>As coleções do Zotero viram tags (no formato Zotero RDF). Obras sem DOI ficam na Biblioteca, onde o app busca o DOI no Crossref.</li>
         </ol>
       </details>
       <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button></div>`;
@@ -127,7 +127,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     prev = null;
     fecharModal();
     const partes = [r.criadas.length ? plural(r.criadas.length, 'obra importada', 'obras importadas') : null, r.completadas ? plural(r.completadas, 'obra ganhou o PDF', 'obras ganharam o PDF') : null].filter(Boolean);
-    toast(`${partes.join(', ') || 'Nada importado'}.${r.semDoi ? ` Buscando o DOI de ${plural(r.semDoi, 'obra', 'obras')} no Acervo.` : ''} Os PDFs vão para o seu Drive.`);
+    toast(`${partes.join(', ') || 'Nada importado'}.${r.semDoi ? ` Buscando o DOI de ${plural(r.semDoi, 'obra', 'obras')} na Biblioteca.` : ''} Os PDFs vão para o seu Drive.`);
     location.hash = r.semDoi ? '#acervo' : '#biblioteca';
   }
 
@@ -305,7 +305,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
 
   function obra(id) {
     const l = bib.obter(id);
-    if (!l) return `<a class="voltar" href="#acervo">${icone('voltar')}Acervo</a><div class="vazio-estado"><h2>Esta obra não está mais na biblioteca</h2><p>Ela pode ter sido apagada ou juntada com outra.</p><a class="btn" href="#acervo">Voltar ao Acervo</a></div>`;
+    if (!l) return `<a class="voltar" href="#acervo">${icone('voltar')}Biblioteca</a><div class="vazio-estado"><h2>Esta obra não está mais na biblioteca</h2><p>Ela pode ter sido apagada ou juntada com outra.</p><a class="btn" href="#acervo">Voltar à Biblioteca</a></div>`;
     const f = faltas(l);
     const st = org.estadoBusca();
     const at = org.estadoAtualizacao();
@@ -338,7 +338,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       })
       .join('');
     const grifos = bib.grifosDe(l.id).length;
-    return `<a class="voltar" href="#acervo">${icone('voltar')}Acervo</a>
+    return `<a class="voltar" href="#acervo">${icone('voltar')}Biblioteca</a>
       <div class="topo"><div><h1 class="ac-obra-tit">${esc(l.titulo || 'Sem título')}</h1><p>${esc([autores(l), l.ano].filter(Boolean).join(', ') || 'Sem autor e sem ano')}. ${TIPO[l.tipo] || 'Artigo'}.${l.adicionadaEm ? ` Adicionada em ${new Date(l.adicionadaEm).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.` : ''}</p></div>
         <div class="acoes"><a class="btn" href="#leitor/${esc(l.id)}">${l.pdf ? 'Abrir para ler' : 'Anexar o PDF'}</a></div></div>
       ${painelObra}
@@ -373,7 +373,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const res = org.resumo();
     const at = org.estadoAtualizacao();
     const r = retrato(bib.leituras(), reps);
-    const topo = `<div class="topo"><div><h1>Acervo</h1><p>${r.total ? `${plural(r.total, 'obra', 'obras')}. ${r.contagem.falta ? `${plural(r.completas, 'completa', 'completas')}, ${r.contagem.falta} com algo faltando.` : 'Todas completas.'}` : 'Todas as suas obras: artigos, livros e capítulos, com o PDF, os dados da referência e o DOI de cada um.'}</p></div>
+    const topo = `<div class="topo"><div><h1>Biblioteca</h1><p>${r.total ? `${plural(r.total, 'obra', 'obras')}. ${r.contagem.falta ? `${plural(r.completas, 'completa', 'completas')}, ${r.contagem.falta} com algo faltando.` : 'Todas completas.'}` : 'Todas as suas obras: artigos, livros e capítulos, com o PDF, os dados da referência e o DOI de cada um.'}</p></div>
       <div class="acoes"><button class="btn" data-org-importar>${icone('upload')}Adicionar obras</button></div></div>`;
     const andamento = st.rodando ? andamentoBusca(st) : '';
     const avisoIA = st.avisoIA ? `<div class="aviso"><span>ⓘ</span><div>A IA não respondeu (${esc(st.avisoIA)}). A busca continuou só pelo Crossref. <a href="#ajustes">Conectar o Gemini</a></div></div>` : '';
