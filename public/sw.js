@@ -26,6 +26,7 @@ const ARQUIVOS = [
   'js/importar.js',
   'js/duplicatas.js',
   'js/acervo.js',
+  'js/fontes.js',
   'js/organizar.js',
   'js/organizar-ui.js',
   'js/seguranca-ui.js',

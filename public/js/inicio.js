@@ -50,6 +50,7 @@ import { criarOrganizar } from './organizar.js';
 import { criarOrganizarUI } from './organizar-ui.js';
 import { lerInicio } from './leitor-pdf.js';
 import { buscarDOI } from './crossref.js';
+import { criarFontes } from './fontes.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -516,7 +517,9 @@ async function iniciar() {
   if (db) {
     const biblioteca = criarBiblioteca({ db, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
     window.rb.biblioteca = biblioteca;
-    window.rb.bibUI = criarBibliotecaUI({ bib: biblioteca, registrar });
+    // Fontes que passam pelo servidor do autor (OpenAlex e leitura da página do artigo).
+    window.rb.fontes = criarFontes({ google, registrar });
+    window.rb.bibUI = criarBibliotecaUI({ bib: biblioteca, registrar, fontes: window.rb.fontes });
     window.rb.fichUI = criarFichamentoUI({ bib: biblioteca, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
     window.rb.argUI = criarArgumentosUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
     window.rb.trilhasUI = criarTrilhasUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
@@ -562,7 +565,7 @@ async function iniciar() {
     window.rb.tutorFich = criarTutorFichamento({ ia: window.rb.ia, bib: biblioteca, fichUI: window.rb.fichUI, argUI: window.rb.argUI, historico, registrar });
     window.rb.overview = criarOverview({ db, ia: window.rb.ia, escrita: window.rb.escrita, drive: driveSeConectado, registrar });
     window.rb.overviewUI = criarOverviewUI({ ov: window.rb.overview, registrar });
-    window.rb.organizar = criarOrganizar({ db, dados: window.rb.dados, bib: biblioteca, ia: window.rb.ia, historico, registrar, lerInicio, buscarDOI });
+    window.rb.organizar = criarOrganizar({ fontes: window.rb.fontes, db, dados: window.rb.dados, bib: biblioteca, ia: window.rb.ia, historico, registrar, lerInicio, buscarDOI });
     window.rb.organizarUI = criarOrganizarUI({ org: window.rb.organizar, bib: biblioteca, bibUI: window.rb.bibUI, registrar });
     window.rb.busca = criarBusca({ rb: window.rb });
     window.rb.iaUso = criarIAUso({ registros: reg, drive: driveSeConectado, registrar });

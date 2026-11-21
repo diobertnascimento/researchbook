@@ -3,6 +3,7 @@
 // este módulo monta o PDF depois que a tela é desenhada (evento rb:render).
 import { referencia, referenciaTexto, autorCurto, citacao } from './abnt.js';
 import { buscarDOI, limparDOI } from './crossref.js';
+import { entender } from './fontes.js';
 import { montarLeitor, lerInicio, FUNCOES } from './leitor-pdf.js';
 import { montarLeitura } from './leitor-texto.js';
 import { ETAPAS } from './progresso.js';
@@ -24,7 +25,7 @@ const TIPOS = [
 ];
 const ROTULO_VEICULO = { artigo: 'Revista', livro: 'Coleção (opcional)', capitulo: 'Título do livro', anais: 'Nome do evento', dissertacao: 'Programa', tese: 'Programa', outro: 'Publicado em' };
 
-export function criarBibliotecaUI({ bib, registrar }) {
+export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
   let busca = '';
   let leitorAtual = null; // { id, controle, palco }
   let montando = null;
@@ -183,9 +184,9 @@ export function criarBibliotecaUI({ bib, registrar }) {
     pdfEscolhido = null;
     const veu = document.getElementById('veu');
     veu.innerHTML = `<div class="modal" role="dialog" aria-labelledby="modal-tit"><h2 id="modal-tit">Adicionar obra</h2>
-      <p>Comece pelo DOI ou pelo PDF. Os dados da obra aparecem para você conferir antes de salvar.</p>
+      <p>Comece pelo DOI, pelo link da página do artigo ou pelo PDF. Os dados da obra aparecem para você conferir antes de salvar.</p>
       <div class="ad-origem">
-        <div class="campo"><label for="ad-doi">DOI</label><div class="linha-doi"><input id="ad-doi" placeholder="10.1057/ejis.2011.54" autocomplete="off"><button class="btn" data-bib="buscar-doi" data-ocupado="Buscando…">Buscar</button></div></div>
+        <div class="campo"><label for="ad-doi">DOI ou link da página do artigo</label><div class="linha-doi"><input id="ad-doi" placeholder="10.1057/ejis.2011.54 ou https://www.scielo.br/…" autocomplete="off"><button class="btn" data-bib="buscar-doi" data-ocupado="Buscando…">Buscar</button></div></div>
         <div class="campo"><label for="ad-pdf">PDF</label><input type="file" id="ad-pdf" accept="application/pdf,.pdf" multiple></div>
       </div>
       <p class="meta">Vários PDFs ou a biblioteca do Zotero? <button class="lnk m-0" data-org-importar>Importar de uma vez</button></p>
@@ -201,7 +202,34 @@ export function criarBibliotecaUI({ bib, registrar }) {
   // O que já está na ficha (inclusive o que o Diobert digitou) não se perde ao buscar.
   const fichaAtual = () => (document.getElementById('f-titulo') ? lerCampos() : rascunho || { tipo: 'artigo' });
 
-  async function aoBuscarDOI(doiTexto, { base, aviso } = {}) {
+  /**
+   * O campo aceita um DOI ou o link da página do artigo. Com DOI, os dados vêm do Crossref. Com link, o
+   * servidor do autor lê os dados que a página publica; se a página traz o DOI, o Crossref confere e completa.
+   */
+  async function aoBuscar(texto) {
+    const e = entender(texto);
+    if (e.doi || !e.url) return aoBuscarDOI(texto);
+    if (!fontes) {
+      mensagem('A busca por link ainda não está ligada neste aparelho. Use o DOI ou preencha à mão.', 'erro');
+      return false;
+    }
+    mensagem('Abrindo a página pelo seu servidor…');
+    const r = await fontes.lerPagina(e.url);
+    if (r.erro) {
+      mensagem(r.erro, 'erro');
+      return false;
+    }
+    const daPagina = Object.fromEntries(Object.entries(r.dados).filter(([, v]) => v != null && !(Array.isArray(v) && !v.length)));
+    const base = { ...fichaAtual(), ...daPagina };
+    if (!daPagina.doi) {
+      mostrarFicha(base);
+      mensagem(`Dados lidos na página do artigo (${r.site}). A página não traz DOI. Confira antes de salvar.`, 'ok');
+      return true;
+    }
+    return aoBuscarDOI(daPagina.doi, { base, aviso: `Dados lidos na página do artigo (${r.site})`, origem: r.site });
+  }
+
+  async function aoBuscarDOI(doiTexto, { base, aviso, origem } = {}) {
     mensagem('Buscando no Crossref…');
     const r = await buscarDOI(doiTexto, { registrar });
     const atual = base || fichaAtual();
@@ -433,7 +461,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     if (!b) return;
     const acao = b.dataset.bib;
     if (acao === 'adicionar') abrirAdicionar();
-    if (acao === 'buscar-doi') aoBuscarDOI(document.getElementById('ad-doi').value);
+    if (acao === 'buscar-doi') return aoBuscar(document.getElementById('ad-doi').value);
     if (acao === 'manual') {
       mensagem('');
       mostrarFicha(rascunho || { tipo: 'artigo' });

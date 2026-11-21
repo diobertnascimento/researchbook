@@ -187,7 +187,7 @@ test.describe('no computador', () => {
 
     // Desfazer tira o DOI e devolve a obra para a lista de conferir, de onde o autor aceita.
     await gravados.getByRole('button', { name: 'Desfazer este' }).click();
-    await expect(page.locator('#toast')).toContainText('1 DOI retirado');
+    await expect(page.locator('#toast')).toContainText('1 gravação desfeita');
     expect((await obra('Design')).doi).toBeFalsy();
     const venable = page.locator('.org-item', { hasText: 'Design science research' });
     await expect(venable).toContainText('Muito provável');
@@ -312,6 +312,52 @@ test.describe('no computador', () => {
     const livro = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design science research')));
     expect([livro.editora, livro.local]).toEqual(['Editora de Exemplo', 'Cidade']);
     await expect(filtro('Referência incompleta')).toContainText('2');
+  });
+
+  test('OpenAlex pelo servidor: entra quando o Crossref não dá certeza, aceita obra sem DOI e diz de onde veio cada dado', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('rb.teste.servidor', 'http://localhost:4173/servidor-falso'));
+    const pedidos = [];
+    let antigo = false;
+    await context.route('http://localhost:4173/servidor-falso/**', (r) => {
+      const u = new URL(r.request().url());
+      pedidos.push({ caminho: u.pathname.replace('/servidor-falso', ''), busca: u.searchParams.get('busca'), auth: r.request().headers().authorization });
+      if (antigo) return r.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: { message: 'Este servidor não atende este endereço.', origem: 'servidor', codigo: 'rota' } }) });
+      const candidatos = (u.searchParams.get('busca') || '').includes('triagem')
+        ? [{ tipo: 'anais', titulo: 'Indicadores de desempenho em centrais de triagem', autores: [{ sobrenome: 'Nogueira', prenomes: 'Lia' }], ano: '2018', veiculo: 'Anais do Encontro Fictício de Produção', volume: null, numero: null, paginas: '112-126', doi: null, idioma: 'pt', idOpenAlex: 'W900' }]
+        : [];
+      return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ candidatos }) });
+    });
+    await entrar(page, context);
+    await page.evaluate(async () => {
+      const b = window.rb.biblioteca;
+      await b.adicionar({ tipo: 'artigo', titulo: 'Indicadores de desempenho em centrais de triagem', autores: [{ sobrenome: 'Nogueira', prenomes: 'Lia' }], ano: '2018' });
+      await b.adicionar({ tipo: 'livro', titulo: 'Design science research: avaliação de artefatos', autores: [{ sobrenome: 'Venable', prenomes: 'John' }], ano: '2016' });
+    });
+    await page.goto('/#acervo');
+    await expect(page.locator('main')).toContainText('A procura usa o Crossref e, quando ele não dá certeza, o OpenAlex.');
+    await page.getByRole('button', { name: 'Completar os dados' }).click();
+    const gravados = page.locator('#org-gravados');
+    await expect(gravados).toContainText('Obra sem DOI, do OpenAlex', { timeout: 15000 });
+    await expect(gravados).toContainText('DOI 10.0000/venable.2016, do Crossref');
+    // O Crossref deu certeza para o livro: o OpenAlex só foi consultado para a outra obra, com o login e sem chave.
+    expect(pedidos.map((p) => p.caminho)).toEqual(['/obras/openalex']);
+    expect(pedidos[0].busca).toContain('triagem');
+    expect(pedidos[0].auth).toBe('Bearer tok-falso');
+    const obra = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Indicadores')));
+    expect([obra.doi || null, obra.doiBusca.status, obra.doiBusca.fonte, obra.veiculo, obra.paginas]).toEqual([null, 'nao-tem', 'openalex', 'Anais do Encontro Fictício de Produção', '112-126']);
+    expect(obra.origens).toMatchObject({ veiculo: 'openalex', paginas: 'openalex' });
+    const livro = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design')));
+    expect(livro.origens).toMatchObject({ doi: 'crossref', editora: 'crossref' });
+    // Desfazer devolve a obra ao que era, sem os dados e sem a marca.
+    await gravados.getByRole('button', { name: /Desfazer os 2/ }).click();
+    await expect(page.locator('#toast')).toContainText('2 gravações desfeitas');
+    const volta = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Indicadores')));
+    expect([volta.veiculo || null, volta.origens || null]).toEqual([null, null]);
+    // Servidor ainda na versão antiga: a procura segue pelo Crossref e a tela diz o que fazer.
+    antigo = true;
+    await page.evaluate(() => window.rb.organizar.procurarDeNovo(window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Indicadores')).id));
+    await page.goto('/#acervo');
+    await expect(page.locator('#acervo-aviso-fonte')).toContainText('Publique de novo');
   });
 
   test('repetidas: junta na obra com mais trabalho, leva grifos e trilhas, e tem desfazer', async ({ page, context }) => {

@@ -30,10 +30,14 @@ export const tituloFraco = (l) => !l?.titulo || /[_]|\.pdf$|^\s*(scan|doc|artigo
 
 const pausa = (ms) => new Promise((ok) => setTimeout(ok, ms));
 
-export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerInicio, buscarDOI }) {
+/** Identifica um candidato: o DOI, ou o número dele no OpenAlex quando a obra não tem DOI. */
+export const chaveCand = (c) => String(c?.doi || `openalex:${c?.idOpenAlex || c?.titulo || ''}`).toLowerCase();
+const NOME_FONTE = { crossref: 'Crossref', openalex: 'OpenAlex' };
+
+export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerInicio, buscarDOI, fontes = null }) {
   const ouvintes = new Set();
   const avisar = () => ouvintes.forEach((f) => f());
-  let busca = { rodando: false, feitos: 0, total: 0, atual: null, avisoIA: null };
+  let busca = { rodando: false, feitos: 0, total: 0, atual: null, avisoIA: null, avisoFonte: null };
 
   /* ---------- Importar ---------- */
 
@@ -210,11 +214,24 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     let r = await procurarPorDados(ficha, { registrar });
     if (r.erro) return { status: 'erro', erro: r.erro, em: new Date().toISOString() };
     const recusados = new Set(l.doiBusca?.recusados || []);
-    const ordenar = (cands, f) => cands.filter((c) => !recusados.has(c.doi.toLowerCase())).map((c) => ({ c, nota: pontuar(f, c) })).sort((a, b) => b.nota.total - a.nota.total);
-    let lista = ordenar(r.candidatos, ficha);
+    const ordenar = (cands, f) => cands.filter((c) => !recusados.has(chaveCand(c))).map((c) => ({ c, nota: pontuar(f, c) })).sort((a, b) => b.nota.total - a.nota.total);
+    const certo = (x) => x && x.nota.total >= MUITO_PROVAVEL && x.nota.titulo >= 0.9;
+    const doCrossref = r.candidatos.map((c) => ({ ...c, fonte: 'crossref' }));
+    let lista = ordenar(doCrossref, ficha);
+    let avisoFonte = null;
+    // O Crossref não deu certeza: procura também no OpenAlex (pelo servidor do autor), que cobre anais e
+    // trabalhos sem DOI. O que o Crossref já trouxe não entra duas vezes.
+    if (!certo(lista[0]) && fontes?.ligado()) {
+      const oa = await fontes.procurarNoOpenAlex(ficha);
+      if (oa.erro) avisoFonte = oa.erro;
+      else {
+        const vistos = new Set(doCrossref.map(chaveCand));
+        lista = ordenar([...doCrossref, ...oa.candidatos.filter((c) => !vistos.has(chaveCand(c)))], ficha);
+      }
+    }
     const melhor = lista[0];
-    if (melhor && melhor.nota.total >= MUITO_PROVAVEL && melhor.nota.titulo >= 0.9) {
-      return { status: 'proposta', candidato: resumoCand(melhor.c, melhor.nota), outros: lista.slice(1, 4).map((x) => resumoCand(x.c, x.nota)), confianca: 'muito-provavel', motivo: 'Título, ano e autor batem no Crossref.', recusados: [...recusados], em: new Date().toISOString() };
+    if (certo(melhor)) {
+      return { status: 'proposta', candidato: resumoCand(melhor.c, melhor.nota), outros: lista.slice(1, 4).map((x) => resumoCand(x.c, x.nota)), confianca: 'muito-provavel', motivo: `Título, ano e autor batem no ${NOME_FONTE[melhor.c.fonte] || 'Crossref'}.`, recusados: [...recusados], avisoFonte, em: new Date().toISOString() };
     }
     let dadosLidos = null;
     let avisoIA = null;
@@ -261,9 +278,9 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     }
     const provavel = lista[0];
     if (provavel && provavel.nota.total >= PROVAVEL && provavel.nota.titulo >= 0.75) {
-      return { status: 'proposta', candidato: resumoCand(provavel.c, provavel.nota), outros: lista.slice(1, 4).map((x) => resumoCand(x.c, x.nota)), confianca: 'provavel', motivo: 'O título é parecido; confira autor e ano.', dadosLidos, recusados: [...recusados], avisoIA, em: new Date().toISOString() };
+      return { status: 'proposta', candidato: resumoCand(provavel.c, provavel.nota), outros: lista.slice(1, 4).map((x) => resumoCand(x.c, x.nota)), confianca: 'provavel', motivo: 'O título é parecido; confira autor e ano.', dadosLidos, recusados: [...recusados], avisoIA, avisoFonte, em: new Date().toISOString() };
     }
-    return { status: 'sem', outros: lista.slice(0, 3).map((x) => resumoCand(x.c, x.nota)), dadosLidos, recusados: [...recusados], avisoIA, em: new Date().toISOString() };
+    return { status: 'sem', outros: lista.slice(0, 3).map((x) => resumoCand(x.c, x.nota)), dadosLidos, recusados: [...recusados], avisoIA, avisoFonte, em: new Date().toISOString() };
   }
 
   let filaExtra = [];
@@ -282,7 +299,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
       avisar();
       return busca.promessa;
     }
-    busca = { rodando: true, feitos: 0, total: alvo.length, atual: null, avisoIA: null };
+    busca = { rodando: true, feitos: 0, total: alvo.length, atual: null, avisoIA: null, avisoFonte: null };
     gravados = [];
     avisar();
     busca.promessa = (async () => {
@@ -297,10 +314,12 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
           const t0 = performance.now();
           const res = await procurarUma(l, { comIA: pedirIAaqui });
           if (res.avisoIA && !busca.avisoIA) busca.avisoIA = res.avisoIA;
+          if (res.avisoFonte && !busca.avisoFonte) busca.avisoFonte = res.avisoFonte;
+          delete res.avisoFonte;
           await bib.atualizar(id, { doiBusca: res });
           if (res.status === 'proposta' && res.confianca === 'muito-provavel') {
-            const desfazer = await aceitar(id, res.candidato.doi, { auto: true });
-            if (desfazer) gravados.push({ id, titulo: l.titulo, doi: res.candidato.doi, desfazer });
+            const desfazer = await aceitar(id, chaveCand(res.candidato), { auto: true });
+            if (desfazer) gravados.push({ id, titulo: l.titulo, doi: res.candidato.doi || null, fonte: res.candidato.fonte || 'crossref', desfazer });
           }
           registrar('arq', 'organizar.doi', { det: `${res.status}${res.confianca ? `, ${res.confianca}` : ''}`, dur: Math.round(performance.now() - t0) });
           await pausa(250);
@@ -315,35 +334,43 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     return busca.promessa;
   }
 
-  /** Aceita um candidato: grava o DOI e completa só os campos vazios (o que o autor já tinha fica). */
-  async function aceitar(id, doi, { auto = false } = {}) {
+  /**
+   * Aceita um candidato: grava o DOI (quando a obra tem) e completa só os campos vazios; o que o autor já
+   * tinha fica. Cada campo completado guarda de onde veio (origens), para a ficha poder dizer.
+   */
+  async function aceitar(id, chave, { auto = false } = {}) {
     const l = bib.obter(id);
     if (!l) return null;
     const b = l.doiBusca || {};
-    const c = [b.candidato, ...(b.outros || [])].find((x) => x && x.doi.toLowerCase() === doi.toLowerCase());
+    const c = [b.candidato, ...(b.outros || [])].find((x) => x && chaveCand(x) === String(chave).toLowerCase());
     if (!c) return null;
     const antes = { ...l };
-    const m = { doi: c.doi, doiBusca: { status: 'aceita', doi: c.doi, em: new Date().toISOString(), ...(auto ? { auto: true } : {}) } };
+    const fonte = c.fonte || 'crossref';
+    const quando = new Date().toISOString();
+    // Obra achada sem DOI (OpenAlex): os dados entram e ela fica marcada como obra que não tem DOI.
+    const m = c.doi ? { doi: c.doi, doiBusca: { status: 'aceita', doi: c.doi, fonte, em: quando, ...(auto ? { auto: true } : {}) } } : { doiBusca: { status: 'nao-tem', fonte, em: quando, ...(auto ? { auto: true } : {}) } };
     for (const k of CAMPOS_BIB) if (!l[k] && c[k]) m[k] = c[k];
     if (!l.autores?.length && c.autores?.length) m.autores = c.autores;
     if (!l.organizadores?.length && c.organizadores?.length) m.organizadores = c.organizadores;
     if (tituloFraco(l)) Object.assign(m, { titulo: c.titulo, subtitulo: c.subtitulo || null, tipo: c.tipo || l.tipo });
+    const completados = Object.keys(m).filter((k) => k !== 'doiBusca');
+    m.origens = { ...(l.origens || {}), ...Object.fromEntries(completados.map((k) => [k, fonte])) };
     await bib.atualizar(id, m);
-    registrar(auto ? 'arq' : 'ui', 'organizar.aceitar', { det: auto ? 'gravado sozinho' : b.confianca || 'manual' });
+    registrar(auto ? 'arq' : 'ui', 'organizar.aceitar', { det: `${auto ? 'gravado sozinho' : b.confianca || 'manual'}, ${fonte}` });
     avisar();
     return async () => {
-      await bib.atualizar(id, { doi: antes.doi || null, doiBusca: antes.doiBusca || null, ...Object.fromEntries(Object.keys(m).filter((k) => !['doi', 'doiBusca'].includes(k)).map((k) => [k, antes[k] ?? null])) });
+      await bib.atualizar(id, { doi: antes.doi || null, doiBusca: antes.doiBusca || null, origens: antes.origens || null, ...Object.fromEntries(completados.filter((k) => k !== 'doi').map((k) => [k, antes[k] ?? null])) });
       avisar();
     };
   }
 
   /** "Não é esta": passa para o próximo candidato bom, ou deixa a obra em "sem DOI encontrado". */
-  async function recusar(id, doi) {
+  async function recusar(id, chave) {
     const l = bib.obter(id);
     if (!l?.doiBusca) return;
     const b = l.doiBusca;
-    const recusados = [...new Set([...(b.recusados || []), doi.toLowerCase()])];
-    const resto = [b.candidato, ...(b.outros || [])].filter((x) => x && !recusados.includes(x.doi.toLowerCase()));
+    const recusados = [...new Set([...(b.recusados || []), String(chave).toLowerCase()])];
+    const resto = [b.candidato, ...(b.outros || [])].filter((x) => x && !recusados.includes(chaveCand(x)));
     const prox = resto.find((x) => (x.pontos ?? 0) >= PROVAVEL);
     const novo = prox
       ? { ...b, status: 'proposta', candidato: prox, outros: resto.filter((x) => x !== prox), confianca: 'provavel', motivo: 'Outro candidato com título parecido; confira.', recusados }
@@ -393,8 +420,8 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
         for (const k of CAMPOS_BIB) if (!l[k] && c[k]) m[k] = c[k];
         if (!l.autores?.length && c.autores?.length) m.autores = c.autores;
         if (Object.keys(m).length) {
-          const antes = Object.fromEntries(Object.keys(m).map((k) => [k, l[k] ?? null]));
-          await bib.atualizar(l.id, m);
+          const antes = Object.fromEntries([...Object.keys(m), 'origens'].map((k) => [k, l[k] ?? null]));
+          await bib.atualizar(l.id, { ...m, origens: { ...(l.origens || {}), ...Object.fromEntries(Object.keys(m).map((k) => [k, 'crossref'])) } });
           atualizacao.completadas.push({ id: l.id, titulo: l.titulo, campos: Object.keys(m), desfazer: () => bib.atualizar(l.id, antes) });
         }
         if (l.ano && c.ano && String(l.ano) !== String(c.ano)) atualizacao.diferentes.push({ id: l.id, titulo: l.titulo, aqui: l.ano, la: c.ano });
@@ -601,6 +628,7 @@ export function criarOrganizar({ db, dados, bib, ia, historico, registrar, lerIn
     contagem,
     estadoBusca: () => busca,
     iaLigada,
+    fontesLigadas: () => !!fontes?.ligado(),
     aoMudar: (f) => ouvintes.add(f),
   };
 }

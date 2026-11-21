@@ -2,6 +2,7 @@
 // e o Acervo (central das obras: o que falta em cada uma, DOIs para conferir, obras repetidas).
 import { ouvir } from './ui.js';
 import { autorCurto } from './abnt.js';
+import { chaveCand } from './organizar.js';
 import { retrato, filtrar, fraseDaReferencia, esperaDOI, FILTROS, ORDENS } from './acervo.js';
 
 /* global I, toast, fecharModal */
@@ -138,16 +139,16 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     return `<article class="org-item" data-org-obra="${esc(l.id)}">
       <div class="org-lados">
         <div><span class="legenda">Na sua biblioteca</span><b>${esc(l.titulo)}</b><small>${esc([autores(l), l.ano, l.veiculo].filter(Boolean).join(', ') || 'Sem autores e ano')}</small></div>
-        <div><span class="legenda">No Crossref</span><b>${esc(c.titulo)}${c.subtitulo ? `: ${esc(c.subtitulo)}` : ''}</b><small>${esc([autores(c), c.ano, c.veiculo || c.editora].filter(Boolean).join(', '))}</small><small class="org-doi">DOI ${esc(c.doi)}</small></div>
+        <div><span class="legenda">${c.fonte === 'openalex' ? 'No OpenAlex' : 'No Crossref'}</span><b>${esc(c.titulo)}${c.subtitulo ? `: ${esc(c.subtitulo)}` : ''}</b><small>${esc([autores(c), c.ano, c.veiculo || c.editora].filter(Boolean).join(', '))}</small><small class="org-doi">${c.doi ? `DOI ${esc(c.doi)}` : 'Esta obra não tem DOI'}</small></div>
       </div>
       <p class="org-motivo"><span class="chip ${classe}">${rot}</span> ${esc(b.motivo || '')}</p>
       <div class="linha-acoes">
-        <button class="btn prim mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(c.doi)}">Aceitar este DOI</button>
-        <button class="btn mini" data-org-recusar="${esc(l.id)}" data-doi="${esc(c.doi)}">Não é esta</button>${org.iaLigada() && l.doiBusca.confianca !== 'ia' ? `<button class="btn fant mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}
+        <button class="btn prim mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(chaveCand(c))}">${c.doi ? 'Aceitar este DOI' : 'É esta obra'}</button>
+        <button class="btn mini" data-org-recusar="${esc(l.id)}" data-doi="${esc(chaveCand(c))}">Não é esta</button>${org.iaLigada() && l.doiBusca.confianca !== 'ia' ? `<button class="btn fant mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}
         ${
           b.outros?.length
             ? `<details class="org-outros"><summary>Outros candidatos (${b.outros.length})</summary>${b.outros
-                .map((o) => `<div class="org-cand"><span><b>${esc(o.titulo)}</b><small>${esc([autores(o), o.ano, o.veiculo].filter(Boolean).join(', '))}. DOI ${esc(o.doi)}</small></span><button class="btn mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(o.doi)}">É esta</button></div>`)
+                .map((o) => `<div class="org-cand"><span><b>${esc(o.titulo)}</b><small>${esc([autores(o), o.ano, o.veiculo].filter(Boolean).join(', '))}. ${o.doi ? `DOI ${esc(o.doi)}` : 'Sem DOI'}, ${o.fonte === 'openalex' ? 'no OpenAlex' : 'no Crossref'}</small></span><button class="btn mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(chaveCand(o))}">É esta</button></div>`)
                 .join('')}</details>`
             : ''
         }
@@ -289,17 +290,18 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const emOrdemHTML = res.comDOI && !at?.rodando
       ? `<section class="org-sec" id="acervo-em-ordem"><div class="org-cab"><h2>Obras com DOI <span class="chip">${res.comDOI}</span></h2><button class="btn mini" data-org-atualizar-doi data-ocupado="Conferindo…">Atualizar os dados pelo DOI</button></div><p class="meta">Confere no Crossref todas as obras que têm DOI e busca revista, volume, páginas e o que mais faltar. Completa só o que está vazio; o que você escreveu fica.</p></section>`
       : '';
-    const notaIA = org.iaLigada() ? '' : '<p class="meta mb-4">A procura usa só o Crossref. Com o Gemini ligado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o candidato certo. <a href="#ajustes">Ligar em Ajustes</a></p>';
+    const notaIA = org.iaLigada() ? '' : `<p class="meta mb-4">${org.fontesLigadas() ? 'A procura usa o Crossref e, quando ele não dá certeza, o OpenAlex.' : 'A procura usa só o Crossref.'} Com o Gemini ligado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o candidato certo. <a href="#ajustes">Ligar em Ajustes</a></p>`;
     const grav = org.gravadosAgora();
     const gravadosHTML = grav.length && !st.rodando
-      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Gravados agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com o Crossref, então o DOI foi gravado e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>DOI ${esc(g.doi)}</small></span></li>`).join('')}</ul></section>`
+      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Gravados agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com a base consultada, então os dados foram gravados e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>${g.doi ? `DOI ${esc(g.doi)}` : 'Obra sem DOI'}, do ${g.fonte === 'openalex' ? 'OpenAlex' : 'Crossref'}</small></span></li>`).join('')}</ul></section>`
       : '';
     if (!r.total)
       return `${topo}<div class="vazio-estado"><h2>Nenhuma obra ainda</h2><p>Solte PDFs, importe do Zotero ou adicione uma obra pelo DOI. O app busca os dados e monta a referência em ABNT.</p><button class="btn prim" data-org-importar>${icone('upload')}Adicionar obras</button></div>`;
     const andamentoAt = at?.rodando
       ? `<div class="bloco org-andamento" role="status" aria-live="polite"><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><b>Conferindo pelo DOI: ${at.feitos} de ${at.total}</b></div><div class="barra mb-0"><i style="width:${at.total ? Math.round((at.feitos / at.total) * 100) : 0}%"></i></div></div>`
       : '';
-    return `${topo}${painel(r, st, pend)}${andamento}${andamentoAt}${avisoIA}${resultadoAt}${gravadosHTML}
+    const avisoFonte = st.avisoFonte ? `<div class="aviso" id="acervo-aviso-fonte"><span>ⓘ</span><div>O OpenAlex não foi consultado nesta procura: ${esc(st.avisoFonte)} A procura seguiu só pelo Crossref.</div></div>` : '';
+    return `${topo}${painel(r, st, pend)}${andamento}${andamentoAt}${avisoIA}${avisoFonte}${resultadoAt}${gravadosHTML}
       ${props.length ? `<section class="org-sec"><div class="org-cab"><h2>Para você decidir <span class="chip">${props.length}</span></h2>${muitoProvaveis.length > 1 ? `<button class="btn mini" data-org-aceitar-todos data-ocupado="Aceitando…">Aceitar os ${muitoProvaveis.length} muito prováveis</button>` : ''}</div>${props.map(cartaoProposta).join('')}</section>` : ''}
       ${listaObras(r)}
       ${reps.length ? `<section class="org-sec" id="acervo-repetidas"><div class="org-cab"><h2>Parecem a mesma obra <span class="chip">${reps.length}</span></h2>${reps.filter((g) => g.tipo === 'identica').length > 1 ? `<button class="btn mini" data-org-juntar-identicas data-ocupado="Juntando…">Juntar as ${reps.filter((g) => g.tipo === 'identica').length} idênticas</button>` : ''}</div>${reps.map((g) => cartaoRepetidas(g, cacheFica.get(g.ids.join(',')))).join('')}</section>` : ''}
@@ -373,7 +375,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.orgDesfazerGravados !== undefined) {
       const n = await org.desfazerGravados();
       redesenhar();
-      return toast(`${plural(n, 'DOI retirado', 'DOIs retirados')}. As obras voltaram para a lista de conferir.`);
+      return toast(`${plural(n, 'gravação desfeita', 'gravações desfeitas')}. As obras voltaram para a lista de conferir.`);
     }
     if (d.orgDispensar !== undefined) {
       org.dispensarGravados();
@@ -382,7 +384,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.orgAceitar) {
       const desfazer = await org.aceitar(d.orgAceitar, d.doi);
       redesenhar();
-      if (desfazer) toast('DOI aceito. Os campos vazios da obra foram completados.', async () => { await desfazer(); redesenhar(); });
+      if (desfazer) toast(`${String(d.doi).startsWith('openalex:') ? 'Obra aceita' : 'DOI aceito'}. Os campos vazios da obra foram completados.`, async () => { await desfazer(); redesenhar(); });
       return;
     }
     if (d.orgRecusar) {
@@ -392,7 +394,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.orgAceitarTodos !== undefined) {
       const ls = org.propostas().filter((l) => l.doiBusca.confianca === 'muito-provavel');
       const desfazeres = [];
-      for (const l of ls) desfazeres.push(await org.aceitar(l.id, l.doiBusca.candidato.doi));
+      for (const l of ls) desfazeres.push(await org.aceitar(l.id, chaveCand(l.doiBusca.candidato)));
       redesenhar();
       toast(`${plural(ls.length, 'DOI aceito', 'DOIs aceitos')}.`, async () => { for (const f of desfazeres.reverse()) if (f) await f(); redesenhar(); });
       return;
