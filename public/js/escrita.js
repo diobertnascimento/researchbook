@@ -96,6 +96,29 @@ export function blocos(html) {
   return [...doc.body.firstChild.querySelectorAll('p, h2, h3, li, blockquote, pre')].filter((b) => !b.querySelector('p, li')).map((b) => ({ tag: b.tagName.toLowerCase(), texto: b.textContent, autoria: b.getAttribute('data-autoria') || 'autor', ia: b.getAttribute('data-ia') }));
 }
 
+/**
+ * Quantas páginas o texto ocupa no Word exportado, mais ou menos (v2.19.0).
+ * A conta usa o formato do arquivo que o app gera (docx.js: A4, Times New Roman 12, espaçamento 1,5):
+ * cerca de 34 linhas de 85 caracteres, menos o que os parágrafos deixam em branco, dá uns 2.500 caracteres
+ * por página. Cada figura conta como um terço de página. É uma estimativa: o número certo é o do Word.
+ */
+export const CARACTERES_POR_PAGINA = 2500;
+export function paginasEstimadas(texto) {
+  const secoes = texto?.secoes || [];
+  const letras = secoes.reduce((n, s) => n + blocos(s.html).reduce((m, b) => m + b.texto.trim().length, 0), 0);
+  const figuras = secoes.reduce((n, s) => n + (String(s.html || '').match(/<figure\b/g) || []).length, 0);
+  return letras / CARACTERES_POR_PAGINA + figuras / 3;
+}
+/** "menos de meia página", "cerca de 1 página", "cerca de 2 páginas e meia". */
+export function fraseDePaginas(n) {
+  if (!n) return 'página em branco';
+  if (n < 0.4) return 'menos de meia página';
+  const meias = Math.round(n * 2);
+  if (meias === 1) return 'cerca de meia página';
+  const inteiras = Math.floor(meias / 2);
+  return `cerca de ${inteiras} ${inteiras === 1 ? 'página' : 'páginas'}${meias % 2 ? ' e meia' : ''}`;
+}
+
 /** Semelhança entre dois textos (coeficiente de Dice sobre pares de palavras), de 0 a 1. */
 export function semelhanca(a, b) {
   const pares = (t) => {

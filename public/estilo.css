@@ -1424,6 +1424,44 @@ a.arg-item{text-decoration:none;color:inherit}
 .org-sem{display:flex;justify-content:space-between;align-items:center;gap:var(--e-3);flex-wrap:wrap;padding:var(--e-3) 0;border-top:1px solid var(--borda)}
 .org-sem > span:first-child{min-width:0;flex:1 1 320px}
 .org-lido{color:var(--acento-forte)!important}
+/* Andamento com número e etapas (v2.18.0): usado na busca do Acervo e nas esperas longas */
+.esperando{display:inline-flex;align-items:baseline;gap:var(--e-2);font-variant-numeric:tabular-nums}
+.pontos{display:inline-flex;gap:3px;position:relative;top:-2px}
+.pontos i{width:5px;height:5px;border-radius:50%;background:var(--acento);animation:pontos 1.2s ease-in-out infinite}
+.pontos i:nth-child(2){animation-delay:.15s}
+.pontos i:nth-child(3){animation-delay:.3s}
+@keyframes pontos{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.esperando-costuma{color:var(--texto-3)}
+.andamento{max-width:420px;margin:0 auto;text-align:left}
+.andamento .barra{margin:var(--e-3) 0 var(--e-2)}
+@media (prefers-reduced-motion:reduce){.pontos i{animation:none;opacity:.7}}
+.andamento-cab{display:flex;align-items:baseline;justify-content:space-between;gap:var(--e-3)}
+.andamento-pct{font-weight:600;font-variant-numeric:tabular-nums}
+.org-andamento .barra{margin:var(--e-3) 0 var(--e-2)}
+.barra i{transition:width .5s ease-out}
+.etapas{list-style:none;margin:var(--e-4) 0 var(--e-3);padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--e-2)}
+.etapas li{display:flex;align-items:flex-start;gap:var(--e-2);padding-top:var(--e-3);box-shadow:inset 0 2px 0 var(--borda-forte);font-size:var(--fs-meta);line-height:1.35;color:var(--texto-3);transition:box-shadow .4s}
+.etapas li.feito{box-shadow:inset 0 2px 0 var(--texto);color:var(--texto)}
+.etapas li.agora{box-shadow:inset 0 2px 0 var(--acento);color:var(--texto);font-weight:600}
+.etapa-sinal{flex:none;width:14px;height:14px;box-sizing:border-box;border-radius:50%;border:2px solid var(--borda-forte);position:relative;top:1px}
+.etapas li.agora .etapa-sinal{border-color:var(--borda-forte);border-top-color:var(--acento);animation:giro .8s linear infinite}
+.etapas li.feito .etapa-sinal{border:0;background:var(--texto);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m5 12 5 5 9-10' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m5 12 5 5 9-10' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;border-radius:0}
+.etapas li.pulado .etapa-sinal{border:0;border-radius:0;height:2px;top:8px;background:var(--borda-forte)}
+@media (max-width:560px){.etapas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){.etapas li.agora .etapa-sinal,.giro{animation:none}.barra i,.etapas li{transition:none}}
+/* Resultados lado a lado */
+.ac-rolar{overflow-x:auto;margin:var(--e-3) 0}
+.ac-comp{width:100%;border-collapse:collapse;font-size:var(--fs-meta);line-height:1.45}
+.ac-comp-2{min-width:720px}
+.ac-comp th,.ac-comp td{padding:var(--e-3) var(--e-4) var(--e-3) 0;text-align:left;vertical-align:top;border-bottom:1px solid var(--borda)}
+.ac-comp thead th{font-weight:500;color:var(--texto-3);vertical-align:bottom}
+.ac-comp thead th small{display:block;margin-top:2px;font-weight:600;color:var(--texto)}
+.ac-comp tbody th{width:96px;font-weight:400;color:var(--texto-3)}
+.ac-comp td{overflow-wrap:anywhere}
+.ac-difere{font-weight:600}
+.ac-vazio{color:var(--texto-3)}
+.ac-comp-acoes th,.ac-comp-acoes td{border-bottom:0;padding-bottom:0}
+@media (max-width:760px){.ac-comp-1 tbody th{width:72px}}
 /* Acervo: central das obras (v2.16.0) */
 .ac-painel{margin-bottom:var(--e-8)}
 .ac-painel > p{margin:0;color:var(--texto-2);max-width:60ch}
@@ -1453,6 +1491,18 @@ a.arg-item{text-decoration:none;color:inherit}
 .ac-sinal{flex:none;width:8px;height:8px;border-radius:50%;background:var(--texto-3);position:relative;top:-1px}
 .ac-sinal.falta{background:transparent;box-shadow:inset 0 0 0 2px var(--texto)}
 .ac-tab td a{color:var(--texto-3);white-space:nowrap}
+a.ac-obra{text-decoration:none}
+.ac-obra-tit{font-size:var(--fs-titulo-1);line-height:1.2;max-width:26em}
+.ac-ref{font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:1.6;max-width:44em;margin:var(--e-4) 0 var(--e-3)}
+.ac-cit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--e-5);margin:var(--e-6) 0 0;max-width:44em}
+.ac-cit dt{font-size:var(--fs-meta);color:var(--texto-3)}
+.ac-cit dd{margin:var(--e-1) 0 0;font-family:var(--leitura);font-size:var(--fs-corpo)}
+.ac-dados th[scope="row"]{width:190px;font-weight:400;color:var(--texto-3);vertical-align:top;padding:var(--e-3) var(--e-4) var(--e-3) 0;border-bottom:1px solid var(--borda)}
+.ac-dados td{padding:var(--e-3) var(--e-4) var(--e-3) 0;overflow-wrap:anywhere}
+.ac-dados td:nth-child(2){width:auto;font-size:var(--fs-ui);color:var(--texto)}
+.ac-dados td:nth-child(3){width:240px;color:var(--texto-3)}
+.ac-uso{margin:0;padding-left:var(--e-5);color:var(--texto-2)}
+.ac-fim{margin-top:var(--e-8);gap:var(--e-2) var(--e-6);flex-wrap:wrap}
 @media (max-width:760px){
   .ac-tab thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .ac-tab,.ac-tab tbody,.ac-tab tr,.ac-tab td{display:block;width:auto!important}
@@ -1461,6 +1511,10 @@ a.arg-item{text-decoration:none;color:inherit}
   .ac-tab td[data-rot]::before{content:attr(data-rot) ": ";color:var(--texto-3);font-weight:400}
   .ac-c-obra{padding-bottom:var(--e-2)!important}
   .ac-achar,.ac-achar input{width:100%}
+  .ac-dados tr{padding:var(--e-3) 0}
+  .ac-dados th[scope="row"]{display:block;width:auto;border:0;padding:0}
+  .ac-dados td:nth-child(3)::before{content:"De onde veio: "}
+  .ac-cit{grid-template-columns:1fr}
 }
 .org-andamento{margin-bottom:var(--e-5)}
 .org-andamento .barra{margin-top:var(--e-3)}
@@ -1689,6 +1743,19 @@ body.leitor main{max-width:none}
 .esc-corpo hr{border:0;margin:var(--e-8) auto;width:120px;height:1px;background:var(--borda-forte)}
 .esc-corpo a{color:var(--acento);text-underline-offset:3px}
 .continue-escrevendo{margin-bottom:var(--e-10)}
+
+/* Escrever em página em branco (v2.19.0): sem caixa em volta do texto, na mesma coluna e no mesmo corpo de
+   letra do modo leitura, com a contagem discreta no pé da tela. */
+.esc-grid.real .folha{background:none;border:0;border-radius:0;overflow:visible}
+.esc-grid.real .folha-corpo{max-width:680px;margin:0 auto;padding:var(--e-4) var(--e-5) 96px}
+.esc-grid.real .esc-corpo{max-width:none;min-height:60vh;font-size:var(--fs-leitor);line-height:1.6}
+.esc-grid.real .esc-sec-tit{font-size:var(--fs-titulo-1);line-height:1.25;margin-bottom:var(--e-4)}
+.esc-grid.real .esc-corpo p,.esc-grid.real .esc-corpo li,.esc-grid.real .esc-corpo blockquote,.esc-grid.real .esc-corpo h3,.esc-grid.real .esc-corpo h2,.esc-grid.real .esc-corpo pre{padding-left:0;border-left-width:0}
+.esc-grid.real .marcas .esc-corpo p,.esc-grid.real .marcas .esc-corpo li,.esc-grid.real .marcas .esc-corpo blockquote,.esc-grid.real .marcas .esc-corpo h3,.esc-grid.real .marcas .esc-corpo h2{padding-left:15px;border-left-width:3px;margin-left:-18px}
+.esc-grid.real .folha-barra{position:sticky;bottom:0;z-index:2;justify-content:center;gap:var(--e-2) var(--e-6);padding:var(--e-3) var(--e-4);border:0;background:rgba(255,255,255,.94);color:var(--texto-3);font-size:var(--fs-legenda)}
+.esc-grid.real .folha-barra label{margin-left:0}
+#esc-paginas{color:var(--texto-2)}
+@media (max-width:1000px){.esc-grid.real .folha-barra{position:static;justify-content:flex-start;padding-left:var(--e-5)}.esc-grid.real .folha-corpo{padding:var(--e-3) var(--e-4) var(--e-8)}}
 
 /* Editor: o Copilot e as versões ficam fechados até serem chamados, e a barra do app sai da tela de escrever. */
 .esc-grid.sem-painel{grid-template-columns:230px minmax(0,1fr)}

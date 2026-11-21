@@ -1,5 +1,6 @@
 // Telas da Dissertação (Revisão do projeto, Orientação) e dos Diálogos, com dados reais.
 import { FORMATOS, FUNCOES_OBRA, TIPOS_PROBLEMA, DISSERTACAO, PARTES_PARECER, GRAVIDADES } from './dissertacao.js';
+import { pensandoHTML, desdeDe } from './espera.js';
 import { MODOS } from './dialogos.js';
 import { pipsHTML, ETAPAS, diaLocal, dataCurta } from './progresso.js';
 import { citacao } from './abnt.js';
@@ -73,7 +74,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   function parecerHTML(r) {
     const p = r.parecer;
     if (!p) {
-      if (est.parecerCorrendo === r.id) return `<section class="proximo parecer-espera" id="sec-parecer" role="status"><div class="rot">Lendo o projeto para o parecer</div><p>O Gemini está lendo a versão ${r.versao} inteira, parte por parte. Leva alguns minutos; a lista de obras abaixo já pode ser usada.</p></section>`;
+      if (est.parecerCorrendo === r.id) return `<section class="proximo parecer-espera" id="sec-parecer" role="status"><div class="rot">Lendo o projeto para o parecer</div><p>${pensandoHTML(`O Gemini está lendo a versão ${r.versao} inteira, parte por parte,`, desdeDe(`parecer:${r.id}`), { tarefa: 'parecer_projeto' })}</p><p class="meta">Você pode sair desta página: o parecer aparece aqui quando ficar pronto. A lista de obras abaixo já pode ser usada.</p></section>`;
       const erro = est.parecerErro[r.id];
       const acao = arquivosDaSessao.has(r.id) ? `<button class="btn" data-par-pedir="${esc(r.id)}">${erro ? 'Tentar de novo' : 'Pedir o parecer'}</button>` : `<label class="btn">Escolher o PDF da versão ${r.versao}<input type="file" accept="application/pdf" data-par-pdf="${esc(r.id)}" hidden></label>`;
       return `<section class="proximo parecer-espera" id="sec-parecer"><div class="rot">${erro ? 'O parecer desta versão não saiu' : 'Esta versão ainda não tem parecer'}</div>
@@ -112,6 +113,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       est.parecerErro[revId] = err;
     } finally {
       est.parecerCorrendo = null;
+      desdeDe(`parecer:${revId}`, false);
       redesenhar();
     }
   }
@@ -171,7 +173,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   }
 
   async function enviarVersao(arquivo) {
-    abrirModal(`<h2 id="modal-tit">Lendo a versão do projeto</h2><p role="status">O Gemini está lendo ${esc(arquivo.name)} e comparando com a biblioteca. Leva cerca de um minuto; você pode fechar esta janela.</p><div class="pe"><button class="btn fant" data-dlg-fechar>Fechar</button></div>`);
+    abrirModal(`<h2 id="modal-tit">Lendo a versão do projeto</h2><p role="status">${pensandoHTML(`O Gemini está lendo ${arquivo.name} e comparando com a biblioteca`, Date.now(), { tarefa: 'revisao_projeto' })}</p><p class="meta">Você pode fechar esta janela: a leitura continua.</p><div class="pe"><button class="btn fant" data-dlg-fechar>Fechar</button></div>`);
     try {
       const r = await diss.revisar(arquivo);
       est.rev = r.id;
@@ -274,7 +276,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
         <div class="linha-h"><div class="seg" role="group" aria-label="Modo do diálogo">${Object.keys(MODOS).map((m) => `<button class="${m === sel.modo ? 'on' : ''}" title="${esc(MODOS[m])}" aria-pressed="${m === sel.modo}" data-dlg-modo="${m}">${m}</button>`).join('')}</div>
         ${sel.leituras.map((i) => bib.obter(i)).filter(Boolean).map((l) => `<a class="sem-sublinhado chip proj" href="#leitor/${encodeURIComponent(l.id)}">${esc(citacao(l))}</a>`).join('')}</div>
         <p class="m-0 t-legenda mute">${esc(MODOS[sel.modo])}.</p></header>
-        <div class="corpo" id="dlg-corpo">${msgs ? mensagensHTML(msgs) : '<p class="mute">Abrindo a conversa…</p>'}${est.ocupado === sel.id ? '<p class="mute" role="status">A IA está pensando…</p>' : ''}${est.erro && est.erro.id === sel.id ? erroHTML(est.erro.err) : ''}</div>
+        <div class="corpo" id="dlg-corpo">${msgs ? mensagensHTML(msgs) : '<p class="mute">Abrindo a conversa…</p>'}${est.ocupado === sel.id ? `<p class="mute" role="status">${pensandoHTML('A IA está pensando', desdeDe(`dialogo:${sel.id}:${msgs?.length || 0}`), { tarefa: 'dialogo' })}</p>` : ''}${est.erro && est.erro.id === sel.id ? erroHTML(est.erro.err) : ''}</div>
         <form class="entrada" data-dlg-enviar="${esc(sel.id)}"><textarea id="dlg-msg" placeholder="${msgs && msgs.length ? 'Continue o diálogo' : 'Diga a sua posição ou a sua dúvida'}" aria-label="Mensagem"></textarea><button type="submit" aria-label="Enviar" ${est.ocupado ? 'disabled' : ''}>${icone('enviar')}</button></form>
       </section>
       <aside class="lado">

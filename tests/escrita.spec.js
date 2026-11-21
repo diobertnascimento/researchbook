@@ -109,6 +109,18 @@ test.describe('no computador', () => {
     const id = await textoPronto(page, { teto: 30 });
     await expect(page.locator('#esc-palavras')).toHaveText('10 de ~1500 palavras');
     await expect(page.locator('#esc-aut')).toContainText('IA 0%');
+    // Página em branco: sem caixa em volta do texto, na coluna e no corpo de letra do modo leitura, com a
+    // estimativa de páginas discreta no pé.
+    const folha = await page.locator('.folha').evaluate((e) => { const c = getComputedStyle(e); return [c.borderTopWidth, c.backgroundColor]; });
+    expect(folha).toEqual(['0px', 'rgba(0, 0, 0, 0)']);
+    expect(await page.locator('#esc-corpo').evaluate((e) => getComputedStyle(e).fontSize)).toBe('20px');
+    await expect(page.locator('#esc-paginas')).toHaveText('menos de meia página');
+    const contas = await page.evaluate(async () => {
+      const m = await import('/js/escrita.js');
+      const texto = (n, figuras = 0) => ({ secoes: [{ html: `<p>${'a'.repeat(n)}</p>${'<figure data-img="img-aaaaaaaa.png"></figure>'.repeat(figuras)}` }, { html: '' }] });
+      return [0, 900, 1300, 2500, 3800, 6200].map((n) => m.fraseDePaginas(m.paginasEstimadas(texto(n)))).concat(m.fraseDePaginas(m.paginasEstimadas(texto(2500, 3))));
+    });
+    expect(contas).toEqual(['página em branco', 'menos de meia página', 'cerca de meia página', 'cerca de 1 página', 'cerca de 1 página e meia', 'cerca de 2 páginas e meia', 'cerca de 2 páginas']);
 
     // Digitar salva sozinho e conta como texto do autor.
     await page.locator('#esc-corpo p').first().click();

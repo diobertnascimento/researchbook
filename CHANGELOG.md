@@ -2,6 +2,34 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.19.0 (21/11/2026)
+Modo leitura com tabelas e gráficos, e escrever em página em branco.
+- O modo leitura passou a trazer tabelas e figuras desenhadas no PDF, não só as fotos. Tabela com réguas (a de cima, a do cabeçalho e a de baixo, como nas revistas, ou em grade) e gráfico ou diagrama feito de linhas e formas aparecem como um recorte da página, no lugar em que estão no texto.
+- O texto que fica dentro do recorte (as células da tabela, os rótulos do gráfico) sai do texto corrido, porque já aparece na figura. Antes ele vinha embaralhado no meio do parágrafo.
+- Limites: tabela sem nenhuma linha desenhada, só alinhada por espaços, continua saindo como texto. Texto em duas colunas ainda pode sair fora de ordem. Dentro de uma figura não dá para grifar no modo leitura; no modo PDF dá.
+- Escrever ficou como uma página em branco: sem a caixa em volta do texto, na mesma coluna e no mesmo tamanho de letra do modo leitura.
+- No pé da tela, discreta, a estimativa de quanto você já escreveu: "cerca de 2 páginas e meia", ao lado das palavras e da participação da IA. A conta usa o formato do Word que o app exporta (A4, Times New Roman 12, espaçamento 1,5); o número certo é o do Word.
+- Testado com um PDF fictício feito para isso (tabela, quadro e gráfico desenhados). Falta ver com os seus artigos.
+
+## 2.18.0 (21/11/2026)
+Busca passo a passo no Acervo e esperas com número.
+- A busca de dados mostra o caminho de cada obra: ler o PDF, procurar pelo DOI, procurar pelo título, conferir. Acima, a barra geral com quantas obras já foram e a porcentagem.
+- Novo primeiro passo: o app lê o DOI escrito nas primeiras páginas do PDF que já está no aparelho. Quando acha, busca por ele e grava, sem depender do título. É o que resolve o arquivo que entrou com nome de arquivo no lugar do título.
+- Resultados em dúvida aparecem lado a lado com a sua obra, dado por dado, com o que é diferente em negrito e a base de onde veio cada um. "Nenhuma das duas" recusa de uma vez, com desfazer.
+- Esperas da IA deixaram de ser só um texto: o tutor, o Copilot, os diálogos e o parecer do projeto mostram "há 8 s", contando sozinho. Quando o app já tem histórico daquela tarefa neste aparelho, diz também quanto costuma levar; se passar do dobro, avisa que está demorando mais que o normal. O botão do tutor passou a se chamar "Parar".
+- PDF que ainda não está no aparelho mostra a barra do download, com os MB e a porcentagem.
+- O app só mostra porcentagem quando sabe o total. Onde não sabe (resposta da IA), mostra o tempo.
+- Ainda sem barra, por dependerem de mudança maior no envio: envio de PDF e de áudio para o Drive, importação e exportação para o Word.
+
+## 2.17.0 (20/11/2026)
+Acervo: página de cada obra, OpenAlex e adicionar pelo link.
+- Cada obra tem a sua página (clique nela no Acervo). Ela mostra o que falta, a referência em ABNT como vai sair no Word, e cada dado com a origem: Crossref, OpenAlex, página do artigo ou "Você escreveu". Dados gravados antes desta versão aparecem como "Sem registro de origem".
+- "Buscar os dados desta obra" procura só aquela obra. Um resultado parecido aparece na própria página para você aceitar ou recusar.
+- A procura passou a usar duas bases. O Crossref continua sendo a primeira; quando ele não dá certeza, o app consulta o OpenAlex, que cobre anais de evento e trabalhos sem DOI. Obra achada sem DOI é aceita do mesmo jeito e fica marcada como "não tem DOI".
+- "Adicionar obra" aceita o link da página do artigo (SciELO, portais de revistas e repositórios de uma lista fechada). O app lê os dados que a página publica e, se ela traz o DOI, confere no Crossref.
+- OpenAlex e link passam pelo seu servidor, que guarda a chave do OpenAlex e é quem abre a página. Para ligar: publique o servidor de novo (`servidor/publicar.sh`), que vai pedir a chave do OpenAlex com a tela escondida. Sem isso, a procura segue só pelo Crossref e a tela avisa.
+- Apagar uma obra pela página dela manda para a lixeira, com desfazer.
+
 ## 2.16.0 (20/11/2026)
 Acervo no menu: a central de todas as obras.
 - O Acervo saiu dos Ajustes e virou o último item do menu (no celular, fica em Mais). O endereço antigo continua abrindo a mesma tela.

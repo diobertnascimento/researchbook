@@ -120,12 +120,12 @@ export function criarBiblioteca({ db, dados, registrar, drive }) {
   /** Blob do PDF: do aparelho, ou baixado do Drive (e guardado) se veio de outro aparelho. */
   // Um download por obra de cada vez: telas redesenhadas durante o download esperam o mesmo pedido.
   const baixando = new Map();
-  function obterPDF(id) {
-    if (!baixando.has(id)) baixando.set(id, obterPDFagora(id).finally(() => baixando.delete(id)));
+  function obterPDF(id, aoProgresso = null) {
+    if (!baixando.has(id)) baixando.set(id, obterPDFagora(id, aoProgresso).finally(() => baixando.delete(id)));
     return baixando.get(id);
   }
 
-  async function obterPDFagora(id) {
+  async function obterPDFagora(id, aoProgresso = null) {
     const local = await arm.um(db, 'arquivos', id);
     if (local) return { blob: local.blob };
     const l = obter(id);
@@ -135,7 +135,7 @@ export function criarBiblioteca({ db, dados, registrar, drive }) {
     if (!d) return { erro: 'Para baixar o PDF deste aparelho, entre com o Google.' };
     if (!navigator.onLine) return { erro: 'Sem internet. O PDF ainda não está guardado neste aparelho.' };
     try {
-      const blob = await d.baixarArquivo(l.pdf.driveId, `biblioteca/pdfs/${id}.pdf`);
+      const blob = await d.baixarArquivo(l.pdf.driveId, `biblioteca/pdfs/${id}.pdf`, aoProgresso, l.pdf.tamanho || 0);
       await arm.gravar(db, 'arquivos', { id, blob, tipo: 'application/pdf', tamanho: blob.size, guardadoEm: new Date().toISOString() });
       return { blob };
     } catch (e) {

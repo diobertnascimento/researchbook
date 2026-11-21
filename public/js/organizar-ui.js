@@ -1,8 +1,9 @@
 // Telas de organizar a biblioteca: "Importar" (vários PDFs, exportações do Zotero, a pasta do Zotero)
 // e o Acervo (central das obras: o que falta em cada uma, DOIs para conferir, obras repetidas).
 import { ouvir } from './ui.js';
-import { autorCurto } from './abnt.js';
-import { retrato, filtrar, fraseDaReferencia, esperaDOI, FILTROS, ORDENS } from './acervo.js';
+import { autorCurto, referencia, referenciaTexto, citacao } from './abnt.js';
+import { chaveCand } from './organizar.js';
+import { retrato, filtrar, faltas, comparar, camposEmFalta, fraseDaReferencia, esperaDOI, nomeDaOrigem, CAMPOS_REF, FILTROS, ORDENS } from './acervo.js';
 
 /* global I, toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -131,23 +132,30 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
 
   /* ---------- Aba Organizar ---------- */
 
+  const NOME_FONTE = { crossref: 'Crossref', openalex: 'OpenAlex' };
+  /** Resultados da busca lado a lado com a obra; o que difere do que está na obra fica em negrito. */
   function cartaoProposta(l) {
     const b = l.doiBusca;
-    const c = b.candidato;
     const [rot, classe] = CONFIANCA[b.confianca] || ['Para conferir', ''];
+    // Ao lado do melhor resultado entra o segundo, quando ele também é parecido o bastante para confundir.
+    const segundo = (b.outros || []).find((o) => (o.pontos ?? 0) >= 0.6);
+    const cs = [b.candidato, segundo].filter(Boolean);
+    const resto = (b.outros || []).filter((o) => o !== segundo);
+    const linhas = comparar(l, cs);
+    const cab = cs.map((c, i) => `<th scope="col">Achado no ${NOME_FONTE[c.fonte] || 'Crossref'}${cs.length > 1 && i === 0 ? '<small>O mais parecido com a sua obra</small>' : ''}</th>`).join('');
+    const corpo = linhas
+      .map((r) => `<tr><th scope="row">${r.rotulo}</th><td>${r.obra ? esc(r.obra) : '<span class="ac-vazio">Não está na obra</span>'}</td>${r.celulas.map((c) => `<td${c.difere ? ' class="ac-difere"' : ''}>${c.valor ? esc(c.valor) : `<span class="ac-vazio">${r.rotulo === 'DOI' ? 'Não tem' : 'Não informado'}</span>`}</td>`).join('')}</tr>`)
+      .join('');
+    const botoes = cs.map((c) => `<td><button class="btn ${cs.length === 1 ? 'prim ' : ''}mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(chaveCand(c))}">${cs.length === 1 ? (c.doi ? 'Aceitar este DOI' : 'É esta obra') : `É esta, do ${NOME_FONTE[c.fonte] || 'Crossref'}`}</button></td>`).join('');
     return `<article class="org-item" data-org-obra="${esc(l.id)}">
-      <div class="org-lados">
-        <div><span class="legenda">Na sua biblioteca</span><b>${esc(l.titulo)}</b><small>${esc([autores(l), l.ano, l.veiculo].filter(Boolean).join(', ') || 'Sem autores e ano')}</small></div>
-        <div><span class="legenda">No Crossref</span><b>${esc(c.titulo)}${c.subtitulo ? `: ${esc(c.subtitulo)}` : ''}</b><small>${esc([autores(c), c.ano, c.veiculo || c.editora].filter(Boolean).join(', '))}</small><small class="org-doi">DOI ${esc(c.doi)}</small></div>
-      </div>
-      <p class="org-motivo"><span class="chip ${classe}">${rot}</span> ${esc(b.motivo || '')}</p>
-      <div class="linha-acoes">
-        <button class="btn prim mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(c.doi)}">Aceitar este DOI</button>
-        <button class="btn mini" data-org-recusar="${esc(l.id)}" data-doi="${esc(c.doi)}">Não é esta</button>${org.iaLigada() && l.doiBusca.confianca !== 'ia' ? `<button class="btn fant mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}
+      <p class="org-motivo"><span class="chip ${classe}">${rot}</span> ${esc(b.motivo || '')} ${cs.length > 1 ? 'Dois resultados parecidos: qual é a sua obra?' : ''} O que está em negrito é diferente do que está na sua obra.</p>
+      <div class="ac-rolar"><table class="ac-comp ac-comp-${cs.length}"><thead><tr><th scope="col"><span class="sr">Dado</span></th><th scope="col">Na sua obra</th>${cab}</tr></thead>
+        <tbody>${corpo}<tr class="ac-comp-acoes"><th scope="row"><span class="sr">Escolher</span></th><td><button class="lnk m-0" data-org-nenhuma="${esc(l.id)}" data-chaves="${esc(cs.map(chaveCand).join('|'))}">${cs.length > 1 ? 'Nenhuma das duas' : 'Não é esta'}</button></td>${botoes}</tr></tbody></table></div>
+      <div class="linha-acoes">${org.iaLigada() && b.confianca !== 'ia' ? `<button class="btn fant mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}
         ${
-          b.outros?.length
-            ? `<details class="org-outros"><summary>Outros candidatos (${b.outros.length})</summary>${b.outros
-                .map((o) => `<div class="org-cand"><span><b>${esc(o.titulo)}</b><small>${esc([autores(o), o.ano, o.veiculo].filter(Boolean).join(', '))}. DOI ${esc(o.doi)}</small></span><button class="btn mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(o.doi)}">É esta</button></div>`)
+          resto.length
+            ? `<details class="org-outros"><summary>Outros resultados (${resto.length})</summary>${resto
+                .map((o) => `<div class="org-cand"><span><b>${esc(o.titulo)}</b><small>${esc([autores(o), o.ano, o.veiculo].filter(Boolean).join(', '))}. ${o.doi ? `DOI ${esc(o.doi)}` : 'Sem DOI'}, ${o.fonte === 'openalex' ? 'no OpenAlex' : 'no Crossref'}</small></span><button class="btn mini" data-org-aceitar="${esc(l.id)}" data-doi="${esc(chaveCand(o))}">É esta</button></div>`)
                 .join('')}</details>`
             : ''
         }
@@ -203,7 +211,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
           ? `<span class="ac-falta">${sinal(false)}Sem DOI</span>`
           : '<span class="ac-ok">Sem DOI</span>';
     return `<tr data-ac-obra="${esc(l.id)}">
-      <td class="ac-c-obra"><button type="button" class="ac-obra" data-org-corrigir="${esc(l.id)}"><b>${esc(l.titulo || 'Sem título')}</b><small>${esc(sobre)}. ${esc(l.veiculo ? l.veiculo + '. ' : '')}${TIPO[l.tipo] || 'Artigo'}.</small></button></td>
+      <td class="ac-c-obra"><a class="ac-obra" href="#acervo/${encodeURIComponent(l.id)}"><b>${esc(l.titulo || 'Sem título')}</b><small>${esc(sobre)}. ${esc(l.veiculo ? l.veiculo + '. ' : '')}${TIPO[l.tipo] || 'Artigo'}.</small></a></td>
       <td data-rot="Referência"><span class="${f.ref.length ? 'ac-falta' : 'ac-ok'}">${sinal(!f.ref.length)}${esc(fraseDaReferencia(f.ref))}</span></td>
       <td data-rot="PDF">${pdf}</td>
       <td data-rot="DOI">${doi}</td>
@@ -265,6 +273,94 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     </section>`;
   }
 
+  /* ---------- Andamento da busca: barra com número e porcentagem, e as etapas da obra de agora ---------- */
+  const ETAPAS_BUSCA = [['pdf', 'Ler o PDF'], ['doi', 'Procurar pelo DOI'], ['titulo', 'Procurar pelo título'], ['conferir', 'Conferir']];
+  function etapasDaBusca(st) {
+    return `<ol class="etapas" aria-label="Etapas da busca desta obra">${ETAPAS_BUSCA.map(([k, nome]) => {
+      const estado = st.etapa === k ? 'agora' : st.feitas?.[k] || 'espera';
+      const sr = { agora: 'em andamento', feito: 'feito', pulado: 'não foi preciso', espera: 'a fazer' }[estado];
+      return `<li class="${estado}"${estado === 'agora' ? ' aria-current="step"' : ''}><span class="etapa-sinal" aria-hidden="true"></span><span>${nome}<span class="sr">, ${sr}</span></span></li>`;
+    }).join('')}</ol>`;
+  }
+  function andamentoBusca(st, { soEtapas = false } = {}) {
+    const pct = st.total ? Math.round((st.feitos / st.total) * 100) : 0;
+    const cab = soEtapas
+      ? ''
+      : `<div class="andamento-cab"><b>Procurando os dados: ${st.feitos} de ${st.total}</b><span class="andamento-pct">${pct}%</span></div>
+        <div class="barra" role="progressbar" aria-label="Andamento da busca" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>`;
+    return `<div class="bloco org-andamento" id="acervo-andamento" role="status" aria-live="polite">${cab}
+      ${st.atual ? `<p class="meta mt-2 mb-0">${esc(st.atual)}</p>` : ''}${etapasDaBusca(st)}
+      ${soEtapas ? '' : '<p class="meta mb-0">O que é achado é gravado na hora. Você pode sair desta página: a busca continua.</p>'}</div>`;
+  }
+
+  /* ---------- Página de uma obra ---------- */
+  const ROT_VEICULO = { artigo: 'Revista', capitulo: 'Livro', anais: 'Evento', livro: 'Coleção', dissertacao: 'Programa', tese: 'Programa' };
+  const valorDe = (l, k) => {
+    if (k === 'tipo') return TIPO[l.tipo] || 'Artigo';
+    if (k === 'autores' || k === 'organizadores') return (l[k] || []).map((a) => [a.sobrenome, a.prenomes].filter(Boolean).join(', ')).join('; ');
+    return l[k] || '';
+  };
+  const tamanho = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1).replace('.', ',')} MB` : n ? `${Math.max(1, Math.round(n / 1024))} KB` : '');
+
+  function obra(id) {
+    const l = bib.obter(id);
+    if (!l) return `<a class="voltar" href="#acervo">${icone('voltar')}Acervo</a><div class="vazio-estado"><h2>Esta obra não está mais no acervo</h2><p>Ela pode ter sido apagada ou juntada com outra.</p><a class="btn" href="#acervo">Voltar ao Acervo</a></div>`;
+    const f = faltas(l);
+    const st = org.estadoBusca();
+    const at = org.estadoAtualizacao();
+    const ocupado = st.rodando || at?.rodando;
+    const prop = !l.doi && l.doiBusca?.status === 'proposta';
+    const itens = [...f.ref, ...(f.doi ? ['o DOI'] : []), ...(f.pdf ? ['o PDF'] : [])];
+    const juntar = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}` : xs[0] || '');
+    const buscavel = f.ref.length > 0 || f.doi;
+    const semAchar = !l.doi && ['sem', 'recusada'].includes(l.doiBusca?.status);
+    const painelObra = ocupado
+      ? `<section class="proximo ac-painel" aria-labelledby="obra-busca-t"><h2 class="prox-tit" id="obra-busca-t">Procurando os dados</h2>${st.rodando ? andamentoBusca(st, { soEtapas: true }) : '<div class="linha-acoes" role="status"><span class="giro" aria-hidden="true"></span><span>Conferindo no Crossref pelo DOI…</span></div>'}</section>`
+      : prop
+        ? ''
+        : itens.length
+          ? `<section class="proximo ac-painel" id="obra-falta" aria-labelledby="obra-falta-t">
+              <h2 class="prox-tit" id="obra-falta-t">${itens.length === 1 ? `Falta ${itens[0]}` : `Faltam ${itens.length} dados: ${juntar(itens)}`}</h2>
+              <p>${semAchar ? 'A última busca não achou esta obra. Corrija o título, os autores ou o ano e busque de novo, ou preencha o que falta à mão.' : buscavel ? (l.doi ? 'A busca usa o DOI desta obra e completa só o que está vazio.' : 'A busca usa o título, os autores e o ano que já estão aqui.') : 'Só falta o arquivo. Anexe o PDF para ler e grifar.'}</p>
+              <div class="acao-l">${buscavel ? `<button class="btn prim" data-ac-buscar-uma="${esc(l.id)}" data-ocupado="Procurando…">Buscar os dados desta obra</button>` : `<a class="btn prim" href="#leitor/${esc(l.id)}">Anexar o PDF</a>`}</div>
+            </section>`
+          : `<p class="meta mb-5" id="obra-falta">Referência completa, com PDF${l.doi ? ' e DOI' : ''}.</p>`;
+    // Só aparecem os dados que a obra tem e os que a referência deste tipo de obra pede e estão faltando.
+    const emFalta = camposEmFalta(l);
+    const linhas = CAMPOS_REF.filter(([k]) => k === 'tipo' || k === 'doi' || valorDe(l, k) || emFalta.has(k))
+      .filter(([k]) => k !== 'doi' || l.doi || esperaDOI(l) || l.doiBusca?.status === 'nao-tem')
+      .map(([k, rot]) => {
+        const v = valorDe(l, k);
+        const nome = k === 'veiculo' ? ROT_VEICULO[l.tipo] || rot : rot;
+        const semDOIMarcado = k === 'doi' && !v && l.doiBusca?.status === 'nao-tem';
+        return `<tr><th scope="row">${nome}</th><td>${v ? esc(v) : semDOIMarcado ? 'Não tem DOI' : `<span class="ac-falta"><span class="ac-sinal falta" aria-hidden="true"></span>${k === 'volume' && !l.numero ? 'Falta o volume ou o número' : 'Falta'}</span>`}</td><td>${v ? esc(nomeDaOrigem(l.origens?.[k], l)) : semDOIMarcado ? (l.doiBusca.fonte ? esc(nomeDaOrigem(l.doiBusca.fonte)) : 'Você marcou') : 'Ainda não achado'}</td></tr>`;
+      })
+      .join('');
+    const grifos = bib.grifosDe(l.id).length;
+    return `<a class="voltar" href="#acervo">${icone('voltar')}Acervo</a>
+      <div class="topo"><div><h1 class="ac-obra-tit">${esc(l.titulo || 'Sem título')}</h1><p>${esc([autores(l), l.ano].filter(Boolean).join(', ') || 'Sem autor e sem ano')}. ${TIPO[l.tipo] || 'Artigo'}.${l.adicionadaEm ? ` Adicionada em ${new Date(l.adicionadaEm).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.` : ''}</p></div>
+        <div class="acoes"><a class="btn" href="#leitor/${esc(l.id)}">${l.pdf ? 'Abrir para ler' : 'Anexar o PDF'}</a></div></div>
+      ${painelObra}
+      ${prop ? `<section class="org-sec" id="obra-decidir"><div class="org-cab"><h2>Para você decidir</h2></div>${cartaoProposta(l)}</section>` : ''}
+      <section class="org-sec" id="obra-ref"><div class="org-cab"><h2>Como aparece nas suas referências</h2></div>
+        <p class="meta">Montada pelo app na norma da ABNT, com os dados abaixo. É assim que ela sai no Word. O que falta aparece como [a completar].</p>
+        <p class="ac-ref">${referencia(l)}</p>
+        <div class="linha-acoes"><button class="btn mini" data-ac-copiar="${esc(l.id)}">Copiar a referência</button></div>
+        <dl class="ac-cit"><div><dt>Citação entre parênteses</dt><dd>${esc(citacao(l))}</dd></div><div><dt>Com a página</dt><dd>${esc(citacao(l, '48'))}</dd></div></dl>
+      </section>
+      <section class="org-sec" id="obra-dados"><div class="org-cab"><h2>Dados da referência</h2><button class="btn mini" data-org-corrigir="${esc(l.id)}">Corrigir os dados</button></div>
+        <p class="meta">Cada dado diz de onde veio. A busca só preenche o que está vazio: o que você escreveu nunca é trocado sem você pedir.</p>
+        <table class="ac-tab ac-dados"><thead><tr><th scope="col">Dado</th><th scope="col">Valor</th><th scope="col">De onde veio</th></tr></thead><tbody>${linhas}</tbody></table>
+      </section>
+      <section class="org-sec" id="obra-arquivo"><div class="org-cab"><h2>Arquivo</h2></div>
+        ${l.pdf ? `<p><b>${esc(l.pdf.nome || 'PDF')}</b>${l.pdf.tamanho ? `, ${tamanho(l.pdf.tamanho)}` : ''}. ${l.pdf.pendente ? 'Guardado só neste aparelho; vai para o Drive na próxima sincronização.' : 'Guardado no seu Drive.'}</p>` : '<p>Esta obra está sem PDF. Com o arquivo, você lê, grifa e o app confere as citações pelas páginas.</p>'}
+      </section>
+      <section class="org-sec" id="obra-uso"><div class="org-cab"><h2>O que você já fez com ela</h2></div>
+        <ul class="ac-uso"><li>${grifos ? plural(grifos, 'grifo', 'grifos') : 'Nenhum grifo ainda'}</li>${l.projeto ? `<li>No projeto ${esc(l.projeto)}</li>` : ''}${l.tags?.length ? `<li>Tags: ${esc(l.tags.join(', '))}</li>` : ''}</ul>
+      </section>
+      <div class="linha-acoes ac-fim">${!l.doi && l.doiBusca?.status !== 'nao-tem' ? `<button class="lnk" data-org-nao-tem="${esc(l.id)}">Esta obra não tem DOI</button>` : ''}<button class="lnk" data-ac-apagar="${esc(l.id)}">Apagar a obra</button><span class="meta">Apagar manda a obra para a lixeira. Dá para trazer de volta.</span></div>`;
+  }
+
   function tela() {
     const st = org.estadoBusca();
     const props = org.propostas();
@@ -278,9 +374,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const r = retrato(bib.leituras(), reps);
     const topo = `<div class="topo"><div><h1>Acervo</h1><p>${r.total ? `${plural(r.total, 'obra', 'obras')}. ${r.contagem.falta ? `${plural(r.completas, 'completa', 'completas')}, ${r.contagem.falta} com algo faltando.` : 'Todas completas.'}` : 'A central das suas obras: artigos, livros e capítulos, com o PDF, os dados da referência e o DOI de cada um.'}</p></div>
       <div class="acoes"><button class="btn" data-org-importar>${icone('upload')}Adicionar obras</button></div></div>`;
-    const andamento = st.rodando
-      ? `<div class="bloco org-andamento" role="status" aria-live="polite"><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><b>Procurando os dados: ${st.feitos} de ${st.total}</b></div>${st.atual ? `<p class="meta mt-2">${esc(st.atual)}</p>` : ''}<div class="barra mb-0"><i style="width:${st.total ? Math.round((st.feitos / st.total) * 100) : 0}%"></i></div></div>`
-      : '';
+    const andamento = st.rodando ? andamentoBusca(st) : '';
     const avisoIA = st.avisoIA ? `<div class="aviso"><span>ⓘ</span><div>A IA não respondeu (${esc(st.avisoIA)}). A procura continuou só pelo Crossref. <a href="#ajustes">Abrir Ajustes do Gemini</a></div></div>` : '';
     const ROT = { subtitulo: 'subtítulo', ano: 'ano', veiculo: 'revista', volume: 'volume', numero: 'número', paginas: 'páginas', editora: 'editora', local: 'local', url: 'link', idioma: 'idioma', autores: 'autores' };
     const resultadoAt = at && !at.rodando
@@ -289,17 +383,18 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const emOrdemHTML = res.comDOI && !at?.rodando
       ? `<section class="org-sec" id="acervo-em-ordem"><div class="org-cab"><h2>Obras com DOI <span class="chip">${res.comDOI}</span></h2><button class="btn mini" data-org-atualizar-doi data-ocupado="Conferindo…">Atualizar os dados pelo DOI</button></div><p class="meta">Confere no Crossref todas as obras que têm DOI e busca revista, volume, páginas e o que mais faltar. Completa só o que está vazio; o que você escreveu fica.</p></section>`
       : '';
-    const notaIA = org.iaLigada() ? '' : '<p class="meta mb-4">A procura usa só o Crossref. Com o Gemini ligado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o candidato certo. <a href="#ajustes">Ligar em Ajustes</a></p>';
+    const notaIA = org.iaLigada() ? '' : `<p class="meta mb-4">${org.fontesLigadas() ? 'A procura usa o Crossref e, quando ele não dá certeza, o OpenAlex.' : 'A procura usa só o Crossref.'} Com o Gemini ligado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o candidato certo. <a href="#ajustes">Ligar em Ajustes</a></p>`;
     const grav = org.gravadosAgora();
     const gravadosHTML = grav.length && !st.rodando
-      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Gravados agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com o Crossref, então o DOI foi gravado e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>DOI ${esc(g.doi)}</small></span></li>`).join('')}</ul></section>`
+      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Gravados agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com a base consultada, então os dados foram gravados e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>${g.doi ? `DOI ${esc(g.doi)}` : 'Obra sem DOI'}, do ${g.fonte === 'openalex' ? 'OpenAlex' : 'Crossref'}</small></span></li>`).join('')}</ul></section>`
       : '';
     if (!r.total)
       return `${topo}<div class="vazio-estado"><h2>Nenhuma obra ainda</h2><p>Solte PDFs, importe do Zotero ou adicione uma obra pelo DOI. O app busca os dados e monta a referência em ABNT.</p><button class="btn prim" data-org-importar>${icone('upload')}Adicionar obras</button></div>`;
     const andamentoAt = at?.rodando
       ? `<div class="bloco org-andamento" role="status" aria-live="polite"><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><b>Conferindo pelo DOI: ${at.feitos} de ${at.total}</b></div><div class="barra mb-0"><i style="width:${at.total ? Math.round((at.feitos / at.total) * 100) : 0}%"></i></div></div>`
       : '';
-    return `${topo}${painel(r, st, pend)}${andamento}${andamentoAt}${avisoIA}${resultadoAt}${gravadosHTML}
+    const avisoFonte = st.avisoFonte ? `<div class="aviso" id="acervo-aviso-fonte"><span>ⓘ</span><div>O OpenAlex não foi consultado nesta procura: ${esc(st.avisoFonte)} A procura seguiu só pelo Crossref.</div></div>` : '';
+    return `${topo}${painel(r, st, pend)}${andamento}${andamentoAt}${avisoIA}${avisoFonte}${resultadoAt}${gravadosHTML}
       ${props.length ? `<section class="org-sec"><div class="org-cab"><h2>Para você decidir <span class="chip">${props.length}</span></h2>${muitoProvaveis.length > 1 ? `<button class="btn mini" data-org-aceitar-todos data-ocupado="Aceitando…">Aceitar os ${muitoProvaveis.length} muito prováveis</button>` : ''}</div>${props.map(cartaoProposta).join('')}</section>` : ''}
       ${listaObras(r)}
       ${reps.length ? `<section class="org-sec" id="acervo-repetidas"><div class="org-cab"><h2>Parecem a mesma obra <span class="chip">${reps.length}</span></h2>${reps.filter((g) => g.tipo === 'identica').length > 1 ? `<button class="btn mini" data-org-juntar-identicas data-ocupado="Juntando…">Juntar as ${reps.filter((g) => g.tipo === 'identica').length} idênticas</button>` : ''}</div>${reps.map((g) => cartaoRepetidas(g, cacheFica.get(g.ids.join(',')))).join('')}</section>` : ''}
@@ -328,9 +423,35 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-ac-filtro],[data-ac-completar],[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
+    const b = e.target.closest('[data-ac-filtro],[data-ac-completar],[data-ac-buscar-uma],[data-ac-copiar],[data-ac-apagar],[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-nenhuma],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
     if (!b) return;
     const d = b.dataset;
+    if (d.acBuscarUma) {
+      const l = bib.obter(d.acBuscarUma);
+      const fim = l?.doi ? org.atualizarPeloDOI({ so: [l.id] }) : org.procurarDeNovo(l.id);
+      redesenhar();
+      const r = await fim;
+      const depois = bib.obter(d.acBuscarUma);
+      const feito = l?.doi ? r?.completadas?.length : depois?.doi || depois?.doiBusca?.status === 'nao-tem';
+      if (l?.doi) org.dispensarAtualizacao();
+      redesenhar();
+      return toast(feito ? 'Dados completados. Confira na lista de dados.' : depois?.doiBusca?.status === 'proposta' ? 'Achei um resultado parecido. Confira antes de aceitar.' : 'Nada novo encontrado para esta obra.');
+    }
+    if (d.acCopiar) {
+      const l = bib.obter(d.acCopiar);
+      try {
+        await navigator.clipboard.writeText(referenciaTexto(l));
+        return toast('Referência copiada');
+      } catch {
+        return toast('Não deu para copiar. Selecione o texto da referência e copie.');
+      }
+    }
+    if (d.acApagar) {
+      const desfazer = await bib.remover(d.acApagar);
+      location.hash = '#acervo';
+      // A troca de tela esconde o aviso que estiver aberto; este entra logo depois dela.
+      return setTimeout(() => toast('Obra apagada. Ela está na lixeira.', async () => { await desfazer(); redesenhar(); }), 60);
+    }
     if (d.acFiltro) {
       ver.filtro = d.acFiltro;
       return pintarLista();
@@ -373,7 +494,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.orgDesfazerGravados !== undefined) {
       const n = await org.desfazerGravados();
       redesenhar();
-      return toast(`${plural(n, 'DOI retirado', 'DOIs retirados')}. As obras voltaram para a lista de conferir.`);
+      return toast(`${plural(n, 'gravação desfeita', 'gravações desfeitas')}. As obras voltaram para a lista de conferir.`);
     }
     if (d.orgDispensar !== undefined) {
       org.dispensarGravados();
@@ -382,7 +503,13 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.orgAceitar) {
       const desfazer = await org.aceitar(d.orgAceitar, d.doi);
       redesenhar();
-      if (desfazer) toast('DOI aceito. Os campos vazios da obra foram completados.', async () => { await desfazer(); redesenhar(); });
+      if (desfazer) toast(`${String(d.doi).startsWith('openalex:') ? 'Obra aceita' : 'DOI aceito'}. Os campos vazios da obra foram completados.`, async () => { await desfazer(); redesenhar(); });
+      return;
+    }
+    if (d.orgNenhuma) {
+      const desfazer = await org.recusarVarios(d.orgNenhuma, String(d.chaves || '').split('|').filter(Boolean));
+      redesenhar();
+      if (desfazer) toast('Recusado. Esses resultados não voltam a ser sugeridos para esta obra.', async () => { await desfazer(); redesenhar(); });
       return;
     }
     if (d.orgRecusar) {
@@ -392,7 +519,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.orgAceitarTodos !== undefined) {
       const ls = org.propostas().filter((l) => l.doiBusca.confianca === 'muito-provavel');
       const desfazeres = [];
-      for (const l of ls) desfazeres.push(await org.aceitar(l.id, l.doiBusca.candidato.doi));
+      for (const l of ls) desfazeres.push(await org.aceitar(l.id, chaveCand(l.doiBusca.candidato)));
       redesenhar();
       toast(`${plural(ls.length, 'DOI aceito', 'DOIs aceitos')}.`, async () => { for (const f of desfazeres.reverse()) if (f) await f(); redesenhar(); });
       return;
@@ -441,5 +568,5 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     }
   });
 
-  return { tela, abrirImportar };
+  return { tela, obra, abrirImportar };
 }

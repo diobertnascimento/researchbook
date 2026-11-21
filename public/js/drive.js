@@ -3,6 +3,7 @@
 //
 // A pasta principal é marcada com appProperties rb=raiz. Assim o app a encontra mesmo que
 // o Diobert a renomeie ou mova dentro do Drive.
+import { lerComProgresso } from './espera.js';
 
 const API = 'https://www.googleapis.com/drive/v3';
 const UP = 'https://www.googleapis.com/upload/drive/v3';
@@ -175,9 +176,10 @@ export function criarDrive({ token, registrar }) {
   }
 
   /** Baixa um arquivo binário pelo id (o id fica guardado na ficha da obra). */
-  async function baixarArquivo(id, det = '') {
+  /** Baixa um arquivo. aoProgresso(bytesLidos, total) é chamado enquanto ele chega; total é o tamanho esperado. */
+  async function baixarArquivo(id, det = '', aoProgresso = null, total = 0) {
     const r = await chamar('GET', `${API}/files/${encodeURIComponent(id)}?alt=media`, { evento: 'drive.baixar_arquivo', det });
-    return r.blob();
+    return lerComProgresso(r, aoProgresso, total);
   }
 
   /** Baixa um arquivo binário pelo caminho, ou null se ele não existe. */

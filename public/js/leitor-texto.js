@@ -1,8 +1,11 @@
 // Modo leitura (v2.2.0): o artigo só com o texto e as figuras, numa coluna estreita em Literata.
 // O texto sai do próprio PDF (PDF.js). Cada pedaço de texto guarda a sua posição na página, então um grifo
 // feito aqui aparece no modo PDF e o contrário também. Tem a mesma interface de controle do leitor de PDF.
-// Limites conhecidos: a ordem do texto é a que o PDF traz (duas colunas e tabelas podem sair embaralhadas)
-// e só entram figuras que o PDF guarda como imagem; gráfico desenhado com linhas não entra.
+// Figuras e tabelas (v2.19.0): além das imagens guardadas no PDF, o modo leitura acha o que foi desenhado
+// com linhas e formas (gráficos, diagramas, tabelas com réguas) e mostra o recorte da página no lugar.
+// O texto que está dentro do recorte sai do texto corrido, porque já aparece na figura.
+// Limites conhecidos: a ordem do texto é a que o PDF traz (duas colunas podem sair embaralhadas) e tabela
+// sem nenhuma linha desenhada (só alinhada por espaços) continua saindo como texto.
 import { abrirDocumento, pdfjs, FUNCOES } from './leitor-pdf.js';
 
 const r4 = (x) => Math.round(x * 10000) / 10000;
@@ -94,15 +97,25 @@ function blocoHTML(b) {
   return b.titulo ? `<h3>${html}</h3>` : `<p>${html}</p>`;
 }
 
-/** Caixas das imagens de uma página, em frações da página (acompanha as transformações do PDF). */
-async function caixasDeImagens(pg, L) {
+/**
+ * O que foi desenhado numa página, em frações da página (acompanha as transformações do PDF):
+ * imagens (fotos, figuras guardadas como imagem) e traços (linhas, retângulos e formas pintados).
+ */
+export async function desenhosDaPagina(pg, L) {
   const vp = pg.getViewport({ scale: 1 });
   const ops = await pg.getOperatorList();
   const O = L.OPS;
   const mul = (m, n) => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3], m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
   let m = [1, 0, 0, 1, 0, 0];
   const pilha = [];
-  const caixas = [];
+  const imagens = [];
+  const tracos = [];
+  const caixa = (pontos) => {
+    const pts = pontos.map(([x, y]) => vp.convertToViewportPoint(m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]));
+    const xs = pts.map((p) => p[0]);
+    const ys = pts.map((p) => p[1]);
+    return { x: Math.max(0, Math.min(...xs)) / vp.width, y: Math.max(0, Math.min(...ys)) / vp.height, w: (Math.max(...xs) - Math.min(...xs)) / vp.width, h: (Math.max(...ys) - Math.min(...ys)) / vp.height };
+  };
   ops.fnArray.forEach((fn, i) => {
     const a = ops.argsArray[i];
     if (fn === O.save) pilha.push(m);
@@ -113,15 +126,95 @@ async function caixasDeImagens(pg, L) {
       if (Array.isArray(a?.[0]) && a[0].length === 6) m = mul(m, a[0]);
     } else if (fn === O.paintFormXObjectEnd) m = pilha.pop() || m;
     else if (fn === O.paintImageXObject || fn === O.paintInlineImageXObject) {
-      const pts = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([x, y]) => vp.convertToViewportPoint(m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]));
-      const xs = pts.map((p) => p[0]);
-      const ys = pts.map((p) => p[1]);
-      const c = { x: Math.max(0, Math.min(...xs)) / vp.width, y: Math.max(0, Math.min(...ys)) / vp.height, w: (Math.max(...xs) - Math.min(...xs)) / vp.width, h: (Math.max(...ys) - Math.min(...ys)) / vp.height };
+      const c = caixa([[0, 0], [1, 0], [0, 1], [1, 1]]);
       // Ícones e enfeites pequenos ficam de fora; uma imagem do tamanho da página é um PDF digitalizado.
-      if (c.w >= 0.12 && c.h >= 0.05 && !(c.w > 0.95 && c.h > 0.95)) caixas.push(c);
+      if (c.w >= 0.12 && c.h >= 0.05 && !(c.w > 0.95 && c.h > 0.95)) imagens.push(c);
+    } else if (fn === O.constructPath) {
+      // O PDF.js entrega cada caminho com a operação de pintura e a caixa que ele ocupa [minX, minY, maxX, maxY].
+      // Caminho que só recorta (sem pintar) não é desenho.
+      const mm = a?.[a.length - 1];
+      if (a?.[0] === O.endPath || !mm || mm.length !== 4 || ![...mm].every(Number.isFinite)) return;
+      tracos.push(caixa([[mm[0], mm[1]], [mm[2], mm[1]], [mm[0], mm[3]], [mm[2], mm[3]]]));
     }
   });
-  return caixas.sort((p, q) => p.y - q.y);
+  return { imagens, tracos };
+}
+
+const juntar = (a, b) => {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
+};
+const tocam = (a, b, folga = 0) => a.x <= b.x + b.w + folga && b.x <= a.x + a.w + folga && a.y <= b.y + b.h + folga && b.y <= a.y + a.h + folga;
+const crescer = (c, f) => {
+  const x = Math.max(0, c.x - f);
+  const y = Math.max(0, c.y - f);
+  return { x, y, w: Math.min(1, c.x + c.w + f) - x, h: Math.min(1, c.y + c.h + f) - y };
+};
+
+/**
+ * Regiões de figura e de tabela de uma página, a partir do que foi desenhado nela (regra pura, sem PDF).
+ *  1. Tabela com réguas: três ou mais linhas horizontais com o mesmo começo e o mesmo fim (a régua de cima,
+ *     a do cabeçalho e a de baixo, como nas revistas; a tabela em grade também cai aqui). Duas réguas não
+ *     bastam: resumo e citação em destaque costumam vir entre duas.
+ *  2. Desenho denso: cinco ou mais traços próximos (gráfico, diagrama, fluxograma).
+ *  3. As imagens.
+ * Réguas de cabeçalho e rodapé (nas margens) e fundos do tamanho da página ficam de fora.
+ */
+export function regioesDeFigura({ imagens = [], tracos = [] }) {
+  const uteis = tracos.filter((t) => !(t.w > 0.9 && t.h > 0.9));
+  const ehRegua = (t) => t.h < 0.004 && t.w >= 0.25;
+  const naMargem = (t) => t.y < 0.09 || t.y > 0.93;
+  const regioes = [];
+
+  // 1. Tabelas com réguas
+  const reguas = uteis.filter((t) => ehRegua(t) && !naMargem(t)).sort((a, b) => a.y - b.y);
+  const usados = new Set();
+  for (const r of reguas) {
+    if (usados.has(r)) continue;
+    let grupo = reguas.filter((o) => !usados.has(o) && Math.abs(o.x - r.x) < 0.015 && Math.abs(o.x + o.w - (r.x + r.w)) < 0.015);
+    grupo.forEach((o) => usados.add(o));
+    // Grupo alto demais são duas tabelas na mesma página: separa no maior vão.
+    const partes = [];
+    const dividir = (g) => {
+      if (g.length < 3) return;
+      const alt = g[g.length - 1].y - g[0].y;
+      if (alt <= 0.6) return partes.push(g);
+      let k = 1;
+      for (let i = 2; i < g.length; i++) if (g[i].y - g[i - 1].y > g[k].y - g[k - 1].y) k = i;
+      dividir(g.slice(0, k));
+      dividir(g.slice(k));
+    };
+    dividir(grupo);
+    for (const g of partes) regioes.push(crescer({ x: g[0].x, y: g[0].y, w: g[0].w, h: g[g.length - 1].y - g[0].y }, 0.005));
+  }
+
+  // 2. Desenhos densos: junta os traços vizinhos. As réguas das tabelas entram na conta: num gráfico, as linhas
+  //    de grade parecem réguas, e a região tem que cobrir também as barras que passam delas.
+  const livres = uteis.filter((t) => !(ehRegua(t) && naMargem(t)));
+  const grupos = [];
+  for (const t of livres) {
+    const perto = grupos.filter((g) => tocam(g.caixa, t, 0.02));
+    const g = { caixa: perto.reduce((c, o) => juntar(c, o.caixa), t), n: 1 + perto.reduce((n, o) => n + o.n, 0) };
+    for (const o of perto) grupos.splice(grupos.indexOf(o), 1);
+    grupos.push(g);
+  }
+  for (const g of grupos) if (g.n >= 5 && g.caixa.w >= 0.18 && g.caixa.h >= 0.05 && g.caixa.w * g.caixa.h <= 0.8) regioes.push(crescer(g.caixa, 0.015));
+
+  // 3. Imagens, e o que encosta vira uma região só
+  const todas = [...regioes, ...imagens];
+  let mudou = true;
+  while (mudou) {
+    mudou = false;
+    for (let i = 0; i < todas.length && !mudou; i++)
+      for (let j = i + 1; j < todas.length && !mudou; j++)
+        if (tocam(todas[i], todas[j])) {
+          todas[i] = juntar(todas[i], todas[j]);
+          todas.splice(j, 1);
+          mudou = true;
+        }
+  }
+  return todas.filter((c) => !(c.w > 0.95 && c.h > 0.95)).sort((p, q) => p.y - q.y);
 }
 
 /**
@@ -186,7 +279,7 @@ export async function montarLeitura({ palco, blob, grifos = [], paginaInicial = 
     comFigura.add(sec);
     try {
       const pg = await doc.getPage(Number(sec.dataset.pagina));
-      const caixas = await caixasDeImagens(pg, L);
+      const caixas = regioesDeFigura(await desenhosDaPagina(pg, L));
       if (!caixas.length) return;
       const vp = pg.getViewport({ scale: Math.min(2, 1400 / pg.getViewport({ scale: 1 }).width) });
       const tela = document.createElement('canvas');
@@ -194,6 +287,18 @@ export async function montarLeitura({ palco, blob, grifos = [], paginaInicial = 
       tela.height = Math.ceil(vp.height);
       await pg.render({ canvasContext: tela.getContext('2d'), viewport: vp }).promise;
       for (const c of caixas) {
+        // O recorte não pode cortar uma linha de texto pela metade: a borda de cima e a de baixo recuam até
+        // a linha vizinha que fica de fora (a legenda, o parágrafo seguinte).
+        for (const el of sec.querySelectorAll('.lt-i')) {
+          const [x, y, w, h] = el.dataset.r.split(',').map(Number);
+          const cy = y + h / 2;
+          if (x + w < c.x || x > c.x + c.w || (cy >= c.y && cy <= c.y + c.h)) continue;
+          const fim = c.y + c.h;
+          if (cy < c.y && y + h > c.y) c.y = Math.min(fim, y + h + 0.002);
+          else if (cy > fim && y < fim) c.h = Math.max(0, y - 0.002 - c.y);
+          if (cy < c.y) c.h = Math.max(0, fim - c.y);
+        }
+        if (c.h < 0.02) continue;
         const corte = document.createElement('canvas');
         corte.width = Math.max(1, Math.round(c.w * tela.width));
         corte.height = Math.max(1, Math.round(c.h * tela.height));
@@ -204,11 +309,21 @@ export async function montarLeitura({ palco, blob, grifos = [], paginaInicial = 
         urls.push(url);
         const fig = document.createElement('figure');
         fig.className = 'lt-fig';
-        fig.innerHTML = `<img src="${url}" alt="Figura da página ${sec.dataset.pagina}" width="${corte.width}" height="${corte.height}">`;
+        fig.innerHTML = `<img src="${url}" alt="Figura ou tabela da página ${sec.dataset.pagina}" width="${corte.width}" height="${corte.height}">`;
+        // O texto que está dentro do recorte (células da tabela, rótulos do gráfico) já aparece na figura:
+        // sai do texto corrido, para não repetir embaralhado.
+        for (const el of sec.querySelectorAll('.lt-i')) {
+          const [x, y, w, h] = el.dataset.r.split(',').map(Number);
+          const cx = x + w / 2;
+          const cy = y + h / 2;
+          if (cx >= c.x && cx <= c.x + c.w && cy >= c.y && cy <= c.y + c.h) el.remove();
+        }
+        for (const b of sec.querySelectorAll('.lt-b')) if (!b.querySelector('.lt-i')) b.dataset.vazio = '1';
         // Entra depois do último bloco de texto que está acima dela na página.
         const antes = [...sec.querySelectorAll('.lt-b')].filter((b) => Number(b.dataset.y) <= c.y + c.h / 2).pop();
         if (antes) antes.after(fig);
         else sec.querySelector('.lt-num').after(fig);
+        sec.querySelectorAll('.lt-b[data-vazio]').forEach((b) => b.remove());
       }
     } catch {
       // Sem as figuras, o texto continua legível.
