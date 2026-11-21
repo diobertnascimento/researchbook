@@ -1,9 +1,9 @@
 // Telas de organizar a biblioteca: "Importar" (vários PDFs, exportações do Zotero, a pasta do Zotero)
 // e o Acervo (central das obras: o que falta em cada uma, DOIs para conferir, obras repetidas).
 import { ouvir } from './ui.js';
-import { autorCurto } from './abnt.js';
+import { autorCurto, referencia, referenciaTexto, citacao } from './abnt.js';
 import { chaveCand } from './organizar.js';
-import { retrato, filtrar, fraseDaReferencia, esperaDOI, FILTROS, ORDENS } from './acervo.js';
+import { retrato, filtrar, faltas, camposEmFalta, fraseDaReferencia, esperaDOI, nomeDaOrigem, CAMPOS_REF, FILTROS, ORDENS } from './acervo.js';
 
 /* global I, toast, fecharModal */
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -204,7 +204,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
           ? `<span class="ac-falta">${sinal(false)}Sem DOI</span>`
           : '<span class="ac-ok">Sem DOI</span>';
     return `<tr data-ac-obra="${esc(l.id)}">
-      <td class="ac-c-obra"><button type="button" class="ac-obra" data-org-corrigir="${esc(l.id)}"><b>${esc(l.titulo || 'Sem título')}</b><small>${esc(sobre)}. ${esc(l.veiculo ? l.veiculo + '. ' : '')}${TIPO[l.tipo] || 'Artigo'}.</small></button></td>
+      <td class="ac-c-obra"><a class="ac-obra" href="#acervo/${encodeURIComponent(l.id)}"><b>${esc(l.titulo || 'Sem título')}</b><small>${esc(sobre)}. ${esc(l.veiculo ? l.veiculo + '. ' : '')}${TIPO[l.tipo] || 'Artigo'}.</small></a></td>
       <td data-rot="Referência"><span class="${f.ref.length ? 'ac-falta' : 'ac-ok'}">${sinal(!f.ref.length)}${esc(fraseDaReferencia(f.ref))}</span></td>
       <td data-rot="PDF">${pdf}</td>
       <td data-rot="DOI">${doi}</td>
@@ -264,6 +264,74 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       <p>${lista}. ${buscavel ? 'O app procura os dados no Crossref, pelo DOI e pelo título, grava o que tem certeza e deixa para você só os casos em dúvida.' : 'O que dava para buscar já foi buscado. O que falta agora depende de você: anexar o PDF, corrigir os dados ou marcar que a obra não tem DOI.'}</p>
       ${buscavel ? `<div class="acao-l"><button class="btn prim" data-ac-completar data-ocupado="Procurando…">Completar os dados</button><span>${plural(buscavel, 'obra para procurar', 'obras para procurar')}</span></div>` : ''}
     </section>`;
+  }
+
+  /* ---------- Página de uma obra ---------- */
+  const ROT_VEICULO = { artigo: 'Revista', capitulo: 'Livro', anais: 'Evento', livro: 'Coleção', dissertacao: 'Programa', tese: 'Programa' };
+  const valorDe = (l, k) => {
+    if (k === 'tipo') return TIPO[l.tipo] || 'Artigo';
+    if (k === 'autores' || k === 'organizadores') return (l[k] || []).map((a) => [a.sobrenome, a.prenomes].filter(Boolean).join(', ')).join('; ');
+    return l[k] || '';
+  };
+  const tamanho = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1).replace('.', ',')} MB` : n ? `${Math.max(1, Math.round(n / 1024))} KB` : '');
+
+  function obra(id) {
+    const l = bib.obter(id);
+    if (!l) return `<a class="voltar" href="#acervo">${icone('voltar')}Acervo</a><div class="vazio-estado"><h2>Esta obra não está mais no acervo</h2><p>Ela pode ter sido apagada ou juntada com outra.</p><a class="btn" href="#acervo">Voltar ao Acervo</a></div>`;
+    const f = faltas(l);
+    const st = org.estadoBusca();
+    const at = org.estadoAtualizacao();
+    const ocupado = st.rodando || at?.rodando;
+    const prop = !l.doi && l.doiBusca?.status === 'proposta';
+    const itens = [...f.ref, ...(f.doi ? ['o DOI'] : []), ...(f.pdf ? ['o PDF'] : [])];
+    const juntar = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}` : xs[0] || '');
+    const buscavel = f.ref.length > 0 || f.doi;
+    const semAchar = !l.doi && ['sem', 'recusada'].includes(l.doiBusca?.status);
+    const painelObra = ocupado
+      ? `<section class="proximo ac-painel" role="status" aria-live="polite"><h2 class="prox-tit">Procurando os dados</h2><div class="linha-acoes"><span class="giro" aria-hidden="true"></span><span>${l.doi ? 'Conferindo no Crossref pelo DOI…' : `Procurando por título, autor e ano${org.fontesLigadas() ? ' no Crossref e no OpenAlex' : ' no Crossref'}…`}</span></div></section>`
+      : prop
+        ? ''
+        : itens.length
+          ? `<section class="proximo ac-painel" id="obra-falta" aria-labelledby="obra-falta-t">
+              <h2 class="prox-tit" id="obra-falta-t">${itens.length === 1 ? `Falta ${itens[0]}` : `Faltam ${itens.length} dados: ${juntar(itens)}`}</h2>
+              <p>${semAchar ? 'A última busca não achou esta obra. Corrija o título, os autores ou o ano e busque de novo, ou preencha o que falta à mão.' : buscavel ? (l.doi ? 'A busca usa o DOI desta obra e completa só o que está vazio.' : 'A busca usa o título, os autores e o ano que já estão aqui.') : 'Só falta o arquivo. Anexe o PDF para ler e grifar.'}</p>
+              <div class="acao-l">${buscavel ? `<button class="btn prim" data-ac-buscar-uma="${esc(l.id)}" data-ocupado="Procurando…">Buscar os dados desta obra</button>` : `<a class="btn prim" href="#leitor/${esc(l.id)}">Anexar o PDF</a>`}</div>
+            </section>`
+          : `<p class="meta mb-5" id="obra-falta">Referência completa, com PDF${l.doi ? ' e DOI' : ''}.</p>`;
+    // Só aparecem os dados que a obra tem e os que a referência deste tipo de obra pede e estão faltando.
+    const emFalta = camposEmFalta(l);
+    const linhas = CAMPOS_REF.filter(([k]) => k === 'tipo' || k === 'doi' || valorDe(l, k) || emFalta.has(k))
+      .filter(([k]) => k !== 'doi' || l.doi || esperaDOI(l) || l.doiBusca?.status === 'nao-tem')
+      .map(([k, rot]) => {
+        const v = valorDe(l, k);
+        const nome = k === 'veiculo' ? ROT_VEICULO[l.tipo] || rot : rot;
+        const semDOIMarcado = k === 'doi' && !v && l.doiBusca?.status === 'nao-tem';
+        return `<tr><th scope="row">${nome}</th><td>${v ? esc(v) : semDOIMarcado ? 'Não tem DOI' : `<span class="ac-falta"><span class="ac-sinal falta" aria-hidden="true"></span>${k === 'volume' && !l.numero ? 'Falta o volume ou o número' : 'Falta'}</span>`}</td><td>${v ? esc(nomeDaOrigem(l.origens?.[k], l)) : semDOIMarcado ? (l.doiBusca.fonte ? esc(nomeDaOrigem(l.doiBusca.fonte)) : 'Você marcou') : 'Ainda não achado'}</td></tr>`;
+      })
+      .join('');
+    const grifos = bib.grifosDe(l.id).length;
+    return `<a class="voltar" href="#acervo">${icone('voltar')}Acervo</a>
+      <div class="topo"><div><h1 class="ac-obra-tit">${esc(l.titulo || 'Sem título')}</h1><p>${esc([autores(l), l.ano].filter(Boolean).join(', ') || 'Sem autor e sem ano')}. ${TIPO[l.tipo] || 'Artigo'}.${l.adicionadaEm ? ` Adicionada em ${new Date(l.adicionadaEm).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}.` : ''}</p></div>
+        <div class="acoes"><a class="btn" href="#leitor/${esc(l.id)}">${l.pdf ? 'Abrir para ler' : 'Anexar o PDF'}</a></div></div>
+      ${painelObra}
+      ${prop ? `<section class="org-sec" id="obra-decidir"><div class="org-cab"><h2>Para você decidir</h2></div>${cartaoProposta(l)}</section>` : ''}
+      <section class="org-sec" id="obra-ref"><div class="org-cab"><h2>Como aparece nas suas referências</h2></div>
+        <p class="meta">Montada pelo app na norma da ABNT, com os dados abaixo. É assim que ela sai no Word. O que falta aparece como [a completar].</p>
+        <p class="ac-ref">${referencia(l)}</p>
+        <div class="linha-acoes"><button class="btn mini" data-ac-copiar="${esc(l.id)}">Copiar a referência</button></div>
+        <dl class="ac-cit"><div><dt>Citação entre parênteses</dt><dd>${esc(citacao(l))}</dd></div><div><dt>Com a página</dt><dd>${esc(citacao(l, '48'))}</dd></div></dl>
+      </section>
+      <section class="org-sec" id="obra-dados"><div class="org-cab"><h2>Dados da referência</h2><button class="btn mini" data-org-corrigir="${esc(l.id)}">Corrigir os dados</button></div>
+        <p class="meta">Cada dado diz de onde veio. A busca só preenche o que está vazio: o que você escreveu nunca é trocado sem você pedir.</p>
+        <table class="ac-tab ac-dados"><thead><tr><th scope="col">Dado</th><th scope="col">Valor</th><th scope="col">De onde veio</th></tr></thead><tbody>${linhas}</tbody></table>
+      </section>
+      <section class="org-sec" id="obra-arquivo"><div class="org-cab"><h2>Arquivo</h2></div>
+        ${l.pdf ? `<p><b>${esc(l.pdf.nome || 'PDF')}</b>${l.pdf.tamanho ? `, ${tamanho(l.pdf.tamanho)}` : ''}. ${l.pdf.pendente ? 'Guardado só neste aparelho; vai para o Drive na próxima sincronização.' : 'Guardado no seu Drive.'}</p>` : '<p>Esta obra está sem PDF. Com o arquivo, você lê, grifa e o app confere as citações pelas páginas.</p>'}
+      </section>
+      <section class="org-sec" id="obra-uso"><div class="org-cab"><h2>O que você já fez com ela</h2></div>
+        <ul class="ac-uso"><li>${grifos ? plural(grifos, 'grifo', 'grifos') : 'Nenhum grifo ainda'}</li>${l.projeto ? `<li>No projeto ${esc(l.projeto)}</li>` : ''}${l.tags?.length ? `<li>Tags: ${esc(l.tags.join(', '))}</li>` : ''}</ul>
+      </section>
+      <div class="linha-acoes ac-fim">${!l.doi && l.doiBusca?.status !== 'nao-tem' ? `<button class="lnk" data-org-nao-tem="${esc(l.id)}">Esta obra não tem DOI</button>` : ''}<button class="lnk" data-ac-apagar="${esc(l.id)}">Apagar a obra</button><span class="meta">Apagar manda a obra para a lixeira. Dá para trazer de volta.</span></div>`;
   }
 
   function tela() {
@@ -330,9 +398,35 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-ac-filtro],[data-ac-completar],[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
+    const b = e.target.closest('[data-ac-filtro],[data-ac-completar],[data-ac-buscar-uma],[data-ac-copiar],[data-ac-apagar],[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
     if (!b) return;
     const d = b.dataset;
+    if (d.acBuscarUma) {
+      const l = bib.obter(d.acBuscarUma);
+      const fim = l?.doi ? org.atualizarPeloDOI({ so: [l.id] }) : org.procurarDeNovo(l.id);
+      redesenhar();
+      const r = await fim;
+      const depois = bib.obter(d.acBuscarUma);
+      const feito = l?.doi ? r?.completadas?.length : depois?.doi || depois?.doiBusca?.status === 'nao-tem';
+      if (l?.doi) org.dispensarAtualizacao();
+      redesenhar();
+      return toast(feito ? 'Dados completados. Confira na lista de dados.' : depois?.doiBusca?.status === 'proposta' ? 'Achei um resultado parecido. Confira antes de aceitar.' : 'Nada novo encontrado para esta obra.');
+    }
+    if (d.acCopiar) {
+      const l = bib.obter(d.acCopiar);
+      try {
+        await navigator.clipboard.writeText(referenciaTexto(l));
+        return toast('Referência copiada');
+      } catch {
+        return toast('Não deu para copiar. Selecione o texto da referência e copie.');
+      }
+    }
+    if (d.acApagar) {
+      const desfazer = await bib.remover(d.acApagar);
+      location.hash = '#acervo';
+      // A troca de tela esconde o aviso que estiver aberto; este entra logo depois dela.
+      return setTimeout(() => toast('Obra apagada. Ela está na lixeira.', async () => { await desfazer(); redesenhar(); }), 60);
+    }
     if (d.acFiltro) {
       ver.filtro = d.acFiltro;
       return pintarLista();
@@ -443,5 +537,5 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     }
   });
 
-  return { tela, abrirImportar };
+  return { tela, obra, abrirImportar };
 }

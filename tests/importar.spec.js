@@ -302,16 +302,44 @@ test.describe('no computador', () => {
     expect(await titulos()).toEqual(['artigo_final_v2', 'Design science em operações', 'Design science research: avaliação de artefatos', 'Roteirização da coleta seletiva']);
     await page.locator('#ac-ordem').selectOption('autor');
     expect((await titulos()).slice(0, 3)).toEqual(['Design science em operações', 'Roteirização da coleta seletiva', 'Design science research: avaliação de artefatos']);
-    // A obra abre para corrigir os dados.
+    // Cada obra tem a sua página: o que falta, a referência em ABNT e de onde veio cada dado.
     await page.locator('#ac-corpo .ac-obra').first().click();
-    await expect(page.locator('#veu')).toContainText('Corrigir dados da obra');
-    await page.locator('#veu').getByRole('button', { name: 'Cancelar' }).click();
+    await expect(page).toHaveURL(/#acervo\/falcao-2017/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Design science em operações');
+    await expect(page.locator('#obra-falta')).toContainText('Faltam 3 dados: a revista, o DOI e o PDF');
+    await expect(page.locator('#obra-ref .ac-ref')).toContainText('FALCÃO, R. Design science em operações. [a completar], v. 11, p. 45-62, 2017.');
+    const dado = (nome) => page.locator('#obra-dados tbody tr').filter({ has: page.locator('th', { hasText: new RegExp('^' + nome + '$') }) });
+    await expect(dado('Revista')).toContainText('Falta');
+    await expect(dado('Revista')).toContainText('Ainda não achado');
+    await expect(dado('Ano')).toContainText('Sem registro de origem');
+    await expect(page.locator('main .btn.prim')).toHaveCount(1);
+    // Corrigir à mão: o dado mudado passa a dizer "Você escreveu".
+    await page.locator('#obra-dados').getByRole('button', { name: 'Corrigir os dados' }).click();
+    await page.locator('#f-veiculo').fill('Revista Fictícia de Operações');
+    await page.getByRole('button', { name: 'Salvar correções' }).click();
+    await expect(dado('Revista')).toContainText('Revista Fictícia de Operações');
+    await expect(dado('Revista')).toContainText('Você escreveu');
+    await expect(dado('Ano')).toContainText('Sem registro de origem');
+    await expect(page.locator('#obra-falta')).toContainText('Faltam 2 dados: o DOI e o PDF');
+    // Buscar os dados desta obra: nada no Crossref simulado, a tela diz e continua pedindo a decisão.
+    await page.getByRole('button', { name: 'Buscar os dados desta obra' }).click();
+    await expect(page.locator('#toast')).toContainText('Nada novo encontrado para esta obra');
+    await expect(page.locator('#obra-falta')).toContainText('A última busca não achou esta obra');
+    await page.getByRole('button', { name: 'Esta obra não tem DOI' }).click();
+    await expect(dado('DOI')).toContainText('Não tem DOI');
+    await expect(page.locator('#obra-falta')).toContainText('Falta o PDF');
+    // Apagar manda para a lixeira, com desfazer.
+    await page.getByRole('button', { name: 'Apagar a obra' }).click();
+    await expect(page).toHaveURL(/#acervo$/);
+    await expect(page.locator('#ac-corpo tr')).toHaveCount(3);
+    await page.locator('#toast').getByRole('button', { name: 'Desfazer' }).click();
+    await expect(page.locator('#ac-corpo tr')).toHaveCount(4);
     // Completar: o livro com DOI ganha a editora que faltava; o que não foi achado continua na lista, sem aviso vazio.
     await page.getByRole('button', { name: 'Completar os dados' }).click();
     await expect(page.locator('#acervo-atualizadas')).toContainText('1 obra completada pelo DOI', { timeout: 15000 });
     const livro = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design science research')));
     expect([livro.editora, livro.local]).toEqual(['Editora de Exemplo', 'Cidade']);
-    await expect(filtro('Referência incompleta')).toContainText('2');
+    await expect(filtro('Referência incompleta')).toContainText('1');
   });
 
   test('OpenAlex pelo servidor: entra quando o Crossref não dá certeza, aceita obra sem DOI e diz de onde veio cada dado', async ({ page, context }) => {

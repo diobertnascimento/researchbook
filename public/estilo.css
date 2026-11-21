@@ -1453,6 +1453,18 @@ a.arg-item{text-decoration:none;color:inherit}
 .ac-sinal{flex:none;width:8px;height:8px;border-radius:50%;background:var(--texto-3);position:relative;top:-1px}
 .ac-sinal.falta{background:transparent;box-shadow:inset 0 0 0 2px var(--texto)}
 .ac-tab td a{color:var(--texto-3);white-space:nowrap}
+a.ac-obra{text-decoration:none}
+.ac-obra-tit{font-size:var(--fs-titulo-1);line-height:1.2;max-width:26em}
+.ac-ref{font-family:var(--leitura);font-size:var(--fs-titulo-3);line-height:1.6;max-width:44em;margin:var(--e-4) 0 var(--e-3)}
+.ac-cit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--e-5);margin:var(--e-6) 0 0;max-width:44em}
+.ac-cit dt{font-size:var(--fs-meta);color:var(--texto-3)}
+.ac-cit dd{margin:var(--e-1) 0 0;font-family:var(--leitura);font-size:var(--fs-corpo)}
+.ac-dados th[scope="row"]{width:190px;font-weight:400;color:var(--texto-3);vertical-align:top;padding:var(--e-3) var(--e-4) var(--e-3) 0;border-bottom:1px solid var(--borda)}
+.ac-dados td{padding:var(--e-3) var(--e-4) var(--e-3) 0;overflow-wrap:anywhere}
+.ac-dados td:nth-child(2){width:auto;font-size:var(--fs-ui);color:var(--texto)}
+.ac-dados td:nth-child(3){width:240px;color:var(--texto-3)}
+.ac-uso{margin:0;padding-left:var(--e-5);color:var(--texto-2)}
+.ac-fim{margin-top:var(--e-8);gap:var(--e-2) var(--e-6);flex-wrap:wrap}
 @media (max-width:760px){
   .ac-tab thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .ac-tab,.ac-tab tbody,.ac-tab tr,.ac-tab td{display:block;width:auto!important}
@@ -1461,6 +1473,10 @@ a.arg-item{text-decoration:none;color:inherit}
   .ac-tab td[data-rot]::before{content:attr(data-rot) ": ";color:var(--texto-3);font-weight:400}
   .ac-c-obra{padding-bottom:var(--e-2)!important}
   .ac-achar,.ac-achar input{width:100%}
+  .ac-dados tr{padding:var(--e-3) 0}
+  .ac-dados th[scope="row"]{display:block;width:auto;border:0;padding:0}
+  .ac-dados td:nth-child(3)::before{content:"De onde veio: "}
+  .ac-cit{grid-template-columns:1fr}
 }
 .org-andamento{margin-bottom:var(--e-5)}
 .org-andamento .barra{margin-top:var(--e-3)}

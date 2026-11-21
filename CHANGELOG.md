@@ -2,6 +2,15 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.17.0 (20/11/2026)
+Acervo: página de cada obra, OpenAlex e adicionar pelo link.
+- Cada obra tem a sua página (clique nela no Acervo). Ela mostra o que falta, a referência em ABNT como vai sair no Word, e cada dado com a origem: Crossref, OpenAlex, página do artigo ou "Você escreveu". Dados gravados antes desta versão aparecem como "Sem registro de origem".
+- "Buscar os dados desta obra" procura só aquela obra. Um resultado parecido aparece na própria página para você aceitar ou recusar.
+- A procura passou a usar duas bases. O Crossref continua sendo a primeira; quando ele não dá certeza, o app consulta o OpenAlex, que cobre anais de evento e trabalhos sem DOI. Obra achada sem DOI é aceita do mesmo jeito e fica marcada como "não tem DOI".
+- "Adicionar obra" aceita o link da página do artigo (SciELO, portais de revistas e repositórios de uma lista fechada). O app lê os dados que a página publica e, se ela traz o DOI, confere no Crossref.
+- OpenAlex e link passam pelo seu servidor, que guarda a chave do OpenAlex e é quem abre a página. Para ligar: publique o servidor de novo (`servidor/publicar.sh`), que vai pedir a chave do OpenAlex com a tela escondida. Sem isso, a procura segue só pelo Crossref e a tela avisa.
+- Apagar uma obra pela página dela manda para a lixeira, com desfazer.
+
 ## 2.16.0 (20/11/2026)
 Acervo no menu: a central de todas as obras.
 - O Acervo saiu dos Ajustes e virou o último item do menu (no celular, fica em Mais). O endereço antigo continua abrindo a mesma tela.

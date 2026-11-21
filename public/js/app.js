@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.16.0';
+const APP_VERSAO = '2.17.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -343,7 +343,7 @@ function trilhaHTML(t){
     ${feitos.length?`<details class="concluidas"><summary>Ver ${feitos.length} concluída${feitos.length>1?'s':''}</summary><ol class="seq feitas">${feitos.map(i=>{const l=L(i);return `<li><div><div class="t">${esc(l.tit)}</div><div class="a">${citCurta(l)}</div></div>${pips(l.etapa)}<a class="btn fant acao" href="#fichamento/${i}">Rever fichamento</a></li>`}).join('')}</ol></details>`:''}
   </section>`;
 }
-V.acervo = () => V.organizar();
+V.acervo = (id) => id && modoReal() && window.rb && window.rb.organizarUI ? window.rb.organizarUI.obra(decodeURIComponent(id)) : V.organizar();
 V.organizar = () => modoReal() ? (window.rb&&window.rb.organizarUI ? window.rb.organizarUI.tela() : esqueleto('Organizar')) : `<div class="topo"><div><h1>Organizar</h1><p>Com os seus dados, aqui aparecem os DOIs encontrados para conferir e as obras repetidas.</p></div></div><div class="vazio-estado"><h2>Nada para organizar no exemplo</h2><p>Entre com o Google para importar PDFs ou a biblioteca do Zotero e organizar as suas obras.</p></div>`;
 V.trilhas = () => modoReal() ? (window.rb&&window.rb.trilhasUI ? window.rb.trilhasUI.tela() : esqueleto('Trilhas')) : `
   <div class="topo">

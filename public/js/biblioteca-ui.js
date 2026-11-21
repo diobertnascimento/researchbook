@@ -4,6 +4,7 @@
 import { referencia, referenciaTexto, autorCurto, citacao } from './abnt.js';
 import { buscarDOI, limparDOI } from './crossref.js';
 import { entender } from './fontes.js';
+import { origensAoSalvar } from './acervo.js';
 import { montarLeitor, lerInicio, FUNCOES } from './leitor-pdf.js';
 import { montarLeitura } from './leitor-texto.js';
 import { ETAPAS } from './progresso.js';
@@ -26,6 +27,9 @@ const TIPOS = [
 const ROTULO_VEICULO = { artigo: 'Revista', livro: 'Coleção (opcional)', capitulo: 'Título do livro', anais: 'Nome do evento', dissertacao: 'Programa', tese: 'Programa', outro: 'Publicado em' };
 
 export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
+  // O que veio de uma busca neste formulário, para a ficha guardar de onde veio cada dado.
+  let buscado = {};
+  const anotar = (dados, fonte) => Object.entries(dados).forEach(([k, valor]) => (buscado[k] = { valor, fonte }));
   let busca = '';
   let leitorAtual = null; // { id, controle, palco }
   let montando = null;
@@ -163,6 +167,7 @@ export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
     const l = bib.obter(id);
     if (!l) return;
     editando = id;
+    buscado = {};
     rascunho = { ...l };
     pdfEscolhido = null;
     const veu = document.getElementById('veu');
@@ -179,6 +184,7 @@ export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
 
   function abrirAdicionar() {
     editando = null;
+    buscado = {};
     confirmarRepetida = false;
     rascunho = null;
     pdfEscolhido = null;
@@ -220,6 +226,7 @@ export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
       return false;
     }
     const daPagina = Object.fromEntries(Object.entries(r.dados).filter(([, v]) => v != null && !(Array.isArray(v) && !v.length)));
+    anotar(daPagina, `pagina:${r.site}`);
     const base = { ...fichaAtual(), ...daPagina };
     if (!daPagina.doi) {
       mostrarFicha(base);
@@ -240,6 +247,7 @@ export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
     }
     // Do Crossref vêm só os dados da obra; projeto, tags e páginas do PDF continuam os da ficha.
     const doCrossref = Object.fromEntries(Object.entries(r.dados).filter(([, v]) => v != null && !(Array.isArray(v) && !v.length)));
+    anotar(doCrossref, 'crossref');
     mostrarFicha({ ...atual, ...doCrossref });
     mensagem(aviso ? `${aviso} e busquei os dados no Crossref. Confira antes de salvar.` : 'Dados encontrados no Crossref. Confira antes de salvar.', 'ok');
     return true;
@@ -281,6 +289,7 @@ export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
     }
     if (editando) {
       const { id: _i, adicionadaEm: _a, ...mudancas } = f;
+      mudancas.origens = origensAoSalvar(bib.obter(editando), f, buscado);
       await bib.atualizar(editando, mudancas);
       registrar('ui', 'biblioteca.corrigir');
       editando = null;
@@ -299,6 +308,7 @@ export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
       }
     }
     confirmarRepetida = false;
+    f.origens = origensAoSalvar(null, f, buscado);
     const id = await bib.adicionar(f, pdfEscolhido);
     fecharModal();
     toast(pdfEscolhido ? 'Obra salva. O PDF vai para o seu Drive.' : 'Obra salva na biblioteca');

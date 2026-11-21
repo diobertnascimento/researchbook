@@ -38,6 +38,11 @@ export function faltas(l) {
   return { ref, pdf: !l.pdf, doi: semDOI && esperaDOI(l), algo: ref.length > 0 || !l.pdf || (semDOI && esperaDOI(l)) };
 }
 
+/** Campos da ficha que a referência deste tipo de obra usa ("volnum" vira volume e número). */
+export const camposUsados = (l) => new Set((PRECISA[l.tipo] || PRECISA.artigo).flatMap(([k]) => (k === 'volnum' ? ['volume', 'numero'] : [k])));
+/** Campos que faltam de fato (sem volume e sem número, quem aparece como falta é o volume). */
+export const camposEmFalta = (l) => new Set((PRECISA[l.tipo] || PRECISA.artigo).filter(([k]) => !tem(l, k)).map(([k]) => (k === 'volnum' ? 'volume' : k)));
+
 /** "Falta a revista", "Faltam a revista e as páginas", "Faltam 4 dados". */
 export function fraseDaReferencia(ref) {
   if (!ref.length) return 'Completa';
@@ -83,4 +88,41 @@ export function filtrar(r, { filtro = 'todas', termo = '', ordem = 'recentes' } 
   const bate = (l) => !t || semAcento([l.titulo, l.subtitulo, ...(l.autores || []).map((a) => `${a.sobrenome} ${a.prenomes}`), l.ano, l.veiculo].filter(Boolean).join(' ')).includes(t);
   const cmp = (ORDENS[ordem] || ORDENS.recentes)[1];
   return r.linhas.filter(({ l, f }) => testa(l, f, r.rep) && bate(l)).sort((a, b) => cmp(a.l, b.l));
+}
+
+/* ---------- De onde veio cada dado ---------- */
+
+// Dados que entram na referência e têm origem registrada (campo "origens" da ficha).
+export const CAMPOS_REF = [
+  ['tipo', 'Tipo'], ['titulo', 'Título'], ['subtitulo', 'Subtítulo'], ['autores', 'Autores'], ['organizadores', 'Organizadores'], ['ano', 'Ano'],
+  ['veiculo', 'Publicado em'], ['volume', 'Volume'], ['numero', 'Número'], ['paginas', 'Páginas'], ['editora', 'Editora ou instituição'], ['local', 'Cidade'], ['doi', 'DOI'],
+];
+const igual = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+const vazio = (v) => v == null || v === '' || (Array.isArray(v) && !v.length);
+
+/**
+ * Origens depois de uma gravação feita pelo autor.
+ * antes: a ficha como estava (null se é nova); depois: como ficou; buscado: { campo: { valor, fonte } } com o
+ * que veio de uma busca neste formulário (Crossref, página do artigo). Campo que o autor mudou vira 'autor';
+ * campo que veio da busca e ficou igual guarda a fonte; campo que não mudou guarda o que já tinha.
+ */
+export function origensAoSalvar(antes, depois, buscado = {}) {
+  const o = { ...(antes?.origens || {}) };
+  for (const [k] of CAMPOS_REF) {
+    if (vazio(depois[k])) delete o[k];
+    else if (buscado[k] && igual(buscado[k].valor, depois[k])) o[k] = buscado[k].fonte;
+    else if (!antes || !igual(antes[k], depois[k])) o[k] = 'autor';
+  }
+  return o;
+}
+
+/** Nome da origem para mostrar: "Crossref", "OpenAlex", "Página do artigo (scielo.br)", "Você escreveu". */
+export function nomeDaOrigem(o, l) {
+  if (o === 'crossref') return 'Crossref';
+  if (o === 'openalex') return 'OpenAlex';
+  if (o === 'autor') return 'Você escreveu';
+  if (o === 'pdf') return 'Lido no PDF';
+  if (typeof o === 'string' && o.startsWith('pagina:')) return `Página do artigo (${o.slice(7)})`;
+  if (typeof o === 'string' && o.startsWith('importado:')) return `Importado: ${o.slice(10)}`;
+  return l?.importadaDe ? `Importado: ${l.importadaDe}` : 'Sem registro de origem';
 }
