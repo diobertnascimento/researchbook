@@ -2,6 +2,16 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.24.0 (21/11/2026)
+Polimento visual, parte 5 de 5: o leitor e o editor no celular, e o documento do sistema visual.
+- Leitor no celular: o cabeçalho cabe numa linha (voltar, Leitura ou PDF, a página e o botão "Painéis"). Antes ocupava cerca de 260 dos 844 px da tela; agora, 62. Grifos, Tutor e Referência ficam no menu "Painéis". O botão principal ("Concluir leitura", "Continuar fichamento") foi para o fim do texto.
+- Editor no celular: título, estado e um botão "Seções e ações". O texto começava em 455 dos 844 px da tela; agora começa em 170. Versões, Copilot, Briefing, Revisar e exportar e a lista de seções aparecem ao tocar no botão.
+- No editor do celular, o título da seção voltou a ser maior que o texto (estava em 16 px por causa da regra que evita o zoom do iPhone).
+- Diálogos e Copilot: o botão passou de "Enviar" para "Enviar mensagem", pela regra de verbo e objeto. No Copilot ele ficou cinza: com o painel aberto havia dois botões azuis na tela, e a avaliação não tinha pegado. No celular e no painel do Copilot, o campo fica em cima e o botão embaixo.
+- Copilot: os três atalhos do painel ("Propor versões do parágrafo", "Isso soa como eu?", "Transição para a próxima seção") eram retângulos com contorno; viraram pílulas pequenas. O teste do sistema visual passou a abrir o painel do Copilot antes de conferir.
+- `docs/design-system.md` reescrito: descrevia o sistema de antes do redesenho (fundo creme, botão de 34 px com canto de 6 px, menu lateral). Agora traz os valores e as regras de hoje, os papéis de título, as três aparências de selecionado, papel com linhas e a lista do que o teste confere.
+- No computador nada muda nesta parte.
+
 ## 2.23.0 (21/11/2026)
 Polimento visual, parte 4 de 5: as telas que ainda estavam no sistema antigo.
 - Saiu o cartão com contorno de treze telas: Trilhas, Fichamentos, lista do Escrever, Diálogos, Orientação, Leituras e citações, Artigos do projeto, Aula, Cartões, Revisar e exportar, Overview, Memória e Ajustes. O conteúdo fica no papel, separado por linhas finas; a coluna lateral não tem caixa; em Ajustes a seção não tem moldura (havia cartão dentro de cartão dentro de cartão).

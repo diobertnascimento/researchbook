@@ -192,7 +192,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       <button class="btn fant" data-esc-soa ${est.ocupado ? 'disabled' : ''}>Isso soa como eu?</button>
       ${secaoAtual(t).i < t.secoes.length - 1 ? `<button class="btn fant" data-esc-transicao ${noTeto || est.ocupado ? 'disabled' : ''}>Transição para a próxima seção</button>` : ''}
     </div>
-    <div class="tutor-escrever"><textarea id="esc-chat" rows="2" placeholder="Fale com o Copilot sobre esta seção" aria-label="Mensagem ao Copilot"></textarea><button class="btn prim" data-esc-chat ${est.ocupado ? 'disabled' : ''}>Enviar</button></div>`;
+    <div class="tutor-escrever"><textarea id="esc-chat" rows="2" placeholder="Fale com o Copilot sobre esta seção" aria-label="Mensagem ao Copilot"></textarea><button class="btn" data-esc-chat ${est.ocupado ? 'disabled' : ''}>Enviar mensagem</button></div>`;
   }
 
   function versoesHTML(v) {
@@ -250,8 +250,9 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     const a = medirAutoria(t);
     const marcas = typeof S !== 'undefined' && S.marcas;
     return `${window.rb?.visaoUI?.barraSessao(t) || ''}<a class="voltar" href="#escrita">${icone('voltar')}Textos</a>
-      <div class="esc-cab"><div><h1>${esc(t.titulo)}</h1><p>${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.entrega ? `. Entrega em ${t.entrega.split('-').reverse().join('/')}` : ''} <span class="d-inline-flex p-0 salvo" id="esc-salvo"><i></i>${est.salvando || 'Salvo'}</span> <button class="btn fant mini" data-esc-painel="versoes">Versões</button></p></div>
-        <div class="acoes"><button class="btn" data-esc-painel="copilot" aria-pressed="${painelAberto() && est.aba !== 'versoes'}">Copilot</button><button class="btn" data-esc-passo="0">Briefing</button><button class="btn prim" data-esc-passo="5">Revisar e exportar</button></div></div>
+      <div class="esc-cab tem-menu"><div><h1>${esc(t.titulo)}</h1><p>${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.entrega ? `. Entrega em ${t.entrega.split('-').reverse().join('/')}` : ''} <span class="d-inline-flex p-0 salvo" id="esc-salvo"><i></i>${est.salvando || 'Salvo'}</span> <button class="btn fant mini" data-esc-painel="versoes">Versões</button></p></div>
+        <button class="btn esc-menu-btn" data-esc-menu aria-expanded="false">Seções e ações</button>
+        <div class="acoes"><button class="btn so-menu" data-esc-painel="versoes">Versões</button><button class="btn" data-esc-painel="copilot" aria-pressed="${painelAberto() && est.aba !== 'versoes'}">Copilot</button><button class="btn" data-esc-passo="0">Briefing</button><button class="btn prim" data-esc-passo="5">Revisar e exportar</button></div></div>
       <div class="esc-grid real ${painelAberto() ? '' : 'sem-painel'}" data-texto="${esc(t.id)}">
         <aside class="lat-esc"><h4 class="t-meta forte m-0 mb-2">Seções</h4>
           <div class="secoes">${t.secoes.map((x, k) => `<button data-esc-secao="${k}" class="${k === i ? 'on' : ''}"><i class="${contarPalavras(blocos(x.html).map((b) => b.texto).join(' ')) ? 'feita' : ''}"></i>${esc(x.titulo)}</button>`).join('')}</div>
@@ -515,6 +516,15 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     if (e.target.closest('[data-esc-fmt],[data-esc-mais],[data-esc-inserir],[data-esc-pedir],[data-esc-pedido]')) e.preventDefault();
   });
 
+  // No celular, as seções e as ações do texto ficam atrás de um botão, para o texto começar mais acima.
+  ouvir('click', (e) => {
+    const b = e.target.closest('[data-esc-menu]');
+    if (!b) return;
+    const abrir = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(abrir));
+    document.querySelector('.esc-cab.tem-menu')?.classList.toggle('menu-aberto', abrir);
+    document.querySelector('.esc-grid.real')?.classList.toggle('menu-aberto', abrir);
+  });
   ouvir('click', async (e) => {
     const b = e.target.closest('[data-esc-painel]');
     const t = b && atual();

@@ -277,7 +277,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
         ${sel.leituras.map((i) => bib.obter(i)).filter(Boolean).map((l) => `<a class="sem-sublinhado chip proj" href="#leitor/${encodeURIComponent(l.id)}">${esc(citacao(l))}</a>`).join('')}</div>
         <p class="m-0 t-legenda mute">${esc(MODOS[sel.modo])}.</p></header>
         <div class="corpo" id="dlg-corpo">${msgs ? mensagensHTML(msgs) : '<p class="mute">Abrindo a conversa…</p>'}${est.ocupado === sel.id ? `<p class="mute" role="status">${pensandoHTML('A IA está pensando', desdeDe(`dialogo:${sel.id}:${msgs?.length || 0}`), { tarefa: 'dialogo' })}</p>` : ''}${est.erro && est.erro.id === sel.id ? erroHTML(est.erro.err) : ''}</div>
-        <form class="entrada" data-dlg-enviar="${esc(sel.id)}"><textarea id="dlg-msg" placeholder="${msgs && msgs.length ? 'Continue o diálogo' : 'Diga a sua posição ou a sua dúvida'}" aria-label="Mensagem"></textarea><button type="submit" class="btn prim" ${est.ocupado ? 'disabled' : ''}>${icone('enviar')}Enviar</button></form>
+        <form class="entrada" data-dlg-enviar="${esc(sel.id)}"><textarea id="dlg-msg" placeholder="${msgs && msgs.length ? 'Continue o diálogo' : 'Diga a sua posição ou a sua dúvida'}" aria-label="Mensagem"></textarea><button type="submit" class="btn prim" ${est.ocupado ? 'disabled' : ''}>${icone('enviar')}Enviar mensagem</button></form>
       </section>
       <aside class="lado">
         <section class="bloco"><h3>Posições que você firmou</h3>

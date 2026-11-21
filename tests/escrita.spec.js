@@ -283,7 +283,10 @@ test.describe('no celular', () => {
   test('lista, preparação e editor cabem na tela, com as seções à mão', async ({ page, context }) => {
     await entrar(page, context);
     await textoPronto(page);
+    // v2.24.0: no celular, as seções e as ações ficam atrás de um botão, para o texto começar mais acima.
     await expect(page.locator('.secoes button')).toHaveCount(2);
+    await expect(page.locator('.secoes button').first()).toBeHidden();
+    await page.getByRole('button', { name: 'Seções e ações' }).click();
     await expect(page.locator('.secoes button').first()).toBeVisible();
     const sobra = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(await sobra()).toBeLessThanOrEqual(0);

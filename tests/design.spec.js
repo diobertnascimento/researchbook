@@ -96,9 +96,8 @@ test('título longo não alarga nenhuma tela: a página tem a largura da janela'
   }, LONGO);
   const rotas = [...rotasDe(ids), '#acervo', `#acervo/${extra.o}`, `#texto/${extra.t}`, `#disciplina/${extra.d}`, '#dissertacao', '#jornada', '#ajustes/seguranca', '#ajustes/sincronizacao', '#mais'];
   const problemas = [];
-  for (const r of rotas) {
-    await page.evaluate((h) => { location.hash = h; }, r);
-    await page.waitForTimeout(350);
+  // As mesmas conferências valem para cada rota e, no fim, para o editor com o painel do Copilot aberto.
+  const conferir = async (r) => {
     // No celular, o navegador alarga a área de desenho quando o conteúdo passa: a medida certa é a da janela configurada.
     const janela = page.viewportSize().width;
     const pagina = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -141,8 +140,49 @@ test('título longo não alarga nenhuma tela: a página tem a largura da janela'
         .map((e) => `${e.tagName.toLowerCase()}${typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).join('.') : ''}`))];
     });
     for (const q of caixas) problemas.push(`${r}: caixa com contorno: ${q}`);
+  };
+  for (const r of rotas) {
+    await page.evaluate((h) => { location.hash = h; }, r);
+    await page.waitForTimeout(350);
+    await conferir(r);
   }
+  await page.evaluate((h) => { location.hash = h; }, `#texto/${extra.t}`);
+  await page.waitForTimeout(350);
+  if (info.project.name === 'celular') await page.getByRole('button', { name: 'Seções e ações' }).click();
+  await page.locator('.esc-cab').getByRole('button', { name: 'Copilot', exact: true }).click();
+  await expect(page.locator('#esc-chat')).toBeVisible();
+  await conferir('editor com o Copilot aberto');
   expect(problemas, `(${info.project.name})\n${problemas.join('\n')}`).toEqual([]);
+});
+
+test('no celular, o leitor e o editor começam o texto perto do topo e guardam o resto num menu', async ({ page, context }, info) => {
+  test.skip(info.project.name !== 'celular', 'Só o celular tem o cabeçalho compacto');
+  const ids = await entrarComDados(page, context);
+  const t = await page.evaluate(async () => {
+    const x = await window.rb.escrita.novo();
+    await window.rb.escrita.salvar({ ...x, titulo: 'Referencial teórico', passo: 4, secoes: [{ id: 's1', titulo: 'Introdução', objetivo: '', html: '<p data-pid="p1" data-autoria="autor">Um parágrafo.</p>' }] });
+    return x.id;
+  });
+  // Leitor: uma linha de cabeçalho; Grifos e Referência dentro do menu.
+  await page.evaluate((h) => { location.hash = h; }, `#leitor/${ids.o1}`);
+  await expect(page.locator('.leitor-barra')).toBeVisible();
+  expect((await page.locator('.leitor-barra').boundingBox()).height).toBeLessThanOrEqual(64);
+  await expect(page.getByRole('button', { name: 'Grifos' })).toBeHidden();
+  await page.getByRole('button', { name: 'Painéis' }).click();
+  await expect(page.getByRole('button', { name: 'Grifos' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Referência' })).toBeVisible();
+  await page.locator('.palco').click({ position: { x: 20, y: 300 } });
+  await expect(page.getByRole('button', { name: 'Grifos' })).toBeHidden();
+  // Editor: o texto começa antes de um terço da tela; seções e ações aparecem ao tocar no botão.
+  await page.evaluate((h) => { location.hash = h; }, `#texto/${t}`);
+  await expect(page.locator('.esc-corpo')).toBeVisible();
+  expect((await page.locator('.esc-sec-tit').boundingBox()).y).toBeLessThan(844 / 3);
+  await expect(page.getByRole('button', { name: 'Revisar e exportar' })).toBeHidden();
+  await page.getByRole('button', { name: 'Seções e ações' }).click();
+  await expect(page.getByRole('button', { name: 'Revisar e exportar' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copilot', exact: true })).toBeVisible();
+  await expect(page.locator('.secoes button')).toHaveCount(1);
+  await expect(page.locator('.secoes button').first()).toBeVisible();
 });
 
 test('a página do editor não herda o estilo de nenhum cartão: sem moldura e sem respiro a mais', async ({ page, context }) => {

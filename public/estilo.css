@@ -1,5 +1,5 @@
 /* researchbook: estilos do app.
-   Design system v2 (v1.1.0). Regras e porquês em docs/design-system.md; um teste confere o que é medível.
+   Sistema visual versão 3 (v2.24.0). Regras e porquês em docs/design-system.md; um teste confere o que é medível.
    Ordem: fontes, tokens, base, estrutura, componentes, telas, responsivo. Valor solto fora dos tokens não entra. */
 /* ============ Fontes (licença SIL OFL em public/fontes) ============ */
 @font-face{font-family:'Inter';src:url(fontes/inter.woff2) format('woff2');font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
@@ -402,8 +402,6 @@ mark.pulso{animation:pulso 1.2s ease}
 .msg.tutor p{margin:0 0 8px}
 .msg.tutor p:last-child{margin:0}
 .atalhos{display:flex;gap:6px;flex-wrap:wrap;padding:0 18px 10px}
-.atalhos button{font-size:var(--fs-legenda);border:1px solid var(--linha-2);background:var(--papel);border-radius:var(--r-2);padding:4px 10px;color:var(--grafite)}
-.atalhos button:hover{border-color:var(--tinta);color:var(--tinta)}
 .entrada{display:flex;gap:8px;padding:12px 16px 16px;border-top:1px solid var(--linha)}
 .notas-lista{display:flex;flex-direction:column;gap:12px}
 .nota{border:1px solid var(--linha);border-radius:var(--r-m);padding:12px 14px;background:var(--papel)}
@@ -691,7 +689,8 @@ body.foco .palco{padding-top:56px}
 .esc-painel .msg .f{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
 .esc-painel .versoes-box{margin:0;max-width:none}
 .esc-painel .atalhos{padding:0}
-.esc-painel .atalhos .btn.fant{font-size:var(--fs-legenda);padding:4px 10px;border-radius:var(--r-2);border:1px solid var(--linha-2);background:var(--papel)}
+.esc-painel .atalhos .btn.fant{height:var(--h-p);padding:0 var(--e-3);background:var(--superficie-2);color:var(--texto);font-size:var(--fs-meta)}
+.esc-painel .atalhos .btn.fant:hover{background:var(--superficie-3)}
 .vers-lista{list-style:none;margin:12px 0 0;padding:0}
 .vers-lista li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--linha);font-size:var(--fs-meta)}
 .vers-lista small{display:block;font-size:var(--fs-legenda);color:var(--grafite-2)}
@@ -2176,3 +2175,41 @@ pre.prev{max-height:230px;white-space:pre-wrap}
   .conversa-card{min-height:0}
   .face{padding:var(--e-6)}
 }
+
+/* =====================================================================
+   v2.24.0, polimento visual, lote 5: o leitor e o editor no celular.
+   O texto começa mais acima: o cabeçalho cabe numa linha e o resto fica num menu.
+   ===================================================================== */
+.leitor-mais,.leitor-fim,.esc-menu-btn,.esc-cab .so-menu{display:none}
+@media (max-width:700px){
+  /* Leitor: voltar, modo, página e o menu dos painéis numa linha. A ação principal vai para o fim do texto. */
+  .leitor-barra{flex-wrap:nowrap;gap:var(--e-2);padding:var(--e-2) var(--e-3)}
+  .leitor-barra .tit{display:none}
+  .leitor-barra > .btn.fant{flex:none;padding:0 var(--e-2)}
+  .leitor-barra .alterna.modo-leitor{flex:none;flex-wrap:nowrap}
+  .leitor-barra .dir{flex:1;min-width:0;justify-content:flex-end}
+  .leitor-barra .dir .btn{display:none}
+  .leitor-barra #pdf-pag{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .leitor-mais{display:inline-flex;flex:none;order:9;padding:0 var(--e-3)}
+  #leitor-paineis{display:none}
+  #leitor-paineis.aberto{display:flex;flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:2px;position:absolute;top:calc(100% + 4px);right:var(--e-3);z-index:6;min-width:200px;padding:var(--e-2);border-radius:var(--r-3);background:var(--superficie);box-shadow:0 8px 28px rgba(0,0,0,.16),0 0 0 1px var(--borda)}
+  #leitor-paineis.aberto button{justify-content:flex-start;height:44px}
+  .leitor-fim{display:flex;justify-content:center;padding:var(--e-6) var(--e-4) 0}
+  /* Editor: título, estado e um botão. Seções e ações aparecem quando ele é tocado. */
+  .esc-cab.tem-menu{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:var(--e-3)}
+  .esc-cab.tem-menu > div:first-child{grid-column:1}
+  .esc-cab.tem-menu p .btn{display:none}
+  .esc-menu-btn{display:inline-flex;grid-column:2}
+  .esc-menu-btn[aria-expanded="true"]{background:var(--superficie-3)}
+  .esc-cab.tem-menu .acoes{display:none;grid-column:1 / -1}
+  .esc-cab.tem-menu.menu-aberto .acoes{display:flex}
+  .esc-cab .so-menu{display:inline-flex}
+  .esc-grid.real:not(.menu-aberto) > .lat-esc{display:none}
+  /* O título da seção continua maior que o texto (a regra dos 16 px do iPhone é um mínimo) */
+  /* Mensagem e botão de enviar: no celular, o campo em cima e o botão embaixo (no painel do Copilot, sempre) */
+  .entrada{flex-direction:column;align-items:stretch}
+  .entrada .btn{align-self:flex-end}
+  :root input.esc-sec-tit:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]){font-size:var(--fs-titulo-2)!important}
+}
+.esc-painel .tutor-escrever{flex-direction:column;align-items:stretch}
+.esc-painel .tutor-escrever .btn{align-self:flex-end}
