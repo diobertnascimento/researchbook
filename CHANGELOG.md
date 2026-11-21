@@ -2,6 +2,16 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.18.0 (21/11/2026)
+Busca passo a passo no Acervo e esperas com número.
+- A busca de dados mostra o caminho de cada obra: ler o PDF, procurar pelo DOI, procurar pelo título, conferir. Acima, a barra geral com quantas obras já foram e a porcentagem.
+- Novo primeiro passo: o app lê o DOI escrito nas primeiras páginas do PDF que já está no aparelho. Quando acha, busca por ele e grava, sem depender do título. É o que resolve o arquivo que entrou com nome de arquivo no lugar do título.
+- Resultados em dúvida aparecem lado a lado com a sua obra, dado por dado, com o que é diferente em negrito e a base de onde veio cada um. "Nenhuma das duas" recusa de uma vez, com desfazer.
+- Esperas da IA deixaram de ser só um texto: o tutor, o Copilot, os diálogos e o parecer do projeto mostram "há 8 s", contando sozinho. Quando o app já tem histórico daquela tarefa neste aparelho, diz também quanto costuma levar; se passar do dobro, avisa que está demorando mais que o normal. O botão do tutor passou a se chamar "Parar".
+- PDF que ainda não está no aparelho mostra a barra do download, com os MB e a porcentagem.
+- O app só mostra porcentagem quando sabe o total. Onde não sabe (resposta da IA), mostra o tempo.
+- Ainda sem barra, por dependerem de mudança maior no envio: envio de PDF e de áudio para o Drive, importação e exportação para o Word.
+
 ## 2.17.0 (20/11/2026)
 Acervo: página de cada obra, OpenAlex e adicionar pelo link.
 - Cada obra tem a sua página (clique nela no Acervo). Ela mostra o que falta, a referência em ABNT como vai sair no Word, e cada dado com a origem: Crossref, OpenAlex, página do artigo ou "Você escreveu". Dados gravados antes desta versão aparecem como "Sem registro de origem".

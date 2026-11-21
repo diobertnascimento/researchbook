@@ -51,6 +51,7 @@ import { criarOrganizarUI } from './organizar-ui.js';
 import { lerInicio } from './leitor-pdf.js';
 import { buscarDOI } from './crossref.js';
 import { criarFontes } from './fontes.js';
+import { iniciarEsperas } from './espera.js';
 
 /* global APP_VERSAO */
 const versao = typeof APP_VERSAO === 'string' ? APP_VERSAO : 'desconhecida';
@@ -115,6 +116,8 @@ async function iniciar() {
   }
 
   const reg = criarRegistros(db, { versao });
+  // Relógio das esperas: "Pensando há 8 s" anda sozinho, e o "costuma levar" vem dos registros.
+  iniciarEsperas(reg);
   const registrar = reg.registrar;
   const ap = aparelho();
   registrar('app', 'sessao.inicio', { det: `versão ${versao}, ${ap.sistema}, ${ap.navegador}${ap.instalado ? ', instalado' : ''}, ${ap.tela}` });

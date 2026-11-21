@@ -1425,6 +1425,16 @@ a.arg-item{text-decoration:none;color:inherit}
 .org-sem > span:first-child{min-width:0;flex:1 1 320px}
 .org-lido{color:var(--acento-forte)!important}
 /* Andamento com número e etapas (v2.18.0): usado na busca do Acervo e nas esperas longas */
+.esperando{display:inline-flex;align-items:baseline;gap:var(--e-2);font-variant-numeric:tabular-nums}
+.pontos{display:inline-flex;gap:3px;position:relative;top:-2px}
+.pontos i{width:5px;height:5px;border-radius:50%;background:var(--acento);animation:pontos 1.2s ease-in-out infinite}
+.pontos i:nth-child(2){animation-delay:.15s}
+.pontos i:nth-child(3){animation-delay:.3s}
+@keyframes pontos{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.esperando-costuma{color:var(--texto-3)}
+.andamento{max-width:420px;margin:0 auto;text-align:left}
+.andamento .barra{margin:var(--e-3) 0 var(--e-2)}
+@media (prefers-reduced-motion:reduce){.pontos i{animation:none;opacity:.7}}
 .andamento-cab{display:flex;align-items:baseline;justify-content:space-between;gap:var(--e-3)}
 .andamento-pct{font-weight:600;font-variant-numeric:tabular-nums}
 .org-andamento .barra{margin:var(--e-3) 0 var(--e-2)}

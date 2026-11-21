@@ -3,6 +3,7 @@
 // Cada resposta mostra as fontes com o resultado da conferência automática: o que não bate com o acervo
 // aparece marcado, nunca escondido.
 import { ErroIA } from './gemini.js';
+import { pensandoHTML, desdeDe } from './espera.js';
 import { ROTULOS_PEDIDO } from './ia.js';
 import { ouvir } from './ui.js';
 
@@ -65,7 +66,8 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
     const vazio = !e.mensagens.length
       ? `<div class="tutor-vazio"><p>Selecione um trecho e escolha <b>Perguntar ao tutor</b>, ou escreva uma pergunta sobre o texto.</p><details class="como"><summary>Como o tutor funciona?</summary><p>Ele pergunta mais do que responde e só cita o que está no seu acervo: o texto desta obra, os seus grifos e fichamentos. Cada fonte é conferida pelo app; o que não bater aparece marcado. A conversa fica guardada no seu Drive.</p></details></div>`
       : '';
-    const pensando = e.pensando ? `<div class="msg tutor pensando" role="status"><span class="av">${icone('tutor')}</span><div><p>Pensando…</p><button class="btn fant" data-tutor-cancelar="${esc(leituraId)}">Cancelar</button></div></div>` : '';
+    const desde = desdeDe(`tutor:${leituraId}`, !!e.pensando);
+    const pensando = e.pensando ? `<div class="msg tutor pensando" role="status"><span class="av">${icone('tutor')}</span><div><p>${pensandoHTML('Pensando', desde, { tarefa: 'tutor' })}</p><button class="btn fant" data-tutor-cancelar="${esc(leituraId)}">Parar</button></div></div>` : '';
     const erro = e.erro ? `<div class="erro-ia" role="alert"><p>${esc(e.erro.mensagem)}</p>${e.erro.acao ? `<a class="btn" href="#ajustes" data-ir-gemini>Abrir Ajustes do Gemini</a>` : ''}</div>` : '';
     return vazio + lista + pensando + erro;
   }

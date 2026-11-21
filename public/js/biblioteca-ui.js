@@ -5,6 +5,7 @@ import { referencia, referenciaTexto, autorCurto, citacao } from './abnt.js';
 import { buscarDOI, limparDOI } from './crossref.js';
 import { entender } from './fontes.js';
 import { origensAoSalvar } from './acervo.js';
+import { barraHTML, tamanho } from './espera.js';
 import { montarLeitor, lerInicio, FUNCOES } from './leitor-pdf.js';
 import { montarLeitura } from './leitor-texto.js';
 import { ETAPAS } from './progresso.js';
@@ -383,7 +384,11 @@ export function criarBibliotecaUI({ bib, registrar, fontes = null }) {
     montando = eu;
     const vale = () => montando === eu && document.body.contains(palco);
     const inicio = performance.now();
-    const r = await bib.obterPDF(id);
+    // PDF que ainda não está neste aparelho: barra com os MB e a porcentagem enquanto ele vem do Drive.
+    const r = await bib.obterPDF(id, (lidos, total) => {
+      const aviso = vale() && palco.querySelector('.pdf-aviso');
+      if (aviso) aviso.innerHTML = barraHTML({ rotulo: 'Baixando o PDF do Drive', feito: lidos, total, medida: tamanho });
+    });
     if (!vale()) {
       if (montando === eu) montando = null;
       return;

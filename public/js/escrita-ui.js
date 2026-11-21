@@ -1,6 +1,7 @@
 // Telas da Escrita: lista de textos, preparação (enquadrar, ideia, diagnóstico, estrutura), editor com
 // Copilot e material da seção, e "Revisar e exportar" com o .docx.
 import { limpar, blocos, medirAutoria, citacoesDiretasSemFonte, contarPalavras, AUTORIAS } from './escrita.js';
+import { pensandoHTML, desdeDe } from './espera.js';
 import { gerarDocx, figurasDe } from './docx.js';
 import { referencia, citacao, autorCurto } from './abnt.js';
 import { normalizar } from './contexto.js';
@@ -67,7 +68,10 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
       .join('')}</ol>`;
   }
   const erroHTML = () => (est.erro ? `<div class="erro-ia" role="alert"><p>${esc(est.erro.mensagem)}</p>${est.erro.acao ? '<a class="btn" href="#ajustes">Abrir Ajustes do Gemini</a>' : ''}</div>` : '');
-  const ocupadoHTML = (o) => (est.ocupado === o ? '<p class="mute" role="status">O Copilot está trabalhando…</p>' : '');
+  const ocupadoHTML = (o) => {
+    const desde = desdeDe(`copilot:${o}`, est.ocupado === o);
+    return est.ocupado === o ? `<p class="mute" role="status">${pensandoHTML('O Copilot está trabalhando', desde, { tarefa: 'copilot' })}</p>` : '';
+  };
 
   function passo0(t) {
     return `<section class="editor esc-prep">
