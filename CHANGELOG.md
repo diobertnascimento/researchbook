@@ -2,6 +2,16 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.19.2 (21/11/2026)
+Leitura por link: o que o primeiro teste de verdade mostrou.
+- O OpenAlex funcionou no primeiro teste. A leitura por link falhou nas três tentativas, e estas são as correções do que deu para identificar.
+- Link antigo da SciELO, que começa com `http://`, era recusado ("O servidor só abre páginas https"). Agora o app e o servidor trocam para `https://` sozinhos.
+- Quando o site não deixa o servidor ler a página, a mensagem diz o que fazer: copiar o DOI que aparece na página do artigo e colar no mesmo campo.
+- O título procurado e o link colado iam no endereço do pedido ao servidor, e o Google Cloud guarda esse endereço no registro de acessos do seu projeto (só você vê, mas não era para ficar lá). Agora vão no corpo do pedido, que não é registrado.
+- O servidor passa a registrar o motivo de cada recusa em código (por exemplo, "o site respondeu 403"), sem o endereço nem o título. É o que faltava para descobrir por que uma leitura falhou sem depender da mensagem na tela.
+- **Precisa publicar o servidor de novo** (`servidor/publicar.sh`; não pede chave nenhuma desta vez). A publicação agora confere a versão que está no ar. Enquanto o servidor for o anterior, o app continua funcionando do jeito antigo.
+- Ainda sem resposta: por que a página `https://` da SciELO falhou no primeiro teste real (erro 502, duas vezes). O servidor não registrava o motivo; com esta versão, o próximo teste mostra.
+
 ## 2.19.1 (21/11/2026)
 Acervo: adicionar pelo link a partir do Acervo, e a tela sempre diz onde procura.
 - "Adicionar obras", no Acervo, ganhou o atalho "Adicionar uma obra pelo DOI ou pelo link". Antes, a entrada por link só existia no botão "Adicionar obra" da tela Ler, e quem estava no Acervo não achava.
