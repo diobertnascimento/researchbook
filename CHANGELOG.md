@@ -2,6 +2,15 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.19.3 (21/11/2026)
+A busca pelo link da página do artigo saiu. Fica o DOI.
+- O campo de adicionar obra voltou a ser "DOI ou link do DOI". Aceita o DOI (10.1590/…) ou o link que traz o DOI (doi.org/10.1590/…), e os dados vêm do Crossref, como antes.
+- Link da página do artigo (SciELO, portal de revista) não é mais aberto. Se você colar um, a tela pede o DOI, que aparece na própria página.
+- Por quê: no teste de verdade a SciELO recusou a leitura pelo servidor (resposta 403), o navegador não consegue ler a página de outro site, e você decidiu que a função era problemática e que o que já existe atende.
+- O servidor deixou de abrir páginas de qualquer site. Ele só fala com o Google e com o OpenAlex. **Publique o servidor de novo** para a rota antiga sair do ar (`servidor/publicar.sh`; não pede chave). Enquanto não publicar, nada quebra: o app já não usa essa rota.
+- O OpenAlex continua igual: entra na busca do Acervo quando o Crossref não dá certeza.
+- No Acervo, o atalho da janela "Adicionar obras" agora se chama "Adicionar uma obra pelo DOI".
+
 ## 2.19.2 (21/11/2026)
 Leitura por link: o que o primeiro teste de verdade mostrou.
 - O OpenAlex funcionou no primeiro teste. A leitura por link falhou nas três tentativas, e estas são as correções do que deu para identificar.

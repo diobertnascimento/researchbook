@@ -225,19 +225,11 @@ test.describe('servidor da chave', () => {
   });
 });
 
-/* ---------- Dados de obras: OpenAlex e leitura da página do artigo (v2.17.0) ---------- */
+/* ---------- Dados de obras: OpenAlex (v2.17.0). A leitura de página de artigo saiu na v2.19.3. ---------- */
 
 const CHAVE_OA = 'chave-openalex-de-teste-0000';
-const PAGINA = (extra = '') => `<!doctype html><html><head><title>x</title>
-<meta name="citation_title" content="Cooperativas de catadores e contratos municipais">
-<meta content="Teixeira, Marina" name="citation_author"><meta name='citation_author' content='Caio Lins'>
-<meta name="citation_journal_title" content="Gest&atilde;o P&uacute;blica e Res&iacute;duos (fict&iacute;cia)">
-<meta name="citation_publication_date" content="2021/08/03"><meta name="citation_volume" content="8"><meta name="citation_issue" content="3">
-<meta name="citation_firstpage" content="77"><meta name="citation_lastpage" content="98"><meta name="citation_doi" content="10.0000/gpr.2021.0230">
-${extra}</head><body><p>O texto do artigo não sai do servidor.</p><script>segredo()</script></body></html>`;
-
-/** Sobe o servidor com a internet simulada: cada endereço https tem uma resposta combinada aqui. */
-async function montarObras({ env = {}, sites = {}, dns = {}, openalex = null } = {}) {
+/** Sobe o servidor com o Google e o OpenAlex simulados. Qualquer outro endereço que ele tente abrir fica anotado. */
+async function montarObras({ env = {}, openalex = null } = {}) {
   const visto = { abertos: [], openalex: [], linhas: [] };
   const buscar = async (url, opcoes = {}) => {
     const u = String(url);
@@ -246,16 +238,12 @@ async function montarObras({ env = {}, sites = {}, dns = {}, openalex = null } =
       visto.openalex.push({ url: u, auth: opcoes.headers?.Authorization });
       return openalex ? openalex(u, opcoes) : new Response(JSON.stringify({ results: [] }), { status: 200 });
     }
-    visto.abertos.push({ url: u, redirect: opcoes.redirect });
-    visto.agente = opcoes.headers?.['User-Agent'];
-    const r = sites[u];
-    if (!r) return new Response('nada aqui', { status: 404, headers: { 'content-type': 'text/html' } });
-    return typeof r === 'function' ? r() : new Response(r.corpo ?? '', { status: r.status ?? 200, headers: { 'content-type': r.tipo ?? 'text/html; charset=utf-8', ...(r.location ? { location: r.location } : {}) } });
+    visto.abertos.push(u);
+    return new Response('nada aqui', { status: 404 });
   };
-  const resolver = async (nome) => (dns[nome] || ['200.17.141.10']).map((address) => ({ address, family: address.includes(':') ? 6 : 4 }));
   const servidor = criarServidor(
     { GEMINI_CHAVE: CHAVE, EMAIL_PERMITIDO: EMAIL, CLIENTE_GOOGLE: CLIENTE, ORIGENS: APP, CONTADOR: 'memoria', URL_TOKENINFO: 'https://tokeninfo.teste', URL_OPENALEX: 'https://openalex.teste', OPENALEX_CHAVE: CHAVE_OA, ...env },
-    { buscar, resolver, registro: (l) => visto.linhas.push(l) },
+    { buscar, registro: (l) => visto.linhas.push(l) },
   );
   const base = await ouvir(servidor);
   const pedir = (caminho, { token = 'token-bom', origem = APP, corpo } = {}) =>
@@ -265,151 +253,25 @@ async function montarObras({ env = {}, sites = {}, dns = {}, openalex = null } =
       body: corpo === undefined ? undefined : typeof corpo === 'string' ? corpo : JSON.stringify(corpo),
     });
   // Como o app pede desde a v2.19.2: no corpo. O jeito antigo (no endereço) tem teste próprio.
-  const pagina = (url, o) => pedir('/obras/pagina', { ...o, corpo: { url } });
   const procurar = (busca, o) => pedir('/obras/openalex', { ...o, corpo: { busca } });
   const registros = () => visto.linhas.map((l) => JSON.parse(l));
-  return { pedir, pagina, openalex: procurar, registros, visto, fim: () => fechar(servidor) };
+  return { pedir, openalex: procurar, registros, visto, fim: () => fechar(servidor) };
 }
 
 test.describe('servidor: dados de obras', () => {
   test.beforeEach(({}, info) => test.skip(info.project.name !== 'computador', 'Sem navegador: roda uma vez só'));
 
-  test('lê os dados que a página do artigo publica e devolve só os campos, nunca a página', async () => {
-    const url = 'https://www.scielo.br/j/gpr/a/exemplo';
-    const s = await montarObras({ sites: { [url]: { corpo: PAGINA() } } });
+  test('o servidor não abre página de site nenhum: a rota de leitura por link não existe mais', async () => {
+    const s = await montarObras();
     try {
-      const r = await s.pagina(url);
-      expect(r.status).toBe(200);
-      const j = await r.json();
-      expect(j.site).toBe('www.scielo.br');
-      expect(j.dados).toEqual({
-        tipo: 'artigo',
-        titulo: 'Cooperativas de catadores e contratos municipais',
-        autores: [{ sobrenome: 'Teixeira', prenomes: 'Marina' }, { sobrenome: 'Lins', prenomes: 'Caio' }],
-        ano: '2021',
-        veiculo: 'Gestão Pública e Resíduos (fictícia)',
-        volume: '8',
-        numero: '3',
-        paginas: '77-98',
-        editora: null,
-        doi: '10.0000/gpr.2021.0230',
-        idioma: null,
-        url,
-      });
-      expect(JSON.stringify(j)).not.toContain('não sai do servidor');
-      expect(s.visto.abertos).toEqual([{ url, redirect: 'manual' }]);
-      // O registro tem só a rota, sem o endereço pedido.
-      expect(s.registros().at(-1)).toMatchObject({ rota: 'POST /obras/pagina', status: 200 });
-      expect(s.visto.linhas.join('\n')).not.toContain('scielo');
-      // O servidor se apresenta pelo nome, com o endereço do app.
-      expect(s.visto.agente).toContain('researchbook');
-      expect(s.visto.agente).toContain('https://researchbook.com.br');
-      // Toda resposta diz a versão do servidor, e o app consegue ler.
-      expect(r.headers.get('x-researchbook-servidor')).toBe(VERSAO_SERVIDOR);
-      expect(r.headers.get('access-control-expose-headers')).toContain('x-researchbook-servidor');
-      expect((await s.pagina(url, { token: null })).headers.get('x-researchbook-servidor')).toBe(VERSAO_SERVIDOR);
-      // O app antigo pede pelo endereço: segue funcionando.
-      const antigo = await s.pedir(`/obras/pagina?url=${encodeURIComponent(url)}`);
-      expect([antigo.status, (await antigo.json()).dados.ano]).toEqual([200, '2021']);
-      // Pedido que não é um objeto em JSON, ou grande demais, é recusado sem abrir nada.
-      const abertos = s.visto.abertos.length;
-      expect((await s.pedir('/obras/pagina', { corpo: 'isso não é json' })).status).toBe(400);
-      expect((await s.pedir('/obras/pagina', { corpo: '[1]' })).status).toBe(400);
-      expect((await s.pedir('/obras/pagina', { corpo: { url, sobra: 'x'.repeat(9000) } })).status).toBe(413);
-      expect(s.visto.abertos.length).toBe(abertos);
-    } finally {
-      await s.fim();
-    }
-  });
-
-  test('não abre endereço fora da lista, http, IP, porta, nem site que aponta para rede interna', async () => {
-    const s = await montarObras({ dns: { 'periodicos.ufmg.br': ['169.254.169.254'], 'revistas.usp.br': ['200.1.1.1', '10.0.0.5'] } });
-    try {
-      const casos = [
-        ['https://metadata.google.internal/computeMetadata/v1/', 403, 'pagina-site'],
-        ['https://exemplo-qualquer.com/artigo', 403, 'pagina-site'],
-        ['https://scielo.br.atacante.com/x', 403, 'pagina-site'],
-        ['http://www.scielo.br:8080/j/x', 400, 'pagina-endereco'],
-        ['ftp://www.scielo.br/j/x', 400, 'pagina-endereco'],
-        ['https://169.254.169.254/latest', 400, 'pagina-endereco'],
-        ['https://www.scielo.br:8443/j/x', 400, 'pagina-endereco'],
-        ['https://usuario:senha@www.scielo.br/j/x', 400, 'pagina-endereco'],
-        ['file:///etc/passwd', 400, 'pagina-endereco'],
-        ['isso não é um endereço', 400, 'pagina-endereco'],
-        ['https://periodicos.ufmg.br/artigo/1', 403, 'pagina-site'],
-        ['https://revistas.usp.br/artigo/2', 403, 'pagina-site'],
-      ];
-      for (const [url, status, codigo] of casos) {
-        const r = await s.pagina(url);
-        expect([url, r.status, (await r.json()).error.codigo]).toEqual([url, status, codigo]);
+      for (const pedido of [{ corpo: { url: 'https://www.scielo.br/j/gpr/a/exemplo' } }, {}]) {
+        const r = await s.pedir(pedido.corpo ? '/obras/pagina' : '/obras/pagina?url=' + encodeURIComponent('https://www.scielo.br/j/gpr/a/exemplo'), pedido);
+        expect([r.status, (await r.json()).error.codigo]).toEqual([404, 'rota']);
       }
       expect(s.visto.abertos).toEqual([]);
-      // Recusas não gastam o limite do dia.
-      expect((await (await s.pedir('/estado')).json()).pedidosHoje).toBe(0);
-      // Sem login, nem chega a conferir o endereço.
-      expect((await s.pagina('https://www.scielo.br/j/x', { token: null })).status).toBe(401);
-    } finally {
-      await s.fim();
-    }
-  });
-
-  test('redirecionamento só é seguido para site da lista; PDF, página sem dados e site fora do ar têm resposta própria', async () => {
-    const s = await montarObras({
-      sites: {
-        'https://www.scielo.br/antigo': { status: 301, location: '/j/gpr/a/exemplo' },
-        'https://www.scielo.br/j/gpr/a/exemplo': { corpo: PAGINA() },
-        'https://www.scielo.br/sai': { status: 302, location: 'https://metadata.google.internal/computeMetadata/v1/' },
-        'https://www.scielo.br/arquivo.pdf': { corpo: '%PDF-1.7', tipo: 'application/pdf' },
-        'https://www.scielo.br/sobre': { corpo: '<html><head><title>Sobre</title></head></html>' },
-        'https://www.scielo.br/quebrado': { status: 500 },
-        'https://www.scielo.br/recusa': { status: 403 },
-        'https://www.scielo.br/scielo.php?pid=S0000': { status: 301, location: 'http://www.scielo.br/j/gpr/a/exemplo' },
-        'https://www.scielo.br/volta': { status: 302, location: '/volta' },
-        'https://www.scielo.br/cai': () => {
-          throw Object.assign(new TypeError('fetch failed: https://www.scielo.br/cai'), { cause: { code: 'ECONNRESET' } });
-        },
-      },
-    });
-    try {
-      const codigo = async (url) => {
-        const r = await s.pagina(url);
-        const j = await r.json();
-        return [r.status, j.error?.codigo ?? j.dados?.ano];
-      };
-      expect(await codigo('https://www.scielo.br/antigo')).toEqual([200, '2021']);
-      expect(await codigo('https://www.scielo.br/sai')).toEqual([403, 'pagina-site']);
-      expect(s.visto.abertos.some((a) => a.url.includes('metadata'))).toBe(false);
-      expect(await codigo('https://www.scielo.br/arquivo.pdf')).toEqual([422, 'pagina-sem-dados']);
-      expect(await codigo('https://www.scielo.br/sobre')).toEqual([422, 'pagina-sem-dados']);
-      expect(await codigo('https://www.scielo.br/quebrado')).toEqual([502, 'pagina-fora']);
-      expect(await codigo('https://www.scielo.br/nao-existe')).toEqual([502, 'pagina-fora']);
-      // Link antigo com http: o servidor abre em https, e o redirecionamento para http também vira https.
-      expect(await codigo('http://www.scielo.br/scielo.php?pid=S0000')).toEqual([200, '2021']);
-      expect(s.visto.abertos.every((a) => a.url.startsWith('https://'))).toBe(true);
-      // Site que recusa o servidor: a mensagem diz o que fazer, e o registro guarda o código e a resposta do site,
-      // sem o endereço pedido.
-      const recusa = await s.pagina('https://www.scielo.br/recusa');
-      expect((await recusa.json()).error.message).toBe('O site recusou a leitura pelo servidor (resposta 403). Copie o DOI que aparece na página do artigo e cole no mesmo campo.');
-      expect(s.registros().at(-1)).toEqual({ rota: 'POST /obras/pagina', status: 502, ms: expect.any(Number), codigo: 'pagina-fora', resposta: 403, saltos: 0 });
-      expect((await (await s.pagina('https://www.scielo.br/nao-existe')).json()).error.message).toContain('esta página não existe');
-      expect(await codigo('https://www.scielo.br/volta')).toEqual([502, 'pagina-fora']);
-      expect(s.registros().at(-1)).toMatchObject({ codigo: 'pagina-fora', resposta: 302, saltos: 4 });
-      expect(await codigo('https://www.scielo.br/cai')).toEqual([504, 'pagina-fora']);
-      expect(s.registros().at(-1)).toMatchObject({ codigo: 'pagina-fora', falha: 'TypeError', causa: 'ECONNRESET' });
-      expect(await codigo('https://www.scielo.br/sobre')).toEqual([422, 'pagina-sem-dados']);
-      expect(s.registros().at(-1)).toMatchObject({ codigo: 'pagina-sem-dados', resposta: 200, bytes: expect.any(Number) });
+      // O registro diz o código da recusa, sem o endereço pedido.
+      expect(s.registros().at(-1)).toEqual({ rota: 'GET /obras/pagina', status: 404, ms: expect.any(Number), codigo: 'rota' });
       expect(s.visto.linhas.join('\n')).not.toMatch(/scielo|https?:/);
-    } finally {
-      await s.fim();
-    }
-  });
-
-  test('a lista de sites pode ser trocada na publicação', async () => {
-    const url = 'https://revista.exemplo.org/artigo/9';
-    const s = await montarObras({ env: { SITES_PAGINA: 'exemplo.org, .outro.org' }, sites: { [url]: { corpo: PAGINA() } } });
-    try {
-      expect((await s.pagina(url)).status).toBe(200);
-      expect((await s.pagina('https://www.scielo.br/j/x')).status).toBe(403);
     } finally {
       await s.fim();
     }
@@ -431,6 +293,19 @@ test.describe('servidor: dados de obras', () => {
       expect(s.visto.openalex[0].url).not.toContain(CHAVE_OA);
       expect(JSON.stringify(j) + [...r.headers].join()).not.toContain(CHAVE_OA);
       expect(s.visto.linhas.join('\n')).not.toMatch(/Falc|Design|chave-openalex/);
+      expect(s.registros().at(-1)).toMatchObject({ rota: 'POST /obras/openalex', status: 200 });
+      // Só o Google e o OpenAlex foram chamados.
+      expect(s.visto.abertos).toEqual([]);
+      // Toda resposta diz a versão do servidor, e o app consegue ler; vale também sem login.
+      expect(r.headers.get('x-researchbook-servidor')).toBe(VERSAO_SERVIDOR);
+      expect(r.headers.get('access-control-expose-headers')).toContain('x-researchbook-servidor');
+      expect((await s.openalex('design science', { token: null })).headers.get('x-researchbook-servidor')).toBe(VERSAO_SERVIDOR);
+      // Pedido que não é um objeto em JSON, ou grande demais, é recusado sem ir ao OpenAlex.
+      const idas = s.visto.openalex.length;
+      expect((await s.pedir('/obras/openalex', { corpo: 'isso não é json' })).status).toBe(400);
+      expect((await s.pedir('/obras/openalex', { corpo: '[1]' })).status).toBe(400);
+      expect((await s.pedir('/obras/openalex', { corpo: { busca: 'design science', sobra: 'x'.repeat(9000) } })).status).toBe(413);
+      expect(s.visto.openalex.length).toBe(idas);
       // Se o OpenAlex recusar os campos escolhidos, o servidor repete sem escolher.
       recusarSelect = true;
       const r2 = await s.pedir('/obras/openalex?busca=design%20science');

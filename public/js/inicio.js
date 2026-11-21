@@ -522,7 +522,7 @@ async function iniciar() {
     window.rb.biblioteca = biblioteca;
     // Fontes que passam pelo servidor do autor (OpenAlex e leitura da página do artigo).
     window.rb.fontes = criarFontes({ google, registrar });
-    window.rb.bibUI = criarBibliotecaUI({ bib: biblioteca, registrar, fontes: window.rb.fontes });
+    window.rb.bibUI = criarBibliotecaUI({ bib: biblioteca, registrar });
     window.rb.fichUI = criarFichamentoUI({ bib: biblioteca, dados: window.rb.dados, registrar, drive: () => (sinc && google.sessao() ? driveAtual : null) });
     window.rb.argUI = criarArgumentosUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });
     window.rb.trilhasUI = criarTrilhasUI({ bib: biblioteca, dados: window.rb.dados, fichUI: window.rb.fichUI, registrar });

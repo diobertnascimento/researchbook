@@ -116,13 +116,12 @@ export function origensAoSalvar(antes, depois, buscado = {}) {
   return o;
 }
 
-/** Nome da origem para mostrar: "Crossref", "OpenAlex", "Página do artigo (scielo.br)", "Você escreveu". */
+/** Nome da origem para mostrar: "Crossref", "OpenAlex", "Lido no PDF", "Você escreveu". */
 export function nomeDaOrigem(o, l) {
   if (o === 'crossref') return 'Crossref';
   if (o === 'openalex') return 'OpenAlex';
   if (o === 'autor') return 'Você escreveu';
   if (o === 'pdf') return 'Lido no PDF';
-  if (typeof o === 'string' && o.startsWith('pagina:')) return `Página do artigo (${o.slice(7)})`;
   if (typeof o === 'string' && o.startsWith('importado:')) return `Importado: ${o.slice(10)}`;
   return l?.importadaDe ? `Importado: ${l.importadaDe}` : 'Sem registro de origem';
 }

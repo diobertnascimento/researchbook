@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Publica o servidor do researchbook no Cloud Run: a chave do Gemini e, desde a v2.17.0, a busca de dados
-# de obras (OpenAlex, com a chave dele, e a leitura da página de um artigo).
+# de obras no OpenAlex, com a chave dele.
 #
 # Onde rodar: no Cloud Shell (https://shell.cloud.google.com), dentro da pasta servidor/ do repositório.
 #   git clone https://github.com/diobertnascimento/researchbook.git
@@ -11,8 +11,6 @@
 # Para trocar a chave:        TROCAR_CHAVE=sim bash publicar.sh ID-DO-PROJETO
 # Para trocar a do OpenAlex:  TROCAR_OPENALEX=sim bash publicar.sh ID-DO-PROJETO
 # Para publicar sem OpenAlex: SEM_OPENALEX=sim bash publicar.sh ID-DO-PROJETO
-# Sites que o servidor pode abrir para ler os dados de um artigo (o padrão está em index.js, em SITES):
-#   SITES_PAGINA=scielo.br,ufmg.br,meusite.org bash publicar.sh ID-DO-PROJETO
 # Para mudar o limite do dia: LIMITE_DIA=500 bash publicar.sh ID-DO-PROJETO
 # O servidor aceita o endereço do app (researchbook.com.br) e o antigo (diobertnascimento.github.io).
 # Para mudar a lista, separe por vírgula:
@@ -135,7 +133,7 @@ esac
 echo "7/7 Publicando (uns 3 minutos na primeira vez)..."
 gcloud run deploy "$SERVICO" --source . --region "$REGIAO" --allow-unauthenticated \
   --service-account "$SA" --set-secrets "$SEGREDOS" \
-  --set-env-vars "^|^EMAIL_PERMITIDO=$EMAIL|CLIENTE_GOOGLE=$CLIENTE|ORIGENS=$ORIGENS|LIMITE_DIA=$LIMITE_DIA${SITES_PAGINA:+|SITES_PAGINA=$SITES_PAGINA}" \
+  --set-env-vars "^|^EMAIL_PERMITIDO=$EMAIL|CLIENTE_GOOGLE=$CLIENTE|ORIGENS=$ORIGENS|LIMITE_DIA=$LIMITE_DIA" \
   --max-instances 2 --memory 256Mi --quiet
 
 URL=$(gcloud run services describe "$SERVICO" --region "$REGIAO" --format='value(status.url)')

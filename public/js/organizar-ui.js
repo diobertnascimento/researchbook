@@ -41,7 +41,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (fase === 'escolher')
       return `<h2 id="modal-tit">Adicionar obras</h2>
       <p>Escolha vários PDFs, um arquivo exportado do Zotero ou do Web of Science (.bib, .ris, .json ou .rdf) ou a pasta inteira que o Zotero exportou com os PDFs. Antes de gravar, você confere o que é novo e o que já está na biblioteca.</p>
-      <p class="meta" id="imp-uma">Tem só o DOI ou o link da página do artigo (SciELO, portal de revista)? <button class="lnk m-0" data-imp-uma>Adicionar uma obra pelo DOI ou pelo link</button></p>
+      <p class="meta" id="imp-uma">Tem só o DOI do artigo? <button class="lnk m-0" data-imp-uma>Adicionar uma obra pelo DOI</button></p>
       <div class="linha-acoes mb-4">
         <label class="btn prim">${icone('upload')}Escolher arquivos<input type="file" multiple accept=".pdf,.bib,.bibtex,.ris,.json,.rdf,.txt,application/pdf" data-imp-arquivos hidden></label>
         ${temPasta() ? `<label class="btn">${icone('pasta') || ''}Escolher a pasta do Zotero<input type="file" webkitdirectory multiple data-imp-arquivos hidden></label>` : ''}
@@ -386,7 +386,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       : '';
     // Onde o app procura fica sempre à vista (antes só aparecia com o Gemini desligado, e não dava para saber
     // se o OpenAlex estava em uso). A nota sobre a IA continua só para quem está sem ela.
-    const notaFontes = `<p class="meta mb-2" id="acervo-fontes">Onde o app procura: ${org.fontesLigadas() ? 'no Crossref e, quando ele não dá certeza, no OpenAlex, pelo seu servidor. Se o servidor não responder, a tela avisa e a procura segue só pelo Crossref.' : 'só no Crossref. O OpenAlex e a busca por link passam pelo seu servidor e pedem que você esteja conectado ao Google.'}</p>`;
+    const notaFontes = `<p class="meta mb-2" id="acervo-fontes">Onde o app procura: ${org.fontesLigadas() ? 'no Crossref e, quando ele não dá certeza, no OpenAlex, pelo seu servidor. Se o servidor não responder, a tela avisa e a procura segue só pelo Crossref.' : 'só no Crossref. O OpenAlex passa pelo seu servidor e pede que você esteja conectado ao Google.'}</p>`;
     const notaIA = notaFontes + (org.iaLigada() ? '' : '<p class="meta mb-4">Com o Gemini ligado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o candidato certo. <a href="#ajustes">Ligar em Ajustes</a></p>');
     const grav = org.gravadosAgora();
     const gravadosHTML = grav.length && !st.rodando
