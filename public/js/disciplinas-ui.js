@@ -78,7 +78,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   const textosDe = (d) => escrita.todos().filter((t) => t.projeto === d.nome);
   const rotaDisc = (d) => `#disciplina/${encodeURIComponent(d.id)}`;
   // As cinco seções de um projeto. O terceiro nome é o da barra do celular, onde o espaço é curto.
-  const SECOES_PROJ = [['geral', 'Início', 'Início'], ['leituras', 'Artigos', 'Artigos'], ['agenda', 'Linha do tempo', 'Tempo'], ['estudio', 'Estúdio', 'Estúdio'], ['aprendizado', 'Aprendizado', 'Aprender']];
+  const SECOES_PROJ = [['geral', 'Início', 'Início'], ['leituras', 'Leituras', 'Leituras'], ['agenda', 'Agenda', 'Agenda'], ['estudio', 'Materiais', 'Materiais'], ['aprendizado', 'Progresso', 'Progresso']];
   const IC = {
     todos: '<svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg>',
     geral: '<svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg>',
@@ -164,7 +164,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     let painel;
     if (foco) {
       const quando = foco.dia === hoje ? `Hoje${foco.inicio ? `, às ${foco.inicio}` : ''}` : `${maiuscula(NOMES_DIA[DIAS[new Date(`${foco.dia}T12:00:00`).getDay()]])}, ${dataLonga(foco.dia)}${foco.inicio ? `, às ${foco.inicio}` : ''}`;
-      const acao = foco.tipo === 'aula' ? `<button class="btn prim" data-dsc-gravacao="${esc(d.id)}">${icone('upload')}Enviar gravação de aula</button>` : foco.tipo === 'estudo' ? `<a class="btn prim" href="${rotaDisc(d)}" data-disc-aba="leituras">Abrir os artigos</a>` : '';
+      const acao = foco.tipo === 'aula' ? `<button class="btn prim" data-dsc-gravacao="${esc(d.id)}">${icone('upload')}Enviar gravação de aula</button>` : foco.tipo === 'estudo' ? `<a class="btn prim" href="${rotaDisc(d)}" data-disc-aba="leituras">Abrir as leituras</a>` : '';
       painel = `<section class="proximo proj-agora" aria-labelledby="pg-t"><div class="rot" id="pg-t">${esc(quando)}</div><h2>${esc(foco.titulo)}</h2>
         ${nota ? `<p>Você anotou: ${esc(nota.texto)}</p>` : ''}${acao ? `<div class="acao-l">${acao}</div>` : ''}</section>`;
     } else {
@@ -178,7 +178,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       <div class="proj-cols">
         <div class="proj-col">
           ${prazos.length ? `<section class="prazos" aria-labelledby="pz-t"><h2 id="pz-t">Prazos</h2><ul>${prazos.map(linhaPrazo).join('')}</ul></section>` : ''}
-          ${compromissos.length ? `<section class="proj-sec" aria-labelledby="ps-t"><h2 id="ps-t">A seguir</h2><div class="evs">${compromissos.slice(0, 4).map((e) => linhaEvento(e)).join('')}</div><a class="lnk-sec" href="${rotaDisc(d)}" data-disc-aba="agenda">Ver a linha do tempo</a></section>` : ''}
+          ${compromissos.length ? `<section class="proj-sec" aria-labelledby="ps-t"><h2 id="ps-t">A seguir</h2><div class="evs">${compromissos.slice(0, 4).map((e) => linhaEvento(e)).join('')}</div><a class="lnk-sec" href="${rotaDisc(d)}" data-disc-aba="agenda">Ver a agenda</a></section>` : ''}
           <section class="proj-sec" aria-labelledby="pn-t"><h2 id="pn-t">Anotações</h2>
             <form class="nota-rap" data-dsc-anotar="${esc(d.id)}"><input id="dsc-nota" placeholder="Anote algo rápido" aria-label="Nova anotação" autocomplete="off"><button class="btn" type="submit">Anotar</button></form>
             ${(d.anotacoes || []).length ? `<ul class="notas-d">${d.anotacoes.map((n) => `<li><span>${esc(n.texto)}</span><small>${new Date(n.em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} <button class="btn fant mini" data-dsc-tirar-nota="${esc(n.id)}" aria-label="Apagar anotação">Apagar</button></small></li>`).join('')}</ul>` : ''}</section>
@@ -205,7 +205,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   function abaLeituras(d) {
     const ls = disc.leiturasDe(d);
     const plano = d.leiturasPlano || [];
-    return `${cab(d, 'Artigos', 'As obras da sua biblioteca marcadas com este projeto e as leituras do plano de ensino.')}
+    return `${cab(d, 'Leituras', 'As obras da sua biblioteca marcadas com este projeto e as leituras do plano de ensino.')}
     <div class="proj-grid"><section class="bloco">
       <h3>Na biblioteca</h3>
       ${ls.length ? `<div class="lst-leit">${ls.map((l) => `<a class="lc" href="#leitor/${encodeURIComponent(l.id)}"><b class="forte">${esc(citacao(l))}</b> ${esc(l.titulo)}<span>${pipsHTML(l.etapa || 0)} ${ETAPAS[l.etapa || 0]}</span></a>`).join('')}</div>` : '<p class="mute">Nenhuma obra marcada com este projeto. Na obra, selecione “Corrigir os dados” e escreva o nome do projeto no campo Projeto.</p>'}
@@ -262,7 +262,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       meses.at(-1)[1].push(x);
     }
     const ligada = window.rb?.agenda?.estado().ligada;
-    return `${cab(d, 'Linha do tempo', 'O que vem a seguir e o que já aconteceu neste projeto.', `<button class="btn" data-dsc-agendar="${esc(d.id)}">${icone('mais')}Agendar</button>`)}
+    return `${cab(d, 'Agenda', 'O que vem a seguir e o que já aconteceu neste projeto.', `<button class="btn" data-dsc-agendar="${esc(d.id)}">${icone('mais')}Agendar</button>`)}
       <div class="proj-linha">
       <section class="proj-sec" aria-labelledby="lt-seg"><h2 id="lt-seg">A seguir</h2>
         ${grupos.length ? grupos.map(([g, es]) => `<h3>${g}</h3><div class="evs">${es.map((e) => linhaEvento(e)).join('')}</div>`).join('') : '<p class="mute">Nada agendado nos próximos meses.</p>'}
@@ -305,7 +305,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     const hoje = diaLocal();
     const quando = (iso) => (diaDe(iso) === hoje ? 'hoje' : diaDe(iso) ? diaMes(diaDe(iso)) : '');
     const titulo = (x) => (x.href ? `<a class="est-t" href="${x.href}">${esc(x.tit)}</a>` : x.arquivo ? `<button class="est-t" data-dsc-abrir-arquivo="${esc(x.arquivo)}" data-ocupado="Abrindo…">${esc(x.tit)}</button>` : x.nota ? `<button class="est-t" data-dsc-nota="${esc(x.nota)}">${esc(x.tit)}</button>` : x.url ? `<a class="est-t" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.tit)}</a>` : `<a class="est-t" href="${rotaDisc(d)}" data-disc-aba="${x.aba}">${esc(x.tit)}</a>`);
-    return `${cab(d, 'Estúdio', 'Tudo o que faz parte deste projeto: o que você escreve aqui e o que traz de fora.')}
+    return `${cab(d, 'Materiais', 'Tudo o que faz parte deste projeto: o que você escreve aqui e o que traz de fora.')}
       <section class="proximo estudio-add" aria-labelledby="ea-t"><div class="rot" id="ea-t">Adicionar ao projeto</div>
         <div class="acao-l"><button class="btn prim" data-dsc-novo-texto="${esc(d.id)}">Escrever texto</button><button class="btn" data-dsc-nota-nova="${esc(d.id)}">Escrever nota</button><button class="btn" data-dsc-gravacao="${esc(d.id)}">Enviar gravação de aula</button><button class="btn" data-dsc-arquivo-novo="${esc(d.id)}">Enviar arquivo ou foto</button><button class="btn" data-dsc-link-novo="${esc(d.id)}">Guardar link</button></div></section>
       <section class="proj-sec" aria-labelledby="en-t"><h2 id="en-t">Neste projeto</h2>
@@ -339,7 +339,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     const ate = ls.length || as.length
       ? `Você leu ${ls.length ? `${lidas} de ${plural(ls.length, 'obra', 'obras')}` : 'nenhuma obra'}, fichou ${fichadas} e tem ${plural(gravadas, 'aula gravada', 'aulas gravadas')}.`
       : 'Ainda não há obras nem aulas neste projeto.';
-    return `${cab(d, 'Aprendizado', `O que você construiu em ${esc(d.nome)}${desde ? ` desde ${dataLonga(desde)}` : ''}. Contado pelo app, sem IA.`)}
+    return `${cab(d, 'Progresso', `O que você construiu em ${esc(d.nome)}${desde ? ` desde ${dataLonga(desde)}` : ''}. Contado pelo app, sem IA.`)}
       <section class="proximo proj-ate" aria-labelledby="ap-ate"><div class="rot" id="ap-ate">Até aqui</div><p>${ate}</p></section>
       <div class="proj-cols">
         <div class="proj-col">
@@ -754,7 +754,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   let notaTimer = null;
   let notaPendente = null;
   function modalNota(discId, m = null) {
-    abrirModal(`<h2 id="modal-tit">Nota</h2><p>Fica no Estúdio deste projeto. É salva sozinha enquanto você escreve.</p>
+    abrirModal(`<h2 id="modal-tit">Nota</h2><p>Fica nos Materiais deste projeto. É salva sozinha enquanto você escreve.</p>
       <div id="dsc-nota-form" data-disc="${esc(discId)}" data-id="${esc(m?.id || '')}">
         <div class="campo"><label for="mat-titulo">Título</label><input id="mat-titulo" data-dsc-mat-campo value="${esc(m?.titulo || '')}" autocomplete="off"></div>
         <div class="campo"><label for="mat-texto">Texto</label><textarea id="mat-texto" rows="10" data-dsc-mat-campo>${esc(m?.texto || '')}</textarea></div>

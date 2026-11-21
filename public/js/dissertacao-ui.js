@@ -120,7 +120,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
 
   function projeto() {
     const revs = diss.todasRevisoes();
-    const topo = `<div class="topo"><div><h1>Projeto</h1><p>Envie cada versão do projeto em PDF. A IA faz duas leituras: o parecer do que ajustar para a qualificação e a lista das obras que você cita, por prioridade de leitura.</p></div>
+    const topo = `<div class="topo"><div><h1>Projeto de pesquisa</h1><p>Envie cada versão do projeto em PDF. A IA faz duas leituras: o parecer do que ajustar para a qualificação e a lista das obras que você cita, por prioridade de leitura.</p></div>
       <div class="acoes"><button class="btn prim" data-rev-escolher>${icone('upload')}${revs.length ? 'Enviar nova versão' : 'Enviar a versão atual'}</button></div></div>`;
     if (!revs.length) return `${topo}<div class="bib-vazia"><h2>Nenhuma versão enviada</h2><p>A cada versão, o parecer diz o que foi resolvido desde a anterior, e a lista de obras mostra as novas, as removidas e os problemas de citação resolvidos. O PDF fica no seu Drive (dissertacao/versoes).</p></div>`;
     const r = (est.rev && diss.revisao(est.rev)) || revs[0];

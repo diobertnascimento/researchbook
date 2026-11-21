@@ -146,7 +146,7 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     const prontas = leituras.filter((l) => !doLivro(l.id) && (l.etapa || 0) >= 2);
     const topo = `<div class="topo"><div><h1>Fichamentos</h1><p>Dois caminhos para a mesma ficha: pelos trechos que você grifou e pelo texto completo, respondendo de memória.</p></div></div>`;
     if (!comFich.length && !prontas.length) {
-      return `${topo}<div class="bib-vazia"><h2>Nenhum fichamento ainda</h2><p>Conclua a leitura de uma obra no leitor e selecione “Fazer fichamento”. Os grifos que você fez viram o ponto de partida.</p><a class="btn prim" href="#biblioteca">Ir para a biblioteca</a></div>`;
+      return `${topo}<div class="bib-vazia"><h2>Nenhum fichamento ainda</h2><p>Conclua a leitura de uma obra no leitor e selecione “Fazer fichamento”. Os grifos que você fez viram o ponto de partida.</p><a class="btn prim" href="#biblioteca">Ir para Leituras</a></div>`;
     }
     const nNotas = (f) => {
       const k = (f.notas || []).filter((x) => x.texto?.trim()).length;
@@ -252,7 +252,7 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
       const g = grifos.find((x) => `g:${x.id}` === n.chave);
       return g ? `Sobre o grifo: “${esc(g.texto.slice(0, 120))}${g.texto.length > 120 ? '…' : ''}”` : 'Sobre um grifo que foi apagado';
     };
-    return `${notas.length ? `<p class="instr">Cada nota já traz a referência e pode ser lida sozinha. As marcadas para a dissertação e as ligadas a um argumento aparecem no Mapa de argumentos.</p>
+    return `${notas.length ? `<p class="instr">Cada nota já traz a referência e pode ser lida sozinha. As marcadas para a dissertação e as ligadas a um argumento aparecem em Argumentos.</p>
       <ul class="fich-notas">${notas.map((n) => `<li><p class="nota-t">${esc(n.texto)} <span class="cit">${esc(referenciaDaNota(n, l))}</span></p><small>${origem(n)}${n.levar ? '. Vai para a dissertação' : ''}${n.argumento?.trim() ? `. Argumento: ${esc(n.argumento)}` : ''}</small><button class="btn fant" data-fich-copiar="${esc(n.chave)}">Copiar</button></li>`).join('')}</ul>` : '<p class="mute">Nenhuma nota ainda. Elas nascem dos dois caminhos: pelos grifos e pelo texto completo.</p>'}
       ${temAntigo(f) ? `<details class="fich-antigo"><summary>Do fichamento em cinco etapas</summary>
         ${f.citacoes?.length ? `<h3>Citações</h3>${f.citacoes.map((c) => `<blockquote>${esc(c.texto)}<cite>${esc(citacao(l, c.pagina))}${c.porque ? `. Por que importa: ${esc(c.porque)}` : ''}</cite></blockquote>`).join('')}` : ''}

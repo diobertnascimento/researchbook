@@ -78,7 +78,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     const painel = busca ? '' : continueLendoHTML(todas);
     // Um botão azul por tela: com o painel "Continue lendo" ou o aviso de biblioteca vazia, o do topo fica cinza.
     const topo = `<div class="topo">
-      <div><h1>Biblioteca</h1><p>${todas.length ? `${todas.length} ${todas.length === 1 ? 'obra' : 'obras'}. Abra uma obra para ler e grifar.` : 'Suas obras, com o PDF guardado no seu Drive.'}</p></div>
+      <div><h1>Leituras</h1><p>${todas.length ? `${todas.length} ${todas.length === 1 ? 'obra' : 'obras'}. Abra uma obra para ler e grifar.` : 'Suas obras, com o PDF guardado no seu Drive.'}</p></div>
       <div class="acoes">
         ${todas.length ? `<label class="busca">${icone('busca')}<input id="bib-busca" type="search" placeholder="Buscar título, autor, tag" value="${esc(busca)}"></label>` : ''}
         <button class="btn" data-org-importar>${icone('upload')}Importar</button>

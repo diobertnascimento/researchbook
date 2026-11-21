@@ -70,7 +70,7 @@ export class ErroIA extends Error {
 export const NOMES_TAREFA = {
   tutor: 'Tutor no leitor', copilot_conversa: 'Copilot: conversa', copilot_versoes: 'Copilot: versões do parágrafo', copilot_plano: 'Copilot: diagnóstico e estrutura', revisao_final: 'Revisar e exportar',
   transcricao: 'Transcrição de aulas e reuniões', aula_resumo: 'Resumo da aula', plano_ensino: 'Plano de ensino', revisao_projeto: 'Revisão do projeto', parecer_projeto: 'Parecer do projeto', orientacao: 'Registro da orientação',
-  dialogo: 'Diálogos', dialogo_encerrar: 'Diálogos: posições firmadas', cartoes: 'Cartões', fichamento: 'Tutor no fichamento', fichamento_perguntas: 'Perguntas do fichamento', overview: 'Overview do autor', organizar: 'Organizar a biblioteca (DOI)', memoria: 'Memória', teste: 'Testar conexão',
+  dialogo: 'Diálogos', dialogo_encerrar: 'Diálogos: posições firmadas', cartoes: 'Cartões', fichamento: 'Tutor no fichamento', fichamento_perguntas: 'Perguntas do fichamento', overview: 'Retrato da escrita', organizar: 'Organizar a biblioteca (DOI)', memoria: 'Memória', teste: 'Testar conexão',
 };
 export function escolhasModelos() {
   try {

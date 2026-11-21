@@ -100,8 +100,8 @@ test.describe('no computador', () => {
 
     // Linha do tempo.
     await secao(page, 'agenda');
-    await expect(page.locator('.topo h1')).toHaveText('Linha do tempo');
-    await expect(menu.locator('a[aria-current="page"]')).toHaveAttribute('title', 'Linha do tempo');
+    await expect(page.locator('.topo h1')).toHaveText('Agenda');
+    await expect(menu.locator('a[aria-current="page"]')).toHaveAttribute('title', 'Agenda');
     await expect(page.locator('.ev')).toHaveCount(2);
     const passado = page.locator('.linha-l li');
     await expect(passado.filter({ hasText: 'Aula 1' })).toContainText('Coleta seletiva e cooperativas');
@@ -121,7 +121,7 @@ test.describe('no computador', () => {
     const id = await projetoPronto(page);
     await page.goto(`/#disciplina/${id}`);
     await secao(page, 'estudio');
-    await expect(page.locator('.topo h1')).toHaveText('Estúdio');
+    await expect(page.locator('.topo h1')).toHaveText('Materiais');
     const itens = page.locator('.estudio li');
     await expect(itens).toHaveCount(1);
     await expect(itens.first()).toContainText('Rotas e cooperativas');
@@ -257,7 +257,7 @@ test.describe('no computador', () => {
     page.on('request', (r) => /generativelanguage|aiplatform/.test(r.url()) && pedidos.push(r.url()));
     await page.goto(`/#disciplina/${id}`);
     await secao(page, 'aprendizado');
-    await expect(page.locator('.topo h1')).toHaveText('Aprendizado');
+    await expect(page.locator('.topo h1')).toHaveText('Progresso');
     await expect(page.locator('.proj-ate')).toContainText('Você leu 1 de 1 obra, fichou 0 e tem 0 aulas gravadas.');
     await expect(page.locator('.apr-obras li')).toContainText('Rotas negociadas e rotas calculadas');
     await expect(page.locator('.apr-obras li')).toContainText('Leitura concluída');
@@ -301,7 +301,7 @@ test.describe('no celular', () => {
     await page.goto(`/#disciplina/${id}`);
     const menu = page.locator('.proj-menu');
     await expect(page.locator('#tabbar')).toBeHidden();
-    await expect(menu.locator('.curto')).toHaveText(['Início', 'Artigos', 'Tempo', 'Estúdio', 'Aprender']);
+    await expect(menu.locator('.curto')).toHaveText(['Início', 'Leituras', 'Agenda', 'Materiais', 'Progresso']);
     await expect(menu.locator('.curto').first()).toBeVisible();
     await expect(menu.locator('.longo').first()).toBeHidden();
     await expect(menu.locator('.todos')).toBeHidden();

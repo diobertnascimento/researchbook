@@ -2,6 +2,18 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.28.0 (21/11/2026)
+Revisão dos textos, parte 4 de 4: onze nomes de menu e de aba.
+- Acervo virou **Biblioteca**. A página de Ler, que tinha o título "Biblioteca", passou a se chamar **Leituras**, igual à aba dela; sem isso haveria duas páginas com o mesmo título.
+- Dissertação: Visão virou **Início**, Projeto virou **Projeto de pesquisa**, Mapa virou **Argumentos** e Jornada virou **Prazos**.
+- Projetos: Artigos virou **Leituras**, Linha do tempo (Tempo, no celular) virou **Agenda**, Estúdio virou **Materiais** e Aprendizado (Aprender, no celular) virou **Progresso**. Cada aba tem agora o mesmo nome no computador e no celular.
+- Você: Overview do autor virou **Retrato da escrita**.
+- Escrever: a primeira etapa da preparação se chamava Enquadrar na lista e Briefing no botão; virou **Sobre o texto** nos dois. No editor, a aba Material, que mostra os grifos ligados à seção, virou **Grifos**.
+- Os textos que citam esses nomes acompanharam ("Voltar à Biblioteca", "Os capítulos ficam no Início", "Ver a agenda"). O aviso "Projeto salvo neste aparelho", que fala do projeto do Google Cloud, virou "ID do projeto salvo neste aparelho".
+- A busca (Ctrl+K) encontra as páginas pelos nomes novos.
+- Os endereços não mudaram (`#acervo`, `#jornada`): links e atalhos antigos continuam abrindo.
+- No celular, as abas da Dissertação já rolavam para o lado; com "Projeto de pesquisa", Orientação e Prazos começam fora da tela (antes só Jornada ficava cortada).
+
 ## 2.27.0 (21/11/2026)
 Revisão dos textos, parte 3 de 4: quem fala, botões, telas vazias e pontuação.
 - O app não diz mais "eu". "Encontrei o DOI no PDF" virou "O DOI estava no PDF"; "Abri no modo PDF" virou "Ele abriu no modo PDF"; "Não encontrei citação neste parágrafo" virou "Nenhuma citação neste parágrafo". Quem fala em primeira pessoa é a IA, na conversa.

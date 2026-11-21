@@ -30,7 +30,7 @@ export function criarOverviewUI({ ov, registrar }) {
     const escritos = ov.textosDaEscrita();
     const corpus = ov.corpus();
     const palavras = ts.reduce((n, t) => n + t.palavras, 0);
-    const topo = `<div class="topo"><div><h1>Overview do autor</h1><p>Como você escreve, a partir dos seus textos. Só os trechos seus entram: coautoria e texto da IA ficam de fora. O Copilot pode usar o resumo para proteger a sua voz.</p></div>
+    const topo = `<div class="topo"><div><h1>Retrato da escrita</h1><p>Como você escreve, a partir dos seus textos. Só os trechos seus entram: coautoria e texto da IA ficam de fora. O Copilot pode usar o resumo para proteger a sua voz.</p></div>
       <div class="acoes"><label class="btn">${icone('upload')}Adicionar textos seus<input type="file" accept=".docx,.txt,.md,text/plain,text/markdown" multiple data-ov-arquivo hidden></label><button class="btn prim" data-ov-atualizar ${est.ocupado || !ts.length ? 'disabled' : ''}>${est.ocupado ? 'Analisando…' : o ? 'Atualizar o retrato' : 'Fazer o retrato'}</button></div></div>`;
     const erro = est.erro ? `<div class="mb-4 erro-ia" role="alert"><p>${esc(est.erro.message)}</p>${est.erro instanceof ErroIA && ERROS_DE_CONFIG.includes(est.erro.codigo) ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}</div>` : '';
     const corpusHTML = `<section class="bloco aut-corpus"><h3>Textos analisados</h3>

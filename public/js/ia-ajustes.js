@@ -180,7 +180,7 @@ export function criarIAAjustes({ ia, cofre, registrar }) {
     if (b.dataset.iaProjeto !== undefined) {
       ia.ajustes.definirProjeto(v('ia-projeto'));
       rascunhoProjeto = null;
-      toast('Projeto salvo neste aparelho');
+      toast('ID do projeto salvo neste aparelho');
       return redesenhar();
     }
     if (b.dataset.iaConectar !== undefined) {

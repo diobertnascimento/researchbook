@@ -29,8 +29,8 @@ test.describe('no computador', () => {
   test('a Visão abre a Dissertação; a tese é gravada sozinha e o plano da semana muda sem botão Salvar', async ({ page, context }) => {
     const { g } = await entrar(page, context);
     await expect(page.locator('.sec-cab h1')).toHaveText('Dissertação');
-    await expect(page.locator('.sec-cab .subnav a')).toHaveText(['Visão', 'Projeto', 'Mapa', 'Orientação', 'Jornada']);
-    await expect(page.locator('.sec-cab .subnav a[aria-current="page"]')).toHaveText('Visão');
+    await expect(page.locator('.sec-cab .subnav a')).toHaveText(['Início', 'Projeto de pesquisa', 'Argumentos', 'Orientação', 'Prazos']);
+    await expect(page.locator('.sec-cab .subnav a[aria-current="page"]')).toHaveText('Início');
     await expect(page.locator('#menu a', { hasText: 'Dissertação' })).toHaveAttribute('href', '#dissertacao');
 
     // Sem capítulo, o painel convida a criar o primeiro, e é o único botão azul.
@@ -137,7 +137,7 @@ test.describe('no computador', () => {
   test('Jornada: mês de início e prazo gravados ao escolher; marcos com apagar e desfazer; régua e próximo marco', async ({ page, context }) => {
     const { g, gem } = await entrar(page, context);
     const pedidos = gem.pedidos.length;
-    await page.locator('.sec-cab .subnav a', { hasText: 'Jornada' }).click();
+    await page.locator('.sec-cab .subnav a', { hasText: 'Prazos' }).click();
     await expect(page).toHaveURL(/#jornada$/);
     await expect(page.locator('.jor-comeco')).toContainText('Quando o mestrado começou?');
 

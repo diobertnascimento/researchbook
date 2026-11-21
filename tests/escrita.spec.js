@@ -154,7 +154,7 @@ test.describe('no computador', () => {
     await expect(page.locator('#esc-aut')).toContainText('IA 0%');
 
     // Material da seção: inserir a citação do grifo.
-    await page.getByRole('tab', { name: 'Material' }).click();
+    await page.getByRole('tab', { name: 'Grifos' }).click();
     await expect(page.locator('.grifo-item')).toContainText('A adesão das equipes de coleta');
     await page.locator('#esc-corpo p').first().click();
     await page.keyboard.press('End');
@@ -246,7 +246,7 @@ test.describe('no computador', () => {
     await expect(page.locator('.erro-ia a')).toHaveAttribute('href', '#ajustes');
 
     await page.locator('[data-esc-passo="4"]').click();
-    await page.getByRole('button', { name: 'Briefing' }).click();
+    await page.getByRole('button', { name: 'Sobre o texto' }).click();
     await page.getByRole('button', { name: 'Apagar texto' }).click();
     await expect(page).toHaveURL(/#escrita$/);
     await expect(page.locator('.txt-card')).toHaveCount(0);
@@ -290,7 +290,7 @@ test.describe('no celular', () => {
     await expect(page.locator('.secoes button').first()).toBeVisible();
     const sobra = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(await sobra()).toBeLessThanOrEqual(0);
-    await page.getByRole('button', { name: 'Briefing' }).click();
+    await page.getByRole('button', { name: 'Sobre o texto' }).click();
     await expect(page.getByLabel('Título de trabalho')).toBeVisible();
     expect(await sobra()).toBeLessThanOrEqual(0);
     await page.goto('/#escrita');

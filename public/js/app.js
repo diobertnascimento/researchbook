@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.27.0';
+const APP_VERSAO = '2.28.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -208,8 +208,8 @@ const SECOES = {
   bib:{nome:'Ler', tabs:[['biblioteca','Leituras'],['trilhas','Trilhas'],['fichamentos','Fichamentos']]},
   esc:{nome:'Escrever', tabs:[['escrita','Textos'],['dialogos','Diálogos']]},
   // v2.5.0: a Visão (tese, sessão de hoje, plano da semana e capítulos) abre a Dissertação. Ela só existe com os dados reais.
-  diss:{nome:'Dissertação', tabs:[['dissertacao','Visão'],['projeto','Projeto'],['argumentos','Mapa'],['orientacao','Orientação'],['jornada','Jornada']]},
-  voce:{nome:'Você', tabs:[['autor','Overview do autor'],['memoria','Memória'],['ajustes','Ajustes']]},
+  diss:{nome:'Dissertação', tabs:[['dissertacao','Início'],['projeto','Projeto de pesquisa'],['argumentos','Argumentos'],['orientacao','Orientação'],['jornada','Prazos']]},
+  voce:{nome:'Você', tabs:[['autor','Retrato da escrita'],['memoria','Memória'],['ajustes','Ajustes']]},
 };
 const SECAO_DE = {}; Object.entries(SECOES).forEach(([k,v])=>v.tabs.forEach(([r])=>SECAO_DE[r]=k));
 Object.assign(SECAO_DE,{leitor:'bib',fichamento:'bib',texto:'esc',cartoes:'hoje',organizar:'acervo',acervo:'acervo'});
@@ -223,9 +223,9 @@ function desenhaMenu(rota){
   const sub=`<ul class="sub" aria-label="Projetos">${projetos.map(([h,n])=>`<li><a href="${h}">${n}</a></li>`).join('')}<li><a href="#disciplinas">Ver todos</a></li></ul>`;
   // Barra do topo, com os seis lugares do app (o Acervo é o último). Você (overview, memória e ajustes) fica no avatar.
   document.getElementById('menu').innerHTML =
-    it('painel','#painel','Hoje') + it('bib','#biblioteca','Ler') + it('esc','#escrita','Escrever') + it('diss',modoReal()?'#dissertacao':'#projeto','Dissertação') + it('proj','#disciplinas','Projetos',sub) + it('acervo','#acervo','Acervo');
+    it('painel','#painel','Hoje') + it('bib','#biblioteca','Ler') + it('esc','#escrita','Escrever') + it('diss',modoReal()?'#dissertacao':'#projeto','Dissertação') + it('proj','#disciplinas','Projetos',sub) + it('acervo','#acervo','Biblioteca');
   const voceAtivo=sec==='voce';
-  document.getElementById('voce').innerHTML=`<div id="status-drive">${statusDriveHTML()}</div><button class="busca-k" data-acao="busca" aria-label="Buscar (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="rot">Buscar</span><kbd>Ctrl K</kbd></button><a class="item ${voceAtivo?'ativo':''}" href="#autor" title="Você: overview, memória e ajustes"><span class="av">V</span><span class="rot-voce">Você<small>Memória e ajustes</small></span></a><span class="selo-versao">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
+  document.getElementById('voce').innerHTML=`<div id="status-drive">${statusDriveHTML()}</div><button class="busca-k" data-acao="busca" aria-label="Buscar (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="rot">Buscar</span><kbd>Ctrl K</kbd></button><a class="item ${voceAtivo?'ativo':''}" href="#autor" title="Você: retrato da escrita, memória e ajustes"><span class="av">V</span><span class="rot-voce">Você<small>Memória e ajustes</small></span></a><span class="selo-versao">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
   // Celular: ler e o dia em primeiro lugar; o resto fica em Mais.
   const maisAtivo=!ativo('painel')&&!ativo('bib');
   const tb=[['#painel','Hoje',ativo('painel')],['#biblioteca','Ler',ativo('bib')],['#mais','Mais',maisAtivo]];
@@ -285,7 +285,7 @@ V.painel = () => {
 
 const FACETAS = [['proj','Projeto'],['etapa','Etapa'],['disc','Disciplina'],['conc','Conceito'],['tag','Tag']];
 V.biblioteca = () => {
-  if(modoReal()) return window.rb&&window.rb.bibUI ? window.rb.bibUI.lista() : '<div class="topo"><div><h1>Biblioteca</h1><p>Abrindo a biblioteca…</p></div></div>';
+  if(modoReal()) return window.rb&&window.rb.bibUI ? window.rb.bibUI.lista() : '<div class="topo"><div><h1>Leituras</h1><p>Abrindo a biblioteca…</p></div></div>';
   const f=S.filtros, b=S.busca.toLowerCase();
   const lista=LEITURAS.filter(l=>
     (!f.proj||l.proj===f.proj)&&(!f.disc||l.disc===f.disc)&&(!f.conc||l.conc.includes(f.conc))&&(!f.tag||l.tags.includes(f.tag))&&
@@ -753,15 +753,15 @@ function secAparelho(){
 }
 
 // Ajustes em subpáginas (#ajustes/<seção>): uma seção por vez, com o índice sempre à vista.
-const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa'],['custo','Uso e custo'],['registros','Registros'],['aparelho','Este aparelho'],['seguranca','Cópias de segurança'],['sincronizacao','Sincronização'],['acervo','Acervo'],['agenda','Google Agenda'],['cores','Marca-textos'],['pasta','Conta e pasta']];
+const SECOES_AJ=[['ia','Conexão com o Gemini'],['modelos','Modelos por tarefa'],['custo','Uso e custo'],['registros','Registros'],['aparelho','Este aparelho'],['seguranca','Cópias de segurança'],['sincronizacao','Sincronização'],['acervo','Biblioteca'],['agenda','Google Agenda'],['cores','Marca-textos'],['pasta','Conta e pasta']];
 // Mais (celular): os lugares que não são ler nem o dia, e o estado da sincronização.
 V.mais = () => `<div class="topo"><div><h1>Mais</h1></div></div>
   <nav class="mais-lista" aria-label="Mais lugares do app">
     <a href="#escrita">Escrever<small>Seus textos e diálogos</small></a>
     <a href="${modoReal()?'#dissertacao':'#projeto'}">Dissertação<small>Sessões de escrita, capítulos, projeto e orientação</small></a>
     <a href="#disciplinas">Projetos<small>Disciplinas e aulas</small></a>
-    <a href="#acervo">Acervo<small>Todas as obras, com PDF, referência e DOI</small></a>
-    <a href="#autor">Você<small>Overview do autor e memória</small></a>
+    <a href="#acervo">Biblioteca<small>Todas as obras, com PDF, referência e DOI</small></a>
+    <a href="#autor">Você<small>Retrato da escrita e memória</small></a>
     <a href="#ajustes">Ajustes<small>Gemini, cópias de segurança e sincronização</small></a>
   </nav>
   <div id="status-mais">${statusDriveHTML()}</div>
@@ -879,7 +879,7 @@ const REFS_PROJ = [
 ];
 const prioBar = n => `<span class="prio" aria-label="Prioridade ${['','baixa','média','alta'][n]}">${[1,2,3].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
 V.dissertacao = () => modoReal() ? (window.rb&&window.rb.visaoUI ? window.rb.visaoUI.tela() : esqueleto('Dissertação')) : V.projeto();
-V.jornada = () => modoReal() ? (window.rb&&window.rb.visaoUI ? window.rb.visaoUI.jornada() : esqueleto('Jornada')) : V.projeto();
+V.jornada = () => modoReal() ? (window.rb&&window.rb.visaoUI ? window.rb.visaoUI.jornada() : esqueleto('Prazos')) : V.projeto();
 V.projeto = () => {
   if(modoReal()) return window.rb&&window.rb.dissertacaoUI ? window.rb.dissertacaoUI.projeto() : esqueleto('Revisão do projeto');
   const ver=VERSOES.find(v=>v.v===S.versao);
@@ -1284,7 +1284,7 @@ V.dialogos = () => {
 /* =========================================================
    Overview do autor
    ========================================================= */
-V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overviewUI.tela() : esqueleto('Overview do autor', 'grade')) : `
+V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overviewUI.tela() : esqueleto('Retrato da escrita', 'grade')) : `
   <div class="topo"><div><h1>Overview do autor</h1><p>Como você escreve, a partir dos seus textos e das conversas com o tutor e o copilot. O copilot usa isto para proteger a sua voz.</p></div>
     <div class="acoes"><button class="btn prim" data-acao="toast" data-msg="Na versão funcional, você envia .docx, .pdf ou .md com textos seus.">${I.upload}Adicionar textos seus</button></div></div>
   <div class="aviso-demo-pg">Análise de exemplo. Ela só será real depois que você enviar seus textos.</div>

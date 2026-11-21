@@ -244,11 +244,11 @@ test.describe('no computador', () => {
     });
     const obra = () => page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Design')));
     // O Acervo é o último item do menu; o endereço antigo e o atalho dos Ajustes continuam valendo.
-    await expect(page.locator('#menu > li > a')).toHaveText(['Hoje', 'Ler', 'Escrever', 'Dissertação', 'Projetos', 'Acervo']);
-    await page.locator('#menu').getByRole('link', { name: 'Acervo' }).click();
+    await expect(page.locator('#menu > li > a')).toHaveText(['Hoje', 'Ler', 'Escrever', 'Dissertação', 'Projetos', 'Biblioteca']);
+    await page.locator('#menu').getByRole('link', { name: 'Biblioteca' }).click();
     await expect(page).toHaveURL(/#acervo$/);
-    await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
-    await expect(page.locator('#menu a[aria-current="page"]')).toHaveText('Acervo');
+    await expect(page.getByRole('heading', { level: 1, name: 'Biblioteca' })).toBeVisible();
+    await expect(page.locator('#menu a[aria-current="page"]')).toHaveText('Biblioteca');
     await expect(page.locator('.topo')).toContainText('2 obras. 0 completas, 2 com algo faltando.');
     // Livro sem DOI não conta como falta de DOI; os dois estão sem PDF e sem a cidade.
     const filtro = (nome) => page.locator('.ac-filtros').getByRole('button', { name: new RegExp('^' + nome) });
@@ -260,7 +260,7 @@ test.describe('no computador', () => {
     await expect(linhas.first().getByRole('link', { name: 'Anexar o PDF' })).toHaveAttribute('href', /#leitor\//);
     await expect(linhas.filter({ hasText: 'Manual interno' })).toContainText('Faltam a editora e a cidade');
     await page.goto('/#organizar');
-    await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Biblioteca' })).toBeVisible();
     // "Adicionar obras" do Acervo leva também à entrada de uma obra pelo DOI.
     await page.getByRole('button', { name: 'Adicionar obras' }).click();
     await expect(page.locator('#modal-tit')).toHaveText('Adicionar obras');
@@ -575,8 +575,8 @@ test('no celular: o Acervo fica em Mais e a lista cabe na tela, sem rolagem late
   await entrar(page, context);
   await page.evaluate(() => window.rb.biblioteca.adicionar({ tipo: 'artigo', titulo: 'Indicadores de desempenho em centrais de triagem de materiais recicláveis', autores: [{ sobrenome: 'Nogueira', prenomes: 'Lia' }], ano: '2018', veiculo: 'Revista Fictícia de Logística Urbana', doi: '10.0000/rflu.2018.0307-um-doi-bem-comprido-para-testar' }));
   await page.goto('/#mais');
-  await page.locator('.mais-lista').getByRole('link', { name: /^Acervo/ }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
+  await page.locator('.mais-lista').getByRole('link', { name: /^Biblioteca/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Biblioteca' })).toBeVisible();
   await expect(page.locator('#ac-corpo tr')).toContainText('Faltam o volume ou o número e as páginas');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
