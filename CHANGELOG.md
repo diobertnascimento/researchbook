@@ -3,7 +3,8 @@
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
 ## 2.19.1 (21/11/2026)
-Acervo: a tela sempre diz onde procura.
+Acervo: adicionar pelo link a partir do Acervo, e a tela sempre diz onde procura.
+- "Adicionar obras", no Acervo, ganhou o atalho "Adicionar uma obra pelo DOI ou pelo link". Antes, a entrada por link só existia no botão "Adicionar obra" da tela Ler, e quem estava no Acervo não achava.
 - A frase que dizia se a procura usa só o Crossref ou também o OpenAlex só aparecia para quem estava com o Gemini desligado. Com a IA ligada, não dava para saber. Agora "Onde o app procura" aparece sempre, no fim do Acervo.
 
 ## 2.19.0 (21/11/2026)

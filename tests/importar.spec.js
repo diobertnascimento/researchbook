@@ -103,7 +103,7 @@ test.describe('no computador', () => {
   test('importa a pasta do Zotero: liga cada PDF à sua obra, manda os PDFs para o Drive e não repete na segunda vez', async ({ page, context }) => {
     const { g } = await entrar(page, context);
     await page.getByRole('button', { name: 'Importar' }).first().click();
-    await expect(page.locator('#modal-tit')).toHaveText('Importar para a biblioteca');
+    await expect(page.locator('#modal-tit')).toHaveText('Adicionar obras');
     await page.locator('input[webkitdirectory]').setInputFiles(ZOT);
     await expect(page.locator('#modal-tit')).toHaveText('Conferir a importação', { timeout: 15000 });
     await expect(page.locator('.imp-lista')).toContainText('Nova');
@@ -261,6 +261,12 @@ test.describe('no computador', () => {
     await expect(linhas.filter({ hasText: 'Manual interno' })).toContainText('Faltam a editora e a cidade');
     await page.goto('/#organizar');
     await expect(page.getByRole('heading', { level: 1, name: 'Acervo' })).toBeVisible();
+    // "Adicionar obras" do Acervo leva também à entrada por DOI ou por link da página do artigo.
+    await page.getByRole('button', { name: 'Adicionar obras' }).click();
+    await expect(page.locator('#modal-tit')).toHaveText('Adicionar obras');
+    await page.getByRole('button', { name: 'Adicionar uma obra pelo DOI ou pelo link' }).click();
+    await expect(page.locator('label[for="ad-doi"]')).toHaveText('DOI ou link da página do artigo');
+    await page.locator('#veu').getByRole('button', { name: 'Cancelar' }).click();
 
     await page.getByRole('button', { name: 'Atualizar os dados pelo DOI' }).click();
     const feito = page.locator('#acervo-atualizadas');

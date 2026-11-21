@@ -39,8 +39,9 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
 
   function corpoModal() {
     if (fase === 'escolher')
-      return `<h2 id="modal-tit">Importar para a biblioteca</h2>
-      <p>Escolha vários PDFs, um arquivo exportado do Zotero (.bib, .ris, .json ou .rdf) ou a pasta inteira que o Zotero exportou com os PDFs. Antes de gravar, você confere o que é novo e o que já está na biblioteca.</p>
+      return `<h2 id="modal-tit">Adicionar obras</h2>
+      <p>Escolha vários PDFs, um arquivo exportado do Zotero ou do Web of Science (.bib, .ris, .json ou .rdf) ou a pasta inteira que o Zotero exportou com os PDFs. Antes de gravar, você confere o que é novo e o que já está na biblioteca.</p>
+      <p class="meta" id="imp-uma">Tem só o DOI ou o link da página do artigo (SciELO, portal de revista)? <button class="lnk m-0" data-imp-uma>Adicionar uma obra pelo DOI ou pelo link</button></p>
       <div class="linha-acoes mb-4">
         <label class="btn prim">${icone('upload')}Escolher arquivos<input type="file" multiple accept=".pdf,.bib,.bibtex,.ris,.json,.rdf,.txt,application/pdf" data-imp-arquivos hidden></label>
         ${temPasta() ? `<label class="btn">${icone('pasta') || ''}Escolher a pasta do Zotero<input type="file" webkitdirectory multiple data-imp-arquivos hidden></label>` : ''}
@@ -426,7 +427,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
   });
 
   ouvir('click', async (e) => {
-    const b = e.target.closest('[data-ac-filtro],[data-ac-completar],[data-ac-buscar-uma],[data-ac-copiar],[data-ac-apagar],[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-nenhuma],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
+    const b = e.target.closest('[data-ac-filtro],[data-ac-completar],[data-ac-buscar-uma],[data-ac-copiar],[data-ac-apagar],[data-org-atualizar-doi],[data-org-desfazer-atualizacao],[data-org-dispensar-atualizacao],[data-org-ia],[data-org-desfazer-gravados],[data-org-dispensar],[data-org-importar],[data-imp-uma],[data-imp-voltar],[data-imp-gravar],[data-org-procurar],[data-org-aceitar],[data-org-recusar],[data-org-nenhuma],[data-org-aceitar-todos],[data-org-juntar],[data-org-juntar-identicas],[data-org-nao-rep],[data-org-de-novo],[data-org-corrigir],[data-org-nao-tem],[data-org-usar-lidos]');
     if (!b) return;
     const d = b.dataset;
     if (d.acBuscarUma) {
@@ -469,6 +470,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       const d2 = org.propostas().length;
       return toast([g ? plural(g, 'DOI gravado', 'DOIs gravados') : null, c ? plural(c, 'obra completada pelo DOI', 'obras completadas pelo DOI') : null, d2 ? `${d2} para você decidir` : null].filter(Boolean).join(', ') + (g || c || d2 ? '.' : 'Nada novo encontrado no Crossref.'));
     }
+    if (d.impUma !== undefined) return bibUI.abrirAdicionar();
     if (d.orgImportar !== undefined) return abrirImportar();
     if (d.impVoltar !== undefined) return abrirImportar();
     if (d.impGravar !== undefined) return gravar();
