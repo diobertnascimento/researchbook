@@ -294,7 +294,8 @@ export async function montarLeitura({ palco, blob, grifos = [], paginaInicial = 
           const cy = y + h / 2;
           if (x + w < c.x || x > c.x + c.w || (cy >= c.y && cy <= c.y + c.h)) continue;
           const fim = c.y + c.h;
-          if (cy < c.y && y + h > c.y) c.y = Math.min(fim, y + h + 0.002);
+          // A caixa de um pedaço de texto vai até a linha de base: as pernas das letras (g, p, ç) descem mais um pouco.
+          if (cy < c.y && y + h * 1.35 > c.y) c.y = Math.min(fim, y + h * 1.35);
           else if (cy > fim && y < fim) c.h = Math.max(0, y - 0.002 - c.y);
           if (cy < c.y) c.h = Math.max(0, fim - c.y);
         }
