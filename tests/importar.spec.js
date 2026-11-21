@@ -181,6 +181,8 @@ test.describe('no computador', () => {
     const obra = (inicio) => page.evaluate((inicio) => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith(inicio)), inicio);
     await page.goto('/#acervo');
     await expect(page.locator('#acervo-resumo')).toContainText('3 obras com algo faltando');
+    // Com a IA ligada, a tela continua dizendo onde procura (antes essa frase sumia).
+    await expect(page.locator('#acervo-fontes')).toContainText('Onde o app procura: só no Crossref');
     await page.getByRole('button', { name: 'Completar os dados' }).click();
 
     // Título, autor e ano batem: gravado na hora, completando só o que faltava (a editora do autor fica).
@@ -228,7 +230,8 @@ test.describe('no computador', () => {
     const l = await page.evaluate(() => window.rb.biblioteca.leituras()[0]);
     expect([l.doi, l.doiBusca.status, l.doiBusca.auto]).toEqual(['10.0000/venable.2016', 'aceita', true]);
     await page.goto('/#organizar');
-    await expect(page.locator('main')).toContainText('A procura usa só o Crossref');
+    await expect(page.locator('#acervo-fontes')).toContainText('só no Crossref');
+    await expect(page.locator('main')).toContainText('Com o Gemini ligado, você pode pedir');
     await expect(page.locator('#org-gravados')).toContainText('10.0000/venable.2016');
   });
 
@@ -369,7 +372,7 @@ test.describe('no computador', () => {
       await b.adicionar({ tipo: 'livro', titulo: 'Design science research: avaliação de artefatos', autores: [{ sobrenome: 'Venable', prenomes: 'John' }], ano: '2016' });
     });
     await page.goto('/#acervo');
-    await expect(page.locator('main')).toContainText('A procura usa o Crossref e, quando ele não dá certeza, o OpenAlex.');
+    await expect(page.locator('#acervo-fontes')).toContainText('no Crossref e, quando ele não dá certeza, no OpenAlex, pelo seu servidor');
     await page.getByRole('button', { name: 'Completar os dados' }).click();
     const gravados = page.locator('#org-gravados');
     await expect(gravados).toContainText('Obra sem DOI, do OpenAlex', { timeout: 15000 });

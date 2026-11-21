@@ -2,6 +2,10 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.19.1 (21/11/2026)
+Acervo: a tela sempre diz onde procura.
+- A frase que dizia se a procura usa só o Crossref ou também o OpenAlex só aparecia para quem estava com o Gemini desligado. Com a IA ligada, não dava para saber. Agora "Onde o app procura" aparece sempre, no fim do Acervo.
+
 ## 2.19.0 (21/11/2026)
 Modo leitura com tabelas e gráficos, e escrever em página em branco.
 - O modo leitura passou a trazer tabelas e figuras desenhadas no PDF, não só as fotos. Tabela com réguas (a de cima, a do cabeçalho e a de baixo, como nas revistas, ou em grade) e gráfico ou diagrama feito de linhas e formas aparecem como um recorte da página, no lugar em que estão no texto.
