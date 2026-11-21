@@ -106,8 +106,8 @@ test('título longo não alarga nenhuma tela: a página tem a largura da janela'
     // v2.21.0: no painel, o título vai até 3 linhas; e todo título de seção tem a mesma letra.
     const t = await page.evaluate(() => {
       const vis = (e) => e.getBoundingClientRect().height > 0 && getComputedStyle(e).visibility !== 'hidden';
-      const painel = [...document.querySelectorAll('.proximo .prox-tit')].filter(vis).map((e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight) * 10) / 10);
-      const secoes = [...document.querySelectorAll('#vista h2')].filter((e) => vis(e) && !e.matches('.prox-tit') && !e.closest('.esc-corpo, .entrar-caixa')).map((e) => { const st = getComputedStyle(e); return `${st.fontFamily.split(',')[0].replace(/['"]/g, '')} ${st.fontSize}/${st.lineHeight} ${st.fontWeight}`; });
+      const painel = [...document.querySelectorAll('.proximo h2')].filter(vis).map((e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight) * 10) / 10);
+      const secoes = [...document.querySelectorAll('#vista h2')].filter((e) => vis(e) && !e.closest('.proximo, .esc-corpo, .entrar-caixa')).map((e) => { const st = getComputedStyle(e); return `${st.fontFamily.split(',')[0].replace(/['"]/g, '')} ${st.fontSize}/${st.lineHeight} ${st.fontWeight}`; });
       return { painel, secoes: [...new Set(secoes)] };
     });
     for (const linhas of t.painel) if (linhas > 3.1) problemas.push(`${r}: título do painel com ${linhas} linhas`);

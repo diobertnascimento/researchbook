@@ -2161,9 +2161,9 @@ input[type="file"]::file-selector-button:hover{background:var(--superficie-3)}
 .topo p,.esc-cab p{margin-top:var(--e-3)}
 .sec-cab + .topo p{margin-top:0}
 /* T2: no painel, o título vai até 3 linhas; inteiro, só na tela da obra ou do texto */
-.proximo .prox-tit{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.proximo .prox-tit,.proximo > h2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 /* T6: título de seção. Um só: Literata 22/30, peso 500. Fica de fora o que o autor escreveu no editor. */
-:where(#vista,.modal) h2:not(.prox-tit):not(.esc-corpo h2):not(.entrar-caixa h2){font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:30px;font-weight:500;letter-spacing:-.005em}
+:where(#vista,.modal) h2:not(.prox-tit):not(.proximo h2):not(.esc-corpo h2):not(.entrar-caixa h2){font-family:var(--leitura);font-size:var(--fs-titulo-2);line-height:30px;font-weight:500;letter-spacing:-.005em}
 /* T7: subtítulo de bloco. Um só: Inter 16/24, peso 600. Rótulo de grupo (cinza, 13 px) e conteúdo ficam de fora. */
 :where(#vista) h3:not(.lt h3):not(.esc-corpo h3):not(.proj-sec h3):not(.fich-conf h3):not(.fich-antigo h3):not(.encontro h3){font-family:var(--ui);font-size:var(--fs-corpo);line-height:24px;font-weight:600}
 /* T8: título de obra, de texto e de encontro é conteúdo: Literata, 18/26 */
