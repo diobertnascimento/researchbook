@@ -1744,6 +1744,19 @@ body.leitor main{max-width:none}
 .esc-corpo a{color:var(--acento);text-underline-offset:3px}
 .continue-escrevendo{margin-bottom:var(--e-10)}
 
+/* Escrever em página em branco (v2.19.0): sem caixa em volta do texto, na mesma coluna e no mesmo corpo de
+   letra do modo leitura, com a contagem discreta no pé da tela. */
+.esc-grid.real .folha{background:none;border:0;border-radius:0;overflow:visible}
+.esc-grid.real .folha-corpo{max-width:680px;margin:0 auto;padding:var(--e-4) var(--e-5) 96px}
+.esc-grid.real .esc-corpo{max-width:none;min-height:60vh;font-size:var(--fs-leitor);line-height:1.6}
+.esc-grid.real .esc-sec-tit{font-size:var(--fs-titulo-1);line-height:1.25;margin-bottom:var(--e-4)}
+.esc-grid.real .esc-corpo p,.esc-grid.real .esc-corpo li,.esc-grid.real .esc-corpo blockquote,.esc-grid.real .esc-corpo h3,.esc-grid.real .esc-corpo h2,.esc-grid.real .esc-corpo pre{padding-left:0;border-left-width:0}
+.esc-grid.real .marcas .esc-corpo p,.esc-grid.real .marcas .esc-corpo li,.esc-grid.real .marcas .esc-corpo blockquote,.esc-grid.real .marcas .esc-corpo h3,.esc-grid.real .marcas .esc-corpo h2{padding-left:15px;border-left-width:3px;margin-left:-18px}
+.esc-grid.real .folha-barra{position:sticky;bottom:0;z-index:2;justify-content:center;gap:var(--e-2) var(--e-6);padding:var(--e-3) var(--e-4);border:0;background:rgba(255,255,255,.94);color:var(--texto-3);font-size:var(--fs-legenda)}
+.esc-grid.real .folha-barra label{margin-left:0}
+#esc-paginas{color:var(--texto-2)}
+@media (max-width:1000px){.esc-grid.real .folha-barra{position:static;justify-content:flex-start;padding-left:var(--e-5)}.esc-grid.real .folha-corpo{padding:var(--e-3) var(--e-4) var(--e-8)}}
+
 /* Editor: o Copilot e as versões ficam fechados até serem chamados, e a barra do app sai da tela de escrever. */
 .esc-grid.sem-painel{grid-template-columns:230px minmax(0,1fr)}
 .esc-grid.sem-painel > .esc-painel{display:none}

@@ -2,6 +2,15 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.19.0 (21/11/2026)
+Modo leitura com tabelas e gráficos, e escrever em página em branco.
+- O modo leitura passou a trazer tabelas e figuras desenhadas no PDF, não só as fotos. Tabela com réguas (a de cima, a do cabeçalho e a de baixo, como nas revistas, ou em grade) e gráfico ou diagrama feito de linhas e formas aparecem como um recorte da página, no lugar em que estão no texto.
+- O texto que fica dentro do recorte (as células da tabela, os rótulos do gráfico) sai do texto corrido, porque já aparece na figura. Antes ele vinha embaralhado no meio do parágrafo.
+- Limites: tabela sem nenhuma linha desenhada, só alinhada por espaços, continua saindo como texto. Texto em duas colunas ainda pode sair fora de ordem. Dentro de uma figura não dá para grifar no modo leitura; no modo PDF dá.
+- Escrever ficou como uma página em branco: sem a caixa em volta do texto, na mesma coluna e no mesmo tamanho de letra do modo leitura.
+- No pé da tela, discreta, a estimativa de quanto você já escreveu: "cerca de 2 páginas e meia", ao lado das palavras e da participação da IA. A conta usa o formato do Word que o app exporta (A4, Times New Roman 12, espaçamento 1,5); o número certo é o do Word.
+- Testado com um PDF fictício feito para isso (tabela, quadro e gráfico desenhados). Falta ver com os seus artigos.
+
 ## 2.18.0 (21/11/2026)
 Busca passo a passo no Acervo e esperas com número.
 - A busca de dados mostra o caminho de cada obra: ler o PDF, procurar pelo DOI, procurar pelo título, conferir. Acima, a barra geral com quantas obras já foram e a porcentagem.

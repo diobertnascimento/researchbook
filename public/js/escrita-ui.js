@@ -1,6 +1,6 @@
 // Telas da Escrita: lista de textos, preparação (enquadrar, ideia, diagnóstico, estrutura), editor com
 // Copilot e material da seção, e "Revisar e exportar" com o .docx.
-import { limpar, blocos, medirAutoria, citacoesDiretasSemFonte, contarPalavras, AUTORIAS } from './escrita.js';
+import { limpar, blocos, medirAutoria, citacoesDiretasSemFonte, contarPalavras, paginasEstimadas, fraseDePaginas, AUTORIAS } from './escrita.js';
 import { pensandoHTML, desdeDe } from './espera.js';
 import { gerarDocx, figurasDe } from './docx.js';
 import { referencia, citacao, autorCurto } from './abnt.js';
@@ -257,15 +257,16 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
           <button class="mt-3 btn fant" data-esc-nova-secao>${icone('mais')}Seção</button>
         </aside>
         <section class="folha ${marcas ? 'marcas' : ''}">
-          <div class="folha-barra">
-            <span id="esc-palavras">${a.total}${t.limite ? ` de ~${t.limite}` : ''} palavras</span>
-            <span class="aut-mini" id="esc-aut">IA ${a.participacao}% ${barra(a, t.teto)}</span>
-            <label><input type="checkbox" data-marcas ${marcas ? 'checked' : ''}>Marcadores de autoria</label>
-          </div>
           <div class="folha-corpo">
             <input class="esc-sec-tit" aria-label="Título da seção" data-esc-sec-titulo value="${esc(s.titulo)}">
             ${s.objetivo ? `<p class="mute esc-obj">${esc(s.objetivo)}</p>` : ''}
             <div id="esc-corpo" class="esc-corpo" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Texto da seção ${esc(s.titulo)}" spellcheck="true" lang="pt-BR">${s.html || '<p data-autoria="autor"><br></p>'}</div>
+          </div>
+          <div class="folha-barra">
+            <span id="esc-paginas" title="Estimativa para o Word que o app exporta: A4, Times New Roman 12, espaçamento 1,5. O número certo é o do Word.">${fraseDePaginas(paginasEstimadas(t))}</span>
+            <span id="esc-palavras">${a.total}${t.limite ? ` de ~${t.limite}` : ''} palavras</span>
+            <span class="aut-mini" id="esc-aut">IA ${a.participacao}% ${barra(a, t.teto)}</span>
+            <label><input type="checkbox" data-marcas ${marcas ? 'checked' : ''}>Marcadores de autoria</label>
           </div>
         </section>
         <aside class="painel-lat esc-painel">
@@ -387,6 +388,8 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     if (st) st.lastChild.textContent = 'Salvo';
     const el = document.getElementById('esc-palavras');
     if (el) el.textContent = `${a.total}${novo.limite ? ` de ~${novo.limite}` : ''} palavras`;
+    const pg = document.getElementById('esc-paginas');
+    if (pg) pg.textContent = fraseDePaginas(paginasEstimadas(novo));
     const au = document.getElementById('esc-aut');
     if (au) au.innerHTML = `IA ${a.participacao}% ${barra(a, novo.teto)}`;
   }
