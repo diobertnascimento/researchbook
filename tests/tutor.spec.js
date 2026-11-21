@@ -258,7 +258,8 @@ test.describe('no computador', () => {
     await page.getByLabel('Perfil', { exact: true }).fill('Prefere frases curtas e exemplos concretos.');
     await page.getByRole('button', { name: 'Salvar perfil' }).click();
     await expect(page.locator('#toast')).toContainText('Perfil salvo no seu Drive');
-    expect(g.ler('memoria/autor.md')).toBe('Prefere frases curtas e exemplos concretos.');
+    // O aviso pode aparecer um instante antes de o Drive simulado terminar de gravar.
+    await expect.poll(() => g.ler('memoria/autor.md')).toBe('Prefere frases curtas e exemplos concretos.');
     await page.goto('/#biblioteca');
     await abrirObraComPDF(page);
     await page.locator('#tutor-texto').fill('Do que trata o texto?');
