@@ -10,6 +10,7 @@ import { ouvir } from './ui.js';
 import { buscarNoAcervo, conferirCitacoes } from './pedir.js';
 
 /* global I, toast, baixar, S */
+const palavrasDe = (n) => `${n} ${n === 1 ? 'palavra' : 'palavras'}`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const icone = (n) => (typeof I !== 'undefined' && I[n]) || '';
 const PASSOS = ['Enquadrar', 'Ideia', 'Diagnóstico', 'Estrutura', 'Escrever', 'Revisar e exportar'];
@@ -44,13 +45,13 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     const quando = (iso) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' }) : '');
     const continuar = `<section class="proximo continue-escrevendo" aria-labelledby="ce-t"><div class="rot" id="ce-t">Continue escrevendo</div>
       <h2 class="prox-tit">${esc(ultimo.titulo)}</h2>
-      <p class="prox-aut">${esc([ultimo.projeto, `${medirAutoria(ultimo).total} palavras`, ultimo.atualizadoEm ? `mexido em ${quando(ultimo.atualizadoEm)}` : ''].filter(Boolean).join(', '))}</p>
+      <p class="prox-aut">${esc([ultimo.projeto, palavrasDe(medirAutoria(ultimo).total), ultimo.atualizadoEm ? `mexido em ${quando(ultimo.atualizadoEm)}` : ''].filter(Boolean).join(', '))}</p>
       <div class="acao-l"><a class="btn prim" href="#texto/${encodeURIComponent(ultimo.id)}">Continuar o texto</a></div></section>`;
     return `${topo}${continuar}<div class="txt-lista">${ts
       .map((t) => {
         const a = medirAutoria(t);
         const st = t.passo <= 3 ? `Preparando: ${PASSOS[t.passo].toLowerCase()}` : t.passo === 4 ? 'Escrevendo' : 'Em revisão';
-        return `<a class="txt-card" href="#texto/${encodeURIComponent(t.id)}"><div><div class="t">${esc(t.titulo)}</div><div class="m">${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.limite ? `. ${a.total} de ${t.limite} palavras` : `. ${a.total} palavras`}${t.entrega ? `, entrega ${t.entrega.split('-').reverse().slice(0, 2).join('/')}` : ''}</div></div>
+        return `<a class="txt-card" href="#texto/${encodeURIComponent(t.id)}"><div><div class="t">${esc(t.titulo)}</div><div class="m">${esc(t.tipo)}${t.projeto ? `, ${esc(t.projeto)}` : ''}${t.limite ? `. ${a.total} de ${t.limite} palavras` : `. ${palavrasDe(a.total)}`}${t.entrega ? `, entrega ${t.entrega.split('-').reverse().slice(0, 2).join('/')}` : ''}</div></div>
           <div class="et"><span class="st"><i style="background:${t.passo <= 3 ? 'var(--linha-2)' : t.passo === 4 ? 'var(--petroleo)' : 'var(--sucesso)'}"></i>${st}</span></div>
           <div class="autoria"><span>Participação da IA: <b>${a.participacao}%</b> (teto ${t.teto}%)</span>${barra(a, t.teto)}</div></a>`;
       })
@@ -230,7 +231,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     const vs = escrita.versoesDe(t);
     const quando = (em) => new Date(em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     return `<p class="sub">O app guarda uma versão sozinho a cada 10 minutos de escrita e antes de toda mudança grande. Ficam neste aparelho e no seu Drive. Restaurar não apaga nada: o texto da tela vira mais uma versão.</p><button class="btn" data-esc-salvar-versao>Guardar versão agora</button>${
-      vs.length ? `<ul class="vers-lista">${vs.map((v) => `<li><span>${quando(v.em)}<small>${v.palavras} palavras, ${esc(MOTIVOS[v.motivo] || v.motivo || 'guardada')}</small></span><button class="btn fant" data-esc-restaurar="${esc(v.arquivo)}">Restaurar</button></li>`).join('')}</ul>` : '<p class="mute">Nenhuma versão ainda.</p>'
+      vs.length ? `<ul class="vers-lista">${vs.map((v) => `<li><span>${quando(v.em)}<small>${palavrasDe(v.palavras)}, ${esc(MOTIVOS[v.motivo] || v.motivo || 'guardada')}</small></span><button class="btn fant" data-esc-restaurar="${esc(v.arquivo)}">Restaurar</button></li>`).join('')}</ul>` : '<p class="mute">Nenhuma versão ainda.</p>'
     }`;
   }
 
@@ -264,7 +265,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
           </div>
           <div class="folha-barra">
             <span id="esc-paginas" title="Estimativa para o Word que o app exporta: A4, Times New Roman 12, espaçamento 1,5. O número certo é o do Word.">${fraseDePaginas(paginasEstimadas(t))}</span>
-            <span id="esc-palavras">${a.total}${t.limite ? ` de ~${t.limite}` : ''} palavras</span>
+            <span id="esc-palavras">${t.limite ? `${a.total} de ~${t.limite} palavras` : palavrasDe(a.total)}</span>
             <span class="aut-mini" id="esc-aut">IA ${a.participacao}% ${barra(a, t.teto)}</span>
             <label><input type="checkbox" data-marcas ${marcas ? 'checked' : ''}>Marcadores de autoria</label>
           </div>
@@ -387,7 +388,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
     const st = document.getElementById('esc-salvo');
     if (st) st.lastChild.textContent = 'Salvo';
     const el = document.getElementById('esc-palavras');
-    if (el) el.textContent = `${a.total}${novo.limite ? ` de ~${novo.limite}` : ''} palavras`;
+    if (el) el.textContent = novo.limite ? `${a.total} de ~${novo.limite} palavras` : palavrasDe(a.total);
     const pg = document.getElementById('esc-paginas');
     if (pg) pg.textContent = fraseDePaginas(paginasEstimadas(novo));
     const au = document.getElementById('esc-aut');

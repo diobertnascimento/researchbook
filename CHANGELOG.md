@@ -2,6 +2,19 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.20.0 (21/11/2026)
+Polimento visual, parte 1 de 5: o que quebrava a tela.
+- Acervo: um título longo não empurra mais as colunas para fora. Antes, a página passava da largura da janela e, no celular, a tela inteira encolhia.
+- Você, Overview do autor: nome de texto longo quebra de linha dentro do cartão.
+- Editor: saiu a moldura fina com cantos redondos em volta da página inteira e o espaço a mais que vinha com ela.
+- Janelas de adicionar obra, criar projeto e enviar gravação: o campo de arquivo ganhou o botão do app. O campo do DOI ocupa a largura toda e não corta mais o exemplo.
+- As caixas de seleção de Modelos por tarefa e de Ordem do Acervo voltaram a ter a seta.
+- Os links sublinhados ("Mudar", "Marcar uma sessão na agenda", "Esta obra não tem DOI") ficaram alinhados com o texto.
+- Celular: a lista do Ler mostra título, autor e etapa empilhados, sem cortar na borda, e a busca ocupa a linha inteira. Em Modelos por tarefa dá para ler o nome do modelo. As ações de Cópias de segurança quebram de linha. "Fechar", no Tutor e nos Grifos, tem o estilo do app. As abas que não cabem esmaecem na borda para mostrar que a fileira rola. Tabela larga em Ajustes ganhou sombra na borda para onde ainda há conteúdo. Na busca, a origem do resultado vai para baixo do título.
+- Celular: "Desfazer" do aviso, "Fechar", o modo do diálogo e as cores do grifo passaram a ter 40 px de área de toque.
+- Um nome só do começo ao fim: o botão "Novo projeto" agora abre "Novo projeto", com "Criar projeto" e "Projeto criado". "1 palavras" virou "1 palavra".
+- Teste novo: todas as telas são abertas com um título de 200 caracteres e a página tem que ter a largura da janela, no computador e no celular. Com o estilo anterior ele acusa o Acervo, o Overview e as Cópias de segurança.
+
 ## 2.19.3 (21/11/2026)
 A busca pelo link da página do artigo saiu. Fica o DOI.
 - O campo de adicionar obra voltou a ser "DOI ou link do DOI". Aceita o DOI (10.1590/…) ou o link que traz o DOI (doi.org/10.1590/…), e os dados vêm do Crossref, como antes.

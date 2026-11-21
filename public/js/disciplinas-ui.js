@@ -129,13 +129,13 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     const foco = ds.filter((d) => res.get(d.id).atencao).sort((a, b) => Number(res.get(b.id).hojeMesmo) - Number(res.get(a.id).hojeMesmo) || res.get(a.id).falta - res.get(b.id).falta)[0];
     const outros = ds.filter((d) => d !== foco);
     const meta = (d) => `${plural(disc.aulasDe(d.id).length, 'aula', 'aulas')}, ${plural(disc.leiturasDe(d).length, 'obra', 'obras')}`;
-    return `<div class="topo"><div><h1>Projetos</h1><p>${ds.length ? `${plural(ds.length, 'disciplina', 'disciplinas')} em andamento.` : 'As disciplinas do mestrado, cada uma com as aulas, os artigos e os textos dela.'}</p></div>
+    return `<div class="topo"><div><h1>Projetos</h1><p>${ds.length ? `${plural(ds.length, 'projeto', 'projetos')} em andamento.` : 'Um projeto para cada disciplina do mestrado, com as aulas, os artigos e os textos dela.'}</p></div>
         ${ds.length ? `<div class="acoes"><button class="btn" data-dsc-nova>${icone('mais')}Novo projeto</button></div>` : ''}</div>
       ${foco ? `<section class="proximo proj-atencao" aria-labelledby="pa-t"><div class="rot" id="pa-t">${res.get(foco.id).hojeMesmo ? 'Pede atenção hoje' : 'Pede atenção esta semana'}</div>
         <h2>${ponto(foco.cor, 11)} ${esc(foco.nome)}</h2><p>${esc(res.get(foco.id).texto)}</p>
         <div class="acao-l"><a class="btn prim" href="${rotaDisc(foco)}">Abrir projeto</a><span>${meta(foco)}</span></div></section>` : ''}
       ${outros.length ? `<section class="proj-lista" aria-label="${foco ? 'Os outros projetos' : 'Projetos'}">${foco ? '<h2>Os outros</h2>' : ''}<ul>${outros.map((d) => `<li><a class="proj-l" href="${rotaDisc(d)}"><span class="nome"><b>${ponto(d.cor, 10)} ${esc(d.nome)}</b><small>${esc(res.get(d.id).texto)}</small></span><span class="meta">${meta(d)}</span></a></li>`).join('')}</ul></section>` : ''}
-      ${ds.length ? '' : `<section class="proximo proj-atencao"><div class="rot">Comece por uma disciplina</div><p>Nome, docente e horário. Com o plano de ensino em PDF, a IA lê as aulas, as leituras e as entregas para você conferir antes de salvar.</p><div class="acao-l"><button class="btn prim" data-dsc-nova>Cadastrar a primeira disciplina</button></div></section>`}
+      ${ds.length ? '' : `<section class="proximo proj-atencao"><div class="rot">Comece pelo primeiro projeto</div><p>Nome, docente e horário. Com o plano de ensino em PDF, a IA lê as aulas, as leituras e as entregas para você conferir antes de salvar.</p><div class="acao-l"><button class="btn prim" data-dsc-nova>Criar o primeiro projeto</button></div></section>`}
       ${arquivadas.length ? `<details class="arq-disc"><summary>Projetos encerrados (${arquivadas.length})</summary><ul>${arquivadas.map((d) => `<li>${ponto(d.cor)} <a href="${rotaDisc(d)}">${esc(d.nome)}</a> <small>${esc(d.semestre || '')}</small></li>`).join('')}</ul></details>` : ''}`;
   }
 
@@ -534,7 +534,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   function formDisciplina(d = {}) {
     const editando = !!d.id;
     const cor = d.cor || CORES_DISC[disc.todas().length % CORES_DISC.length];
-    abrirModal(`<h2 id="modal-tit">${editando ? 'Editar disciplina' : 'Nova disciplina'}</h2><p>${editando ? 'O nome também muda nas obras e nos textos marcados com ele.' : 'Só o nome é obrigatório. Com o plano de ensino, a IA lê aulas, leituras e entregas para você conferir antes de salvar.'}</p>
+    abrirModal(`<h2 id="modal-tit">${editando ? 'Editar projeto' : 'Novo projeto'}</h2><p>${editando ? 'O nome também muda nas obras e nos textos marcados com ele.' : 'Só o nome é obrigatório. Com o plano de ensino, a IA lê aulas, leituras e entregas para você conferir antes de salvar.'}</p>
       <form id="dsc-form" data-id="${esc(d.id || '')}">
         <div class="campo"><label for="dsc-nome">Nome</label><input id="dsc-nome" required value="${esc(d.nome || '')}" placeholder="Ex.: Teoria das Organizações"></div>
         <div class="linha2">
@@ -548,7 +548,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
         </div>
         <fieldset class="cores-disc"><legend>Cor</legend>${CORES_DISC.map((c, i) => `<label><input type="radio" name="dsc-cor" value="${c}" ${c === cor ? 'checked' : ''}><span style="background:${c}" aria-label="Cor ${i + 1}"></span></label>`).join('')}</fieldset>
         ${editando ? '' : `<div class="campo"><label for="dsc-plano-novo">Plano de ensino <span>PDF, opcional</span></label><input id="dsc-plano-novo" type="file" accept="application/pdf"></div><label class="check"><input type="checkbox" id="dsc-aulas-sem" checked>Agendar as aulas toda semana neste horário</label>`}
-        <div class="pe">${editando ? `<button type="button" class="btn fant" data-dsc-arquivar="${esc(d.id)}">${d.arquivada ? 'Desarquivar' : 'Arquivar'}</button><button type="button" class="btn fant perigo" data-dsc-apagar="${esc(d.id)}">Apagar disciplina</button><span class="cresce"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${editando ? 'Salvar' : 'Criar disciplina'}</button></div>
+        <div class="pe">${editando ? `<button type="button" class="btn fant" data-dsc-arquivar="${esc(d.id)}">${d.arquivada ? 'Desarquivar' : 'Arquivar'}</button><button type="button" class="btn fant perigo" data-dsc-apagar="${esc(d.id)}">Apagar disciplina</button><span class="cresce"></span>` : ''}<button type="button" class="btn fant" data-dsc-fechar>Cancelar</button><button class="btn prim" type="submit">${editando ? 'Salvar' : 'Criar projeto'}</button></div>
       </form>`);
   }
 
@@ -630,7 +630,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       const antes = f.dataset.id ? disc.obter(f.dataset.id) : {};
       const nome = v('dsc-nome');
       if (!nome) return;
-      if (disc.todas().some((x) => x.nome.toLowerCase() === nome.toLowerCase() && x.id !== antes.id)) return toast('Já existe uma disciplina com esse nome.');
+      if (disc.todas().some((x) => x.nome.toLowerCase() === nome.toLowerCase() && x.id !== antes.id)) return toast('Já existe um projeto com esse nome.');
       const d = await disc.salvar({ ...antes, nome, docente: v('dsc-docente'), semestre: v('dsc-semestre'), dia_semana: v('dsc-dia'), inicio: v('dsc-inicio'), fim: v('dsc-fim'), cor: f.querySelector('[name=dsc-cor]:checked')?.value });
       const plano = document.getElementById('dsc-plano-novo')?.files?.[0];
       if (!antes.id && document.getElementById('dsc-aulas-sem')?.checked && d.dia_semana && d.inicio) {
@@ -645,7 +645,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       if (!antes.id) {
         location.hash = `#disciplina/${encodeURIComponent(d.id)}`;
         if (plano) depois(() => lerPlano(d.id, plano));
-        else depois(() => toast('Disciplina criada'));
+        else depois(() => toast('Projeto criado'));
       } else {
         redesenhar();
         toast('Disciplina salva');

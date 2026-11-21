@@ -88,7 +88,7 @@ export function criarIAUso({ registros, drive, registrar }) {
     };
     return `<section id="sec-modelos"><h2>Modelos por tarefa</h2>
       <p>Cada tarefa usa o modelo mais barato que dá conta dela. O nível de pensamento controla quanto o modelo raciocina antes de responder; mais pensamento custa mais. Se o modelo falhar duas vezes, o pedido vai para o reserva, e isso fica nos registros.</p>
-      <div class="tab-wrap"><table class="tab-ia"><thead><tr><th>Tarefa</th><th>Modelo</th><th>Pensamento</th><th></th></tr></thead><tbody>${Object.keys(TAREFAS).filter((k) => k !== 'teste').map(linha).join('')}</tbody></table></div>
+      <div class="tab-wrap"><table class="tab-ia modelos"><thead><tr><th>Tarefa</th><th>Modelo</th><th>Pensamento</th><th></th></tr></thead><tbody>${Object.keys(TAREFAS).filter((k) => k !== 'teste').map(linha).join('')}</tbody></table></div>
       <p class="t-legenda m-0 mt-2 mute-2">As escolhas valem em todos os seus aparelhos.</p></section>`;
   }
 

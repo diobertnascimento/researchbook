@@ -71,7 +71,7 @@ test.describe('no computador', () => {
     // v2.4.0: a Dissertação tem lugar próprio no menu e saiu da lista de projetos.
     await expect(page.locator('.topo h1')).toHaveText('Projetos');
     await expect(page.locator('#vista')).not.toContainText('Dissertação');
-    await page.getByRole('button', { name: 'Cadastrar a primeira disciplina' }).click();
+    await page.getByRole('button', { name: 'Criar o primeiro projeto' }).click();
     await page.getByLabel('Nome').fill('Avaliação de Artefatos');
     await page.getByLabel('Docente').fill('Docente de exemplo');
     await page.getByLabel('Semestre').fill('2026/2');
@@ -79,7 +79,7 @@ test.describe('no computador', () => {
     await page.getByLabel('Início').fill('19:00');
     await page.getByLabel('Fim').fill('21:00');
     await page.getByLabel('Plano de ensino').setInputFiles({ name: 'plano.pdf', mimeType: 'application/pdf', buffer: PDF });
-    await page.locator('.modal').getByRole('button', { name: 'Criar disciplina' }).click();
+    await page.locator('.modal').getByRole('button', { name: 'Criar projeto' }).click();
 
     // Conferência do plano: aula sem data fica desmarcada e bloqueada; nada é salvo antes de confirmar.
     await expect(page.locator('#modal-tit')).toHaveText('Conferir o plano de ensino');
@@ -292,10 +292,10 @@ test.describe('no computador', () => {
   test('erro de configuração do Gemini ao ler o plano leva aos Ajustes; a disciplina fica salva', async ({ page, context }) => {
     await entrar(page, context, { cenario: 'api-desligada' });
     await page.goto('/#disciplinas');
-    await page.getByRole('button', { name: 'Cadastrar a primeira disciplina' }).click();
+    await page.getByRole('button', { name: 'Criar o primeiro projeto' }).click();
     await page.getByLabel('Nome').fill('Teoria das Organizações');
     await page.getByLabel('Plano de ensino').setInputFiles({ name: 'plano.pdf', mimeType: 'application/pdf', buffer: PDF });
-    await page.locator('.modal').getByRole('button', { name: 'Criar disciplina' }).click();
+    await page.locator('.modal').getByRole('button', { name: 'Criar projeto' }).click();
     await expect(page.locator('#modal-tit')).toHaveText('Não deu para ler o plano');
     await expect(page.locator('.modal a[href="#ajustes"]')).toBeVisible();
     expect(await page.evaluate(() => window.rb.disciplinas.ativas().map((d) => d.nome))).toEqual(['Teoria das Organizações']);
