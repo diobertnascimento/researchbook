@@ -156,4 +156,12 @@ if [ "$CODIGO" = "401" ]; then
 else
   echo "Atenção: a rota de dados de obras devolveu $CODIGO sem login (o esperado é 401)."
 fi
+# O servidor diz a versão dele em toda resposta: confere que a que está no ar é a deste código.
+ESPERADA=$(grep -o "VERSAO_SERVIDOR = '[^']*'" index.js | cut -d"'" -f2)
+NO_AR=$(curl -s -o /dev/null -D - "$URL/estado" | tr -d '\r' | grep -i '^x-researchbook-servidor:' | cut -d' ' -f2 || true)
+if [ -n "$ESPERADA" ] && [ "$NO_AR" = "$ESPERADA" ]; then
+  echo "Conferido: a versão no ar é a deste código (servidor $NO_AR)."
+else
+  echo "Atenção: a versão no ar é '${NO_AR:-desconhecida}' e a deste código é '$ESPERADA'. Rode de novo em um minuto."
+fi
 echo "O endereço do servidor não é segredo. Se ele mudou, mande para ser colocado no app."

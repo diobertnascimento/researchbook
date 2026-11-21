@@ -364,9 +364,11 @@ test.describe('no computador', () => {
     let antigo = false;
     await context.route('http://localhost:4173/servidor-falso/**', (r) => {
       const u = new URL(r.request().url());
-      pedidos.push({ caminho: u.pathname.replace('/servidor-falso', ''), busca: u.searchParams.get('busca'), auth: r.request().headers().authorization });
+      // O pedido vai no corpo, para o título da obra não ficar no endereço (que o servidor registra).
+      const busca = r.request().method() === 'POST' ? r.request().postDataJSON().busca : u.searchParams.get('busca');
+      pedidos.push({ metodo: r.request().method(), caminho: u.pathname.replace('/servidor-falso', ''), noEndereco: u.search, busca, auth: r.request().headers().authorization });
       if (antigo) return r.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: { message: 'Este servidor não atende este endereço.', origem: 'servidor', codigo: 'rota' } }) });
-      const candidatos = (u.searchParams.get('busca') || '').includes('triagem')
+      const candidatos = (busca || '').includes('triagem')
         ? [{ tipo: 'anais', titulo: 'Indicadores de desempenho em centrais de triagem', autores: [{ sobrenome: 'Nogueira', prenomes: 'Lia' }], ano: '2018', veiculo: 'Anais do Encontro Fictício de Produção', volume: null, numero: null, paginas: '112-126', doi: null, idioma: 'pt', idOpenAlex: 'W900' }]
         : [];
       return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ candidatos }) });
@@ -384,7 +386,7 @@ test.describe('no computador', () => {
     await expect(gravados).toContainText('Obra sem DOI, do OpenAlex', { timeout: 15000 });
     await expect(gravados).toContainText('DOI 10.0000/venable.2016, do Crossref');
     // O Crossref deu certeza para o livro: o OpenAlex só foi consultado para a outra obra, com o login e sem chave.
-    expect(pedidos.map((p) => p.caminho)).toEqual(['/obras/openalex']);
+    expect(pedidos.map((p) => [p.metodo, p.caminho, p.noEndereco])).toEqual([['POST', '/obras/openalex', '']]);
     expect(pedidos[0].busca).toContain('triagem');
     expect(pedidos[0].auth).toBe('Bearer tok-falso');
     const obra = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Indicadores')));

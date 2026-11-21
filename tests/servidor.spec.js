@@ -2,7 +2,7 @@
 // Não abre navegador: os pedidos saem do próprio processo dos testes.
 import { test, expect } from '@playwright/test';
 import { createServer } from 'node:http';
-import { criarServidor } from '../servidor/index.js';
+import { criarServidor, VERSAO_SERVIDOR } from '../servidor/index.js';
 
 const CHAVE = 'chave-de-teste-AIzaFALSA-0000';
 const CLIENTE = 'cliente-do-app.apps.googleusercontent.com';
@@ -247,6 +247,7 @@ async function montarObras({ env = {}, sites = {}, dns = {}, openalex = null } =
       return openalex ? openalex(u, opcoes) : new Response(JSON.stringify({ results: [] }), { status: 200 });
     }
     visto.abertos.push({ url: u, redirect: opcoes.redirect });
+    visto.agente = opcoes.headers?.['User-Agent'];
     const r = sites[u];
     if (!r) return new Response('nada aqui', { status: 404, headers: { 'content-type': 'text/html' } });
     return typeof r === 'function' ? r() : new Response(r.corpo ?? '', { status: r.status ?? 200, headers: { 'content-type': r.tipo ?? 'text/html; charset=utf-8', ...(r.location ? { location: r.location } : {}) } });
@@ -257,9 +258,17 @@ async function montarObras({ env = {}, sites = {}, dns = {}, openalex = null } =
     { buscar, resolver, registro: (l) => visto.linhas.push(l) },
   );
   const base = await ouvir(servidor);
-  const pedir = (caminho, { token = 'token-bom', origem = APP } = {}) => fetch(`${base}${caminho}`, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(origem ? { Origin: origem } : {}) } });
-  const pagina = (url, o) => pedir(`/obras/pagina?url=${encodeURIComponent(url)}`, o);
-  return { pedir, pagina, visto, fim: () => fechar(servidor) };
+  const pedir = (caminho, { token = 'token-bom', origem = APP, corpo } = {}) =>
+    fetch(`${base}${caminho}`, {
+      method: corpo === undefined ? 'GET' : 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(origem ? { Origin: origem } : {}), ...(corpo === undefined ? {} : { 'Content-Type': 'application/json' }) },
+      body: corpo === undefined ? undefined : typeof corpo === 'string' ? corpo : JSON.stringify(corpo),
+    });
+  // Como o app pede desde a v2.19.1: no corpo. O jeito antigo (no endereço) tem teste próprio.
+  const pagina = (url, o) => pedir('/obras/pagina', { ...o, corpo: { url } });
+  const procurar = (busca, o) => pedir('/obras/openalex', { ...o, corpo: { busca } });
+  const registros = () => visto.linhas.map((l) => JSON.parse(l));
+  return { pedir, pagina, openalex: procurar, registros, visto, fim: () => fechar(servidor) };
 }
 
 test.describe('servidor: dados de obras', () => {
@@ -290,8 +299,24 @@ test.describe('servidor: dados de obras', () => {
       expect(JSON.stringify(j)).not.toContain('não sai do servidor');
       expect(s.visto.abertos).toEqual([{ url, redirect: 'manual' }]);
       // O registro tem só a rota, sem o endereço pedido.
-      expect(s.visto.linhas.join('\n')).toContain('GET /obras/pagina');
+      expect(s.registros().at(-1)).toMatchObject({ rota: 'POST /obras/pagina', status: 200 });
       expect(s.visto.linhas.join('\n')).not.toContain('scielo');
+      // O servidor se apresenta pelo nome, com o endereço do app.
+      expect(s.visto.agente).toContain('researchbook');
+      expect(s.visto.agente).toContain('https://researchbook.com.br');
+      // Toda resposta diz a versão do servidor, e o app consegue ler.
+      expect(r.headers.get('x-researchbook-servidor')).toBe(VERSAO_SERVIDOR);
+      expect(r.headers.get('access-control-expose-headers')).toContain('x-researchbook-servidor');
+      expect((await s.pagina(url, { token: null })).headers.get('x-researchbook-servidor')).toBe(VERSAO_SERVIDOR);
+      // O app antigo pede pelo endereço: segue funcionando.
+      const antigo = await s.pedir(`/obras/pagina?url=${encodeURIComponent(url)}`);
+      expect([antigo.status, (await antigo.json()).dados.ano]).toEqual([200, '2021']);
+      // Pedido que não é um objeto em JSON, ou grande demais, é recusado sem abrir nada.
+      const abertos = s.visto.abertos.length;
+      expect((await s.pedir('/obras/pagina', { corpo: 'isso não é json' })).status).toBe(400);
+      expect((await s.pedir('/obras/pagina', { corpo: '[1]' })).status).toBe(400);
+      expect((await s.pedir('/obras/pagina', { corpo: { url, sobra: 'x'.repeat(9000) } })).status).toBe(413);
+      expect(s.visto.abertos.length).toBe(abertos);
     } finally {
       await s.fim();
     }
@@ -304,7 +329,8 @@ test.describe('servidor: dados de obras', () => {
         ['https://metadata.google.internal/computeMetadata/v1/', 403, 'pagina-site'],
         ['https://exemplo-qualquer.com/artigo', 403, 'pagina-site'],
         ['https://scielo.br.atacante.com/x', 403, 'pagina-site'],
-        ['http://www.scielo.br/j/x', 400, 'pagina-endereco'],
+        ['http://www.scielo.br:8080/j/x', 400, 'pagina-endereco'],
+        ['ftp://www.scielo.br/j/x', 400, 'pagina-endereco'],
         ['https://169.254.169.254/latest', 400, 'pagina-endereco'],
         ['https://www.scielo.br:8443/j/x', 400, 'pagina-endereco'],
         ['https://usuario:senha@www.scielo.br/j/x', 400, 'pagina-endereco'],
@@ -336,6 +362,12 @@ test.describe('servidor: dados de obras', () => {
         'https://www.scielo.br/arquivo.pdf': { corpo: '%PDF-1.7', tipo: 'application/pdf' },
         'https://www.scielo.br/sobre': { corpo: '<html><head><title>Sobre</title></head></html>' },
         'https://www.scielo.br/quebrado': { status: 500 },
+        'https://www.scielo.br/recusa': { status: 403 },
+        'https://www.scielo.br/scielo.php?pid=S0000': { status: 301, location: 'http://www.scielo.br/j/gpr/a/exemplo' },
+        'https://www.scielo.br/volta': { status: 302, location: '/volta' },
+        'https://www.scielo.br/cai': () => {
+          throw Object.assign(new TypeError('fetch failed: https://www.scielo.br/cai'), { cause: { code: 'ECONNRESET' } });
+        },
       },
     });
     try {
@@ -351,6 +383,22 @@ test.describe('servidor: dados de obras', () => {
       expect(await codigo('https://www.scielo.br/sobre')).toEqual([422, 'pagina-sem-dados']);
       expect(await codigo('https://www.scielo.br/quebrado')).toEqual([502, 'pagina-fora']);
       expect(await codigo('https://www.scielo.br/nao-existe')).toEqual([502, 'pagina-fora']);
+      // Link antigo com http: o servidor abre em https, e o redirecionamento para http também vira https.
+      expect(await codigo('http://www.scielo.br/scielo.php?pid=S0000')).toEqual([200, '2021']);
+      expect(s.visto.abertos.every((a) => a.url.startsWith('https://'))).toBe(true);
+      // Site que recusa o servidor: a mensagem diz o que fazer, e o registro guarda o código e a resposta do site,
+      // sem o endereço pedido.
+      const recusa = await s.pagina('https://www.scielo.br/recusa');
+      expect((await recusa.json()).error.message).toBe('O site recusou a leitura pelo servidor (resposta 403). Copie o DOI que aparece na página do artigo e cole no mesmo campo.');
+      expect(s.registros().at(-1)).toEqual({ rota: 'POST /obras/pagina', status: 502, ms: expect.any(Number), codigo: 'pagina-fora', resposta: 403, saltos: 0 });
+      expect((await (await s.pagina('https://www.scielo.br/nao-existe')).json()).error.message).toContain('esta página não existe');
+      expect(await codigo('https://www.scielo.br/volta')).toEqual([502, 'pagina-fora']);
+      expect(s.registros().at(-1)).toMatchObject({ codigo: 'pagina-fora', resposta: 302, saltos: 4 });
+      expect(await codigo('https://www.scielo.br/cai')).toEqual([504, 'pagina-fora']);
+      expect(s.registros().at(-1)).toMatchObject({ codigo: 'pagina-fora', falha: 'TypeError', causa: 'ECONNRESET' });
+      expect(await codigo('https://www.scielo.br/sobre')).toEqual([422, 'pagina-sem-dados']);
+      expect(s.registros().at(-1)).toMatchObject({ codigo: 'pagina-sem-dados', resposta: 200, bytes: expect.any(Number) });
+      expect(s.visto.linhas.join('\n')).not.toMatch(/scielo|https?:/);
     } finally {
       await s.fim();
     }
@@ -374,8 +422,9 @@ test.describe('servidor: dados de obras', () => {
       openalex: (u) => (recusarSelect && u.includes('select=') ? new Response('{"error":"Invalid query parameters"}', { status: 400 }) : new Response(JSON.stringify({ results: [obra, { display_name: '' }] }), { status: 200 })),
     });
     try {
-      const r = await s.pedir('/obras/openalex?busca=' + encodeURIComponent('Design science em pesquisas de operações Falcão 2017'));
+      const r = await s.openalex('Design science em pesquisas de operações Falcão 2017');
       expect(r.status).toBe(200);
+      expect(s.visto.openalex[0].url).toContain(encodeURIComponent('Falcão 2017'));
       const j = await r.json();
       expect(j.candidatos).toEqual([{ tipo: 'anais', titulo: 'Design science em pesquisas de operações', autores: [{ sobrenome: 'Falcão', prenomes: 'Renata' }], ano: '2017', veiculo: 'Anais do Encontro Fictício de Produção', volume: null, numero: null, paginas: '112-126', doi: '10.0000/falcao.2017', idioma: 'pt', idOpenAlex: 'W123' }]);
       expect(s.visto.openalex[0].auth).toBe(`Bearer ${CHAVE_OA}`);
