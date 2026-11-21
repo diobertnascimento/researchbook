@@ -45,7 +45,7 @@ export async function decifrar(cofre, frase) {
     const claro = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: deB64(cofre.iv), additionalData: texto.encode('researchbook:gemini:v1') }, k, deB64(cofre.dado));
     return new TextDecoder().decode(claro);
   } catch {
-    const e = new Error('Frase-senha errada, ou o arquivo do cofre foi alterado.');
+    const e = new Error('A frase-senha não abriu o cofre. Confira a frase; se ela estiver certa, o arquivo do cofre foi alterado e é preciso guardar a chave de novo.');
     e.codigo = 'frase';
     throw e;
   }

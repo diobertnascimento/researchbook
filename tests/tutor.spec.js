@@ -234,7 +234,7 @@ test.describe('no computador', () => {
     await expect(page.getByRole('button', { name: 'Abrir o cofre' })).toBeVisible();
     await page.getByLabel(/^Frase-senha/).fill('frase errada de propósito');
     await page.getByRole('button', { name: 'Abrir o cofre' }).click();
-    await expect(page.locator('#sec-ia .erro-campo')).toContainText('Frase-senha errada');
+    await expect(page.locator('#sec-ia .erro-campo')).toContainText('A frase-senha não abriu o cofre');
     await page.getByLabel(/^Frase-senha/).fill(FRASE);
     await page.getByLabel('Lembrar neste aparelho').check();
     await page.getByRole('button', { name: 'Abrir o cofre' }).click();

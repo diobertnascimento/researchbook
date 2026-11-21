@@ -68,7 +68,7 @@ export function criarArgumentosUI({ bib, dados, fichUI, registrar }) {
   };
 
   function lembrete(n) {
-    if (n === 0) return 'Ainda sem fonte. Ligue trechos a este argumento no passo “Para a dissertação” de um fichamento.';
+    if (n === 0) return 'Ainda sem fonte. Num fichamento, marque uma nota com “Levar para a dissertação” e escolha este argumento.';
     if (n === 1) return 'Depende de uma única obra. Antes de apresentar como consenso, procure uma segunda fonte ou trate como proposição sua.';
     return '';
   }
@@ -105,7 +105,7 @@ export function criarArgumentosUI({ bib, dados, fichUI, registrar }) {
     const topo = `<div class="topo"><div><h1>Argumentos</h1><p>Cada linha é uma afirmação sua. Cada coluna, uma obra fichada. Os números são trechos que você separou para a dissertação. O que está vazio é o que falta ler ou fichar.</p></div>
       <div class="acoes"><button class="btn ${todos.length ? 'prim' : ''}" data-arg-novo>${icone('mais')}Novo argumento</button></div></div>`;
     if (!todos.length) {
-      return `${topo}<div class="bib-vazia"><h2>Nenhum argumento ainda</h2><p>Argumentos nascem de dois jeitos: no passo “Para a dissertação” de um fichamento, quando você liga um trecho a uma tese, ou aqui, escrevendo a tese primeiro.</p><button class="btn prim" data-arg-novo>${icone('mais')}Escrever um argumento</button></div>`;
+      return `${topo}<div class="bib-vazia"><h2>Nenhum argumento ainda</h2><p>Argumentos nascem de dois jeitos: num fichamento, quando você marca uma nota com “Levar para a dissertação” e diz que tese ela sustenta, ou aqui, escrevendo a tese primeiro.</p><button class="btn prim" data-arg-novo>${icone('mais')}Escrever um argumento</button></div>`;
     }
     const escolhido = idSel ? todos.find((x) => x.id === idSel) : null;
     // Sem argumento escolhido, a tela é o mapa. No celular a matriz não cabe: fica a lista, com a sustentação de cada um.

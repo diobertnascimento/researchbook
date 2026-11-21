@@ -168,7 +168,7 @@ test('quem vem de uma versão antiga: a sessão guardada no aparelho passa para 
 test('token emitido para outro app é recusado', async ({ page, context }) => {
   await googleFalso(context, { aud: 'outro-app.apps.googleusercontent.com' });
   await entrar(page);
-  await expect(page.locator('[role="alert"]')).toContainText('não foi emitido para o researchbook');
+  await expect(page.locator('[role="alert"]')).toContainText('O login não se completou');
   await expect(page.locator('body')).toHaveClass(/bloqueado/);
 });
 

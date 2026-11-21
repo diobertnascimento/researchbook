@@ -16,7 +16,7 @@ const STATUS = {
   completa: { rot: 'Completa uma obra da biblioteca', classe: 'info' },
   identica: { rot: 'Já está na biblioteca', classe: '' },
   provavel: { rot: 'Parece repetida', classe: 'lac' },
-  repetida: { rot: 'Repetida neste envio', classe: '' },
+  repetida: { rot: 'Repetida nesta importação', classe: '' },
 };
 const CONFIANCA = { 'muito-provavel': ['Muito provável', 'ok'], provavel: ['Provável', 'lac'], ia: ['Indicado pela IA', 'info'] };
 
@@ -52,7 +52,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
           <li>Em Formato, escolha <b>BibTeX</b> ou <b>Zotero RDF</b>. Esses dois levam os PDFs; RIS e CSL JSON levam só os dados.</li>
           <li>Marque <b>Exportar arquivos</b> e salve. O Zotero cria uma pasta com o arquivo de dados e a pasta files.</li>
           <li>Aqui, escolha essa pasta inteira${temPasta() ? '' : ' (no celular, escolha o arquivo de dados e os PDFs juntos)'}. Cada PDF é ligado à sua obra pelo caminho que o Zotero gravou.</li>
-          <li>As coleções do Zotero viram tags (no formato Zotero RDF). Obras sem DOI vão para Organizar, onde o app procura o DOI no Crossref.</li>
+          <li>As coleções do Zotero viram tags (no formato Zotero RDF). Obras sem DOI ficam no Acervo, onde o app busca o DOI no Crossref.</li>
         </ol>
       </details>
       <div class="pe"><button class="btn fant" data-acao="fechar">Cancelar</button></div>`;
@@ -181,7 +181,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
   function cartaoSem(l) {
     const b = l.doiBusca || {};
     const d = b.dadosLidos;
-    return `<li class="org-sem"><span><b>${esc(l.titulo)}</b><small>${esc([autores(l), l.ano].filter(Boolean).join(', ') || 'Sem autores e ano')}${b.status === 'recusada' ? '. Você recusou os candidatos.' : ''}</small>
+    return `<li class="org-sem"><span><b>${esc(l.titulo)}</b><small>${esc([autores(l), l.ano].filter(Boolean).join(', ') || 'Sem autores e ano')}${b.status === 'recusada' ? '. Você recusou os resultados.' : ''}</small>
       ${d ? `<small class="org-lido">A IA leu no PDF: “${esc(d.titulo)}”${d.autores?.length ? `, ${esc(autores(d))}` : ''}${d.ano ? `, ${esc(d.ano)}` : ''}</small>` : ''}</span>
       <span class="linha-acoes">${d ? `<button class="btn mini" data-org-usar-lidos="${esc(l.id)}">Usar esses dados</button>` : ''}<button class="btn mini" data-org-de-novo="${esc(l.id)}" data-ocupado="Buscando…">Buscar de novo</button>${org.iaLigada() ? `<button class="btn mini" data-org-ia="${esc(l.id)}" data-ocupado="A IA está lendo…">Pedir para a IA conferir</button>` : ''}<button class="btn fant mini" data-org-corrigir="${esc(l.id)}">Corrigir os dados</button><button class="btn fant mini" data-org-nao-tem="${esc(l.id)}">Não tem DOI</button></span></li>`;
   }
@@ -390,7 +390,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const notaIA = notaFontes + (org.iaLigada() ? '' : '<p class="meta mb-4">Com o Gemini conectado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o resultado certo. <a href="#ajustes">Conectar o Gemini</a></p>');
     const grav = org.gravadosAgora();
     const gravadosHTML = grav.length && !st.rodando
-      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Salvos agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com a base consultada, então os dados foram gravados e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>${g.doi ? `DOI ${esc(g.doi)}` : 'Obra sem DOI'}, do ${g.fonte === 'openalex' ? 'OpenAlex' : 'Crossref'}</small></span></li>`).join('')}</ul></section>`
+      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Salvos agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com o Crossref ou o OpenAlex, então os dados foram salvos e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>${g.doi ? `DOI ${esc(g.doi)}` : 'Obra sem DOI'}, do ${g.fonte === 'openalex' ? 'OpenAlex' : 'Crossref'}</small></span></li>`).join('')}</ul></section>`
       : '';
     if (!r.total)
       return `${topo}<div class="vazio-estado"><h2>Nenhuma obra ainda</h2><p>Solte PDFs, importe do Zotero ou adicione uma obra pelo DOI. O app busca os dados e monta a referência em ABNT.</p><button class="btn prim" data-org-importar>${icone('upload')}Adicionar obras</button></div>`;

@@ -52,7 +52,7 @@ export async function textoDoDocx(arquivo) {
   // Diretório central: acha word/document.xml.
   let fim = buf.length - 22;
   while (fim >= 0 && dv.getUint32(fim, true) !== 0x06054b50) fim--;
-  if (fim < 0) throw new Error('O arquivo não parece um .docx.');
+  if (fim < 0) throw new Error('O arquivo não parece um .docx. Envie .docx, .txt ou .md.');
   let p = dv.getUint32(fim + 16, true);
   const n = dv.getUint16(fim + 10, true);
   for (let i = 0; i < n; i++) {
@@ -190,7 +190,7 @@ export function criarOverview({ db, ia, escrita, drive, registrar }) {
 
   async function atualizar() {
     const ts = await textos();
-    if (!ts.length) throw new Error('Ainda não há textos seus. Escreva na Escrita ou envie um texto.');
+    if (!ts.length) throw new Error('Ainda não há textos seus. Escreva um texto em Escrever ou envie um arquivo.');
     const m = metricas(ts.flatMap((t) => t.paragrafos));
     let usado = 0;
     const partes = [];

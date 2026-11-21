@@ -91,7 +91,7 @@ export function criarAgenda({ dados, disc, drive, token, temPermissao, ligada, r
     if (r.status === 401) throw new ErroAgenda('sessao', 'O login do Google venceu. Entre de novo para enviar à agenda.');
     if (r.status === 403 && /SERVICE_DISABLED|accessNotConfigured|has not been used|disabled/i.test(msg)) throw new ErroAgenda('api', 'A Google Calendar API não está ativada no projeto do Google Cloud. Ative a API e tente de novo.');
     if (r.status === 403 && /insufficient|scope|PERMISSION/i.test(msg)) throw new ErroAgenda('permissao', 'Falta a permissão da agenda no login. Em Ajustes, em Google Agenda, selecione "Ligar o Google Agenda".');
-    const e = new ErroAgenda('servico', `O Google Agenda respondeu ${r.status}. Tente de novo em instantes.`);
+    const e = new ErroAgenda('servico', 'O Google Agenda não respondeu como esperado. Tente de novo em instantes.');
     e.status = r.status;
     throw e;
   }
@@ -196,7 +196,7 @@ export function criarAgenda({ dados, disc, drive, token, temPermissao, ligada, r
       } catch (err) {
         est.fase = 'erro';
         est.erro = err;
-        registrar('erro', 'agenda.falhou', { det: `${err.codigo || ''} ${err.message}`.trim(), st: err.codigo === 'rede' ? 'aviso' : 'erro' });
+        registrar('erro', 'agenda.falhou', { det: `${err.codigo || ''} ${err.status || ''} ${err.message}`.replace(/\s+/g, ' ').trim(), st: err.codigo === 'rede' ? 'aviso' : 'erro' });
       }
       aoMudar();
       return est;

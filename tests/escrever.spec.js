@@ -409,7 +409,7 @@ test.describe('figura no texto', () => {
     expect(r.b).toBe('image/jpeg 300x900');
     expect(r.gif).toBe('Use uma imagem PNG, JPG ou WebP.');
     expect(r.svg).toBe('Use uma imagem PNG, JPG ou WebP.');
-    expect(r.quebrada).toBe('Não deu para ler esta imagem.');
+    expect(r.quebrada).toBe('Não deu para ler esta imagem. Tente outro arquivo.');
     expect(r.limpo).toBe('<p>antes</p><figure data-img="img-0a1b2c3d.jpg" data-l="300" data-a="900" data-titulo="T" data-fonte="F"></figure><figure data-img="img-0a1b2c3d.png"></figure>');
     expect(r.figs).toEqual(['img-0a1b2c3d.jpg:300x900', 'img-0a1b2c3d.png:0x0']);
     expect(r.semImagem).toBe(true);

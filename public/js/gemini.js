@@ -95,7 +95,7 @@ const DO_SERVIDOR = {
   contador: ['servidor', 'O servidor da chave não conseguiu conferir o limite do dia. Tente de novo em instantes.'],
   google: ['servico', 'O servidor da chave não conseguiu conferir o login com o Google agora. Tente de novo em instantes.'],
   grande: ['pedido', 'O pedido passa de 30 MB. Use um arquivo menor.'],
-  envio: ['servidor', 'O servidor da chave não pôde repassar o envio do arquivo. O problema ficou registrado.'],
+  envio: ['servidor', 'O servidor da chave não pôde repassar o envio do arquivo. Tente de novo; o erro está em Ajustes, em Registros.'],
   gemini: ['servico', 'O servidor da chave não conseguiu falar com o Gemini agora. Tente de novo em instantes.'],
 };
 
@@ -103,7 +103,7 @@ function explicar(status, corpo) {
   if (corpo?.error?.origem === 'servidor') {
     const [codigo, texto] = DO_SERVIDOR[corpo.error.codigo] || ['servidor', null];
     // A mensagem do servidor é escrita por nós (não traz conteúdo do pedido) e já diz o que fazer.
-    return new ErroIA(codigo, texto || String(corpo.error.message || 'O servidor da chave recusou o pedido.').slice(0, 200), `servidor: ${corpo.error.codigo}`);
+    return new ErroIA(codigo, texto || String(corpo.error.message || 'O servidor da chave recusou o pedido. Tente de novo; o erro está em Ajustes, em Registros.').slice(0, 200), `servidor: ${corpo.error.codigo}`);
   }
   const msg = corpo?.error?.message || '';
   const motivo = corpo?.error?.details?.find?.((d) => d.reason)?.reason || corpo?.error?.status || '';
@@ -114,7 +114,7 @@ function explicar(status, corpo) {
   if (status === 403) return new ErroIA('negado', 'O Google recusou o pedido ao Gemini. Confira em Ajustes o projeto e a permissão.', motivo || msg.slice(0, 120));
   if (status === 429 && /spend|spending|cap|billing/i.test(msg)) return new ErroIA('limite', 'O limite de gasto do mês no Google AI Studio foi atingido. Aumente o limite lá ou espere o próximo mês.', motivo);
   if (status === 429) return new ErroIA('cota', 'Muitos pedidos ao Gemini agora. Espere um minuto e tente de novo.', motivo);
-  if (status === 400) return new ErroIA('pedido', 'O Gemini não aceitou o pedido. O problema ficou registrado; tente de novo com um trecho menor.', msg.slice(0, 160));
+  if (status === 400) return new ErroIA('pedido', 'O Gemini não aceitou o pedido. Tente de novo com um trecho menor; o erro está em Ajustes, em Registros.', msg.slice(0, 160));
   return new ErroIA('servico', 'O Gemini não respondeu agora. Tente de novo em instantes.', `${status} ${motivo}`);
 }
 
@@ -216,13 +216,13 @@ export function criarGemini({ credenciais, registrar, espera = (ms) => new Promi
         dur,
         st: fim === 'STOP' ? 'ok' : 'aviso',
       });
-      if (fim === 'SAFETY' || fim === 'RECITATION' || (!texto && fim !== 'STOP')) throw new ErroIA('bloqueado', 'O Gemini não devolveu resposta para este pedido. Tente reformular.', fim);
+      if (fim === 'SAFETY' || fim === 'RECITATION' || (!texto && fim !== 'STOP')) throw new ErroIA('bloqueado', 'O Gemini não devolveu resposta para este pedido. Escreva o pedido de outro jeito.', fim);
       let json = null;
       if (esquema) {
         try {
           json = JSON.parse(texto);
         } catch {
-          throw new ErroIA('formato', 'A resposta do Gemini veio fora do formato esperado. Tente de novo.', 'json inválido');
+          throw new ErroIA('formato', 'O Gemini respondeu de um jeito que o app não entendeu. Tente de novo.', 'json inválido');
         }
       }
       return { texto, json, uso, custo, modelo: m, reserva: i >= 2, tentativas: i + 1, dur, fim };
@@ -255,7 +255,7 @@ export function criarGemini({ credenciais, registrar, espera = (ms) => new Promi
       throw erro;
     }
     const destino = r.headers.get('x-goog-upload-url');
-    if (!destino) throw new ErroIA('servico', 'O Gemini não devolveu o endereço de envio. Tente de novo.');
+    if (!destino) throw new ErroIA('servico', 'O envio do arquivo ao Gemini não começou. Tente de novo.');
     let j;
     try {
       const r2 = await fetch(destino, { method: 'POST', headers: { 'X-Goog-Upload-Offset': '0', 'X-Goog-Upload-Command': 'upload, finalize' }, body: blob, signal: sinal });

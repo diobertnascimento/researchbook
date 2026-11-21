@@ -407,7 +407,7 @@ export function criarEscritaUI({ escrita, copiloto, ia, bib, drive, imagens, reg
 
   function mostrarErro(err) {
     const acao = err instanceof ErroIA && ['sem-acesso', 'permissao', 'projeto', 'trancado', 'chave', 'api', 'negado', 'sessao'].includes(err.codigo);
-    est.erro = { mensagem: err instanceof ErroIA ? err.message : 'Algo deu errado ao falar com o Gemini. O problema ficou registrado; tente de novo.', acao };
+    est.erro = { mensagem: err instanceof ErroIA ? err.message : 'O Gemini não respondeu como esperado. Tente de novo; o erro está em Ajustes, em Registros.', acao };
     if (!(err instanceof ErroIA)) registrar('erro', 'copilot.falhou', { det: err.message, st: 'erro' });
   }
   /** No editor, só o painel lateral é redesenhado: o texto e o cursor do autor ficam onde estão. */

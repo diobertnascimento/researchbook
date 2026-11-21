@@ -32,7 +32,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   const fechar = () => veu().classList.remove('on');
   const erroHTML = (err) => {
     const config = err instanceof ErroIA ? ERROS_DE_CONFIG.includes(err.codigo) : ERROS_DE_CONFIG.includes(err?.codigo);
-    return `<div class="erro-ia" role="alert"><p>${esc(err?.message || err?.mensagem || 'O Gemini não respondeu.')}</p>${config ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}</div>`;
+    return `<div class="erro-ia" role="alert"><p>${esc(err?.message || err?.mensagem || 'O Gemini não respondeu. Tente de novo em instantes.')}</p>${config ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}</div>`;
   };
 
   /* =================== Revisão do projeto =================== */

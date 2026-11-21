@@ -151,7 +151,7 @@ export function criarTutorUI({ ia, historico, bib, registrar }) {
       if (tipo === 'pergunta') e.rascunho = texto;
       if (!(err instanceof ErroIA && err.codigo === 'cancelado')) {
         const acao = err instanceof ErroIA && ['sem-acesso', 'permissao', 'projeto', 'trancado', 'chave', 'api', 'negado', 'sessao'].includes(err.codigo);
-        e.erro = { mensagem: err instanceof ErroIA ? err.message : 'Algo deu errado ao falar com o Gemini. O problema ficou registrado; tente de novo.', acao };
+        e.erro = { mensagem: err instanceof ErroIA ? err.message : 'O Gemini não respondeu como esperado. Tente de novo; o erro está em Ajustes, em Registros.', acao };
         if (!(err instanceof ErroIA)) registrar('erro', 'tutor.falhou', { det: err.message, st: 'erro' });
       }
     } finally {

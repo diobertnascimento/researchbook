@@ -98,7 +98,7 @@ test.describe('no computador', () => {
     });
     await expect(page.locator('.proximo .prox-tit')).toHaveText('Logística reversa no município');
     await expect(page.getByRole('link', { name: 'Continuar o fichamento' })).toHaveAttribute('href', '#fichamento/prado-2019');
-    await expect(page.locator('.proximo .acao-l span')).toHaveText('Etapa 3 de 5: resumo');
+    await expect(page.locator('.proximo .acao-l span')).toHaveText('Em andamento, 0 notas');
     await expect(page.locator('.tambem a').first()).toContainText('faltam 3 dias');
     await expect(page.locator('.tambem .urg')).toHaveCount(1);
 
