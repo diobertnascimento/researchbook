@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.15.1';
+const APP_VERSAO = '2.16.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -212,18 +212,18 @@ const SECOES = {
   voce:{nome:'Você', tabs:[['autor','Overview do autor'],['memoria','Memória'],['ajustes','Ajustes']]},
 };
 const SECAO_DE = {}; Object.entries(SECOES).forEach(([k,v])=>v.tabs.forEach(([r])=>SECAO_DE[r]=k));
-Object.assign(SECAO_DE,{leitor:'bib',fichamento:'bib',texto:'esc',cartoes:'hoje',organizar:'voce'});
+Object.assign(SECAO_DE,{leitor:'bib',fichamento:'bib',texto:'esc',cartoes:'hoje',organizar:'acervo',acervo:'acervo'});
 function desenhaMenu(rota){
   const [base]=rota.split('/');
   const sec=SECAO_DE[base];
   const emProjeto=base==='disciplinas'||base==='disciplina'||base==='aula';
-  const ativo=(k)=> (k==='painel'&&(base==='painel'||base==='cartoes'||!base)) || (k==='bib'&&sec==='bib') || (k==='esc'&&sec==='esc') || (k==='diss'&&sec==='diss') || (k==='proj'&&emProjeto);
+  const ativo=(k)=> (k==='painel'&&(base==='painel'||base==='cartoes'||!base)) || (k==='bib'&&sec==='bib') || (k==='esc'&&sec==='esc') || (k==='diss'&&sec==='diss') || (k==='proj'&&emProjeto) || (k==='acervo'&&sec==='acervo');
   const it=(k,href,rot,sub='')=>`<li${sub?' class="tem-sub"':''}><a class="item ${ativo(k)?'ativo':''}" href="${href}" ${ativo(k)?'aria-current="page"':''}><span class="rot">${rot}</span></a>${sub}</li>`;
   const projetos=modoReal() ? (window.rb&&window.rb.disciplinasUI ? window.rb.disciplinasUI.menu().map(d=>['#disciplina/'+encodeURIComponent(d.id),esc(d.nome)]) : []) : DISCIPLINAS.map((d,i)=>['#disciplina/'+i,d]);
   const sub=`<ul class="sub" aria-label="Projetos">${projetos.map(([h,n])=>`<li><a href="${h}">${n}</a></li>`).join('')}<li><a href="#disciplinas">Ver todos</a></li></ul>`;
-  // Barra do topo, com os cinco lugares do app. Você (overview, memória e ajustes) fica no avatar.
+  // Barra do topo, com os seis lugares do app (o Acervo é o último). Você (overview, memória e ajustes) fica no avatar.
   document.getElementById('menu').innerHTML =
-    it('painel','#painel','Hoje') + it('bib','#biblioteca','Ler') + it('esc','#escrita','Escrever') + it('diss',modoReal()?'#dissertacao':'#projeto','Dissertação') + it('proj','#disciplinas','Projetos',sub);
+    it('painel','#painel','Hoje') + it('bib','#biblioteca','Ler') + it('esc','#escrita','Escrever') + it('diss',modoReal()?'#dissertacao':'#projeto','Dissertação') + it('proj','#disciplinas','Projetos',sub) + it('acervo','#acervo','Acervo');
   const voceAtivo=sec==='voce';
   document.getElementById('voce').innerHTML=`<div id="status-drive">${statusDriveHTML()}</div><button class="busca-k" data-acao="busca" aria-label="Buscar (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="rot">Buscar</span><kbd>Ctrl K</kbd></button><a class="item ${voceAtivo?'ativo':''}" href="#autor" title="Você: overview, memória e ajustes"><span class="av">V</span><span class="rot-voce">Você<small>Memória e ajustes</small></span></a><span class="selo-versao">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</span>`;
   // Celular: ler e o dia em primeiro lugar; o resto fica em Mais.
@@ -343,6 +343,7 @@ function trilhaHTML(t){
     ${feitos.length?`<details class="concluidas"><summary>Ver ${feitos.length} concluída${feitos.length>1?'s':''}</summary><ol class="seq feitas">${feitos.map(i=>{const l=L(i);return `<li><div><div class="t">${esc(l.tit)}</div><div class="a">${citCurta(l)}</div></div>${pips(l.etapa)}<a class="btn fant acao" href="#fichamento/${i}">Rever fichamento</a></li>`}).join('')}</ol></details>`:''}
   </section>`;
 }
+V.acervo = () => V.organizar();
 V.organizar = () => modoReal() ? (window.rb&&window.rb.organizarUI ? window.rb.organizarUI.tela() : esqueleto('Organizar')) : `<div class="topo"><div><h1>Organizar</h1><p>Com os seus dados, aqui aparecem os DOIs encontrados para conferir e as obras repetidas.</p></div></div><div class="vazio-estado"><h2>Nada para organizar no exemplo</h2><p>Entre com o Google para importar PDFs ou a biblioteca do Zotero e organizar as suas obras.</p></div>`;
 V.trilhas = () => modoReal() ? (window.rb&&window.rb.trilhasUI ? window.rb.trilhasUI.tela() : esqueleto('Trilhas')) : `
   <div class="topo">
@@ -759,15 +760,16 @@ V.mais = () => `<div class="topo"><div><h1>Mais</h1></div></div>
     <a href="#escrita">Escrever<small>Seus textos e diálogos</small></a>
     <a href="${modoReal()?'#dissertacao':'#projeto'}">Dissertação<small>Sessões de escrita, capítulos, projeto e orientação</small></a>
     <a href="#disciplinas">Projetos<small>Disciplinas e aulas</small></a>
+    <a href="#acervo">Acervo<small>Todas as obras, com PDF, referência e DOI</small></a>
     <a href="#autor">Você<small>Overview do autor e memória</small></a>
-    <a href="#ajustes">Ajustes<small>Gemini, cópias de segurança, sincronização e acervo</small></a>
+    <a href="#ajustes">Ajustes<small>Gemini, cópias de segurança e sincronização</small></a>
   </nav>
   <div id="status-mais">${statusDriveHTML()}</div>
   <p class="meta mt-4">${modoReal()?`Versão ${APP_VERSAO}`:`Protótipo v${APP_VERSAO}, dados de exemplo`}</p>`;
-V.ajustes = (sec) => { if(sec==='acervo'){location.hash='#organizar';return ''} const atual=SECOES_AJ.some(([k])=>k===sec)?sec:'ia'; return `
+V.ajustes = (sec) => { if(sec==='acervo'){location.hash='#acervo';return ''} const atual=SECOES_AJ.some(([k])=>k===sec)?sec:'ia'; return `
   <div class="topo"><div><h1>Ajustes</h1><p>IA, custos, registros, agenda, cores e a pasta onde tudo fica.</p></div></div>
   <div class="aj-wrap">
-  <nav class="aj-indice" aria-label="Seções dos ajustes">${SECOES_AJ.map(([k,n])=>`<a href="${k==='acervo'?'#organizar':'#ajustes/'+k}"${k===atual?' class="on" aria-current="page"':''}>${n}</a>`).join('')}</nav>
+  <nav class="aj-indice" aria-label="Seções dos ajustes">${SECOES_AJ.map(([k,n])=>`<a href="${k==='acervo'?'#acervo':'#ajustes/'+k}"${k===atual?' class="on" aria-current="page"':''}>${n}</a>`).join('')}</nav>
   <div class="aj" data-sec="sec-${atual}">
     ${modoReal()&&window.rb&&window.rb.iaAjustes?window.rb.iaAjustes.secaoHTML():`<section id="sec-ia">
       <h2>Conexão com o Gemini</h2>

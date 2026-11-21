@@ -1424,6 +1424,44 @@ a.arg-item{text-decoration:none;color:inherit}
 .org-sem{display:flex;justify-content:space-between;align-items:center;gap:var(--e-3);flex-wrap:wrap;padding:var(--e-3) 0;border-top:1px solid var(--borda)}
 .org-sem > span:first-child{min-width:0;flex:1 1 320px}
 .org-lido{color:var(--acento-forte)!important}
+/* Acervo: central das obras (v2.16.0) */
+.ac-painel{margin-bottom:var(--e-8)}
+.ac-painel > p{margin:0;color:var(--texto-2);max-width:60ch}
+.ac-barra{display:flex;align-items:center;justify-content:space-between;gap:var(--e-3) var(--e-5);flex-wrap:wrap;margin-bottom:var(--e-3)}
+.ac-filtros{display:flex;flex-wrap:wrap;gap:var(--e-1)}
+.ac-filtros button{min-height:44px;padding:0 var(--e-4);border:0;border-radius:999px;background:transparent;color:var(--texto-3);font-size:var(--fs-meta);cursor:pointer}
+.ac-filtros button[aria-pressed="true"]{background:var(--superficie-2);color:var(--texto);font-weight:600}
+.ac-filtros button span{font-weight:400;color:var(--texto-3);font-variant-numeric:tabular-nums}
+.ac-achar{display:flex;align-items:center;gap:var(--e-3);flex-wrap:wrap}
+.ac-achar input{height:40px;width:220px;max-width:100%;padding:0 var(--e-4);border:1px solid var(--borda-campo);border-radius:999px;background:var(--superficie);font-size:var(--fs-meta)}
+.ac-ordem{display:flex;align-items:center;gap:var(--e-2);font-size:var(--fs-meta);color:var(--texto-3)}
+.ac-ordem select{height:40px;padding:0 var(--e-3);border:1px solid var(--borda-campo);border-radius:999px;background:var(--superficie);font-size:var(--fs-meta);color:var(--texto)}
+.ac-tab{width:100%;border-collapse:collapse;font-size:var(--fs-meta);line-height:1.45}
+.ac-tab th{padding:var(--e-2) var(--e-4) var(--e-2) 0;text-align:left;font-weight:500;color:var(--texto-3);border-bottom:1px solid var(--borda)}
+.ac-tab td{padding:var(--e-4) var(--e-4) var(--e-4) 0;vertical-align:top;border-bottom:1px solid var(--borda)}
+.ac-tab th:nth-child(2),.ac-tab td:nth-child(2){width:200px}
+.ac-tab th:nth-child(3),.ac-tab td:nth-child(3){width:150px}
+.ac-tab th:nth-child(4),.ac-tab td:nth-child(4){width:190px;padding-right:0}
+.ac-obra{display:block;width:100%;padding:0;border:0;background:none;text-align:left;cursor:pointer;color:var(--texto)}
+.ac-obra b{display:block;font-family:var(--leitura);font-weight:500;font-size:var(--fs-corpo);line-height:1.35;overflow-wrap:anywhere}
+.ac-obra small{display:block;margin-top:3px;font-size:var(--fs-legenda);color:var(--texto-3)}
+.ac-obra:hover b{text-decoration:underline;text-underline-offset:3px}
+.ac-ok,.ac-falta{display:inline-flex;align-items:baseline;gap:6px}
+.ac-ok{color:var(--texto-3)}
+.ac-falta{color:var(--texto);font-weight:600}
+.ac-doi{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.ac-sinal{flex:none;width:8px;height:8px;border-radius:50%;background:var(--texto-3);position:relative;top:-1px}
+.ac-sinal.falta{background:transparent;box-shadow:inset 0 0 0 2px var(--texto)}
+.ac-tab td a{color:var(--texto-3);white-space:nowrap}
+@media (max-width:760px){
+  .ac-tab thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .ac-tab,.ac-tab tbody,.ac-tab tr,.ac-tab td{display:block;width:auto!important}
+  .ac-tab tr{padding:var(--e-4) 0;border-bottom:1px solid var(--borda)}
+  .ac-tab td{padding:0 0 var(--e-1);border:0}
+  .ac-tab td[data-rot]::before{content:attr(data-rot) ": ";color:var(--texto-3);font-weight:400}
+  .ac-c-obra{padding-bottom:var(--e-2)!important}
+  .ac-achar,.ac-achar input{width:100%}
+}
 .org-andamento{margin-bottom:var(--e-5)}
 .org-andamento .barra{margin-top:var(--e-3)}
 @media (max-width:760px){.org-lados{grid-template-columns:1fr;gap:var(--e-3)}.org-lados > div + div{border-left:0;padding-left:0;border-top:1px solid var(--borda);padding-top:var(--e-3)}.org-item{padding:var(--e-4)}}

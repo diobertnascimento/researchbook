@@ -2,6 +2,15 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.16.0 (20/11/2026)
+Acervo no menu: a central de todas as obras.
+- O Acervo saiu dos Ajustes e virou o último item do menu (no celular, fica em Mais). O endereço antigo continua abrindo a mesma tela.
+- A tela começa pelo que falta: quantas obras estão com a referência incompleta, sem PDF ou sem DOI, e um botão só, "Completar os dados". Ele procura no Crossref o DOI das obras que ainda não foram procuradas e, nas que já têm DOI, busca a revista, o volume, as páginas e o que mais faltar. Só preenche o que está vazio.
+- Abaixo, todas as obras numa lista com três colunas: Referência (completa, ou o que falta para a ABNT, por tipo de obra), PDF e DOI. Filtros com contagem (com algo faltando, referência incompleta, sem PDF, sem DOI, repetidas), busca por título, autor ou ano e quatro ordens.
+- Livro, capítulo, tese e trabalho de evento sem DOI não contam como falta: só artigo de revista.
+- Clicar numa obra abre os dados dela para corrigir.
+- Ainda não entrou, e vem nas próximas versões: a página própria de cada obra (com a origem de cada dado), a busca passo a passo com resultados lado a lado, o OpenAlex e a busca pelo link da página do artigo.
+
 ## 2.15.1 (20/11/2026)
 Correção: a procura do DOI pelo título volta a funcionar.
 - "Procurar DOIs que faltam" rodava e não gravava nada. O pedido que o app fazia ao Crossref incluía um campo que o Crossref não aceita, e por isso ele recusava o pedido inteiro; a obra voltava para a fila sem resultado. Buscar por um DOI digitado e "Atualizar os dados pelo DOI" não tinham o problema.
