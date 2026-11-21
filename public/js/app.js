@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.22.0';
+const APP_VERSAO = '2.23.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -846,7 +846,7 @@ ${modoReal()?`<pre class="arvore">researchbook/
     ├── autor.md  decisoes.md  regras.md
     ├── conversas/           <span>registro completo, por mês</span>
     └── exportar/</pre>`}
-      <div class="aviso"><span>ⓘ</span><div>Pode usar os dois computadores e o celular ao mesmo tempo: cada mudança vai para o Drive e chega aos outros aparelhos na próxima sincronização. Se o mesmo item mudar em dois lugares antes disso, fica a versão mais recente e a outra é guardada para você decidir. A chave do Gemini fica só em cada aparelho, nunca na pasta.</div></div>
+      <p class="nota-info">Pode usar os dois computadores e o celular ao mesmo tempo: cada mudança vai para o Drive e chega aos outros aparelhos na próxima sincronização. Se o mesmo item mudar em dois lugares antes disso, fica a versão mais recente e a outra é guardada para você decidir. A chave do Gemini fica só em cada aparelho, nunca na pasta.</p>
       <div class="flex gap-3 wrap">
         <button class="btn" data-baixar="bibtex">Exportar referências (BibTeX)</button>
         <a class="btn fant" href="#memoria">Exportar memória para outras IAs</a>

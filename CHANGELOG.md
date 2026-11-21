@@ -2,6 +2,19 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.23.0 (21/11/2026)
+Polimento visual, parte 4 de 5: as telas que ainda estavam no sistema antigo.
+- Saiu o cartão com contorno de treze telas: Trilhas, Fichamentos, lista do Escrever, Diálogos, Orientação, Leituras e citações, Artigos do projeto, Aula, Cartões, Revisar e exportar, Overview, Memória e Ajustes. O conteúdo fica no papel, separado por linhas finas; a coluna lateral não tem caixa; em Ajustes a seção não tem moldura (havia cartão dentro de cartão dentro de cartão).
+- Listas num formato só: linhas no papel, com o título sublinhando ao passar o cursor. Valia para o Acervo, o Mapa e os Projetos; agora vale também para o Ler, os Fichamentos, o Escrever e o Mapa no celular.
+- Tela vazia num formato só: o painel cinza, alinhado à esquerda, como o do Hoje. Antes era um cartão tracejado no meio da coluna.
+- Azul só para ação e lugar. Saíram o fundo azul de "Trilha sugerida" e de "Exportar", o azul-claro de "A IA quer lembrar" (virou o painel cinza da tela) e o degradê azul da obra da vez nas Trilhas.
+- "Fora da biblioteca" deixou de ser vermelho: vermelho fica para erro e para prazo no último dia.
+- O aviso de Conta e pasta deixou de ser uma caixa âmbar: é texto comum. Âmbar fica para aviso de verdade (limite de gasto, IA que não respondeu).
+- A barra do leitor ficou branca, como o resto do app.
+- O cartão de revisão é o painel cinza da tela, sem contorno e sem sombra.
+- Data num formato só no projeto: dia grande, como nos prazos do Hoje, no lugar da caixinha com borda.
+- Limpeza do arquivo de estilos: saíram as regras antigas das telas corrigidas e as de 21 classes que não existem mais no código.
+
 ## 2.22.0 (21/11/2026)
 Polimento visual, parte 3 de 5: botões e controles.
 - Escolher um modo (Leitura ou PDF, o caminho do fichamento, o modo do diálogo, o tipo de registro da conversa) ficou num formato só: um trilho cinza com a opção escolhida em pílula branca.
