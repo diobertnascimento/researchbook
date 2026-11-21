@@ -86,7 +86,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
       </div>
     </div>`;
     if (!todas.length) {
-      return `${topo}<div class="bib-vazia"><h2>Sua biblioteca está vazia</h2><p>Adicione um artigo pelo DOI ou envie o PDF. O app busca os dados da obra, monta a referência em ABNT e guarda o PDF no seu Drive e neste aparelho.</p><div class="linha-acoes j-centro"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar a primeira obra</button><button class="btn" data-org-importar>${icone('upload')}Importar PDFs ou o Zotero</button></div></div>`;
+      return `${topo}<div class="bib-vazia"><h2>Sua biblioteca está vazia</h2><p>Adicione um artigo pelo DOI ou envie o PDF. O app busca os dados da obra, monta a referência em ABNT e guarda o PDF no seu Drive e neste aparelho.</p><div class="linha-acoes"><button class="btn prim" data-bib="adicionar">${icone('mais')}Adicionar a primeira obra</button><button class="btn" data-org-importar>${icone('upload')}Importar PDFs ou o Zotero</button></div></div>`;
     }
     return `${topo}${painel}<div class="tabela" role="table">
       <div class="linha-lv cab" role="row"><span>Obra</span><span>Etapa</span><span>Progresso</span></div>

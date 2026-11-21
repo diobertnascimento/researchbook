@@ -132,6 +132,15 @@ test('título longo não alarga nenhuma tela: a página tem a largura da janela'
     if (c.azuis.length > 1) problemas.push(`${r}: ${c.azuis.length} botões azuis (${c.azuis.join(', ')})`);
     for (const q of c.quadrados) problemas.push(`${r}: botão fora do formato de pílula: ${q}`);
     for (const q of c.campos) problemas.push(`${r}: campo fora do padrão: ${q}`);
+    // v2.23.0: papel com linhas. Nenhuma caixa com contorno nos quatro lados, fora o cartão de escolha e o que flutua.
+    const caixas = await page.evaluate(() => {
+      const transparente = (cor) => cor === 'rgba(0, 0, 0, 0)' || cor === 'transparent';
+      return [...new Set([...document.querySelectorAll('#vista *')]
+        .filter((e) => { const b = e.getBoundingClientRect(); return b.width >= 160 && b.height >= 48 && !e.closest('[hidden]') && !e.matches('input, select, textarea, button, .btn, img, canvas, svg, .ia-modo, .dlg-item, .pdf-pagina, .ops, .col-tutor, .col-grifos, .popover'); })
+        .filter((e) => { const st = getComputedStyle(e); return ['Top', 'Right', 'Bottom', 'Left'].every((l) => parseFloat(st[`border${l}Width`]) > 0 && st[`border${l}Style`] !== 'none' && !transparente(st[`border${l}Color`])); })
+        .map((e) => `${e.tagName.toLowerCase()}${typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).join('.') : ''}`))];
+    });
+    for (const q of caixas) problemas.push(`${r}: caixa com contorno: ${q}`);
   }
   expect(problemas, `(${info.project.name})\n${problemas.join('\n')}`).toEqual([]);
 });
