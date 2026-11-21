@@ -57,7 +57,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   }
   function achadoHTML(a, aberto) {
     const onde = a.pagina ? `p. ${a.pagina}` : '';
-    const aviso = a.conferido === 'nao' ? 'Não encontrei este trecho no PDF. Confira antes de levar em conta.' : a.conferido === 'outra' ? 'O trecho está no PDF, em outra página.' : '';
+    const aviso = a.conferido === 'nao' ? 'Este trecho não foi encontrado no PDF. Confira antes de levar em conta.' : a.conferido === 'outra' ? 'O trecho está no PDF, em outra página.' : '';
     const estado = a.decisao === 'pendencia' ? 'Nas suas pendências' : a.decisao === 'ignorado' ? 'Ignorado' : 'Sem decisão';
     // A linha mostra a parte, o problema e a situação. O resto abre ao tocar.
     return `<article class="achado ${a.decisao || 'aberto-a-decidir'} ${aberto ? 'on' : ''}">
@@ -84,7 +84,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     const partes = GRAVIDADES.map(([g]) => [g, n(g)]).filter(([, k]) => k).map(([g, k]) => `${k} ${CONTAGEM[g][k === 1 ? 0 : 1]}`);
     const pend = p.achados.filter((a) => a.decisao === 'pendencia');
     const semDecisao = p.achados.filter((a) => !a.decisao).length;
-    const resumo = p.achados.length ? `${p.achados.length} ${p.achados.length === 1 ? 'ponto' : 'pontos'}: ${partes.join(', ')}.${semDecisao ? ` ${semDecisao === 1 ? 'Falta decidir 1' : `Faltam decidir ${semDecisao}`}.` : ' Todos decididos.'}` : 'Esta leitura não encontrou ponto a ajustar. Isso não substitui a leitura de quem orienta.';
+    const resumo = p.achados.length ? `${p.achados.length} ${p.achados.length === 1 ? 'ponto' : 'pontos'}: ${partes.join(', ')}.${semDecisao ? ` ${semDecisao === 1 ? '1 sem decisão' : `${semDecisao} sem decisão`}.` : ' Todos decididos.'}` : 'Esta leitura não encontrou ponto a ajustar. Isso não substitui a leitura de quem orienta.';
     const abertos = abertosDe(r);
     return `<section class="proj-secao parecer" id="sec-parecer" aria-labelledby="par-t">
       <header class="proj-secao-cab"><h2 id="par-t">Parecer da versão ${r.versao}</h2><p class="par-resumo">${resumo}</p>
@@ -98,7 +98,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
         }).join('')}
       </div>
       <aside class="lado"><section class="bloco pendencias" id="sec-pendencias"><h3>Suas pendências${pend.length ? ` (${pend.filter((a) => a.feito).length} de ${pend.length} feitas)` : ''}</h3>
-        ${pend.length ? `<ul>${pend.map((a) => `<li><label><input type="checkbox" data-par-feito="${esc(a.id)}" ${a.feito ? 'checked' : ''}><span>${esc(a.titulo)}<small>${nomeParte[a.parte]}</small></span></label></li>`).join('')}</ul>` : '<p class="mute m-0">Nenhuma ainda. Em cada ponto do parecer, você decide se ele entra aqui.</p>'}</section>
+        ${pend.length ? `<ul>${pend.map((a) => `<li><label><input type="checkbox" data-par-feito="${esc(a.id)}" ${a.feito ? 'checked' : ''}><span>${esc(a.titulo)}<small>${nomeParte[a.parte]}</small></span></label></li>`).join('')}</ul>` : '<p class="mute m-0">Nenhuma obra citada ainda. Em cada ponto do parecer, você decide se ele entra aqui.</p>'}</section>
         <section class="bloco"><details class="ajuda-det"><summary>Como o parecer é feito?</summary><p class="m-0 mt-3 t-meta mute">A IA lê o PDF inteiro com nove critérios fixos: introdução e problema, propósito, perguntas, literatura e teoria, método, ética, coerência entre as partes, cronograma e forma. Ela aponta o que falta e não reescreve o seu texto. Os trechos citados são conferidos no próprio PDF, sem IA. O parecer só muda quando você envia outra versão.</p></details></section>
       </aside></div></section>`;
   }
@@ -158,7 +158,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
             const rs = res.obras.map((o, i) => [o, i]).filter(([o]) => o.prioridade === n);
             const cab = `<header>${prio(n)}<h3>Prioridade ${nome}</h3><p>${rs.length} ${rs.length === 1 ? 'obra' : 'obras'}. ${desc}</p></header>`;
             const corpo = rs.map(([o, i]) => linha(o, i)).join('');
-            return n === 3 ? `<section class="prio-grupo">${cab}${corpo || '<p class="mute px-5 pb-4">Nenhuma.</p>'}</section>` : `<details class="prio-grupo"><summary>${cab}</summary>${corpo}</details>`;
+            return n === 3 ? `<section class="prio-grupo">${cab}${corpo || '<p class="mute px-5 pb-4">Nenhuma obra nesta prioridade.</p>'}</section>` : `<details class="prio-grupo"><summary>${cab}</summary>${corpo}</details>`;
           })
           .join('')}
       </div>
@@ -226,7 +226,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       ${e.texto ? `<details class="meu-reg"><summary>${e.formato === 'anotacao' ? 'Sua anotação' : e.formato === 'email' ? 'O e-mail' : e.formato === 'pdf' ? 'Sua observação' : 'O texto registrado'}</summary><p>${esc(e.texto).replace(/\n/g, '<br>')}</p></details>` : ''}
       ${reg?.anteriores?.length ? `<h4>Combinados anteriores tratados</h4><ul class="anteriores">${reg.anteriores.map((x) => `<li><span>${esc(x.acao)}<small>${{ resolvido: 'Parece resolvido', mantido: 'Mantido', alterado: 'Alterado' }[x.situacao]}${x.detalhe ? `: ${esc(x.detalhe)}` : ''}</small></span>${x.situacao === 'resolvido' && diss.combinadosAbertos().some((c) => c.id === x.combinadoId) ? `<button class="btn fant" data-ori-feito="${esc(x.combinadoId)}" data-enc="${esc(x.encontroId)}">Marcar como feito</button>` : ''}</li>`).join('')}</ul>` : ''}
       <h4>Combinados</h4>
-      ${(e.combinados || []).length ? `<ul class="combinados">${e.combinados.map((c) => `<li class="${c.feito ? 'ok' : ''}"><input type="checkbox" ${c.feito ? 'checked' : ''} data-ori-comb="${esc(c.id)}" data-enc="${esc(e.id)}" aria-label="${esc(c.acao)}"><span>${esc(c.acao)}<small>${[c.responsavel === 'orientacao' ? 'Com a orientação' : c.responsavel === 'ambos' ? 'Dos dois' : '', c.secao ? `Seção ${c.secao}` : '', c.prazo ? `até ${dataCurta(c.prazo)}` : ''].filter(Boolean).map(esc).join(', ')}</small></span></li>`).join('')}</ul>` : '<p class="t-meta mute">Nenhum.</p>'}
+      ${(e.combinados || []).length ? `<ul class="combinados">${e.combinados.map((c) => `<li class="${c.feito ? 'ok' : ''}"><input type="checkbox" ${c.feito ? 'checked' : ''} data-ori-comb="${esc(c.id)}" data-enc="${esc(e.id)}" aria-label="${esc(c.acao)}"><span>${esc(c.acao)}<small>${[c.responsavel === 'orientacao' ? 'Com a orientação' : c.responsavel === 'ambos' ? 'Dos dois' : '', c.secao ? `Seção ${c.secao}` : '', c.prazo ? `até ${dataCurta(c.prazo)}` : ''].filter(Boolean).map(esc).join(', ')}</small></span></li>`).join('')}</ul>` : '<p class="t-meta mute">Nenhum combinado neste encontro.</p>'}
       <form class="mt-3 nota-rap" data-ori-novo-comb="${esc(e.id)}"><input placeholder="Acrescentar um combinado" aria-label="Novo combinado"><button class="btn" type="submit">Acrescentar</button></form>
       ${reg?.sugestoes?.length ? `<h4>Sugestões</h4><ul>${reg.sugestoes.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
       ${reg?.atencao?.length ? `<div class="conf-ia"><b>Pontos de atenção:</b> ${reg.atencao.map(esc).join(' ')}</div>` : ''}

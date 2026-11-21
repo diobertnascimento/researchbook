@@ -90,7 +90,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     }
     return `${topo}${painel}<div class="tabela" role="table">
       <div class="linha-lv cab" role="row"><span>Obra</span><span>Etapa</span><span>Progresso</span></div>
-      ${filtradas.length ? filtradas.map(linha).join('') : `<div class="vazio">Nada encontrado para “${esc(busca)}”.</div>`}
+      ${filtradas.length ? filtradas.map(linha).join('') : `<div class="vazio">Nada encontrado para “${esc(busca)}”. Tente o sobrenome do autor ou uma palavra do título.</div>`}
     </div>`;
   }
 
@@ -235,7 +235,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     const doCrossref = Object.fromEntries(Object.entries(r.dados).filter(([, v]) => v != null && !(Array.isArray(v) && !v.length)));
     anotar(doCrossref, 'crossref');
     mostrarFicha({ ...atual, ...doCrossref });
-    mensagem(aviso ? `${aviso} e busquei os dados no Crossref. Confira antes de salvar.` : 'Dados encontrados no Crossref. Confira antes de salvar.', 'ok');
+    mensagem(aviso ? `${aviso} e os dados vieram do Crossref. Confira antes de salvar.` : 'Dados encontrados no Crossref. Confira antes de salvar.', 'ok');
     return true;
   }
 
@@ -259,7 +259,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     const doi = limparDOI(inicio.texto);
     if (doi) {
       document.getElementById('ad-doi').value = doi;
-      await aoBuscarDOI(doi, { base, aviso: 'Encontrei o DOI no PDF' });
+      await aoBuscarDOI(doi, { base, aviso: 'O DOI estava no PDF' });
     } else {
       mostrarFicha(base);
       mensagem('O PDF não traz DOI. Confira o título e preencha os autores e o ano.', 'info');
@@ -415,7 +415,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     let controle = modoLeitor() === 'leitura' ? await montarLeitura(opcoes) : await montarLeitor(opcoes);
     if (controle?.semTexto) {
       // PDF digitalizado (só imagem): não há texto para o modo leitura.
-      toast('Este PDF não tem texto para o modo leitura. Abri no modo PDF.');
+      toast('Este PDF não tem texto para o modo leitura. Ele abriu no modo PDF.');
       controle = vale() ? await montarLeitor(opcoes) : null;
     }
     if (!vale()) {

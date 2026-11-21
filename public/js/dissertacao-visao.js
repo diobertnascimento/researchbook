@@ -97,7 +97,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
       <div class="proj-cols">
         <div class="proj-col">
           <section class="proj-sec" aria-labelledby="dv-sem"><h2 id="dv-sem">Esta semana</h2>
-            <p class="diss-plano">Seu plano: ${plural(plano.sessoes, 'sessão', 'sessões')} de ${plano.minutos} minutos. <button class="lnk" data-diss-plano aria-expanded="${est.mudarPlano}">Mudar</button></p>
+            <p class="diss-plano">Seu plano: ${plural(plano.sessoes, 'sessão', 'sessões')} de ${plano.minutos} minutos. <button class="lnk" data-diss-plano aria-expanded="${est.mudarPlano}">Mudar o plano</button></p>
             ${est.mudarPlano ? `<div class="linha2 diss-plano-campos">
               <div class="campo"><label for="pl-sessoes">Sessões por semana</label><select id="pl-sessoes" data-diss-plano-campo="sessoes">${[1, 2, 3, 4, 5, 6, 7].map((n) => `<option ${n === plano.sessoes ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
               <div class="campo"><label for="pl-minutos">Minutos por sessão</label><select id="pl-minutos" data-diss-plano-campo="minutos">${[15, 25, 40, 50].map((n) => `<option ${n === plano.minutos ? 'selected' : ''}>${n}</option>`).join('')}</select></div></div>` : ''}
@@ -167,7 +167,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     const onde = !anda.comecou ? `Começa em ${mesAno(anda.de)}.` : anda.acabou ? 'O prazo já passou.' : `Você está no mês ${anda.mes} de ${c.meses}.`;
     return `${cab}
       <section class="jor-regua" aria-label="Prazo do mestrado">
-        <p class="jor-frase">De ${mesAno(anda.de)} a ${mesAno(anda.ate)}. ${onde} <button class="lnk" data-diss-mudar-inicio aria-expanded="${est.mudarInicio}">Mudar</button></p>
+        <p class="jor-frase">De ${mesAno(anda.de)} a ${mesAno(anda.ate)}. ${onde} <button class="lnk" data-diss-mudar-inicio aria-expanded="${est.mudarInicio}">Mudar o prazo</button></p>
         ${est.mudarInicio ? camposInicio(c) : ''}
         <div class="regua" role="img" aria-label="${anda.comecou ? `Mês ${anda.mes} de ${c.meses}` : 'Ainda não começou'}"><i style="width:${Math.round(anda.fracao * 1000) / 10}%"></i>${c.marcos.map((m) => `<span class="marca ${m.data < hoje ? 'passou' : ''}" style="left:${posicao(m.data)}%" title="${esc(m.titulo)}, ${dataCurta(m.data)}"></span>`).join('')}</div>
         <div class="regua-pontas"><span>${mesAno(anda.de)}</span><span>${mesAno(anda.ate)}</span></div>

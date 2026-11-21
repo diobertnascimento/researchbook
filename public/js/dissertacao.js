@@ -9,7 +9,7 @@ import { obraPorReferencia } from './disciplinas.js';
 import { diaLocal } from './progresso.js';
 
 export const DISSERTACAO = 'dissertacao'; // disciplinaId dos eventos da dissertação (encontros de orientação)
-export const FORMATOS = { anotacao: 'Minha anotação', audio: 'Áudio', transcricao: 'Transcrição', email: 'E-mail', pdf: 'PDF comentado' };
+export const FORMATOS = { anotacao: 'Sua anotação', audio: 'Áudio', transcricao: 'Transcrição', email: 'E-mail', pdf: 'PDF comentado' };
 export const FUNCOES_OBRA = { decisao: 'Sustenta uma decisão', argumento: 'Sustenta um argumento', precedente: 'Trabalho relacionado', contexto: 'Contexto' };
 const LIMITE_EM_LINHA = 14 * 1024 * 1024;
 

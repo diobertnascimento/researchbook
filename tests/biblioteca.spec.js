@@ -131,7 +131,7 @@ test('PDF com DOI: lê, guarda no Drive, abre no leitor e grifa', async ({ page,
   const g = await entrar(page, context);
   await page.locator('[data-bib="adicionar"]').first().click();
   await page.locator('#ad-pdf').setInputFiles(PDF);
-  await expect(page.locator('.ad-msg.ok')).toContainText('Encontrei o DOI no PDF');
+  await expect(page.locator('.ad-msg.ok')).toContainText('O DOI estava no PDF');
   await expect(page.locator('#f-autores')).toHaveValue('Moraes, Tânia\nLins, Rafael Augusto');
   await page.getByRole('button', { name: 'Salvar na biblioteca' }).click();
 
@@ -182,7 +182,7 @@ test('PDF com DOI que o Crossref não conhece: a ficha aparece para preencher', 
   await page.waitForFunction(() => window.rb && window.rb.sincronia && window.rb.sincronia.estado().fase === 'ok');
   await page.locator('[data-bib="adicionar"]').first().click();
   await page.locator('#ad-pdf').setInputFiles(PDF);
-  await expect(page.locator('.ad-msg.erro')).toContainText('Encontrei o DOI no PDF, mas');
+  await expect(page.locator('.ad-msg.erro')).toContainText('O DOI estava no PDF, mas');
   await expect(page.locator('#f-titulo')).toHaveValue('Roteirizacao colaborativa (PDF de teste)');
   await expect(page.locator('#f-doi')).toHaveValue(DOI);
   await expect(page.getByRole('button', { name: 'Salvar na biblioteca' })).toBeVisible();

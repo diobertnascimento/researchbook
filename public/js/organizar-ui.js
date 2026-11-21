@@ -373,13 +373,13 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const res = org.resumo();
     const at = org.estadoAtualizacao();
     const r = retrato(bib.leituras(), reps);
-    const topo = `<div class="topo"><div><h1>Acervo</h1><p>${r.total ? `${plural(r.total, 'obra', 'obras')}. ${r.contagem.falta ? `${plural(r.completas, 'completa', 'completas')}, ${r.contagem.falta} com algo faltando.` : 'Todas completas.'}` : 'A central das suas obras: artigos, livros e capítulos, com o PDF, os dados da referência e o DOI de cada um.'}</p></div>
+    const topo = `<div class="topo"><div><h1>Acervo</h1><p>${r.total ? `${plural(r.total, 'obra', 'obras')}. ${r.contagem.falta ? `${plural(r.completas, 'completa', 'completas')}, ${r.contagem.falta} com algo faltando.` : 'Todas completas.'}` : 'Todas as suas obras: artigos, livros e capítulos, com o PDF, os dados da referência e o DOI de cada um.'}</p></div>
       <div class="acoes"><button class="btn" data-org-importar>${icone('upload')}Adicionar obras</button></div></div>`;
     const andamento = st.rodando ? andamentoBusca(st) : '';
     const avisoIA = st.avisoIA ? `<div class="aviso"><span>ⓘ</span><div>A IA não respondeu (${esc(st.avisoIA)}). A busca continuou só pelo Crossref. <a href="#ajustes">Conectar o Gemini</a></div></div>` : '';
     const ROT = { subtitulo: 'subtítulo', ano: 'ano', veiculo: 'revista', volume: 'volume', numero: 'número', paginas: 'páginas', editora: 'editora', local: 'local', url: 'link', idioma: 'idioma', autores: 'autores' };
     const resultadoAt = at && !at.rodando
-      ? `<div class="bloco" id="acervo-atualizadas" role="status"><div class="org-cab"><b>${at.completadas.length ? `${plural(at.completadas.length, 'obra completada', 'obras completadas')} pelo DOI` : 'Nada para completar: os dados das obras com DOI já estavam preenchidos'}</b><span class="linha-acoes">${at.completadas.length ? '<button class="btn mini" data-org-desfazer-atualizacao data-ocupado="Desfazendo…">Desfazer</button>' : ''}<button class="btn fant mini" data-org-dispensar-atualizacao>Ok, conferi</button></span></div>${at.completadas.length ? `<ul class="org-lista-sem">${at.completadas.map((c) => `<li class="org-sem"><span><b>${esc(c.titulo)}</b><small>Completou ${esc(c.campos.map((k) => ROT[k] || k).join(', '))}</small></span></li>`).join('')}</ul>` : ''}${at.diferentes.length ? `<p class="meta">Ano diferente do Crossref, sem mexer no que você escreveu: ${at.diferentes.map((x) => `${esc(x.titulo)} (aqui ${esc(x.aqui)}, no Crossref ${esc(x.la)})`).join('; ')}.</p>` : ''}${at.falhas ? `<p class="meta">${plural(at.falhas, 'DOI não respondeu', 'DOIs não responderam')} no Crossref agora. Tente de novo mais tarde.</p>` : ''}</div>`
+      ? `<div class="bloco" id="acervo-atualizadas" role="status"><div class="org-cab"><b>${at.completadas.length ? `${plural(at.completadas.length, 'obra completada', 'obras completadas')} pelo DOI` : 'Nada para completar: os dados das obras com DOI já estavam preenchidos'}</b><span class="linha-acoes">${at.completadas.length ? '<button class="btn mini" data-org-desfazer-atualizacao data-ocupado="Desfazendo…">Desfazer</button>' : ''}<button class="btn fant mini" data-org-dispensar-atualizacao>Conferi</button></span></div>${at.completadas.length ? `<ul class="org-lista-sem">${at.completadas.map((c) => `<li class="org-sem"><span><b>${esc(c.titulo)}</b><small>Completou ${esc(c.campos.map((k) => ROT[k] || k).join(', '))}</small></span></li>`).join('')}</ul>` : ''}${at.diferentes.length ? `<p class="meta">Ano diferente do Crossref, sem mexer no que você escreveu: ${at.diferentes.map((x) => `${esc(x.titulo)} (aqui ${esc(x.aqui)}, no Crossref ${esc(x.la)})`).join('; ')}.</p>` : ''}${at.falhas ? `<p class="meta">${plural(at.falhas, 'DOI não respondeu', 'DOIs não responderam')} no Crossref agora. Tente de novo mais tarde.</p>` : ''}</div>`
       : '';
     const emOrdemHTML = res.comDOI && !at?.rodando
       ? `<section class="org-sec" id="acervo-em-ordem"><div class="org-cab"><h2>Obras com DOI <span class="chip">${res.comDOI}</span></h2><button class="btn mini" data-org-atualizar-doi data-ocupado="Conferindo…">Atualizar os dados pelo DOI</button></div><p class="meta">Confere no Crossref todas as obras que têm DOI e busca revista, volume, páginas e o que mais faltar. Completa só o que está vazio; o que você escreveu fica.</p></section>`
@@ -390,7 +390,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     const notaIA = notaFontes + (org.iaLigada() ? '' : '<p class="meta mb-4">Com o Gemini conectado, você pode pedir, obra por obra, que a IA leia o começo do PDF e indique o resultado certo. <a href="#ajustes">Conectar o Gemini</a></p>');
     const grav = org.gravadosAgora();
     const gravadosHTML = grav.length && !st.rodando
-      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Salvos agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Ok, conferi</button></span></div><p class="meta">Título, autor e ano batem com o Crossref ou o OpenAlex, então os dados foram salvos e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>${g.doi ? `DOI ${esc(g.doi)}` : 'Obra sem DOI'}, do ${g.fonte === 'openalex' ? 'OpenAlex' : 'Crossref'}</small></span></li>`).join('')}</ul></section>`
+      ? `<section class="org-sec" id="org-gravados"><div class="org-cab"><h2>Salvos agora <span class="chip">${grav.length}</span></h2><span class="linha-acoes"><button class="btn mini" data-org-desfazer-gravados data-ocupado="Desfazendo…">Desfazer ${grav.length === 1 ? 'este' : `os ${grav.length}`}</button><button class="btn fant mini" data-org-dispensar>Conferi</button></span></div><p class="meta">Título, autor e ano batem com o Crossref ou o OpenAlex, então os dados foram salvos e os campos vazios da obra foram completados.</p><ul class="org-lista-sem">${grav.map((g) => `<li class="org-sem"><span><b>${esc(g.titulo)}</b><small>${g.doi ? `DOI ${esc(g.doi)}` : 'Obra sem DOI'}, do ${g.fonte === 'openalex' ? 'OpenAlex' : 'Crossref'}</small></span></li>`).join('')}</ul></section>`
       : '';
     if (!r.total)
       return `${topo}<div class="vazio-estado"><h2>Nenhuma obra ainda</h2><p>Solte PDFs, importe do Zotero ou adicione uma obra pelo DOI. O app busca os dados e monta a referência em ABNT.</p><button class="btn prim" data-org-importar>${icone('upload')}Adicionar obras</button></div>`;
@@ -439,7 +439,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       const feito = l?.doi ? r?.completadas?.length : depois?.doi || depois?.doiBusca?.status === 'nao-tem';
       if (l?.doi) org.dispensarAtualizacao();
       redesenhar();
-      return toast(feito ? 'Dados completados. Confira na lista de dados.' : depois?.doiBusca?.status === 'proposta' ? 'Achei um resultado parecido. Confira antes de aceitar.' : 'Nada novo encontrado para esta obra.');
+      return toast(feito ? 'Dados completados. Confira na lista de dados.' : depois?.doiBusca?.status === 'proposta' ? 'Há um resultado parecido. Confira antes de aceitar.' : 'Nada novo encontrado para esta obra');
     }
     if (d.acCopiar) {
       const l = bib.obter(d.acCopiar);
@@ -468,7 +468,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       const g = org.gravadosAgora().length;
       const c = org.estadoAtualizacao()?.completadas.length || 0;
       const d2 = org.propostas().length;
-      return toast([g ? plural(g, 'DOI salvo', 'DOIs salvos') : null, c ? plural(c, 'obra completada pelo DOI', 'obras completadas pelo DOI') : null, d2 ? `${d2} para você decidir` : null].filter(Boolean).join(', ') + (g || c || d2 ? '.' : 'Nada novo encontrado no Crossref.'));
+      return toast([g ? plural(g, 'DOI salvo', 'DOIs salvos') : null, c ? plural(c, 'obra completada pelo DOI', 'obras completadas pelo DOI') : null, d2 ? `${d2} para você decidir` : null].filter(Boolean).join(', ') + (g || c || d2 ? '.' : 'Nada novo encontrado no Crossref'));
     }
     if (d.impUma !== undefined) return bibUI.abrirAdicionar();
     if (d.orgImportar !== undefined) return abrirImportar();
@@ -481,12 +481,12 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.orgAtualizarDoi !== undefined) {
       const r = await org.atualizarPeloDOI();
       redesenhar();
-      return toast(r.completadas.length ? `${plural(r.completadas.length, 'obra completada', 'obras completadas')} pelo DOI` : 'Nada para completar.');
+      return toast(r.completadas.length ? `${plural(r.completadas.length, 'obra completada', 'obras completadas')} pelo DOI` : 'Nada para completar');
     }
     if (d.orgDesfazerAtualizacao !== undefined) {
       const n = await org.desfazerAtualizacao();
       redesenhar();
-      return toast(`${plural(n, 'obra voltou', 'obras voltaram')} a como estava.`);
+      return toast(`${plural(n, 'obra voltou', 'obras voltaram')} ao estado anterior.`);
     }
     if (d.orgDispensarAtualizacao !== undefined) {
       org.dispensarAtualizacao();
@@ -534,7 +534,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       cacheFica.clear();
       redesenhar();
       if (r.erro) return toast(r.erro);
-      toast('Obras juntadas numa só.', async () => { await r.desfazer(); redesenhar(); });
+      toast('Obras juntadas numa só', async () => { await r.desfazer(); redesenhar(); });
       return;
     }
     if (d.orgJuntarIdenticas !== undefined) {
@@ -548,7 +548,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
       }
       cacheFica.clear();
       redesenhar();
-      toast(`${plural(desfazeres.length, 'grupo juntado', 'grupos juntados')}.${erros ? ` ${plural(erros, 'grupo precisa', 'grupos precisam')} de você: as obras têm fichamento.` : ''}`, async () => { for (const f of desfazeres.reverse()) await f(); redesenhar(); });
+      toast(`${plural(desfazeres.length, 'grupo juntado', 'grupos juntados')}.${erros ? ` ${plural(erros, 'grupo não foi juntado', 'grupos não foram juntados')}: mais de uma obra tem fichamento. Decida qual fichamento fica.` : ''}`, async () => { for (const f of desfazeres.reverse()) await f(); redesenhar(); });
       return;
     }
     if (d.orgNaoRep) {
@@ -563,7 +563,7 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
     if (d.orgCorrigir) return bibUI.editar(d.orgCorrigir);
     if (d.orgNaoTem) {
       await org.marcarSemDOI(d.orgNaoTem);
-      toast('Marcada como obra sem DOI.');
+      toast('Marcada como obra sem DOI');
       return redesenhar();
     }
     if (d.orgUsarLidos) {

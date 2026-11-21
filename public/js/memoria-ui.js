@@ -357,7 +357,7 @@ export function criarMemoriaUI({ ia, historico, dados, bib, fichUI, argUI, drive
         }
       }
       registrar('ui', 'memoria.exportar', { det: `${exportar.formato}, ${Object.keys(exportar).filter((k) => k !== 'formato' && exportar[k]).join(' ')}${noDrive ? ', cópia no Drive' : ''}` });
-      toast(noDrive ? 'Exportado. Cópia no seu Drive, em memoria/exportar.' : 'Exportado neste aparelho.');
+      toast(noDrive ? 'Exportado. Cópia no seu Drive, em memoria/exportar.' : 'Exportado neste aparelho');
     }
   });
 

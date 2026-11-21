@@ -411,7 +411,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
   }
 
   function notasHTML(a) {
-    return `<section class="mt-4 editor"><h2>Suas anotações</h2><p class="instr">O que você anotou da aula. Fica separado da transcrição e salva sozinho.</p><div class="campo"><textarea id="dsc-notas-aula" data-dsc-notas="${esc(a.id)}" style="min-height:180px" aria-label="Suas anotações da aula">${esc(a.notas || '')}</textarea></div><small class="mute" id="dsc-notas-st"></small></section>`;
+    return `<section class="mt-4 editor"><h2>Suas anotações</h2><p class="instr">O que você anotou da aula. Fica separado da transcrição e é salvo sozinho.</p><div class="campo"><textarea id="dsc-notas-aula" data-dsc-notas="${esc(a.id)}" style="min-height:180px" aria-label="Suas anotações da aula">${esc(a.notas || '')}</textarea></div><small class="mute" id="dsc-notas-st"></small></section>`;
   }
 
   function leiturasCitadas(d, leituras) {

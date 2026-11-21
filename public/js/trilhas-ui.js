@@ -30,7 +30,7 @@ export function criarTrilhasUI({ bib, dados, fichUI, registrar }) {
     };
     return `<section class="trilha" data-trilha="${esc(t.id)}">
       <header>
-        <div><h2>${esc(t.nome)}</h2><p>${t.objetivo ? `${esc(t.objetivo)}. ` : ''}${obras.length ? `${feitas.length} de ${obras.length} ${obras.length === 1 ? 'fichada' : 'fichadas'}.` : 'Nenhuma obra ainda.'}</p></div>
+        <div><h2>${esc(t.nome)}</h2><p>${t.objetivo ? `${esc(t.objetivo)}. ` : ''}${obras.length ? `${feitas.length} de ${obras.length} ${obras.length === 1 ? 'fichada' : 'fichadas'}.` : 'Nenhuma obra nesta trilha ainda.'}</p></div>
         <div class="prazo ${p.urgente && abertas.length ? 'urgente' : ''}"><b>${p.principal}</b>${p.detalhe ? `<small>${p.detalhe}</small>` : ''}</div>
         <button class="btn fant" data-trilha-editar="${esc(t.id)}">Editar trilha</button>
       </header>

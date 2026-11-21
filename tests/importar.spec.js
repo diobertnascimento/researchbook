@@ -277,7 +277,7 @@ test.describe('no computador', () => {
     let v = await obra();
     expect([v.editora, v.ano]).toEqual(['Editora de Exemplo', '2015']);
     await feito.getByRole('button', { name: 'Desfazer' }).click();
-    await expect(page.locator('#toast')).toContainText('1 obra voltou a como estava');
+    await expect(page.locator('#toast')).toContainText('1 obra voltou ao estado anterior');
     v = await obra();
     expect(v.editora || null).toBeNull();
   });

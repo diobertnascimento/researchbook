@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.26.0';
+const APP_VERSAO = '2.27.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -953,7 +953,7 @@ const ENCONTROS = [
   {data:'21 out. 2026', tit:'PDF da v2 com comentários', chips:['PDF comentado'],
     texto:'14 comentários na margem. 9 foram respondidos na v3; 5 continuam em aberto, a maioria na seção de método.',
     comb:[['Responder os 5 comentários abertos da v2','Seções 3.1 a 3.4',false]]},
-  {data:'09 out. 2026', tit:'Encontro de orientação', chips:['Minha anotação'],
+  {data:'09 out. 2026', tit:'Encontro de orientação', chips:['Sua anotação'],
     texto:'Primeira conversa sobre o método. Ele perguntou se a abordagem interpretativista não seria mais segura. Mantive o pragmatismo e fiquei de trazer a justificativa por escrito.',
     comb:[['Justificar o pragmatismo por escrito','Seção 3.2',true]]},
 ];
@@ -1161,7 +1161,7 @@ V.texto = (id) => {
   <ol class="passos quatro">${PASSOS_TEXTO.slice(0,4).map((n,i)=>`<li><button data-passo-texto="${i}" class="${i===p?'on':i<p?'feito':''}"><span class="n">${i<p?'✓':i+1}</span><span class="rot">${n}</span></button></li>`).join('')}</ol>
   ${p===0?'<p class="setup-intro">O copilot entrevista você e propõe versões do que você escreveu. Ele não escreve do zero e só cita o que está na sua biblioteca.</p>':''}
   ${corpo}
-  <div class="flex entre mt-5 ${p===2?'larg-1180':p===3?'larg-1000':'larg-pagina'}">${p>0?`<button class="btn fant" data-passo-texto="${p-1}">Voltar para ${PASSOS_TEXTO[p-1]}</button>`:'<span></span>'}<button class="btn prim" data-passo-texto="${p+1}">${p===3?'Aprovar estrutura e começar a escrever':'Ir para '+PASSOS_TEXTO[p+1]}</button></div>`;
+  <div class="flex entre mt-5 ${p===2?'larg-1180':p===3?'larg-1000':'larg-pagina'}">${p>0?`<button class="btn fant" data-passo-texto="${p-1}">Voltar para ${PASSOS_TEXTO[p-1]}</button>`:'<span></span>'}<button class="btn prim" data-passo-texto="${p+1}">${p===3?'Aprovar e começar a escrever':'Ir para '+PASSOS_TEXTO[p+1]}</button></div>`;
   if(p===4) return `
   <a class="voltar" href="#escrita">${I.voltar}Textos</a>
   <div class="esc-cab"><div><h1>${t.tit}</h1><p>${meta} <span class="d-inline-flex p-0 salvo"><i></i>Salvo há 10 s</span></p></div>
@@ -1204,11 +1204,11 @@ function escritaHTML(t){
           <div class="alerta">⚠ <span>Você afirma que as empresas “sabiam”. Nenhuma fonte da sua biblioteca sustenta isso. As duas versões tiram essa parte; para mantê-la, adicione uma fonte à biblioteca.</span></div>
           <div class="versao-op"><div class="cab"><b>Mais próxima do seu texto</b><span class="chip">liga à fonte</span><span class="chip">mesma ordem</span></div>
             <p>As empresas lucravam com a reputação que o relatório construía; por isso, chamar o greenwashing de exagero não se sustenta <span class="cit-in">(Nogueira; Prado, 2023)</span>.</p>
-            <div class="bts"><button class="btn prim" data-acao="toast" data-msg="Versão aplicada. O parágrafo passa a contar como coautoria.">Usar</button><button class="btn" data-acao="toast" data-msg="Edite à vontade; quanto mais você mudar, mais o trecho conta como seu.">Editar a partir desta</button></div></div>
+            <div class="bts"><button class="btn prim" data-acao="toast" data-msg="Versão aplicada. O parágrafo passa a contar como coautoria.">Usar esta versão</button><button class="btn" data-acao="toast" data-msg="Edite à vontade; quanto mais você mudar, mais o trecho conta como seu.">Editar a partir desta</button></div></div>
           <div class="versao-op"><div class="cab"><b>Mais acadêmica</b><span class="chip">tira o coloquial</span><span class="chip">liga à fonte</span></div>
             <p>Tratar o greenwashing como exagero de comunicação ignora que o modelo de negócio dependia justamente da reputação construída pelos relatórios <span class="cit-in">(Nogueira; Prado, 2023)</span>.</p>
-            <div class="bts"><button class="btn prim" data-acao="toast" data-msg="Versão aplicada. O parágrafo passa a contar como coautoria.">Usar</button><button class="btn" data-acao="toast" data-msg="Edite à vontade; quanto mais você mudar, mais o trecho conta como seu.">Editar a partir desta</button></div></div>
-          <div class="pb-0 versao-op"><div class="bts"><button class="btn fant" data-acao="toast" data-msg="Mantido como você escreveu. O trecho continua marcado como sem fonte.">Manter o meu</button></div></div>
+            <div class="bts"><button class="btn prim" data-acao="toast" data-msg="Versão aplicada. O parágrafo passa a contar como coautoria.">Usar esta versão</button><button class="btn" data-acao="toast" data-msg="Edite à vontade; quanto mais você mudar, mais o trecho conta como seu.">Editar a partir desta</button></div></div>
+          <div class="pb-0 versao-op"><div class="bts"><button class="btn fant" data-acao="toast" data-msg="Mantido como você escreveu. O trecho continua marcado como sem fonte.">Manter o original</button></div></div>
         </div>
         <div class="par ia"><span class="tag-a">IA: transição aceita com pouca edição</span>A próxima seção examina como essa conveniência operou em três níveis: empresas, investidores e reguladores.</div>
       </div>
@@ -1229,7 +1229,7 @@ function escritaHTML(t){
       <div class="p-0 atalhos">
         <button data-acao="toast" data-msg="O copilot propõe versões do parágrafo selecionado">Propor versões</button>
         <button data-acao="toast" data-msg="3 frases desta seção dependem de fonte">Onde falta fonte?</button>
-        <button data-acao="toast" data-msg="Comparado ao seu overview: frases mais longas que a sua média">Isso soa como eu?</button>
+        <button data-acao="toast" data-msg="Comparado ao seu overview: frases mais longas que a sua média">Soa como você?</button>
       </div>
       <form class="p-0 b-0 entrada" data-demo-toast="Na versão funcional, o copilot responde aqui"><textarea placeholder="Responda ou pergunte ao copilot" aria-label="Mensagem ao copilot"></textarea><button type="submit" aria-label="Enviar">${I.enviar}</button></form>`}
     </aside>
@@ -1286,7 +1286,7 @@ V.dialogos = () => {
    ========================================================= */
 V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overviewUI.tela() : esqueleto('Overview do autor', 'grade')) : `
   <div class="topo"><div><h1>Overview do autor</h1><p>Como você escreve, a partir dos seus textos e das conversas com o tutor e o copilot. O copilot usa isto para proteger a sua voz.</p></div>
-    <div class="acoes"><button class="btn prim" data-acao="toast" data-msg="Na versão funcional, você envia .docx, .pdf ou .md com textos seus.">${I.upload}Adicionar textos meus</button></div></div>
+    <div class="acoes"><button class="btn prim" data-acao="toast" data-msg="Na versão funcional, você envia .docx, .pdf ou .md com textos seus.">${I.upload}Adicionar textos seus</button></div></div>
   <div class="aviso-demo-pg">Análise de exemplo. Ela só será real depois que você enviar seus textos.</div>
   <div class="aut-grid">
     <section class="bloco aut-estilo">
@@ -1333,7 +1333,7 @@ V.autor = () => modoReal() ? (window.rb&&window.rb.overviewUI ? window.rb.overvi
     <section class="bloco aut-uso"><h3>Como o copilot usa este overview</h3>
       <ul class="m-0 pl-lista t-meta flex coluna gap-2">
         <li>Propõe versões no seu comprimento de frase e com os seus conectivos.</li>
-        <li>Avisa quando um trecho se afasta do seu estilo (“Isso soa como eu?”).</li>
+        <li>Avisa quando um trecho se afasta do seu estilo (“Soa como você?”).</li>
         <li>Nunca imita o seu estilo para escrever do zero.</li>
       </ul>
     </section>

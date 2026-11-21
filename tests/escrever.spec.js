@@ -224,8 +224,8 @@ test.describe('Pedir, no computador', () => {
     await page.locator('#esc-corpo p').first().click();
 
     await pedir.getByRole('button', { name: 'Pedir' }).click();
-    await expect(pedir.getByRole('menuitem')).toHaveText(['Buscar nos meus grifos e notas', 'Conferir as citações', 'Propor outra versão', 'Conversar com o Copilot']);
-    await pedir.getByRole('menuitem', { name: 'Buscar nos meus grifos e notas' }).click();
+    await expect(pedir.getByRole('menuitem')).toHaveText(['Buscar nos seus grifos e notas', 'Conferir as citações', 'Propor outra versão', 'Conversar com o Copilot']);
+    await pedir.getByRole('menuitem', { name: 'Buscar nos seus grifos e notas' }).click();
     const caixa = page.locator('.esc-pedido');
     await expect(caixa).toContainText('Por palavras em comum com este parágrafo, sem IA.');
     await expect(caixa.locator('li')).toHaveCount(2);
@@ -271,7 +271,7 @@ test.describe('Pedir, no computador', () => {
     await expect(page.locator('.sessao-barra')).toBeVisible();
     await page.locator('#esc-corpo p').first().click();
     await page.locator('.esc-pedir').getByRole('button', { name: 'Pedir' }).click();
-    await expect(page.locator('.esc-pedir [role="menuitem"]:visible')).toHaveText(['Buscar nos meus grifos e notas', 'Conferir as citações']);
+    await expect(page.locator('.esc-pedir [role="menuitem"]:visible')).toHaveText(['Buscar nos seus grifos e notas', 'Conferir as citações']);
   });
 });
 

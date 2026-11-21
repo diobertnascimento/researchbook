@@ -220,6 +220,7 @@ Preços da página oficial do Gemini API em 13/11/2026, por milhão de tokens. D
 - v0.7.0 (13/11/2026): entrega 1, base do app (PWA, atualização, dados locais, registros reais, segurança).
 - v0.8.0 (13/11/2026): entrega 2, login Google, pasta no Drive e sincronização entre aparelhos.
 - v0.8.1 (13/11/2026): correção da volta do login (o Google devolve `state` antes do token). Login e sincronização confirmados pelo Diobert no computador e no iPhone.
+- v2.27.0 (21/11/2026): revisão dos textos, lote 3. O app não diz "eu"; o que é do autor é "seu"; botões de uma palavra ganham objeto; telas vazias dizem o que falta; pontuação dos avisos curtos.
 - v2.26.0 (21/11/2026): revisão dos textos, lote 2. Treze textos que descreviam versão antiga (chave do Gemini na pasta, etapas do fichamento, páginas renomeadas) e erros sem código, com palavra comum e próximo passo.
 - v2.25.0 (21/11/2026): revisão dos textos, lote 1. Um nome para cada coisa (biblioteca, projeto, salvar, buscar, apagar, login, internet, Conectar o Gemini); seis regras novas de escrita e glossário em `docs/design-system.md`; teste que recusa termo aposentado.
 - v2.24.0 (21/11/2026): polimento visual, lote 5. Leitor e editor no celular com o cabeçalho numa linha (menus "Painéis" e "Seções e ações"); `docs/design-system.md` reescrito com o sistema atual.
