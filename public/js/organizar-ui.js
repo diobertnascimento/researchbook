@@ -321,8 +321,8 @@ export function criarOrganizarUI({ org, bib, bibUI, registrar }) {
         ? ''
         : itens.length
           ? `<section class="proximo ac-painel" id="obra-falta" aria-labelledby="obra-falta-t">
-              <h2 class="prox-tit" id="obra-falta-t">${itens.length === 1 ? `Falta ${itens[0]}` : `Faltam ${itens.length} dados: ${juntar(itens)}`}</h2>
-              <p>${semAchar ? 'A última busca não achou esta obra. Corrija o título, os autores ou o ano e busque de novo, ou preencha o que falta à mão.' : buscavel ? (l.doi ? 'A busca usa o DOI desta obra e completa só o que está vazio.' : 'A busca usa o título, os autores e o ano que já estão aqui.') : 'Só falta o arquivo. Anexe o PDF para ler e grifar.'}</p>
+              <h2 class="prox-tit" id="obra-falta-t">${itens.length === 1 ? `Falta ${itens[0]}` : `Faltam ${itens.length} dados`}</h2>
+              <p>${itens.length > 1 ? `<span id="obra-falta-lista">Faltam ${juntar(itens)}.</span> ` : ''}${semAchar ? 'A última busca não achou esta obra. Corrija o título, os autores ou o ano e busque de novo, ou preencha o que falta à mão.' : buscavel ? (l.doi ? 'A busca usa o DOI desta obra e completa só o que está vazio.' : 'A busca usa o título, os autores e o ano que já estão aqui.') : 'Só falta o arquivo. Anexe o PDF para ler e grifar.'}</p>
               <div class="acao-l">${buscavel ? `<button class="btn prim" data-ac-buscar-uma="${esc(l.id)}" data-ocupado="Procurando…">Buscar os dados desta obra</button>` : `<a class="btn prim" href="#leitor/${esc(l.id)}">Anexar o PDF</a>`}</div>
             </section>`
           : `<p class="meta mb-5" id="obra-falta">Referência completa, com PDF${l.doi ? ' e DOI' : ''}.</p>`;

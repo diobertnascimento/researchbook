@@ -2,6 +2,18 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.21.0 (21/11/2026)
+Polimento visual, parte 2 de 5: títulos.
+- O título grande de 44 px ficou só para o nome da seção (Ler, Escrever, Acervo). Título de obra, de texto, de aula e nome de projeto passaram a 30 px (22 no celular) e aparecem inteiros. Um título de 197 caracteres, que ocupava 5 linhas no computador e 8 no celular, agora ocupa 4 e 6.
+- No painel cinza (Próximo passo, Continue lendo, Continue escrevendo), o título vai até 3 linhas e termina em reticências. O título inteiro aparece ao abrir a obra ou o texto.
+- Na página da obra, o painel diz "Faltam 8 dados" e a lista do que falta vem no texto abaixo, em vez de uma frase inteira como título.
+- A linha de apoio não fica mais colada no título: 12 px no lugar de 4.
+- Título de seção igual em todas as telas (Literata, 22 px). Trilhas, Aula, a preparação do texto e Revisar e exportar usavam outra letra.
+- Subtítulo de bloco igual em todas as telas (16 px, negrito). Eram oito variações.
+- Título de obra e de texto em Literata também na lista do Ler, em Fichamentos, na lista do Escrever, nas Trilhas e nos encontros da Orientação.
+- Numa lista, o título de obra ou de texto também vai até 3 linhas. No celular, um título longo ocupava 8 linhas numa trilha.
+- Ficou como está, de propósito: a linha do tempo do projeto continua em letra de interface, porque mistura aula, entrega, link e obra na mesma lista; e "Entrar" continua em 30 px, por ficar numa caixa estreita.
+
 ## 2.20.0 (21/11/2026)
 Polimento visual, parte 1 de 5: o que quebrava a tela.
 - Acervo: um título longo não empurra mais as colunas para fora. Antes, a página passava da largura da janela e, no celular, a tela inteira encolhia.
