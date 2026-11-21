@@ -322,7 +322,8 @@ test.describe('no computador', () => {
     await page.locator('#ac-corpo .ac-obra').first().click();
     await expect(page).toHaveURL(/#acervo\/falcao-2017/);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Design science em operações');
-    await expect(page.locator('#obra-falta')).toContainText('Faltam 3 dados: a revista, o DOI e o PDF');
+    await expect(page.locator('#obra-falta-t')).toHaveText('Faltam 3 dados');
+    await expect(page.locator('#obra-falta-lista')).toHaveText('Faltam a revista, o DOI e o PDF.');
     await expect(page.locator('#obra-ref .ac-ref')).toContainText('FALCÃO, R. Design science em operações. [a completar], v. 11, p. 45-62, 2017.');
     const dado = (nome) => page.locator('#obra-dados tbody tr').filter({ has: page.locator('th', { hasText: new RegExp('^' + nome + '$') }) });
     await expect(dado('Revista')).toContainText('Falta');
@@ -336,7 +337,8 @@ test.describe('no computador', () => {
     await expect(dado('Revista')).toContainText('Revista Fictícia de Operações');
     await expect(dado('Revista')).toContainText('Você escreveu');
     await expect(dado('Ano')).toContainText('Sem registro de origem');
-    await expect(page.locator('#obra-falta')).toContainText('Faltam 2 dados: o DOI e o PDF');
+    await expect(page.locator('#obra-falta-t')).toHaveText('Faltam 2 dados');
+    await expect(page.locator('#obra-falta-lista')).toHaveText('Faltam o DOI e o PDF.');
     // Buscar os dados desta obra: nada no Crossref simulado, a tela diz e continua pedindo a decisão.
     await page.getByRole('button', { name: 'Buscar os dados desta obra' }).click();
     await expect(page.locator('#toast')).toContainText('Nada novo encontrado para esta obra');

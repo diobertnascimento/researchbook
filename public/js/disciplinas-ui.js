@@ -171,7 +171,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
       painel = `<section class="proximo proj-agora"><div class="rot">Nada agendado</div><p>Agende as aulas, as entregas e as sessões de estudo deste projeto. Elas aparecem aqui e no Hoje.</p>
         <div class="acao-l"><button class="btn prim" data-dsc-agendar="${esc(d.id)}">Agendar</button></div></section>`;
     }
-    return `<div class="topo"><div><h1>${ponto(d.cor, 14)} ${esc(d.nome)}${d.arquivada ? ' <span class="chip">Arquivada</span>' : ''}</h1>
+    return `<div class="topo"><div><h1 class="tit-conteudo">${ponto(d.cor, 14)} ${esc(d.nome)}${d.arquivada ? ' <span class="chip">Arquivada</span>' : ''}</h1>
         <p>${quem ? `${esc(quem)}. ` : 'Complete docente, semestre e horário em Editar. '}${plural(as.length, 'aula', 'aulas')}, ${plural(ls.length, 'obra', 'obras')}, ${plural(ts.length, 'texto', 'textos')}.</p></div>
         <div class="acoes"><button class="btn fant" data-dsc-editar="${esc(d.id)}">Editar</button>${foco ? `<button class="btn" data-dsc-agendar="${esc(d.id)}">${icone('mais')}Agendar</button>` : ''}</div></div>
       ${painel}
@@ -377,7 +377,7 @@ export function criarDisciplinasUI({ disc, bib, escrita, registrar }) {
     const r = a.resumo;
     const proxAula = disc.proximos(d.id, 60).find((e) => e.tipo === 'aula');
     return `<button class="fundo-0 b-0 p-0 cursor voltar" data-voltar-disc="${esc(d.id)}">${icone('voltar')}${esc(d.nome)}</button>
-      <div class="topo"><div><h1 class="t-titulo-1">Aula ${a.numero}${a.tema ? `: ${esc(a.tema)}` : ''}</h1><p>${dataLonga(a.data)}${a.audio?.duracao ? `, ${duracaoTexto(a.audio.duracao)}` : ''}. ${stAula(a)}</p></div>
+      <div class="topo"><div><h1 class="tit-conteudo">Aula ${a.numero}${a.tema ? `: ${esc(a.tema)}` : ''}</h1><p>${dataLonga(a.data)}${a.audio?.duracao ? `, ${duracaoTexto(a.audio.duracao)}` : ''}. ${stAula(a)}</p></div>
         <div class="acoes"><button class="btn fant" data-dsc-editar-aula="${esc(a.id)}">Editar aula</button><button class="btn" data-dsc-agendar="${esc(d.id)}" data-tipo="estudo" data-titulo="Revisar a aula ${a.numero}">${icone('mais')}Agendar revisão</button></div></div>
       ${a.audio ? `<div class="audio-real" data-aula-audio="${esc(a.id)}"><audio controls preload="metadata" aria-label="Gravação da aula"></audio><small class="mute" id="audio-msg"></small></div>` : ''}
       <div class="aula-grid">
