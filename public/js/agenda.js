@@ -78,7 +78,7 @@ export function criarAgenda({ dados, disc, drive, token, temPermissao, ligada, r
 
   async function chamar(metodo, caminho, corpo) {
     const t = token();
-    if (!t) throw new ErroAgenda('sessao', 'A sessão do Google venceu. Reconecte para enviar à agenda.');
+    if (!t) throw new ErroAgenda('sessao', 'O login do Google venceu. Entre de novo para enviar à agenda.');
     let r;
     try {
       r = await fetch(`${API}${caminho}`, { method: metodo, headers: { Authorization: `Bearer ${t}`, ...(corpo ? { 'Content-Type': 'application/json' } : {}) }, body: corpo ? JSON.stringify(corpo) : undefined });
@@ -88,9 +88,9 @@ export function criarAgenda({ dados, disc, drive, token, temPermissao, ligada, r
     if (r.ok) return r.status === 204 ? null : r.json();
     const j = await r.json().catch(() => ({}));
     const msg = `${j.error?.message || ''} ${(j.error?.errors || []).map((x) => x.reason).join(' ')} ${(j.error?.details || []).map((x) => x.reason).join(' ')}`;
-    if (r.status === 401) throw new ErroAgenda('sessao', 'A sessão do Google venceu. Reconecte para enviar à agenda.');
+    if (r.status === 401) throw new ErroAgenda('sessao', 'O login do Google venceu. Entre de novo para enviar à agenda.');
     if (r.status === 403 && /SERVICE_DISABLED|accessNotConfigured|has not been used|disabled/i.test(msg)) throw new ErroAgenda('api', 'A Google Calendar API não está ativada no projeto do Google Cloud. Ative a API e tente de novo.');
-    if (r.status === 403 && /insufficient|scope|PERMISSION/i.test(msg)) throw new ErroAgenda('permissao', 'Falta a permissão da agenda no login. Em Ajustes > Google Agenda, selecione "Ligar o Google Agenda".');
+    if (r.status === 403 && /insufficient|scope|PERMISSION/i.test(msg)) throw new ErroAgenda('permissao', 'Falta a permissão da agenda no login. Em Ajustes, em Google Agenda, selecione "Ligar o Google Agenda".');
     const e = new ErroAgenda('servico', `O Google Agenda respondeu ${r.status}. Tente de novo em instantes.`);
     e.status = r.status;
     throw e;

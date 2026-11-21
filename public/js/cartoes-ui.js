@@ -114,7 +114,7 @@ export function criarCartoesUI({ cart, bib, disc, registrar }) {
         modalPropostas();
       } catch (err) {
         const config = err instanceof ErroIA && ERROS_DE_CONFIG.includes(err.codigo);
-        abrirModal(`<h2 id="modal-tit">Não deu para criar cartões</h2><div class="erro-ia" role="alert"><p>${esc(err.message)}</p></div><div class="pe">${config ? '<a class="btn" href="#ajustes">Abrir Ajustes do Gemini</a>' : ''}<button class="btn prim" data-cart-fechar>Fechar</button></div>`);
+        abrirModal(`<h2 id="modal-tit">Não deu para criar cartões</h2><div class="erro-ia" role="alert"><p>${esc(err.message)}</p></div><div class="pe">${config ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}<button class="btn prim" data-cart-fechar>Fechar</button></div>`);
       }
       return;
     }

@@ -32,7 +32,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   const fechar = () => veu().classList.remove('on');
   const erroHTML = (err) => {
     const config = err instanceof ErroIA ? ERROS_DE_CONFIG.includes(err.codigo) : ERROS_DE_CONFIG.includes(err?.codigo);
-    return `<div class="erro-ia" role="alert"><p>${esc(err?.message || err?.mensagem || 'O Gemini não respondeu.')}</p>${config ? '<a class="btn" href="#ajustes">Abrir Ajustes do Gemini</a>' : ''}</div>`;
+    return `<div class="erro-ia" role="alert"><p>${esc(err?.message || err?.mensagem || 'O Gemini não respondeu.')}</p>${config ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}</div>`;
   };
 
   /* =================== Revisão do projeto =================== */
@@ -74,7 +74,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   function parecerHTML(r) {
     const p = r.parecer;
     if (!p) {
-      if (est.parecerCorrendo === r.id) return `<section class="proximo parecer-espera" id="sec-parecer" role="status"><div class="rot">Lendo o projeto para o parecer</div><p>${pensandoHTML(`O Gemini está lendo a versão ${r.versao} inteira, parte por parte,`, desdeDe(`parecer:${r.id}`), { tarefa: 'parecer_projeto' })}</p><p class="meta">Você pode sair desta página: o parecer aparece aqui quando ficar pronto. A lista de obras abaixo já pode ser usada.</p></section>`;
+      if (est.parecerCorrendo === r.id) return `<section class="proximo parecer-espera" id="sec-parecer" role="status"><div class="rot">Lendo o projeto para o parecer</div><p>${pensandoHTML(`A IA está lendo a versão ${r.versao} inteira, parte por parte,`, desdeDe(`parecer:${r.id}`), { tarefa: 'parecer_projeto' })}</p><p class="meta">Você pode sair desta página: o parecer aparece aqui quando ficar pronto. A lista de obras abaixo já pode ser usada.</p></section>`;
       const erro = est.parecerErro[r.id];
       const acao = arquivosDaSessao.has(r.id) ? `<button class="btn" data-par-pedir="${esc(r.id)}">${erro ? 'Tentar de novo' : 'Pedir o parecer'}</button>` : `<label class="btn">Escolher o PDF da versão ${r.versao}<input type="file" accept="application/pdf" data-par-pdf="${esc(r.id)}" hidden></label>`;
       return `<section class="proximo parecer-espera" id="sec-parecer"><div class="rot">${erro ? 'O parecer desta versão não saiu' : 'Esta versão ainda não tem parecer'}</div>
@@ -130,7 +130,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       const buscando = (r.buscar || []).includes(i);
       const st = l
         ? `<span>Na biblioteca</span>${pipsHTML(l.etapa || 0)}<span>${ETAPAS[l.etapa || 0]}</span><a class="btn fant" href="#leitor/${encodeURIComponent(l.id)}">Abrir</a>`
-        : `<span class="fora">Fora da biblioteca</span>${buscando ? '<span>Na lista para buscar</span>' : `<button class="btn" data-rev-buscar="${i}">Marcar para buscar</button>`}`;
+        : `<span class="fora">Fora da biblioteca</span>${buscando ? '<span>Na lista para adicionar</span>' : `<button class="btn" data-rev-buscar="${i}">Marcar para adicionar</button>`}`;
       return `<div class="ref-linha"><div><div class="t">${esc(l ? l.titulo : o.como_aparece)}</div><div class="a">${esc(l ? citacao(l) : o.como_aparece)}${o.incompleta ? '. Referência incompleta no texto' : ''}</div><div class="porque">${icone('tutor')}<span>${esc(o.porque)}</span></div></div>
         <div class="onde"><b>${o.vezes || 1}×</b><span>${esc(FUNCOES_OBRA[o.funcao] || '')}</span>${(o.secoes || []).slice(0, 4).map((s) => `<span>${esc(s)}</span>`).join('')}</div>
         <div class="st-bib">${st}</div></div>`;
@@ -173,7 +173,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
   }
 
   async function enviarVersao(arquivo) {
-    abrirModal(`<h2 id="modal-tit">Lendo a versão do projeto</h2><p role="status">${pensandoHTML(`O Gemini está lendo ${arquivo.name} e comparando com a biblioteca`, Date.now(), { tarefa: 'revisao_projeto' })}</p><p class="meta">Você pode fechar esta janela: a leitura continua.</p><div class="pe"><button class="btn fant" data-dlg-fechar>Fechar</button></div>`);
+    abrirModal(`<h2 id="modal-tit">Lendo a versão do projeto</h2><p role="status">${pensandoHTML(`A IA está lendo ${arquivo.name} e comparando com a biblioteca`, Date.now(), { tarefa: 'revisao_projeto' })}</p><p class="meta">Você pode fechar esta janela: a leitura continua.</p><div class="pe"><button class="btn fant" data-dlg-fechar>Fechar</button></div>`);
     try {
       const r = await diss.revisar(arquivo);
       est.rev = r.id;
@@ -204,7 +204,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
         <section class="bloco"><h3>Combinados em aberto</h3>${abertos.length ? `<ul class="combinados">${abertos.map((c) => `<li><input type="checkbox" data-ori-comb="${esc(c.id)}" data-enc="${esc(c.encontroId)}" aria-label="${esc(c.acao)}"><span>${esc(c.acao)}<small>${[c.secao ? `Seção ${c.secao}` : '', c.prazo ? `até ${dataCurta(c.prazo)}` : '', `combinado em ${dataLonga(c.data)}`].filter(Boolean).map(esc).join(', ')}</small></span></li>`).join('')}</ul>` : '<p class="mute">Nenhum em aberto.</p>'}
           ${total ? `<div class="t-legenda mt-3 mute">${feitos} de ${total} combinados cumpridos</div><div class="barra"><i style="width:${(feitos / total) * 100}%"></i></div>` : ''}</section>
         ${temas.length ? `<section class="bloco"><h3>Temas que voltam</h3><div class="dist">${temas.map((t) => `<div style="grid-template-columns:1fr 70px 18px"><span>${esc(t.tema)}</span><span class="trilho"><i style="background:var(--petroleo);width:${(t.vezes / temas[0].vezes) * 100}%"></i></span><span class="mute-2">${t.vezes}</span></div>`).join('')}</div></section>` : ''}
-        <section class="bloco"><h3>${prox ? `Próximo encontro: ${dataCurta(prox.dia)}${prox.inicio ? `, ${prox.inicio}` : ''}` : 'Próximo encontro'}</h3>${prox ? '' : '<p class="m-0 mb-3 mute">Sem data. Use "Agendar encontro".</p>'}
+        <section class="bloco"><h3>${prox ? `Próximo encontro: ${dataCurta(prox.dia)}${prox.inicio ? `, ${prox.inicio}` : ''}` : 'Próximo encontro'}</h3>${prox ? '' : '<p class="m-0 mb-3 mute">Sem data. Selecione "Agendar encontro".</p>'}
           ${abertos.length ? `<p>Pauta a partir dos combinados abertos:</p><ol>${diss.pauta().map((p) => `<li>${esc(p)}</li>`).join('')}</ol><button class="mt-3 btn" data-ori-pauta>${icone('copiar')}Copiar pauta</button>` : ''}</section>
       </aside></div>`;
   }
@@ -216,7 +216,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     let estado = '';
     if (e.formato === 'audio' && t && t.status !== 'pronta') {
       if (t.status === 'erro') estado = `${erroHTML({ message: t.erro, codigo: t.codigoErro })}<button class="btn" data-ori-transcrever="${esc(e.id)}">Tentar de novo</button>`;
-      else estado = `<p class="mute" role="status">${t.status === 'enviando' ? 'Enviando o áudio para o Gemini…' : t.status === 'resumindo' ? 'Transcrição pronta. Registrando a conversa…' : `Transcrevendo: parte ${Math.min((t.feitos || 0) + 1, t.total)} de ${t.total}.`}</p><div class="barra"><i style="width:${Math.round(((t.feitos || 0) / (t.total || 1)) * 100)}%"></i></div>`;
+      else estado = `<p class="mute" role="status">${t.status === 'enviando' ? 'Enviando o áudio para a IA…' : t.status === 'resumindo' ? 'Transcrição pronta. Registrando a conversa…' : `Transcrevendo: parte ${Math.min((t.feitos || 0) + 1, t.total)} de ${t.total}.`}</p><div class="barra"><i style="width:${Math.round(((t.feitos || 0) / (t.total || 1)) * 100)}%"></i></div>`;
     } else if (e.processando) estado = '<p class="mute" role="status">A IA está registrando a conversa…</p>';
     else if (e.erroIA) estado = `${erroHTML(e.erroIA)}<button class="btn" data-ori-processar="${esc(e.id)}">Tentar de novo</button>`;
     const corpo = `${e.audio ? `<div class="audio-real" data-aula-audio="${esc(e.id)}"><audio controls preload="metadata" aria-label="Gravação da conversa"></audio><small class="mute" id="audio-msg"></small></div>` : ''}
@@ -247,7 +247,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
           : `<div class="campo"><label for="ori-texto">${t === 'transcricao' ? 'Cole a transcrição' : t === 'email' ? 'Cole o e-mail' : 'O que foi conversado'}</label><textarea id="ori-texto" style="min-height:170px" required placeholder="${t === 'anotacao' ? 'Com as suas palavras, o que ficou da conversa' : 'Cole o texto aqui'}"></textarea></div>`;
     abrirModal(`<h2 id="modal-tit">Registrar conversa</h2><p>Guarde do jeito mais fácil. O resumo da IA fica separado do que você registrou.</p>
       <div class="tipo-reg" role="group" aria-label="Tipo de registro">${Object.entries(FORMATOS).map(([k, n]) => `<button type="button" data-ori-tipo="${k}" class="${k === t ? 'on' : ''}" aria-pressed="${k === t}">${n}</button>`).join('')}</div>
-      <form id="ori-form"><div class="linha2"><div class="campo"><label for="ori-titulo">Título</label><input id="ori-titulo" value="${t === 'email' ? 'Retorno por e-mail' : t === 'pdf' ? 'PDF com comentários' : 'Reunião de orientação'}"></div><div class="campo"><label for="ori-data">Data</label><input id="ori-data" type="date" value="${diaLocal()}" required></div></div>
+      <form id="ori-form"><div class="linha2"><div class="campo"><label for="ori-titulo">Título</label><input id="ori-titulo" value="${t === 'email' ? 'Retorno por e-mail' : t === 'pdf' ? 'PDF com comentários' : 'Encontro de orientação'}"></div><div class="campo"><label for="ori-data">Data</label><input id="ori-data" type="date" value="${diaLocal()}" required></div></div>
       ${campo}
       <div class="pe"><button type="button" class="btn fant" data-dlg-fechar>Cancelar</button><button class="btn prim" type="submit" data-ocupado="Registrando…">Registrar conversa</button></div></form>`);
   }
@@ -257,7 +257,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
     const ds = dlg.todos();
     const topo = `<div class="topo"><div><h1>Diálogos</h1><p>Conversas sobre as ideias das leituras: testar contrapontos, ser questionado e alinhar a sua visão com o que você já sustenta.</p></div>
       <div class="acoes"><button class="btn" data-dlg-novo>${icone('mais')}Novo diálogo</button></div></div>`;
-    if (!ds.length) return `${topo}<div class="bib-vazia"><h2>Nenhum diálogo ainda</h2><p>Escolha um tema ou uma posição, as leituras e o modo. A IA só cita o seu acervo. No fim, as posições que você firmou podem ir para a memória ou atualizar um argumento.</p><button class="btn prim" data-dlg-novo>Começar um diálogo</button></div>`;
+    if (!ds.length) return `${topo}<div class="bib-vazia"><h2>Nenhum diálogo ainda</h2><p>Escolha um tema ou uma posição, as leituras e o modo. A IA só cita a sua biblioteca. No fim, as posições que você firmou podem ir para a memória ou atualizar um argumento.</p><button class="btn prim" data-dlg-novo>Começar um diálogo</button></div>`;
     const sel = typeof S !== 'undefined' && S.dlgReal && dlg.obter(S.dlgReal) ? dlg.obter(S.dlgReal) : ds[0];
     const msgs = est.msgs[sel.id];
     if (!msgs && !est.carregando.has(sel.id)) {
@@ -299,15 +299,15 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
         const r = m.resposta || {};
         const conf = new Set(m.conferencia?.conferidas || []);
         const itens = new Map((m.itens || []).map((i) => [i.id, i]));
-        const fontes = (r.fontes || []).map((f) => `<span class="chip ${conf.has(f.id) ? '' : 'lac'}" title="${conf.has(f.id) ? 'Trecho conferido no seu acervo' : 'Não conferido'}">${conf.has(f.id) ? '' : '⚠ '}${esc(itens.get(f.id)?.citacao || f.id)}</span>`).join('');
-        return `<div class="msg tutor"><span class="av">${icone('dialogos')}</span><div>${r.resposta ? `<p>${esc(tirarIds(r.resposta))}</p>` : ''}${r.pergunta ? `<p class="pergunta-tutor">${esc(tirarIds(r.pergunta))}</p>` : ''}${fontes ? `<div class="f">${fontes}</div>` : ''}${m.conferencia && !m.conferencia.ok ? '<p class="t-legenda mute">A conferência encontrou citação que não bate com o seu acervo; ela está marcada.</p>' : ''}</div></div>`;
+        const fontes = (r.fontes || []).map((f) => `<span class="chip ${conf.has(f.id) ? '' : 'lac'}" title="${conf.has(f.id) ? 'Trecho conferido na sua biblioteca' : 'Não conferido'}">${conf.has(f.id) ? '' : '⚠ '}${esc(itens.get(f.id)?.citacao || f.id)}</span>`).join('');
+        return `<div class="msg tutor"><span class="av">${icone('dialogos')}</span><div>${r.resposta ? `<p>${esc(tirarIds(r.resposta))}</p>` : ''}${r.pergunta ? `<p class="pergunta-tutor">${esc(tirarIds(r.pergunta))}</p>` : ''}${fontes ? `<div class="f">${fontes}</div>` : ''}${m.conferencia && !m.conferencia.ok ? '<p class="t-legenda mute">A conferência encontrou citação que não bate com a sua biblioteca; ela está marcada.</p>' : ''}</div></div>`;
       })
       .join('');
   }
 
   function modalNovoDialogo() {
     const ls = bib.leituras();
-    abrirModal(`<h2 id="modal-tit">Novo diálogo</h2><p>A IA só cita o seu acervo: as leituras escolhidas vêm primeiro.</p>
+    abrirModal(`<h2 id="modal-tit">Novo diálogo</h2><p>A IA só cita a sua biblioteca: as leituras escolhidas vêm primeiro.</p>
       <form id="dlg-form">
         <div class="campo"><label for="dlg-tema">Tema ou posição</label><textarea id="dlg-tema" required style="min-height:80px" placeholder="Ex.: a adesão das equipes substitui a economia de quilometragem como critério de avaliação"></textarea></div>
         <fieldset class="modos-dlg"><legend>Modo</legend>${Object.entries(MODOS).map(([m, d], i) => `<label class="check"><input type="radio" name="dlg-modo" value="${m}" ${i === 0 ? 'checked' : ''}><span><b>${m}</b> ${esc(d)}</span></label>`).join('')}</fieldset>
@@ -461,7 +461,7 @@ export function criarDissertacaoUI({ diss, dlg, disc, discUI, bib, registrar }) 
       const r = (est.rev && diss.revisao(est.rev)) || diss.todasRevisoes()[0];
       await diss.marcarParaBuscar(r.id, Number(d.revBuscar));
       redesenhar();
-      return toast('Na lista para buscar. Adicione o PDF à biblioteca e peça a revisão de novo.');
+      return toast('Na lista para adicionar. Adicione o PDF à biblioteca e peça a revisão de novo.');
     }
     if (d.revTrilha) {
       const t = await diss.criarTrilha(d.revTrilha);

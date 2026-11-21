@@ -5,7 +5,7 @@
 // Descartados ficam guardados para a IA não propor a mesma coisa de novo.
 //
 // Quando a IA procura: ao abrir o app, nas conversas paradas há mais de 10 minutos com mensagens novas;
-// ao começar uma "Nova conversa"; e quando ele toca em "Procurar nas conversas".
+// ao começar uma "Nova conversa"; e quando ele toca em "Buscar nas conversas".
 import { TIPOS_MEMORIA } from './ia.js';
 import { ErroIA } from './gemini.js';
 import { referenciaTexto } from './abnt.js';
@@ -255,7 +255,7 @@ export function criarMemoriaUI({ ia, historico, dados, bib, fichUI, argUI, drive
         <section class="sug" aria-labelledby="mem-pend"><h3 id="mem-pend">A IA quer lembrar (${pend.length})</h3>
           ${pend.length ? pend.map(propostaHTML).join('') : `<p class="mem-vazio">Nada para revisar agora. A IA propõe itens a partir do que você diz nas conversas com o tutor; sugestões dela não entram.</p>`}
           <div class="mem-procurar">${
-            semIA ? '<a class="btn" href="#ajustes">Conectar o Gemini para a IA propor itens</a>' : `<button class="btn" data-mem-procurar ${procurando ? 'disabled' : ''}>${procurando ? 'Procurando…' : 'Procurar nas conversas'}</button>`
+            semIA ? '<a class="btn" href="#ajustes">Conectar o Gemini para a IA propor itens</a>' : `<button class="btn" data-mem-procurar ${procurando ? 'disabled' : ''}>${procurando ? 'Buscando…' : 'Buscar nas conversas'}</button>`
           }${aviso ? `<span class="mem-aviso" role="status">${esc(aviso)}</span>` : ''}</div>
         </section>
         ${TIPOS_MEMORIA.map(([k, , plural], i) => {

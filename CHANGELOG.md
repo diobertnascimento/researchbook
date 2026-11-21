@@ -2,6 +2,22 @@
 
 Cada versão nova entra no topo, em linguagem de quem usa o app.
 
+## 2.25.0 (21/11/2026)
+Revisão dos textos, parte 1 de 4: um nome para cada coisa. O inventário achou 2.473 textos de tela; 240 mudam, e esta parte cuida dos que usavam dois ou três nomes para a mesma coisa.
+- Biblioteca: os textos que diziam "acervo" para o conjunto das suas obras passam a dizer "biblioteca" ("só cita o que está na sua biblioteca"). O nome da página Acervo muda na parte 4.
+- Projetos: sumiram as sobras de "disciplina" ("Projeto salvo", "Projeto apagado", "Projeto não encontrado"). "Arquivar" virou "Encerrar projeto" e "Desarquivar" virou "Reabrir projeto", como a lista "Projetos encerrados" já dizia.
+- Salvar no lugar de gravar: "Marco salvo", "Anotação salva", "Salvando…". "Gravação" fica só para áudio.
+- Buscar no lugar de procurar, em toda a busca de dados das obras e na memória ("Buscar nas conversas").
+- A lista das obras que faltam na biblioteca passou de "para buscar" a "para adicionar".
+- Apagar: "Grifo apagado" também na aula (era "Grifo tirado"); "Arquivo apagado" no projeto. As mensagens de apagar dizem "Está na lixeira".
+- Login: "O login do Google venceu" e o botão "Entrar de novo" no lugar de "A sessão do Google venceu" e "Reconectar".
+- Internet no lugar de conexão: "quando a internet voltar", "Sem internet para buscar o DOI".
+- Um nome só para o botão que leva aos ajustes da IA: "Conectar o Gemini" (eram cinco). Os erros que mandavam para "Ajustes > Gemini" agora dizem "Em Ajustes, em Conexão com o Gemini", que é o nome da seção.
+- Nas telas de trabalho, quem transcreve, resume e lê é "a IA"; "Gemini" fica em Ajustes e nos erros de conexão.
+- "Sincronizado" no lugar de "Em dia" no estado do Drive; "Encontro de orientação" no lugar de "Reunião de orientação"; "pedidos à IA" no lugar de "chamadas".
+- `docs/design-system.md` ganhou seis regras de escrita e o glossário novo. Um teste lê o código e recusa os termos aposentados.
+- As mensagens do servidor da chave não mudaram: mexer nelas pediria publicar o servidor de novo.
+
 ## 2.24.0 (21/11/2026)
 Polimento visual, parte 5 de 5: o leitor e o editor no celular, e o documento do sistema visual.
 - Leitor no celular: o cabeçalho cabe numa linha (voltar, Leitura ou PDF, a página e o botão "Painéis"). Antes ocupava cerca de 260 dos 844 px da tela; agora, 62. Grifos, Tutor e Referência ficam no menu "Painéis". O botão principal ("Concluir leitura", "Continuar fichamento") foi para o fim do texto.

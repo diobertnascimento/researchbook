@@ -11,7 +11,7 @@
   history.replaceState(null,'',location.pathname+location.search+volta);
 })();
 /* Versão do app: mantenha igual à de package.json e registre a mudança em CHANGELOG.md */
-const APP_VERSAO = '2.24.0';
+const APP_VERSAO = '2.25.0';
 /* Quem vê o app: este aparelho já entrou com a conta autorizada, ou está no modo de exemplo (testes).
    A proteção real dos dados é o login do Google e a permissão do Drive; esta tela só evita mostrar o app a visitantes. */
 /* Dados reais: este aparelho já entrou com a conta e não está no modo de exemplo. */
@@ -713,7 +713,7 @@ function secRegistros(){
     <div class="kpis">
       <div><b>${deHoje.length.toLocaleString('pt-BR')}</b><span>eventos hoje</span><small>${sessoes} ${sessoes===1?'sessão':'sessões'}</small></div>
       <div><b>${erros}</b><span>${erros===1?'erro hoje':'erros hoje'}</span><small>${erros?'veja abaixo, em Erros':'nenhum problema registrado'}</small></div>
-      <div><b>${deHoje.filter(e=>e.ev==='ia.resposta').length}</b><span>chamadas à IA hoje</span><small>${deHoje.filter(e=>e.ev==='ia.falhou').length} falhas, com nova tentativa</small></div>
+      <div><b>${deHoje.filter(e=>e.ev==='ia.resposta').length}</b><span>pedidos à IA hoje</span><small>${deHoje.filter(e=>e.ev==='ia.falhou').length} falhas, com nova tentativa</small></div>
       <div><b>v${esc(rb?rb.versao:APP_VERSAO)}</b><span>versão do app</span><small>vai em cada registro</small></div>
     </div>
     <div class="m-0 mt-1 mb-3 seg" role="group" aria-label="Filtrar registros">${LOG_TIPOS.map(([k,n])=>`<button data-log="${k}" class="${k===f?'on':''}">${n}</button>`).join('')}</div>
@@ -943,7 +943,7 @@ V.projeto = () => {
    Orientação
    ========================================================= */
 const ENCONTROS = [
-  {data:'06 nov. 2026', tit:'Reunião de orientação', chips:['Áudio','Transcrição'], audio:'42 min',
+  {data:'06 nov. 2026', tit:'Encontro de orientação', chips:['Áudio','Transcrição'], audio:'42 min',
     resumo:'A conversa girou em torno da avaliação. A troca da economia de quilometragem simulada pela adesão das equipes às rotas foi aceita, com a condição de declarar o critério de utilidade antes dos testes. Também pediu que a seção 2.4 deixe claro em que a proposta difere do RotaCoop.',
     trecho:{quando:'Orientador, aos 18 min', t:'Se a banca perguntar por que a simulação não basta, a resposta precisa estar no texto, não só na sua fala.'},
     comb:[['Declarar o critério de utilidade antes dos testes','Seção 3.5',false],['Reescrever a 2.4 contrastando com o RotaCoop','Seção 2.4',false],['Enviar a v3 até 13 nov.','Enviada hoje',true]]},
@@ -953,7 +953,7 @@ const ENCONTROS = [
   {data:'21 out. 2026', tit:'PDF da v2 com comentários', chips:['PDF comentado'],
     texto:'14 comentários na margem. 9 foram respondidos na v3; 5 continuam em aberto, a maioria na seção de método.',
     comb:[['Responder os 5 comentários abertos da v2','Seções 3.1 a 3.4',false]]},
-  {data:'09 out. 2026', tit:'Reunião de orientação', chips:['Minha anotação'],
+  {data:'09 out. 2026', tit:'Encontro de orientação', chips:['Minha anotação'],
     texto:'Primeira conversa sobre o método. Ele perguntou se a abordagem interpretativista não seria mais segura. Mantive o pragmatismo e fiquei de trazer a justificativa por escrito.',
     comb:[['Justificar o pragmatismo por escrito','Seção 3.2',true]]},
 ];
@@ -1080,7 +1080,7 @@ V.texto = (id) => {
     <h2>Enquadrar</h2><p class="instr">O que é o texto e quais são as regras. O copilot usa estas informações em todas as etapas.</p>
     <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Tipo de texto</label><select><option>Artigo de disciplina</option><option>Artigo para periódico</option><option>Resenha</option><option>Ensaio</option><option>Seção de trabalho em equipe</option></select></div>
-      <div class="campo"><label>Disciplina ou projeto</label><select>${DISCIPLINAS.map(d=>`<option ${d===t.disc?'selected':''}>${d}</option>`).join('')}${PROJETOS.map(x=>`<option>${x.nome}</option>`).join('')}</select></div>
+      <div class="campo"><label>Projeto</label><select>${DISCIPLINAS.map(d=>`<option ${d===t.disc?'selected':''}>${d}</option>`).join('')}${PROJETOS.map(x=>`<option>${x.nome}</option>`).join('')}</select></div>
     </div></div>
     <div class="campo"><label>Enunciado da atividade <span>cole o texto ou envie o PDF</span></label><textarea class="f-ui t-ui">Artigo individual, de até 7 páginas, que discuta um tema do capítulo estudado à luz de um caso concreto. Normas ABNT.</textarea></div>
     <div class="campo"><label>Critérios de avaliação</label><textarea class="f-ui t-ui" style="min-height:70px">Clareza do argumento; uso das fontes da disciplina; relação entre teoria e caso.</textarea></div>
@@ -1101,19 +1101,19 @@ V.texto = (id) => {
   </section>`;
   if(p===2) corpo=`
   <div class="diag-grid">
-    <section class="diag"><h3><i style="background:var(--sucesso)"></i>Sustentado pelo acervo</h3><p>Você tem grifos e fichamentos para isto</p>
+    <section class="diag"><h3><i style="background:var(--sucesso)"></i>Sustentado pela biblioteca</h3><p>Você tem grifos e fichamentos para isto</p>
       <div class="diag-item"><b>A conveniência da reputação suprime o compromisso ambiental</b><span>Teixeira, p. 48. 3 grifos, 1 argumento</span></div>
       <div class="diag-item"><b>O relatório como ativo de reputação</b><span>Nogueira e Prado (2023). 5 grifos; leitura em andamento</span></div>
     </section>
     <section class="diag"><h3><i style="background:#B8862B"></i>Frágil</h3><p>Uma fonte só, ou fonte ainda não lida</p>
       <div class="diag-item"><b>Os reguladores também se beneficiaram da vitrine</b><span>Só 1 grifo, em Teixeira. Está na sua tese, então precisa de mais base.</span></div>
     </section>
-    <section class="diag"><h3><i style="background:var(--perigo)"></i>Lacuna</h3><p>Nada no acervo. Sugestões para você buscar</p>
-      <div class="diag-item"><b>Os dados permitiam inferir traços de personalidade</b><span>Sugestão: Kosinski, Stillwell e Graepel (2013), PNAS</span><button class="btn" data-acao="toast" data-msg="Sugestão salva. Adicione o PDF à biblioteca para o copilot poder citar.">Marcar para buscar</button></div>
-      <div class="diag-item"><b>Cronologia do caso</b><span>Sugestão: reportagem de Cadwalladr e Graham-Harrison (2018), The Guardian</span><button class="btn" data-acao="toast" data-msg="Sugestão salva. Adicione o texto à biblioteca para o copilot poder citar.">Marcar para buscar</button></div>
+    <section class="diag"><h3><i style="background:var(--perigo)"></i>Lacuna</h3><p>Fora da sua biblioteca. Sugestões para você adicionar</p>
+      <div class="diag-item"><b>Os dados permitiam inferir traços de personalidade</b><span>Sugestão: Kosinski, Stillwell e Graepel (2013), PNAS</span><button class="btn" data-acao="toast" data-msg="Sugestão salva. Adicione o PDF à biblioteca para o copilot poder citar.">Marcar para adicionar</button></div>
+      <div class="diag-item"><b>Cronologia do caso</b><span>Sugestão: reportagem de Cadwalladr e Graham-Harrison (2018), The Guardian</span><button class="btn" data-acao="toast" data-msg="Sugestão salva. Adicione o texto à biblioteca para o copilot poder citar.">Marcar para adicionar</button></div>
     </section>
   </div>
-  <div class="nota-grounding">${I.tutor}<span>O copilot só cita o que está no seu acervo, com página. Sugestões de fora ficam pendentes até você adicionar o texto à biblioteca.</span></div>`;
+  <div class="nota-grounding">${I.tutor}<span>O copilot só cita o que está na sua biblioteca, com página. Sugestões de fora ficam pendentes até você adicionar o texto à biblioteca.</span></div>`;
   if(p===3){
     const sec=[
       ['Introdução: o relatório como sintoma','Apresentar os casos e a tese',[],'~400','Escrita'],
@@ -1201,7 +1201,7 @@ function escritaHTML(t){
         <div class="par autor ativo"><span class="tag-a">Seu, em revisão</span><span class="sem-fonte">As empresas sabiam que os números eram maquiados</span> e lucravam com isso, então não dá pra dizer que foi exagero.</div>
         <div class="versoes-box">
           <h4>Versões propostas pelo copilot a partir do seu parágrafo</h4>
-          <div class="alerta">⚠ <span>Você afirma que as empresas “sabiam”. Nenhuma fonte do seu acervo sustenta isso. As duas versões tiram essa parte; para mantê-la, adicione uma fonte à biblioteca.</span></div>
+          <div class="alerta">⚠ <span>Você afirma que as empresas “sabiam”. Nenhuma fonte da sua biblioteca sustenta isso. As duas versões tiram essa parte; para mantê-la, adicione uma fonte à biblioteca.</span></div>
           <div class="versao-op"><div class="cab"><b>Mais próxima do seu texto</b><span class="chip">liga à fonte</span><span class="chip">mesma ordem</span></div>
             <p>As empresas lucravam com a reputação que o relatório construía; por isso, chamar o greenwashing de exagero não se sustenta <span class="cit-in">(Nogueira; Prado, 2023)</span>.</p>
             <div class="bts"><button class="btn prim" data-acao="toast" data-msg="Versão aplicada. O parágrafo passa a contar como coautoria.">Usar</button><button class="btn" data-acao="toast" data-msg="Edite à vontade; quanto mais você mudar, mais o trecho conta como seu.">Editar a partir desta</button></div></div>
@@ -1433,7 +1433,7 @@ function resultadosBusca(q){
 }
 function abrirBusca(){
   const veu=document.getElementById('veu');
-  veu.innerHTML=`<div class="modal busca-modal"><h2 id="modal-tit" class="sr sr">Buscar</h2><input id="qk" placeholder="Buscar leituras, textos, argumentos e páginas" aria-label="Buscar" autocomplete="off"><div class="res-busca" id="res-busca">${resultadosBusca('')}</div></div>`;
+  veu.innerHTML=`<div class="modal busca-modal"><h2 id="modal-tit" class="sr sr">Buscar</h2><input id="qk" placeholder="Buscar obras, textos, argumentos e páginas" aria-label="Buscar" autocomplete="off"><div class="res-busca" id="res-busca">${resultadosBusca('')}</div></div>`;
   veu.classList.add('on'); setTimeout(()=>document.getElementById('qk').focus(),20);
 }
 function abrirBriefing(){
@@ -1557,7 +1557,7 @@ V.aula = (i,k) => {
       ${a.conc.length?`<section class="bloco"><h3>Conceitos citados</h3><div class="termos">${a.conc.map(c=>`<span class="chip">${c}</span>`).join('')}</div></section>`:''}
       ${a.leit.length||a.fora.length?`<section class="bloco"><h3>Leituras citadas</h3>
         ${a.leit.map(x=>`<a class="lc" href="#leitor/${x}">${citCurta(L(x))}<span>Na biblioteca, ${rotEtapa(L(x).etapa).toLowerCase()}</span></a>`).join('')}
-        ${a.fora.map(([au,ti])=>`<div class="lc"><b class="forte">${au}</b><span>${ti}. Fora da biblioteca</span><button class="mt-2 btn mini" data-acao="toast" data-msg="Sugestão salva. Adicione o PDF à biblioteca para o tutor e o copilot poderem usar.">Marcar para buscar</button></div>`).join('')}
+        ${a.fora.map(([au,ti])=>`<div class="lc"><b class="forte">${au}</b><span>${ti}. Fora da biblioteca</span><button class="mt-2 btn mini" data-acao="toast" data-msg="Sugestão salva. Adicione o PDF à biblioteca para o tutor e o copilot poderem usar.">Marcar para adicionar</button></div>`).join('')}
       </section>`:''}
       <section class="bloco"><h3>Próxima aula</h3><p class="m-0">${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).tit||'Sem aula agendada'}, ${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).sem||''} ${(EVENTOS.find(e=>e.d===i&&e.tipo==='Aula')||{}).dia||''} nov.</p></section>
     </aside>
@@ -1584,7 +1584,7 @@ function abrirModalEvento(i){
     <div class="campo"><label>Título</label><input value="Ler Iivari (2007) antes da aula"></div>
     <div class="larg-total gap-0 aj"><div class="linha2">
       <div class="campo"><label>Tipo</label><select><option>Sessão de estudo</option><option>Aula</option><option>Entrega</option><option>Encontro de orientação</option><option>Outro</option></select></div>
-      <div class="campo"><label>Disciplina ou projeto</label><select>${DISCIPLINAS.map((d,j)=>`<option ${j===i?'selected':''}>${d}</option>`).join('')}<option>Dissertação</option></select></div>
+      <div class="campo"><label>Projeto</label><select>${DISCIPLINAS.map((d,j)=>`<option ${j===i?'selected':''}>${d}</option>`).join('')}<option>Dissertação</option></select></div>
       <div class="campo"><label>Data</label><input type="date" value="2026-11-18"></div>
       <div class="campo"><label>Horário</label><input value="20h às 21h"></div>
       <div class="campo"><label>Repetir</label><select><option>Não repete</option><option>Toda semana</option></select></div>
@@ -1653,7 +1653,7 @@ function abrirModalRegistro(tipo){
     <p>Guarde do jeito que for mais fácil. O resumo da IA fica separado do que você escreveu.</p>
     <div class="tipo-reg" role="group" aria-label="Tipo de registro">${['Anotação','Áudio','Transcrição','E-mail','PDF comentado'].map(x=>`<button data-tipo-reg="${x}" class="${x===t?'on':''}">${x}</button>`).join('')}</div>
     <div class="larg-total gap-0 aj"><div class="linha2">
-      <div class="campo"><label>Título</label><input value="Reunião de orientação"></div>
+      <div class="campo"><label>Título</label><input value="Encontro de orientação"></div>
       <div class="campo"><label>Data</label><input type="date" value="2026-11-13"></div>
     </div></div>
     ${corpo}
@@ -1794,11 +1794,11 @@ function statusDriveHTML(){
   const e=rb.sincronia?rb.sincronia.estado():{fase:rb.google.conectado()?'parado':'desconectado'};
   const conf=e.conflitos?`, <a href="#conflitos">${e.conflitos} ${e.conflitos===1?'conflito para revisar':'conflitos para revisar'}</a>`:'';
   const n=e.pendentes||0, esp=n?` ${n} ${n===1?'mudança espera':'mudanças esperam'} o Drive.`:'';
-  if(e.fase==='ok'&&e.pendente) return linha('pendente','Gravado neste aparelho. Enviando ao Drive…');
+  if(e.fase==='ok'&&e.pendente) return linha('pendente','Salvo neste aparelho. Enviando ao Drive…');
   if(e.fase==='ok') return linha('ok',`<span>Sincronizado às ${new Date(e.ultima).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${conf}</span>`);
-  if(e.fase==='sincronizando'||e.fase==='parado') return linha('pendente',e.pendente?'Gravado neste aparelho. Enviando ao Drive…':'Sincronizando com o Drive…');
-  if(e.fase==='offline') return linha('aviso',`Sem internet: salvo neste aparelho.${n?` ${n} ${n===1?'mudança sobe':'mudanças sobem'} quando a conexão voltar.`:''}`);
-  if(e.fase==='desconectado') return linha('aviso',`Salvo neste aparelho.${esp} <button data-google="entrar">Reconectar ao Google</button>`);
+  if(e.fase==='sincronizando'||e.fase==='parado') return linha('pendente',e.pendente?'Salvo neste aparelho. Enviando ao Drive…':'Sincronizando com o Drive…');
+  if(e.fase==='offline') return linha('aviso',`Sem internet: salvo neste aparelho.${n?` ${n} ${n===1?'mudança sobe':'mudanças sobem'} quando a internet voltar.`:''}`);
+  if(e.fase==='desconectado') return linha('aviso',`Salvo neste aparelho.${esp} <button data-google="entrar">Entrar de novo</button>`);
   return linha('erro',`Não deu para sincronizar.${esp} <a href="#ajustes/pasta">Ver detalhes</a>`);
 }
 window.statusDriveHTML=statusDriveHTML;
@@ -1808,7 +1808,7 @@ function statusMovelHTML(){
   const e=rb.sincronia.estado();
   const aviso=(cls,txt)=>`<div class="status-movel-caixa ${cls}">${txt}</div>`;
   if(e.fase==='offline') return aviso('aviso','Sem internet. O que você fizer fica neste aparelho e vai para o Drive quando a internet voltar.');
-  if(e.fase==='desconectado') return aviso('aviso','A sessão do Google venceu. Suas mudanças estão guardadas neste aparelho. <button class="btn mini" data-google="entrar">Reconectar</button>');
+  if(e.fase==='desconectado') return aviso('aviso','O login do Google venceu. Suas mudanças estão guardadas neste aparelho. <button class="btn mini" data-google="entrar">Entrar de novo</button>');
   if(e.fase==='erro') return aviso('erro','Não deu para sincronizar com o Drive. <button class="btn mini" data-google="sincronizar">Tentar de novo</button>');
   if(e.conflitos) return aviso('info',`<a href="#conflitos">${e.conflitos===1?'1 conflito para revisar':`${e.conflitos} conflitos para revisar`}</a>`);
   return '';
@@ -1843,7 +1843,7 @@ function contaHTML(){
   const id=rb&&rb.sincronia?rb.sincronia.idPasta():null;
   const esc=x=>String(x??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   return `<div class="mb-3 ap-grade">
-      <div class="ap-it"><span>Conta</span><b>${esc(conta)}</b><small>${rb&&rb.google.conectado()?'conectada':'sessão vencida: entre de novo para sincronizar'}</small></div>
+      <div class="ap-it"><span>Conta</span><b>${esc(conta)}</b><small>${rb&&rb.google.conectado()?'conectada':'login vencido: entre de novo para sincronizar'}</small></div>
       <div class="ap-it"><span>Sincronização</span><div>${statusDriveHTML()}</div>${e&&e.erro?`<small>${esc(e.erro)}</small>`:''}</div>
     </div>
     <div class="flex gap-2 wrap mb-4">

@@ -182,7 +182,7 @@ test.describe('no computador', () => {
     await page.goto('/#acervo');
     await expect(page.locator('#acervo-resumo')).toContainText('3 obras com algo faltando');
     // Com a IA ligada, a tela continua dizendo onde procura (antes essa frase sumia).
-    await expect(page.locator('#acervo-fontes')).toContainText('Onde o app procura: só no Crossref');
+    await expect(page.locator('#acervo-fontes')).toContainText('Onde o app busca: só no Crossref');
     await page.getByRole('button', { name: 'Completar os dados' }).click();
 
     // Título, autor e ano batem: gravado na hora, completando só o que faltava (a editora do autor fica).
@@ -196,7 +196,7 @@ test.describe('no computador', () => {
 
     // Desfazer tira o DOI e devolve a obra para a lista de conferir, de onde o autor aceita.
     await gravados.getByRole('button', { name: 'Desfazer este' }).click();
-    await expect(page.locator('#toast')).toContainText('1 gravação desfeita');
+    await expect(page.locator('#toast')).toContainText('1 DOI desfeito');
     expect((await obra('Design')).doi).toBeFalsy();
     const venable = page.locator('.org-item', { hasText: 'Design science research' });
     await expect(venable).toContainText('Muito provável');
@@ -231,7 +231,7 @@ test.describe('no computador', () => {
     expect([l.doi, l.doiBusca.status, l.doiBusca.auto]).toEqual(['10.0000/venable.2016', 'aceita', true]);
     await page.goto('/#organizar');
     await expect(page.locator('#acervo-fontes')).toContainText('só no Crossref');
-    await expect(page.locator('main')).toContainText('Com o Gemini ligado, você pode pedir');
+    await expect(page.locator('main')).toContainText('Com o Gemini conectado, você pode pedir');
     await expect(page.locator('#org-gravados')).toContainText('10.0000/venable.2016');
   });
 
@@ -398,7 +398,7 @@ test.describe('no computador', () => {
     expect(livro.origens).toMatchObject({ doi: 'crossref', editora: 'crossref' });
     // Desfazer devolve a obra ao que era, sem os dados e sem a marca.
     await gravados.getByRole('button', { name: /Desfazer os 2/ }).click();
-    await expect(page.locator('#toast')).toContainText('2 gravações desfeitas');
+    await expect(page.locator('#toast')).toContainText('2 DOIs desfeitos');
     const volta = await page.evaluate(() => window.rb.biblioteca.leituras().find((l) => l.titulo.startsWith('Indicadores')));
     expect([volta.veiculo || null, volta.origens || null]).toEqual([null, null]);
     // Servidor ainda na versão antiga: a procura segue pelo Crossref e a tela diz o que fazer.
@@ -430,7 +430,7 @@ test.describe('no computador', () => {
     await page.getByRole('button', { name: 'Completar os dados' }).click();
     await expect(page.locator('#acervo-andamento')).toBeVisible();
     await expect(page.locator('#acervo-andamento [role="progressbar"]')).toHaveAttribute('aria-valuenow', /^\d+$/);
-    await expect(page.locator('#acervo-andamento .etapas li')).toHaveText([/Ler o PDF/, /Procurar pelo DOI/, /Procurar pelo título/, /Conferir/]);
+    await expect(page.locator('#acervo-andamento .etapas li')).toHaveText([/Ler o PDF/, /Buscar pelo DOI/, /Buscar pelo título/, /Conferir/]);
     // 1. DOI lido no arquivo: gravado sozinho, com o título de verdade no lugar do nome do arquivo.
     const gravados = page.locator('#org-gravados');
     await expect(gravados).toContainText('DOI 10.9999/teste.2026.001, do Crossref', { timeout: 20000 });
@@ -562,7 +562,7 @@ test.describe('sincronização entre aparelhos', () => {
     });
     await page.reload();
     await page.waitForFunction(() => window.rb && window.rb.pronto);
-    await expect(page.locator('#status-drive')).toContainText('Reconectar ao Google');
+    await expect(page.locator('#status-drive')).toContainText('Entrar de novo');
     await expect(page.locator('.entrar-erro')).toHaveCount(0);
     await page.reload();
     await page.waitForFunction(() => window.rb && window.rb.pronto);
@@ -590,8 +590,8 @@ test('no celular: o Hoje mostra a sincronização e o aviso aparece quando ela p
   await expect(page.locator('#status-movel')).toBeEmpty();
   g.estado.tokenValido = false;
   await page.evaluate(() => window.rb.sincronia.sincronizar());
-  await expect(page.locator('#status-movel')).toContainText('A sessão do Google venceu');
-  await expect(page.locator('#status-movel').getByRole('button', { name: 'Reconectar' })).toBeVisible();
+  await expect(page.locator('#status-movel')).toContainText('O login do Google venceu');
+  await expect(page.locator('#status-movel').getByRole('button', { name: 'Entrar de novo' })).toBeVisible();
   const sobra = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   expect(sobra).toBeLessThanOrEqual(1);
 });

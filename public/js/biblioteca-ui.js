@@ -118,7 +118,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
       </div>
       <div class="campo"><label for="f-doi">DOI</label><input id="f-doi" value="${v('doi')}"></div>
       <div class="linha2">
-        <div class="campo"><label for="f-projeto">Projeto</label><input id="f-projeto" list="f-projetos" placeholder="Dissertação, nome da disciplina…" value="${v('projeto')}"><datalist id="f-projetos">${[...new Set(['Dissertação', ...bib.leituras().map((l) => l.projeto).filter(Boolean)])].map((p) => `<option value="${esc(p)}">`).join('')}</datalist></div>
+        <div class="campo"><label for="f-projeto">Projeto</label><input id="f-projeto" list="f-projetos" placeholder="Ex.: Dissertação, Teoria das Organizações" value="${v('projeto')}"><datalist id="f-projetos">${[...new Set(['Dissertação', ...bib.leituras().map((l) => l.projeto).filter(Boolean)])].map((p) => `<option value="${esc(p)}">`).join('')}</datalist></div>
         <div class="campo"><label for="f-tags">Tags <small>separadas por vírgula</small></label><input id="f-tags" value="${esc((f.tags || []).join(', '))}"></div>
       </div>
       <div class="ref-previa"><small>Referência (ABNT)</small><p id="f-ref">${referencia(f)}</p></div>
@@ -174,7 +174,7 @@ export function criarBibliotecaUI({ bib, registrar }) {
     rascunho = { ...l };
     pdfEscolhido = null;
     const veu = document.getElementById('veu');
-    veu.innerHTML = `<div class="modal" role="dialog" aria-labelledby="modal-tit"><h2 id="modal-tit">Corrigir dados da obra</h2>
+    veu.innerHTML = `<div class="modal" role="dialog" aria-labelledby="modal-tit"><h2 id="modal-tit">Corrigir os dados da obra</h2>
       <p>A referência ABNT se atualiza enquanto você corrige.</p>
       <div class="ad-origem"><div class="campo"><label for="ad-doi">Buscar de novo pelo DOI</label><div class="linha-doi"><input id="ad-doi" value="${esc(l.doi || '')}" autocomplete="off"><button class="btn" data-bib="buscar-doi" data-ocupado="Buscando…">Buscar</button></div></div></div>
       <div id="ad-msg"></div>

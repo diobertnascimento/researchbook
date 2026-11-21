@@ -49,7 +49,7 @@ test('tarefas do dia: anotar, marcar e apagar são gravados na hora, sobem para 
   await page.locator('.tarefas li', { hasText: 'Levar o livro' }).hover();
   await page.getByRole('button', { name: 'Apagar a tarefa: Levar o livro à orientação' }).click();
   await expect(page.locator('.tarefas li')).toHaveCount(1);
-  await expect(page.locator('#toast')).toContainText('Tarefa apagada. Ela fica na lixeira.');
+  await expect(page.locator('#toast')).toContainText('Tarefa apagada. Está na lixeira.');
   expect(await page.evaluate(() => window.rb.dados.lixeira().then((l) => l.map((x) => x.item.texto)))).toEqual(['Levar o livro à orientação']);
 });
 

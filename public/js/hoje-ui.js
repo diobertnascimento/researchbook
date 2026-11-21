@@ -53,7 +53,7 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI, dados 
     const falta = lista.filter((t) => !t.feita).length;
     return `<section class="tarefas" aria-labelledby="tar-t"><h2 id="tar-t">Tarefas${falta ? ` <small>${falta === 1 ? 'falta 1' : `faltam ${falta}`}</small>` : ''}</h2>
       ${lista.length ? `<ul>${lista.map((t) => `<li class="${t.feita ? 'feita' : ''}"><label><input type="checkbox" data-tarefa-feita="${esc(t.id)}" ${t.feita ? 'checked' : ''}><span>${esc(t.texto)}</span></label><button class="btn fant mini" data-tarefa-apagar="${esc(t.id)}" aria-label="Apagar a tarefa: ${esc(t.texto)}">Apagar</button></li>`).join('')}</ul>` : '<p class="mute">Nada anotado para hoje.</p>'}
-      <form class="tarefa-nova" data-tarefa-form><label class="sr" for="tarefa-nova">Nova tarefa</label><input id="tarefa-nova" type="text" maxlength="200" placeholder="Anotar uma tarefa" autocomplete="off"><button class="btn" type="submit" data-ocupado="Gravando…">Adicionar</button></form>
+      <form class="tarefa-nova" data-tarefa-form><label class="sr" for="tarefa-nova">Nova tarefa</label><input id="tarefa-nova" type="text" maxlength="200" placeholder="Anotar uma tarefa" autocomplete="off"><button class="btn" type="submit" data-ocupado="Salvando…">Adicionar</button></form>
     </section>`;
   }
 
@@ -193,7 +193,7 @@ export function criarHojeUI({ bib, fichUI, trilhasUI, argUI, conflitosUI, dados 
     if (!b) return;
     const desfazer = await apagarTarefa(b.dataset.tarefaApagar);
     redesenhar();
-    if (desfazer) window.toast?.('Tarefa apagada. Ela fica na lixeira.', async () => { await desfazer(); redesenhar(); });
+    if (desfazer) window.toast?.('Tarefa apagada. Está na lixeira.', async () => { await desfazer(); redesenhar(); });
   });
 
   return { tela, carregar, tarefas: () => tarefas, adicionarTarefa, marcarTarefa };

@@ -150,9 +150,9 @@ export function criarTutorFichamento({ ia, bib, fichUI, argUI, historico, regist
     const itens = new Map((c?.itens || []).map((x) => [x.id, x]));
     const ref = (s) => (/^A\d+$/.test(s) && itens.get(s) ? `Grifo ${itens.get(s).citacao}` : s ? `“${s}”` : '');
     return `<h4 class="mt-6">Comentários do tutor</h4>
-      ${sem ? '<p class="sub">Ligue o Gemini em Ajustes para o tutor comentar cada etapa. Ele aponta lacunas e faz perguntas, sem reescrever por você.</p><a class="btn fant" href="#ajustes">Ajustes do Gemini</a>' : ''}
+      ${sem ? '<p class="sub">Conecte o Gemini em Ajustes para o tutor comentar cada etapa. Ele aponta lacunas e faz perguntas, sem reescrever por você.</p><a class="btn fant" href="#ajustes">Conectar o Gemini</a>' : ''}
       ${c ? `<div class="coment-tutor">${(c.pontos || []).map((p, i) => `<div class="ct ${p.tipo} ${i === c.mais_importante ? 'mais' : ''}"><b>${nomes[p.tipo] || p.tipo}${i === c.mais_importante ? ' <span class="chip">mais importante</span>' : ''}</b><p>${esc(tirarIds(p.texto))}</p>${p.ref ? `<small>${esc(ref(p.ref))}</small>` : ''}</div>`).join('')}<small class="mute">${new Date(c.em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</small></div>` : !sem ? '<p class="sub">O tutor comenta o que você escreveu nesta etapa: um ponto forte, uma lacuna e uma pergunta.</p>' : ''}
-      ${est.erro && est.erro.id === id ? `<div class="erro-ia" role="alert"><p>${esc(est.erro.err.message)}</p>${est.erro.err instanceof ErroIA && ERROS_DE_CONFIG.includes(est.erro.err.codigo) ? '<a class="btn" href="#ajustes">Abrir Ajustes do Gemini</a>' : ''}</div>` : ''}
+      ${est.erro && est.erro.id === id ? `<div class="erro-ia" role="alert"><p>${esc(est.erro.err.message)}</p>${est.erro.err instanceof ErroIA && ERROS_DE_CONFIG.includes(est.erro.err.codigo) ? '<a class="btn" href="#ajustes">Conectar o Gemini</a>' : ''}</div>` : ''}
       ${sem ? '' : `<button class="btn" data-tf-comentar="${esc(id)}" data-passo="${passo}" ${est.ocupado ? 'disabled' : ''}>${est.ocupado === `${id}:${etapa}` ? 'O tutor está lendo…' : c ? 'Pedir novos comentários' : 'Pedir comentários do tutor'}</button>`}`;
   }
 

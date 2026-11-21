@@ -113,7 +113,7 @@ test.describe('no computador', () => {
     await expect(page.locator('.linha-l li')).toContainText('1 min, 12 palavras');
     await expect(page.locator('.linha-l li')).toContainText('Capítulo 1, Método');
     await expect(page.locator('.diss-sessao')).toContainText('Sessão de hoje, a 2ª de 3 desta semana');
-    await expect(page.locator('.diss-sessao')).toContainText('Você parou em: “em campo, e a diferença era registrada como”');
+    await expect(page.locator('.diss-sessao')).toContainText('Onde você parou: “em campo, e a diferença era registrada como”');
     await expect(page.locator('.diss-caps li')).toContainText('12 palavras');
     await expect(page.locator('#vista')).toContainText('12 palavras, 100% suas');
 
@@ -169,7 +169,7 @@ test.describe('no computador', () => {
     await page.getByLabel('Novo marco').fill('Qualificação');
     await page.getByLabel('Data do marco').fill(dia);
     await page.getByRole('button', { name: 'Adicionar marco' }).click();
-    await expect(page.locator('#toast')).toContainText('Marco gravado');
+    await expect(page.locator('#toast')).toContainText('Marco salvo');
     await expect(marcos).toHaveCount(3);
     await expect(marcos.nth(1)).toContainText('Qualificação');
     await expect(marcos.nth(1)).toContainText('Em 24 dias');

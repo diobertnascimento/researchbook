@@ -52,7 +52,7 @@ export function conferirCitacoes(paragrafo, leituras, grifos, curto = (l) => l.t
     if (visto.has(chave)) return;
     visto.add(chave);
     const l = leituras.find((x) => semAcento(x.autores?.[0]?.sobrenome) === primeiro && String(x.ano) === ano.replace(/[a-z]$/, ''));
-    achados.push(l ? { tipo: 'ok', texto: `${autores.trim()} (${ano})`, detalhe: `Na biblioteca: ${curto(l)}.`, leituraId: l.id } : { tipo: 'fora', texto: `${autores.trim()} (${ano})`, detalhe: 'Não encontrei esta obra na sua biblioteca. Só se cita o que está no acervo: adicione a obra ou confira o nome e o ano.' });
+    achados.push(l ? { tipo: 'ok', texto: `${autores.trim()} (${ano})`, detalhe: `Na biblioteca: ${curto(l)}.`, leituraId: l.id } : { tipo: 'fora', texto: `${autores.trim()} (${ano})`, detalhe: 'Esta obra não está na sua biblioteca. Só se cita o que está nela: adicione a obra ou confira o nome e o ano.' });
   };
   // (Sobrenome, 2020) e (Sobrenome; Outro, 2020, p. 3), inclusive várias no mesmo parêntese.
   // O ponto e vírgula separa tanto os autores de uma obra quanto uma obra da outra: os pedaços sem ano

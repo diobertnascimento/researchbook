@@ -57,7 +57,7 @@ export async function buscarDOI(entrada, { registrar } = {}) {
     r = await fetch(API + encodeURIComponent(doi), { headers: { Accept: 'application/json' } });
   } catch {
     registrar?.('erro', 'crossref.buscar', { det: 'sem conexão', st: 'erro' });
-    return { erro: 'Sem conexão para buscar o DOI. Você pode preencher os dados à mão.' };
+    return { erro: 'Sem internet para buscar o DOI. Você pode preencher os dados à mão.' };
   }
   const dur = Math.round(performance.now() - inicio);
   if (r.status === 404) {
@@ -94,7 +94,7 @@ export async function procurarPorDados(f, { registrar, linhas = 5 } = {}) {
       r = await fetch(url, { headers: { Accept: 'application/json' } });
     } catch {
       registrar?.('erro', 'crossref.procurar', { det: 'sem conexão', st: 'aviso' });
-      return { erro: 'Sem conexão para procurar no Crossref.' };
+      return { erro: 'Sem internet para buscar no Crossref.' };
     }
     if (r.status === 429 && tentativa === 1) {
       await new Promise((ok) => setTimeout(ok, 2000));

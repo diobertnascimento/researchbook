@@ -224,7 +224,7 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
         <p>A IA pode escrever as perguntas para este texto, uma única vez, a partir do artigo, dos seus grifos, da sua tese e dos seus argumentos. Ela não responde por você.</p>
         ${est.erro && est.erro.id === l.id ? `<div class="erro-ia" role="alert"><p>${esc(est.erro.err.message)}</p></div>` : ''}
         <div class="acao-l">${semIA ? '' : `<button class="btn prim" data-fich-perguntas="ia" data-ocupado="Preparando as perguntas…">Preparar as perguntas com a IA</button>`}<button class="btn ${semIA ? 'prim' : ''}" data-fich-perguntas="geral">Usar perguntas gerais, sem IA</button></div>
-        ${semIA ? '<p class="t-meta mute">O Gemini não está ligado neste aparelho. As perguntas gerais valem para qualquer texto.</p>' : ''}</section>`;
+        ${semIA ? '<p class="t-meta mute">O Gemini não está conectado neste aparelho. As perguntas gerais valem para qualquer texto.</p>' : ''}</section>`;
     }
     const i = indiceAtual(f, l.id);
     const p = ps[i];
@@ -275,7 +275,7 @@ export function criarFichamentoUI({ bib, dados, registrar, drive }) {
     const abas = [['grifos', `Pelos grifos, ${grifos.length}`], ['texto', 'Pelo texto completo'], ['notas', `Suas notas, ${comTexto(f).length}`]];
     return `<a class="voltar" href="#leitor/${encodeURIComponent(id)}">${icone('voltar')}Voltar ao texto</a>
       <div class="topo fich-topo"><div><h1>Fichamento</h1><p class="fich-obra">${esc(l.titulo)}</p>
-        <p class="ref-previa">${referencia(l)} <button class="lnk" data-bib-editar="${esc(l.id)}">Corrigir dados da obra</button></p>
+        <p class="ref-previa">${referencia(l)} <button class="lnk" data-bib-editar="${esc(l.id)}">Corrigir os dados da obra</button></p>
         ${faltam ? '<div class="ad-msg erro" role="status">Faltam dados na referência. Corrija antes de usar a obra no texto.</div>' : ''}</div>
         <div class="acoes"><span class="t-legenda mute-2" id="fich-salvo" role="status">${doLivro(id) ? 'Salvo' : ''}</span></div></div>
       <div class="alterna fich-caminho" role="group" aria-label="Caminho do fichamento">${abas.map(([k, n]) => `<button class="txt" data-fich-vista="${k}" aria-pressed="${v === k}">${n}</button>`).join('')}</div>

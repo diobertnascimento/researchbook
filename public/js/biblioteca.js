@@ -139,7 +139,7 @@ export function criarBiblioteca({ db, dados, registrar, drive }) {
       await arm.gravar(db, 'arquivos', { id, blob, tipo: 'application/pdf', tamanho: blob.size, guardadoEm: new Date().toISOString() });
       return { blob };
     } catch (e) {
-      return { erro: e.codigo === 401 ? 'A sessão do Google venceu. Reconecte para baixar o PDF.' : 'Não deu para baixar o PDF do Drive agora. Tente de novo.' };
+      return { erro: e.codigo === 401 ? 'O login do Google venceu. Entre de novo para baixar o PDF.' : 'Não deu para baixar o PDF do Drive agora. Tente de novo.' };
     }
   }
 

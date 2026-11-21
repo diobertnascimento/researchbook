@@ -57,7 +57,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     const t = onde.texto;
     const rot = semana.length < plano.sessoes ? `Sessão de hoje, a ${semana.length + 1}ª de ${plano.sessoes} desta semana` : `Plano da semana cumprido, com ${plural(semana.length, 'sessão', 'sessões')}`;
     const total = palavrasDe(t).total;
-    const parou = onde.sessao?.frase ? `Você parou em: “${esc(onde.sessao.frase)}”` : total ? `${plural(total, 'palavra', 'palavras')} até aqui.` : 'Ainda vazio.';
+    const parou = onde.sessao?.frase ? `Onde você parou: “${esc(onde.sessao.frase)}”` : total ? `${plural(total, 'palavra', 'palavras')} até aqui.` : 'Ainda vazio.';
     const outros = caps.filter((c) => c.id !== t.id);
     return `<section class="proximo diss-sessao" aria-labelledby="ds-t"><div class="rot" id="ds-t">${rot}</div><h2>${esc(nomeCap(t))}</h2><p>${parou}</p>
       <div class="acao-l"><button class="btn prim" data-diss-sessao="${esc(t.id)}">Escrever por ${plano.minutos} minutos</button>${outros.length ? `<button class="btn fant" data-diss-escolher aria-expanded="${est.escolher}">Escolher outro capítulo</button>` : ''}</div>
@@ -148,7 +148,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     const cab = '<div class="topo"><div><h1>Jornada</h1></div></div>';
     if (!anda) {
       return `${cab}<section class="proximo jor-comeco" aria-labelledby="jc-t"><div class="rot" id="jc-t">Quando o mestrado começou?</div>
-        <p>Com o mês de início e o prazo, esta página mostra em que ponto você está e quanto falta para cada marco. Fica gravado assim que você escolhe.</p>${camposInicio(c)}</section>`;
+        <p>Com o mês de início e o prazo, esta página mostra em que ponto você está e quanto falta para cada marco. É salvo assim que você escolhe.</p>${camposInicio(c)}</section>`;
     }
     const marcos = marcosDe(c, anda);
     const proximo = [...marcos].reverse().find((m) => m.seu && m.data >= hoje);
@@ -332,7 +332,7 @@ export function criarVisaoUI({ sess, escrita, diss, disc, registrar }) {
     await sess.salvarConfig({ marcos: [...sess.config().marcos, { id: `marco-${crypto.randomUUID().slice(0, 8)}`, titulo, data }] });
     registrar('ui', 'dissertacao.marco');
     redesenhar();
-    toast('Marco gravado');
+    toast('Marco salvo');
   });
 
   ouvir('click', async (e) => {

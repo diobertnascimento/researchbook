@@ -51,7 +51,7 @@ export function criarMudanca({ endereco, origem, buscar, aviso, estado, temConta
       const quantas = e.pendentes ? ` (${e.pendentes} ${e.pendentes === 1 ? 'mudança esperando' : 'mudanças esperando'})` : '';
       caso = {
         tipo: 'espere',
-        texto: `O researchbook mudou para ${nome}. Antes de ir, este aparelho precisa terminar de enviar tudo para o Drive${quantas}. Conecte ao Google, espere aparecer "Sincronizado" e confira de novo.`,
+        texto: `O researchbook mudou para ${nome}. Antes de ir, este aparelho precisa terminar de enviar tudo para o Drive${quantas}. Entre com o Google, espere aparecer "Sincronizado" e confira de novo.`,
         acoes: [{ rotulo: 'Conferir de novo', principal: true, ao: () => avaliar() }, depois],
       };
     }
